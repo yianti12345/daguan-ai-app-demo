@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=245f2945">
+<link rel="stylesheet" href="assets/sys.css?v=a688a1e1">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=5808cd0c">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -26,6 +25,7 @@
 .dl-menu .k-mi[data-dim]{color:var(--color-text-tertiary);font-size:var(--font-size-caption)}
 </style>
 
+<meta name="robots" content="noindex,nofollow">
 </head>
 <body>
 
@@ -609,10 +609,13 @@
           '</span>' +
           '<span class="kc-ops">' +
             (a.status === '未发布'
-              /* ★2026-11-01（评审 P0-2）：草稿没有「上架」这个动作（要发布才有），
-                 但**位置要占住** —— 否则同排卡里它的 ⋮ 比别人的靠右 24px，
-                 一屏看过去右端参差，像没对齐。用一个不可见的占位撑住。 */
-              ? '<span class="k-pub-ghost" aria-hidden="true"></span>'
+              /* ★2026-11-02（用户 m06188 + 官网标准）：草稿没有上下架动作，但**位置必须占住**，
+                 而且要和其它卡长得一样 —— 用官网同款 24×24 电源钮的 disabled 态，
+                 不再用不可见 ghost（ghost 24 + 真钮 32 造成动作簇 60/68 不齐，用户已投诉三轮）。
+                 文案只陈述事实：未发布，不能上下架。 */
+              ? '<button class="k-pub" type="button" disabled aria-disabled="true"' +
+              ' aria-label="未发布，不能上下架"' +
+              ' title="发布后才能上架">' + ICON.pow + '</button>'
               : '<button class="k-pub" type="button" data-act="toggle" data-id="' + esc(a.id) + '"' +
               ' aria-label="' + esc((up ? '下架 ' : '上架 ') + a.name) + '"' +
               ' title="' + esc(pubTitle) + '">' + ICON.pow + '</button>') +

@@ -464,7 +464,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
    两个独立判断撞在一起才动手：oil-ui 的 lint 判它 sideStripe（彩色单侧边线＝模型默认做法），
    零上下文盲评看图也点名"纯装饰却被读成有含义的编码"。
    彩条原本承担的"这是哪一类"改由 `.card-tt` 的文字说（见 app.html 卡片标题）。 */
-.kcard:hover{box-shadow:var(--shadow-card-hover)}
+/* 2026-11-02：这条悬停与下方重复，已删；应用卡悬停统一定义在同一组件段内。 */
 /* ── 应用卡顶部光（2026-10-25）：与组件卡 .crow.ccard::before 同一口径的三层径向，
    只把浓度再降一档、高度按卡走。
    为什么应用卡也要：两页并排看，组件卡有光、应用卡是纯白板 —— 同一模块的两个列表页，
@@ -1033,10 +1033,7 @@ button.cc-meta:focus-visible{
    hover 到卡片上之后却按卡片的坐标系定位，实测右缘差 217px、纵向差 134px
    （CARDMENU ⑧c 抓到的就是这个）。上浮 2px 的观感远不值得让菜单乱跑。
    层级靠阴影加深表达，不动几何。 */
-/* ★2026-11-01：这里原来是写死的 `0 3px 9.7px rgba(170,175,210,.22)` ——
-   rgba(170,175,210) 是**淡紫**。白底上一点紫，就是用户说的「阴影很诡异、颜色怪」。
-   现在走令牌：悬停只加深收边环，不投影（见 tokens.css --card-shadow-hover 那段）。 */
-.kcard:hover{box-shadow:var(--card-shadow-hover)}
+/* 2026-11-02：这条悬停已并入下方「应用卡尺寸令牌」段；同一选择器不再两处定义。 */
 /* ★2026-10-31（列表页实测 · 视觉#1）：封面原来 181 高，占整卡 60%，是卡上唯一有色块，
    里面却只有一行 24 高的组件芯片 —— 扫一屏先看到 6 块浅蓝空板，认不出是谁家。
    压到 **166**：这是能压到的下限，不是取整偏好 ——
@@ -1175,29 +1172,27 @@ button.cc-meta:focus-visible{
 .kc-body .card-desc{margin:6px 0 0;font-size:var(--font-size-caption);line-height:var(--leading-card-desc);color:var(--color-text-secondary);height:38px;overflow:hidden;white-space:normal;display:block}/* 2026-10-29：真源 12px（refparity 卡描述 fs）；14→12，行高/高不变（12/19 两行 38） */
 .kc-meta{font-size:var(--font-size-caption);color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kcard .card-ft{
-  display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);
-  margin:0;padding:0 var(--space-12);height:49px;flex:none;
+  display:flex;align-items:center;justify-content:space-between;gap:0;
+  margin:0;padding:var(--space-12) var(--space-12) 13px;height:49px;flex:none;
   /* ★2026-10-27：删掉 border-top:1px。它是一句**从未生效的死代码** ——
      实测 computed borderTopWidth=0px（被后面 `.kcard .card-ft{border-top:0}` 覆盖），
      但 NOBORDER 判据扫源码文本时把它算成"容器描边"报红。
      删掉不影响任何渲染，只是让源码与渲染一致：一条写在那儿却不起作用的线，
      比没有更坏 —— 下一个人会以为 footer 上有分隔线而在别处补偿。 */
-  background:var(--surface-page);
+  background:var(--surface-page);box-shadow:none;
   /* ★2026-10-29（refparity：卡底栏 color 真源 rgb(37,37,36)/我方继承 rgba(0,0,0,.65)）：
      真源 footer 是 inline `color: rgb(37,37,36)`，可见的日期子元素再自着色成 rgb(108,125,169)。
      我方 footer 原来不设 color（继承来的值不是可见色），可见子元素 .kc-meta 同样自着色。
      这里只对齐**容器锚点**（--color-icon-card = #252524 = rgb(37,37,36)），可见子元素不动。 */
   color:var(--color-icon-card);
-  border-radius:0 0 var(--radius-panel) var(--radius-panel);
+  border-radius:0;
 }
 
 /* ── 应用卡 footer 里的 ⋮（2026-10-26 晚）──────────────────────
    原来 .k-more 是 absolute 定位在卡片右上角，与封面上的状态标签重叠。
    现在它是 footer 流内元素，菜单由 placeMenu() 用 fixed 计算位置。 */
 
-.kcard .kc-ops{display:flex;align-items:center;gap:2px;flex:none;margin-left:auto}
-/* 草稿卡的电源位占位：看不见，但占住 24px，让同一排所有卡的 ⋮ 落在同一条竖线上 */
-.kcard .kc-ops .k-pub-ghost{display:inline-block;width:24px;height:24px;flex:none}
+.kcard .kc-ops{display:flex;align-items:center;gap:0;flex:none;margin-left:0}
 /* ── footer 里的「配置」文字入口（2026-10-26 深夜，盲审 P0）─────────
    上一版撤掉它之后，静态图上"点哪里进配置页"零可见线索：整卡可点只靠 hover 出箭头暗示，
    ⋮ 菜单里也没有"打开配置"。可发现性不能依赖鼠标悬停。
@@ -2085,7 +2080,7 @@ body[data-drawer="on"] .hint{
    ⚠ 这些是**组件尺寸**，不是间距 —— 不要拿 --space-* 顶替：
      间距令牌表达的是"元素之间的呼吸"，卡片高度不是呼吸。 */
 
-/* 常态：不投影。悬停：只把收边环加深一档。选中：才出真阴影（见 .kcard[data-sel]）。 */
+/* 常态：1px 收边环。悬停：加深收边环并轻投影。选中：才出真阴影（见 .kcard[data-sel]）。 */
 .kcard:hover{box-shadow:inset 0 0 0 1px var(--color-border-control), 0 6px 18px var(--shadow-color-2)}
 .kcard:focus-within{box-shadow:inset 0 0 0 1px var(--color-brand-ink), var(--card-shadow-selected)}
 
@@ -2149,12 +2144,8 @@ body[data-drawer="on"] .hint{
 }
 .kcard .kc-row .kc-upd{flex:none;margin:0}
 
-/* 底栏：三个动作同一灰度、同一 32 热区；下架只在 hover 出血色 */
-.kcard .card-ft{
-  border-top:0;flex:none;
-  padding:var(--space-4) var(--space-8) var(--space-4);
-}
-.kcard .kc-ops{gap:2px}
+/* 底栏：三个动作同一灰度；几何统一由文件尾部 canonical 段定义（2026-11-02 收口）。
+   这里不再写 padding/gap —— 多代叠加正是 60/68 与 4px/12px 混用的根因。 */
 .kcard .kc-ops .k-open,
 .kcard .kc-ops .k-pub,
 .kcard .kc-ops .k-more{
@@ -2267,7 +2258,10 @@ body[data-drawer="on"] .hint{
 .kcard:focus-within{
   box-shadow:var(--shadow-card-soft);
 }
-.kcard[data-off="1"]{opacity:.72}
+/* 2026-11-02（用户 m06188 + 官网标准）：整卡 opacity 会把 footer 一起变淡，
+   同排卡底栏看起来两套材质；已下架只由状态胶囊表达，卡面不整体降透明。
+   这样 published / draft / offline 三态的 footer 几何与材质完全一致。 */
+.kcard[data-off="1"]{opacity:1}
 
 /* 整卡热区：封面 + 标题 + 说明 */
 .kcard .kc-hit{
@@ -2320,34 +2314,29 @@ body[data-drawer="on"] .hint{
   color:var(--color-text-tertiary);overflow:hidden;
 }
 
-/* 底栏：左时间、右电源 + ⋮ */
-.kcard .card-ft{
-  flex:none;border-top:0;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:var(--space-12);
-  background:var(--surface-page);
-}
+/* 底栏：左时间、右电源 + ⋮（2026-11-02 收口：只留这一份契约，见文件尾部 canonical） */
+/* ── 底栏 canonical 契约（2026-11-02）────────────────────────────
+   数值全部取自线上真机 agents.datagrand.com/#/Expert/ManageAgent（1440）：
+   footer padding 12/12/13、高 49、无投影；时间 12/16；动作组 68 = 10+24+10+24；
+   按钮 24×24、radius 2、margin-left 10、无 gap；图标 20×20。
+   三态（已上架 / 未发布 / 已下架）共用同一套几何，草稿只把电源钮置 disabled。
+   ★这些值是量出来的，不是"看起来差不多"调出来的；改前先回官网复量。 */
 .kcard .kc-time{
-  font-size:var(--font-size-caption);line-height:var(--leading-caption);
-  color:var(--color-text-tertiary);
+  font-size:var(--font-size-caption);line-height:var(--leading-caption-meta);
+  color:var(--color-text-card-meta);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   flex:1 1 auto;min-width:0;
 }
 .kcard .kc-ops{
-  display:flex;align-items:center;gap:var(--space-4);
-  /* 2026-11-02（独立走查 P2-8）：1440 四列时卡宽 269，草稿卡「未发布 + 19 字时间」要 171px，
-     原来 gap 8 + margin 8 只给它 169 ⇒ 秒数被省略号吃掉 2px（第 5 张卡实测）。
-     justify-between 已经负责拉开距离，这 8px 只在最紧的时候才省得出来。 */
+  display:flex;align-items:center;gap:0;
   flex:none;margin-left:0;
 }
-/* 两颗图标钮：32×32 热区（CARDMENU ② 要求 ≥32×32 —— 24 时实测 32×24），
-   静息字色用 secondary（tertiary 在卡底上实测 2.23:1，不到 3:1） */
 .kcard .kc-ops .k-pub,
 .kcard .kc-ops .k-more{
-  width:32px;height:32px;padding:0;
+  width:24px;height:24px;min-width:0;margin-left:10px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   background:none;border:0;box-shadow:none;border-radius:var(--radius-xs);
-  color:var(--color-text-body);
+  color:var(--color-icon-card);
   cursor:pointer;
   transition:background .16s,color .16s;
 }
@@ -2356,7 +2345,12 @@ body[data-drawer="on"] .hint{
   background:var(--color-state-hover);color:var(--color-text-primary);
 }
 .kcard .kc-ops .k-pub:hover{color:var(--color-danger)}
-.kcard .kc-ops svg{width:16px;height:16px;display:block}
+/* 未发布：电源动作不存在，但按钮位必须占住；disabled 用 25% ink，不是隐形 ghost。 */
+.kcard .kc-ops .k-pub:disabled{color:var(--color-text-muted);cursor:not-allowed;background:none}
+.kcard .kc-ops .k-pub:disabled:hover{background:none;color:var(--color-text-muted)}
+.kcard .kc-ops .k-open svg,
+.kcard .kc-ops .k-pub svg,
+.kcard .kc-ops .k-more svg{width:20px;height:20px;display:block}
 
 /* 未装配标记：贴在封面左下，一句事实，不是组件清单 */
 .kcard .kc-empty-flag{
@@ -2472,12 +2466,6 @@ body[data-drawer="on"] .hint{
   margin:0;
   font-size:var(--font-size-caption);line-height:var(--leading-caption-meta);
   color:var(--color-text-card-meta);overflow:hidden;
-}
-.kcard .card-ft{
-  display:flex;align-items:center;justify-content:space-between;
-  flex:none;
-  padding:var(--space-12);
-  border-top:0;background:var(--surface-page);
 }
 /* 卡高由 grid 行拉伸时不参与（否则一行里最高的卡会把别的撑开） */
 .grid{align-items:start}
