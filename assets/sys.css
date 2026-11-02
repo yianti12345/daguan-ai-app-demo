@@ -702,7 +702,10 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      而"运行带通到卡边"本来不需要负 margin：卡自己不设内距，上区与运行带各自带 16 内距即可 ——
      内容基线仍是 +16、带子仍贴左/右/下三边（check-card-shape C4 量的是这三条），少一层"先加再减"的往返。 */
   padding:0;border:0;border-radius:var(--ccard-radius);
-  background:var(--surface-page);box-shadow:var(--shadow-flat);overflow:hidden;
+  background:var(--surface-page);
+  /* 同应用卡 m05570：4% 贴地投影在白底上等于没有边界，补一道 inset 收边环。 */
+  box-shadow:inset 0 0 0 1px var(--color-border-card), 0 1px 2px var(--shadow-color-1);
+  overflow:hidden;
   /* ★2026-11-02 材质再统一（NB 判据）：2026-11-01 曾把两页统一成 1px 描边，那不是统一材质，
      是把两边一起做成 DESIGN.md §1.1 明令禁止的样子。现在两页都走「底色差 + 阴影」：
      静止 var(--shadow-flat)，hover 抬一层。线一条不留。 */
@@ -710,7 +713,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      不许写 min-height：写死下限之后，内容不够时卡不收，底部留一条空带（旧卡 139 就是这条）。 */
   transition:box-shadow .16s ease;
 }
-.page-components .crow.ccard:hover{box-shadow:var(--shadow-card-hover)}
+.page-components .crow.ccard:hover{box-shadow:inset 0 0 0 1px var(--color-border-control), 0 6px 18px var(--shadow-color-2)}
 /* ── 身份区：类型点 + 名称（"这是什么零件"只由这一行回答）──────────────
    类型色在这张卡上**只出现一次**（那个 6px 点），不整卡染色、不加侧边条、不印类型文字：
    一个类型一个色，五个色（--c-page/cap/data/cfg/slate）压白全部 ≥3:1。
