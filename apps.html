@@ -17,7 +17,7 @@
 /* 下载客户端按钮（2026-11-02 改）：原先是 32×32 纯图标，靠 title 说明；
    m03821 要求更明显，改为「图标 + 文案」的文字按钮，高度仍 32 与工具条同高。
    浮层与去向不变（Mac / Windows 分包，没有包就给去下载页的出口）。 */
-.dl-btn{height:32px;padding:0 10px;display:inline-flex;align-items:center;gap:6px;flex:none;white-space:nowrap}
+.dl-btn{height:32px;padding:0 var(--space-8);display:inline-flex;align-items:center;gap:var(--space-8);flex:none;white-space:nowrap}
 .dl-btn[aria-expanded="true"]{background:var(--color-state-hover);color:var(--color-brand-ink)}
 .dl-menu{min-width:216px}
 .dl-menu .k-mi[data-mute]{cursor:default;color:var(--color-text-tertiary)}
