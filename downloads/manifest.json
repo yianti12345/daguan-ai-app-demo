@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "at": "2026-10-30T08:29:00.609Z",
+  "files": [
+    {
+      "key": "mac",
+      "file": "达观智能审核平台-1.0.0-mac-arm64.dmg",
+      "ext": ".dmg",
+      "os": "macOS",
+      "arch": "Apple 芯片（M1 及以后）",
+      "requires": "macOS 12 或更高",
+      "name": "达观智能审核平台-1.0.0-mac-arm64.dmg",
+      "version": "1.0.0",
+      "size": 108994195,
+      "sha256": "cb84ee70a694b121956a5b73e3fec5f41b48f504b61021afb9ab4dde751ae549",
+      "href": "https://github.com/yianti12345/daguan-ai-app-demo/releases/download/v1.0.0/%E8%BE%BE%E8%A7%82%E6%99%BA%E8%83%BD%E5%AE%A1%E6%A0%B8%E5%B9%B3%E5%8F%B0-1.0.0-mac-arm64.dmg"
+    },
+    {
+      "key": "win",
+      "file": "达观智能审核平台-1.0.0-windows-x64.zip",
+      "ext": ".zip",
+      "os": "Windows",
+      "arch": "64 位（x64）",
+      "requires": "Windows 10 或更高",
+      "name": "达观智能审核平台-1.0.0-windows-x64.zip",
+      "version": "1.0.0",
+      "size": 113094961,
+      "sha256": "49a6527f126a93a9ed4b9a57ba8820802116cd8d0337111294776b549066ec9d",
+      "href": "https://github.com/yianti12345/daguan-ai-app-demo/releases/download/v1.0.0/%E8%BE%BE%E8%A7%82%E6%99%BA%E8%83%BD%E5%AE%A1%E6%A0%B8%E5%B9%B3%E5%8F%B0-1.0.0-windows-x64.zip"
+    }
+  ]
+}
