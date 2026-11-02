@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新建组件</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
+<link rel="stylesheet" href="assets/sys.css?v=42fb1b98">
+<link rel="stylesheet" href="assets/float.css?v=31ab1375">
+<link rel="stylesheet" href="assets/viewmode.css?v=583dee86">
+<link rel="stylesheet" href="assets/generated.css?v=f89c421a">
+<link rel="stylesheet" href="assets/configurator.css?v=59b1113c">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=5808cd0c">
+<style>
+
+/* ─────────────────────────────────────────────────────────────
+   本页局部排版。不新增任何取值：颜色/字号/圆角/阴影全部走 tokens.css
+   与 base.css 已有的变量，这里只负责"放在哪、多宽、什么时候出现"。
+
+   形态：一块全屏画布 = 最终页面本身，输入条浮在最顶层。
+   没有顶栏、没有侧栏、没有「预览」这个动作 —— 说完就边生成边长出来。
+   ───────────────────────────────────────────────────────────── */
+
+/* ── 左上角浮层：返回 + 组件名 ─────────────────────────────── */
+#topbar{
+  position:fixed; top:16px; right:24px; z-index:35;
+  /* 2026-10-25：撤掉侧栏后回到 24px —— 这一页没有平台导航（C6），顶栏从内容区左缘起 */
+  left: 24px;
+  display:flex; align-items:center; gap: 10px;
+}
+#topbar .back-btn{
+  width:28px; height:28px; flex:0 0 28px;
+  display:grid; place-items:center;
+  border-radius:var(--radius-control); color:var(--color-text-secondary);
+  background:var(--surface-veil); border:0; box-shadow:0 1px 3px var(--shadow-color-1);
+  transition:background .16s, border-color .16s, color .16s;
+}
+#topbar .back-btn:hover{background:var(--surface-page); border-color:var(--color-text-muted); color:var(--color-text-body)}
+#topbar .comp-name{
+  margin:0;
+  font-size:var(--font-size-heading); font-weight:600; color:var(--color-text-body); line-height:1.4;
+}
+/* 面包屑：一行 12 号灰字，只用来交代"这个组件装在哪"，不参与标题层级 */
+#topbar .crumb{
+  display:flex; align-items:center; gap:6px;
+  font-size:var(--font-size-caption); color:var(--color-text-secondary);
+  padding: 0 10px 0 2px;
+  border-left:1px solid var(--color-border-card);
+}
+#topbar .crumb a{color:var(--color-text-secondary)}
+#topbar .crumb a:hover{color:var(--color-brand-ink)}
+/* 状态 chip：启用绿、未发布灰、禁用橙 —— 与组件库卡片同一套词（DB.compState），
+   2026-10-30 起不再印「已上架/已下架」；旧的 data-st="up" 选择器保留兼容。 */
+/* 2026-10-30：胶囊基础与语义色已并入 assets/sys.css 的同一份声明（见 §26.5），本页不再写第二份。 */
+/* 共用件影响面（2026-10-28 E44）：与面包屑同一层信息，一条竖线隔开，不抢标题。
+   取值只用 tokens.css 已有变量，不新增颜色/间距字面量。 */
+/* 版本与发布状态不再显示在顶栏：用户原话「直接就是只显示当前应用名称就行了」。
+   元素保留但隐藏 —— 内部还有三处会写它（草稿/生成中/已发布），删元素会抛空引用。 */
+#topbar .comp-ver{display:none}
+
+/* ★2026-10-26 撤销「本页隐藏浮球」。
+   10-25 那条 P0 的前提是错的：它把「底部输入轴」和「右下浮球」当成两个同类 AI 入口。
+   用户 10-26 原话纠正：「小智是全局的，就是小智可以跟人一样，操作我们 web 端全部的操作，
+   跟组件配置的对话和应用配置的对话，是完全不同的概念」。
+   ⇒ 输入轴是**本页的配置对话**（只管这一屏的对象），浮球是**全局操作者**（能操作整个系统）。
+   两者不是重复入口，隐藏浮球等于砍掉全局能力，且用户在别的页找不到它就不会知道它存在。
+   如果同屏真的显得挤，该调的是浮球的视觉重量（尺寸/透明度/层级），不是取消它。 */
+
+/* 空态这一屏：输入条从"贴底页脚"抬到空态卡正下方，与卡一起构成一个居中的落点。
+   有内容之后 body.is-empty 被摘掉（assets/component.js 的 renderEmpty / 两支绘制分支），
+   输入条回到底部常态位置 —— 只改空态构图，不改有内容时的布局。 */
+
+/* ★2026-10-25 盲评第七轮 P1，原文「空态卡中心 819.5、输入条中心 719.5 —— 同一屏两个『居中』相差 100px」：
+   曾经把输入条改成"在内容区里居中"（侧栏宽 + 剩余一半），但那依赖侧栏存在。
+   撤掉侧栏后（C6：配置页不挂平台导航）输入条与内容区都在整幅视口里居中，
+   仍由 float.css 的 left:50% 负责 —— 这里不再覆盖，避免"两套居中"再次错轴。 */
+
+/* 生成进度：一条 3px 的确定进度（不做循环动画，DESIGN §6 禁循环） */
+#genbar{
+  position:fixed; top:0; left:0; height:3px; width:0;
+  background:var(--color-brand); z-index:45;
+  transition:width .26s ease, opacity .2s;
+}
+#genbar[data-off="true"]{opacity:0}
+
+/* ── 画布 ────────────────────────────────────────────────────
+   顶部留出悬浮条的高度：条是浮层，内容滚到上面时从条下面过。
+   ★ 2026-10-23 用户说"画布的颜色太丑"：原来是一整片均匀的 #F5F6F9，
+     空态只有中间一小团内容，四周全是同一种灰 —— 眼睛没有落点。
+     现在给一层极淡的径向渐变（中心近白、四周回到画布灰），
+     视觉重心自然落在中间那块内容上；画布本身仍然是灰的，
+     所以和「内容区白、卡片白」这套底色规则不冲突（生成出来的白卡照样立得住）。 */
+#canvas{
+  flex:1; min-height:0; overflow:auto;
+  padding:72px 24px 104px;
+  /* ★2026-10-25 盲评第六轮 P1，原文「p2 画布 (245,246,249) ≠ p1/p3 content 区 (255,255,255)，
+     且与侧栏 (243,244,247) 只差 2 个灰阶，栏线被吃掉」：
+     --canvas 是给"卡片托底"的浅灰，而列表页/组件库页真正的工作区是白的。
+     这一页没有卡片阵列要托底，改成 --bg（白），三页工作区同一个底。 */
+  background:var(--surface-page);
+}
+.canvas-inner{max-width:1202px; margin: 0 auto}/* 1202 = 列表页内容区实测宽度（x=216..1418），三页右缘对齐 */
+/* 画布铺满，不切短：切短会在底部露出 body 白底，看起来像"页面没铺满"。
+   底部对话浮层就浮在画布上，留白交给 #canvas 的 padding-bottom。 */
+
+/* 首屏空态：一张卡（标题 / 说明 / "说第一句"）。没有样例页，
+   第一次进来就该是空的，等对话生成。 */
+.empty-wrap{
+  /* 空白画布：只做垂直居中，不做卡片底、不做边框 —— 画布本身就该是空白的 */
+  min-height:calc(100vh - 260px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+}
+/* ★ 2026-10-24 用户：「点进去是空白待机页、看不到提示文」——提示文本就在，问题在**太淡**：
+   `.empty-hint` 用 rgba(0,0,0,.45)（合成 #878789 on #F5F6F9 = 3.31:1），`.seed-ar` 用
+   rgba(0,0,0,.25)（#BFBFBF on #FFF = 1.83:1）。肉眼看不到 ≠ 没有，所以按实测对比度提到
+   说明 ≥4.5:1、箭头 ≥4.5:1（判据 tools/check-empty-contrast.mjs，负控会把它们压回 .2 判红）。 */
+.empty-hint{margin:0; font-size:var(--font-size-body); color:var(--color-text-secondary)}
+/* 首屏空态：一行主句 + 一行说明 + 三条起手示例。
+   示例是 button（可点、可键盘、点了把话填进输入框），不是画在画布上的样例内容。
+   不画卡片底、不加边框 —— 要让"这块是空的"这件事保持成立。
+   ★ 2026-10-23 用户说"太丑"。上一版主句 14px 次色、示例是白底细边胶囊，
+     两者和旁边的说明文字同一套视觉语言 —— 看起来是三行静态标签，
+     既没有主次，也看不出能点。现在：主句用正文色 + 600，示例升到 38 高、
+     每行前面加一个 `›`（可点的最小信号），hover 时边框转品牌色。 */
+/* ★ 2026-10-23 用户定了一条审美原则：「现在好看的审美一般都不带边框了」。
+   所以这一屏的"框"全部换成**底色差 + 阴影**，不再画 1px 线。
+   要不要边框不是风格问题，是"这一块是浮起来的还是在纸上画的"——
+   浮起来的东西用阴影，画在纸上的才用线。这里是浮起来的。 */
+.empty-lead{margin:0; font-size:var(--font-size-heading); font-weight:600; color:var(--color-text-body); letter-spacing:-.01em}
+/* ★ 2026-10-25 空态从"漂在灰布上的三行字"改成**一张卡**（.empty-card 原先定义着却没人用，
+   是死代码；现在它是空态唯一的容器）。理由：列表页的容器语言是白卡 + 阴影 + r-l 圆角，
+   空态若只有居中的几行字，三张图并排就显得配置页没有"容器"这件事，
+   而被评"60% 空区里的一座小孤岛"。
+   按 2026-10-23 定的原则（浮起来的东西用阴影、画在纸上的才用线）把它的 1px 线换成 --sh-card。 */
+.empty-card{
+  width:520px; max-width:100%; padding:36px 32px; text-align:center;
+  background:var(--surface-page); border:0; border-radius:var(--radius-panel); box-shadow:var(--shadow-card);
+}
+.empty-seeds{display:flex; flex-direction:column; align-items:stretch; gap:8px; margin-top:6px}
+/* 示例组上面的那句话：说明"点了会发生什么"，替三条示例表态。
+   评审要的是"首选那条"—— 三条是三类不同任务（列表/详情/表单），谁都不是别人的默认，
+   硬挑一条当推荐属于编产品逻辑；改成把"点一句 = 填进输入框"讲明白，让人敢点。 */
+.seed-cap{margin:14px 0 0; font-size:var(--font-size-body); color:var(--color-text-secondary); text-align:center}
+.seed{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  width:100%; height:44px; padding:0 14px 0 16px; border-radius:var(--radius-control);
+  /* ★2026-10-25 盲评第六轮 P1，原文「白卡内部再套三张各带边和影的白卡，是同一张卡片的第三层」：
+     三条示例住在 .empty-card 里面，不该再各挂一层卡影（卡片套卡片），因此去掉阴影。
+     ★2026-10-25 第八轮盲评 P1 又指出：去影之后它变成「描边胶囊行，看起来像禁用的输入框」——
+     灰底 + 灰描边 + 灰字 + 整行左对齐，正好是禁用输入框的那套特征。
+     改法不是再加一层装饰，而是把"可点"的三个特征补齐：
+       ① 去掉描边（线＝纸面上的分隔，按钮靠底色差与字色表达）；
+       ② 文字提到正文色 --ink（灰字是禁用态的语言）；
+       ③ 箭头推到行尾（左对齐整行 = 输入框的读法，行尾箭头 = "能走进去"的读法）。
+     高度 44 = 触控最小值；圆角从 pill 收到 --r-ctl，与全站按钮同一族。 */
+  background:var(--surface-subtle);
+  border:0;
+  box-shadow:none;
+  color:var(--color-text-body);
+  font-size:var(--font-size-body); font-family:inherit; cursor:pointer; text-align:left;
+  transition:color .16s, background .16s, box-shadow .18s, transform .18s;
+}
+.seed-tx{flex:1 1 auto; min-width:0; text-align:left}
+.seed-ar{
+  flex:0 0 auto; margin-left:auto; color:var(--color-text-secondary); font-size:var(--font-size-heading); line-height:1;
+  transition:color .16s, transform .16s;
+}
+.seed:hover{
+  color:var(--color-brand-ink); background:var(--surface-page);
+  box-shadow:var(--shadow-card-hover);
+  transform:translateY(-1px);
+}
+.seed:hover .seed-ar{color:var(--color-brand); transform:translateX(2px)}
+.seed:active{transform:translateY(0)}
+.seed:focus-visible{outline:2px solid var(--color-focus-ring); outline-offset:2px}
+/* 2026-10-25：上一版这里还有 `.empty-card b / p / .go` 三条后代规则 —— 它们专为一张已经不存在的
+   "标题+正文+开始按钮"空态卡写的，`.go` 在 HTML/JS 里零引用（死代码），
+   且 `.empty-card p` 会盖掉 `.empty-lead`（16px/600 → 14px）。整组删掉，容器规则留在上面。 */
+
+/* 失败提示：画布内的一条（对话框已经归 float.js 管，不再往条上挂东西） */
+.err-strip{
+  display:flex; align-items:center; gap: 8px;
+  max-width:1080px; margin: 0 auto 12px; padding: 8px 12px;
+  border-radius:var(--radius-panel); background:var(--color-warning-surface); color:var(--color-danger);
+  border:1px solid var(--color-border-card); font-size:var(--font-size-caption); line-height:1.5;
+}
+.err-strip .strip-act{font-size:var(--font-size-caption); color:var(--color-danger); text-decoration:underline; text-underline-offset:2px}
+
+/* 发布结果：对话框上方浮一条，5 秒自动消失（不阻断） */
+#pub{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(24px + 56px + 12px); z-index:44;
+  display:flex; align-items:center; gap: 8px;
+  padding: 8px 14px; border-radius:var(--radius-pill);
+  background:var(--color-text-body); color:var(--color-text-inverse); font-size:var(--font-size-caption);
+  box-shadow:var(--shadow-floating);
+}
+
+/* 段落入场：8px 上移 + 淡入 */
+.cstep{animation:cstep .3s ease both}
+@keyframes cstep{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){.cstep{animation:none}}
+
+/* 状态条统一到 sys.css 的 .status（原来这里是 .bd-status：橙底 + 32 高 + 12 号，
+   与 app.html 的蓝底 + 40 高 + 14 号是同一件东西的两份实现） */
+
+/* ★ 2026-10-23：空白不是靠"把卡片改矮"解决的 —— 那是把一页变成一张残卡。
+   正解是**让留白有结构**：左栏灰底一直铺到卡片底部，右侧白区被灰底框住，
+   空白就成了"右栏的呼吸"，而不是"卡片没画完"。
+   min-height:430 已撤（有 flex:1 就不需要兜底高度）。 */
+mark{background:var(--color-brand-surface-2); color:var(--color-text-body); padding: 0 2px; border-radius:var(--radius-xs)}
+
+.trail-row{display:grid; grid-template-columns:76px 52px minmax(0,1fr); gap:8px;
+  padding: 8px 12px; border-bottom:1px solid var(--color-border-hairline); font-size:var(--font-size-caption); color:var(--color-text-secondary)}
+.trail-row:last-child{border-bottom:0}
+.trail-t{color:var(--color-text-tertiary); font-variant-numeric:tabular-nums}
+.trail-who{color:var(--color-text-body)}
+.trail-txt{min-width:0}
+
+/* 表单页骨架：**单列**居中 —— 和工作台的双栏在结构上就不同，
+   不能只是换个标题（用户要的是"装了个东西，界面确实变了"）。 */
+/* 这里原来有一条 `.bd-group + .bd-group{margin-top:18px}` —— 与上面 `.page > .bd-group`
+   的 12px 特异性相同、位置更后，于是同一页里出现 12 和 18 两种块间距（实测 gaps=[12,18,12]）。
+   删掉：块间距只能有一个来源，多一条就多一种"看着像没对齐"的感觉。 */
+
+/* toast 挪到底部中间，别压画布内容 */
+.toast{bottom:calc(24px + 56px + 60px)}
+
+/* ── 预览里的勾选列 / 批量带 / 筛选控件（2026-10-26）──────────────
+   组件库预览页是"这个组件长什么样"的唯一凭据，而同一个组件在应用画布里
+   有首列勾选（表头全选 + 行内单选）、批量带、行内选人、真改处理人；
+   预览页原来只有一张静态表 + 一颗点不动的「全部（状态）」。
+   同一块在两处是两个形态，看预览的人就会以为它只能看、不能批量处理。
+
+   ⚠ 这一段与 app.html 里那段是同一套规则（同一组件 → 同一形态）。
+     本轮写域只到本页，sys.css 归另一个改动域，暂时各存一份；
+     合并时应收进 sys.css，两页共用一份。
+   ⚠ 取值全部走 token：40 宽 = 16 复选框 + 24（左内距 12 + 右留白 12）。
+   ⚠ hover / 展开只换底色，不用 transform —— 画布里有 position:fixed 的
+     输入条与提示条，祖先一旦有 transform，它们的定位基准就跟着变。 */
+.tb-ck{width:calc(var(--space-16) + var(--space-24));padding-right:0}
+.tb-ck input,.tb-pick-row input{width:var(--space-16);height:var(--space-16);margin:0;accent-color:var(--color-brand);cursor:pointer}
+.tb-ck input:focus-visible,.tb-pick-row input:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:2px}
+.tb-batch{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-8);padding:0 0 var(--space-8)}
+.tb-batch > b{font-size:var(--font-size-caption);font-weight:600;color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
+.tb-batch-btn{
+  height:var(--space-24);padding:0 var(--space-8);border:0;border-radius:var(--radius-sm);
+  background:var(--color-brand-surface);color:var(--color-brand-ink);font-size:var(--font-size-caption);line-height:1;cursor:pointer;
+  transition:background .16s;
+}
+.tb-batch-btn:hover,.tb-batch-btn[aria-expanded="true"]{background:var(--color-brand-surface-2)}
+.tb-batch-btn[disabled]{background:var(--surface-sunken-2);color:var(--color-text-tertiary);cursor:not-allowed}
+.tb-batch-cancel{background:var(--surface-sunken-2);color:var(--color-text-secondary)}
+.tb-batch-cancel:hover{background:var(--color-state-selected)}
+.tb-pick{
+  flex:1 0 100%;display:flex;align-items:center;gap:var(--space-16);
+  padding:var(--space-8) var(--space-12);border-radius:var(--radius-sm);background:var(--surface-sunken-2);
+}
+.tb-pick-list{display:flex;align-items:center;gap:var(--space-16);min-width:0}
+.tb-pick-row{
+  display:inline-flex;align-items:center;gap:var(--space-4);
+  font-size:var(--font-size-caption);color:var(--color-text-body);cursor:pointer;
+}
+.tb-pick-ok{
+  margin-left:auto;height:var(--space-24);padding:0 var(--space-12);border:0;border-radius:var(--radius-sm);
+  background:var(--color-brand-surface);color:var(--color-brand-ink);font-size:var(--font-size-caption);cursor:pointer;
+}
+.tb-pick-ok:disabled{background:var(--surface-subtle);color:var(--color-text-tertiary);cursor:not-allowed}
+/* 筛选是真控件：外观沿用 .bd-chip 那颗胶囊，只补表单元素必须有的三样
+   （手型 / 键盘焦点 / 原生下拉的读法），不复刻一套新样式。 */
+.bd-chip-sel{display:inline-block;cursor:pointer;padding-right:var(--space-4)}
+.bd-chip-sel:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:2px}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ★2026-10-25 撤掉侧栏（装回来过一天，又撤了）。
+       装的理由：盲评第四/五轮连续两条 P1 ——「遮掉文字后 p2 只剩一张浮卡和一条输入条，
+       判为另一个产品」「p2 没有 196px 侧栏，像换了一套框架」。
+       撤的理由（优先级更高）：`tools/check-consistency.mjs` 的 C6 判据写着
+       「配置页不该有平台导航（.sider）—— 用户已明确说过」——这是用户当面定的规则，
+       评审席不知道这条约束。装上之后 C6 当场判红、J3 判「nav 一边有一边没有」、
+       J6 判「画布 1240×900 未铺满 1440」。
+       ⇒ 结论：**评审席的建议与用户已明确的规则冲突时，规则优先**；
+          「体系像不像一套」改用别的手段满足（同一套令牌、同宽 1202 内容列、
+          同一条面包屑起点、同一底色），不靠把导航塞进沉浸式编辑页。 -->
+  <!-- 左上角浮层：返回 + 组件名（组件名由 JS 填，静态文案里不出现场景词） -->
+  <div id="topbar">
+    <a class="back-btn" href="components.html" aria-label="返回组件库">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <!-- ★2026-10-24（用户：配置页"设计不合理"）：
+         上一版这里只有一个应用名 —— 站在组件配置页上，标题写着应用名，人会以为走错了页。
+         现在标题是**组件名**，前面一行小字交代"它装在哪"，后面跟状态 chip。 -->
+    <nav class="crumb" aria-label="位置">
+      <a href="components.html">组件库</a>
+      <!-- 分隔符按态切换：新建态 / 未装配 是「/」，已装配是「装于」（三态见 setCompName()） -->
+      <span id="comp-sep" aria-hidden="true">/</span>
+      <span id="comp-app">新建组件</span>
+    </nav>
+    <h1 class="comp-name" id="comp-name"></h1>
+    <span class="comp-status" id="comp-status" hidden></span>
+    <!-- 共用件影响面（2026-10-28 E44）：这一页改的是共用件，会连带装着它的应用。
+         文案由 component.js 的 setCompName() 现算 N 后填入；没有应用装着时整段隐藏。 -->
+    <span class="comp-ver" id="comp-ver">v1 · 未发布</span>
+    <!-- ★2026-10-31（用户原话）：「不要有什么撤回……没有任何一家 Agent 平台做这种撤回」。
+         原来这里是「撤回这次生成」按钮：撤一步就要支持撤三步四五步，还要支持取消撤回，做不完。
+         已删。生成仍然即落库，不可逆；要换内容就重新说一句，旧的留在历史版本里。 -->
+    <!-- 动作属于「这个组件」，不属于「这个页面」，所以跟标题同一行；
+         右下角只留小智一个浮球（上一版两矩形+一圆球挤在右下，视觉上互不搭）。 -->
+    <div class="tb-ops">
+      <a class="btn ghost" id="act-versions" href="versions.html?scope=comp">历史版本</a>
+      <button type="button" class="btn primary" id="act-publish">保存</button>
+    </div>
+  </div>
+
+  <!-- 画布：就是最终页面本身 -->
+  <main class="canvas" id="canvas" aria-busy="false" data-busy="false" data-error="false">
+    <!-- 报错要打断读屏当前朗读（assertive），不是排队等它念完（polite） -->
+    <div class="err-strip" id="err-strip" role="alert" aria-live="assertive" hidden>
+      <span id="err-txt">这次没生成出来</span>
+      <button type="button" class="strip-act" id="btn-retry">重试</button>
+    </div>
+    <!-- 配置器条（assets/configurator.js 画：配置器选择 / 导入 / 设为默认）。
+         只在 ?cfg=<id> 或 ?cfgbar=1 时出现；不带参数时整条 hidden，
+         零高度零占位 —— 所以默认访问与拆分前逐像素一致。 -->
+    <div class="cfg-bar" id="cfg-bar" hidden></div>
+    <div class="canvas-inner" id="canvas-inner"></div>
+  </main>
+
+  <!-- 发布结果（底部对话框上方，5 秒自动消失） -->
+  <div id="pub" hidden><span id="pub-tt" role="status" aria-live="polite"></span></div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" data-kind="info" data-on="false"></div>
+</div>
+<div id="genbar" data-off="true"></div>
+<div id="xz-host"></div>
+<script src="assets/ui-kit.js?v=b0a55a1a"></script>
+<script src="assets/gen.js?v=ac80bd3b"></script>
+<script src="assets/data.js?v=23afa3a7"></script>
+<script src="assets/confirm.js?v=26f0a69f"></script>
+<script src="assets/drag.js?v=cc6ccb06"></script>
+<script src="assets/float.js?v=5db8733d"></script>
+<script src="assets/component.js?v=4025bf6a"></script>
+<!-- 配置器：三个内置包先登记，宿主最后接管（CONFIGURATOR.md）。
+     顺序有意义 —— 登记表按 script 顺序排，内置配置器在列表里就是按这个顺序出现。 -->
+<script src="assets/configurators/comp-form.js?v=002be4e9"></script>
+<script src="assets/configurators/comp-dialog.js?v=e67646d4"></script>
+<script src="assets/configurators/app-standard.js?v=a478d9a2"></script>
+<script src="assets/configurator.js?v=4558be01"></script>
+<script src="assets/xiaozhi.js?v=32a43fd2"></script>
+<script src="assets/viewmode.js?v=fe643a47"></script>
+</body>
+</html>

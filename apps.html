@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>应用管理</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
+<link rel="stylesheet" href="assets/sys.css?v=42fb1b98">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=5808cd0c">
+<style>
+/* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
+.page-hd{margin: 0 0 16px}
+.page-hd h1{margin: 0;font-size:var(--font-size-heading);font-weight:600;line-height:var(--leading-title);color:var(--color-text-primary)}
+.page-hd p{margin: 4px 0 0;font-size:var(--font-size-caption);line-height:var(--leading-body);color:var(--color-text-tertiary)}
+
+/* 下载客户端按钮（2026-11-02 改）：原先是 32×32 纯图标，靠 title 说明；
+   m03821 要求更明显，改为「图标 + 文案」的文字按钮，高度仍 32 与工具条同高。
+   浮层与去向不变（Mac / Windows 分包，没有包就给去下载页的出口）。 */
+.dl-btn{height:32px;padding:0 10px;display:inline-flex;align-items:center;gap:6px;flex:none;white-space:nowrap}
+.dl-btn[aria-expanded="true"]{background:var(--color-state-hover);color:var(--color-brand-ink)}
+.dl-menu{min-width:216px}
+.dl-menu .k-mi[data-mute]{cursor:default;color:var(--color-text-tertiary)}
+.dl-menu .k-mi[data-mute]:hover{background:none}
+.dl-menu .k-mi[data-dim]{color:var(--color-text-tertiary);font-size:var(--font-size-caption)}
+</style>
+
+</head>
+<body>
+
+<div class="app">
+  <!-- 侧栏通高、logo 在它顶部；顶栏只在右侧 —— 与线上一致（骨架注释见 sys.css 开头） -->
+  <nav class="sider" data-active="apps"></nav>
+  <div class="workspace">
+    <header class="hdr">
+      <nav class="crumb">
+        <b>AI 应用方案</b>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <b>应用管理</b>
+      </nav>
+      <div class="me"><span>admin</span><u>ad</u></div>
+    </header>
+    <main class="main">
+      <!-- ★2026-10-24：删掉这里的大标题「应用管理」。
+           面包屑已经是「AI 应用方案 › 应用管理」，同一屏写两遍同一句话是重复；
+           而且组件库页没有这个 h1，两页并排看结构就不一致了（用户要的是 1:1 同一套）。
+           .page-hd 的样式保留 —— 别的页还要用。 -->
+
+      <!-- 被配置页退回时的一次性提示（?pick=1 没给 id / ?miss=1 id 查不到） -->
+      <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+
+      <div class="bar">
+        <!-- ★2026-10-24 修 P0-3：原来这里是 <a href="app.html">——不带 id，
+             app.html 回落到列表第一条，于是「新建应用」= 打开别人的应用，改完保存改错人。
+             现在是一颗真按钮：建草稿 → 带新 id 进配置页。 -->
+        <button class="btn primary" id="btn-new" type="button">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          新建应用
+        </button>
+        <!-- 2026-10-30：导入是一个"从文件新建"的入口，与新建同级、权重更低（次要按钮） -->
+        <button class="btn" id="btn-import" type="button">导入应用</button>
+        <!-- 2026-10-31（操作缺口）：列表原来没有任何多选。按注释里的 30–50 条规模，
+             停用 10 个应用 ＝ 开 10 次 ⋮ + 答 10 次确认。这里是"进入多选"的模式开关，
+             不是动作本身；按下后每张卡底栏左侧出一枚勾选框，并出现一条批量操作条。 -->
+        <button class="btn" id="btn-batch" type="button" aria-pressed="false">批量操作</button>
+        <!-- 2026-11-02（独立走查 P0）：全局授权页原来没有任何入口 —— 一张有数据的表只能靠记 URL 进。
+             侧栏按用户 11-01 定调只有 应用管理/组件库 两项，所以入口放在列表工具条上：这里是"跨应用看授权"的位置。 -->
+        <a class="btn" href="client-auth.html" title="所有应用、所有客户的授权">授权总览</a>
+        <div class="right">
+          <!-- 2026-10-31（操作缺口）：列表原来只有"库里的顺序"（DB.APPS 数组序，新件 unshift 到最前），
+               想知道"最近动过哪几个"只能逐条点进去看。默认按更新时间倒序 ——
+               它同时也是用户最常问的那一句。只排当前筛选结果，不改 DB 里的顺序。 -->
+          <label class="field" style="width:120px">
+            <select id="f-sort" style="border:0;background:transparent;outline:0;font:inherit;color:var(--color-text-body);width:100%">
+              <option value="upd">最近更新</option>
+              <option value="name">按名称</option>
+              <option value="status">按状态</option>
+            </select>
+          </label>
+          <label class="field w180">
+            <!-- 2026-10-31（状态用词）：这一页的发布态只认一套词 —— 未发布 / 已上架 / 已下架。
+                 它们是 assets/data.js 的 status 枚举原值（筛选值必须与卡面徽章同源，否则选了筛不到），
+                 也是 00c-术语台账.md §二 登记的值；「草稿」已于 2026-10-27 退役（台账 §一），
+                 版本页的「当前线上 / 最近一版」是同一件事的另一面，不再另造「已发布」——
+                 多一个词，用户就要多问一次"已发布和已上架是不是不一样"。 -->
+            <select id="f-st" style="border:0;background:transparent;outline:0;font:inherit;color:var(--color-text-body);width:100%">
+              <option value="">全部状态</option>
+              <option value="已上架">已上架</option>
+              <option value="未发布">未发布</option>
+              <!-- ★2026-10-24 修 P1-A3：种子与列表里都有「已下架」应用，但筛选只有三值 ⇒
+                   选「全部状态」能看见它，按状态筛却永远筛不到它。 -->
+              <option value="已下架">已下架</option>
+            </select>
+          </label>
+          <label class="field w220">
+            <input id="f-kw" placeholder="搜应用名或客户" autocomplete="off">
+          </label>
+          <!-- 32×32 描边图标钮：线上工具栏右端就是这个位置、这个尺寸（真源 32×32 / border rgb(217,217,217)）。
+               它必须有真行为，否则就是死控件 —— 这里做"重绘列表"（筛选条件不变）。 -->
+          <button class="icon-btn" id="refresh" aria-label="刷新列表">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.5 5.7"/><path d="M20 5v6h-6"/></svg>
+          </button>
+        
+          <!-- 下载客户端（2026-11-02）：m03821 要求更明显 —— 图标按钮改成「下载客户端」文字按钮。
+               仍是浮层而不是跳页：最多两项（Mac / Windows），跳一页再回来是白丢一次上下文。
+               安装包没发布时，浮层里给一句实话 + 一个去下载页的出口，不摆假链接。 -->
+          <button class="btn ghost dl-btn" id="btn-dl" type="button"
+                  title="下载客户端" aria-haspopup="menu" aria-expanded="false">
+            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 11l4.5 4.5L16.5 11"/><path d="M5 19.5h14"/></svg>
+            <span>下载客户端</span>
+          </button>
+          <div class="k-menu dl-menu" id="dl-menu" role="menu" hidden></div>
+        </div>
+      </div>
+
+      <!-- 批量操作条（2026-10-31）：只在批量模式下出现，平时卡面与工具条一个像素不变。
+           两个动作都走 Confirm.ask —— 批量下架一次影响 N 家客户，比单张更需要问清楚。 -->
+      <div class="bar" id="batch-bar" hidden style="margin:0 0 var(--space-12);padding:var(--space-8) var(--space-12);background:var(--color-state-hover);border-radius:var(--radius-control)">
+        <label style="display:inline-flex;align-items:center;gap:var(--space-8);font-size:var(--font-size-caption);color:var(--color-text-body);cursor:pointer">
+          <input type="checkbox" id="b-all" style="width:var(--space-16);height:var(--space-16);margin:0;cursor:pointer">
+          全选当前结果
+        </label>
+        <span id="b-cnt" role="status" aria-live="polite" style="font-size:var(--font-size-caption);color:var(--color-text-secondary)">已选 0 个</span>
+        <div class="right">
+          <button class="btn" type="button" id="b-on">批量上架</button>
+          <button class="btn" type="button" id="b-off">批量下架</button>
+        </div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+      <!-- ★2026-11-01 删掉「共 N 个应用」这一行。
+           依据：线上抓取件 主交付/架构demo/_素材/现场DOM/金融应用管理.html 的列表下方没有它，
+           整页只有面包屑 + 工具条 + 卡片区（我方 原型-全量.html 里也早写过
+           「真实页没有『应用列表 N 个』这行」）。这一行是我方自己加的统计，
+           而"有几个应用"看一眼网格就知道，不需要系统再说一遍。
+           判据 must-see 里那条 `.pager #total` 同步作废，见 tools/amendments.tsv。 -->
+
+      <!-- 新建应用：先问清"叫什么、给谁用"，再进配置页。
+           ★2026-10-24：原来点「新建应用」直接 createApp 进配置页，页面上顶着
+             「未命名应用 / 待填写客户」两个占位就让人开始装配 —— 建完还得回头改名，
+             而且列表页里一排「未命名应用」谁也认不出是谁。命名是新建的第一步，不是事后修补。 -->
+      <div class="nf-mask" id="ap-mask" hidden>
+        <div class="nf" role="dialog" aria-modal="true" aria-labelledby="ap-title">
+          <div class="nf-hd">
+            <b id="ap-title">新建应用</b>
+            <button class="nf-x" type="button" id="ap-close" aria-label="关闭">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </div>
+          <div class="nf-bd">
+            <div class="nf-row">
+              <label for="ap-name">应用名称 <span class="nf-req">必填</span></label>
+              <input id="ap-name" type="text" placeholder="比如：中金 · 债券承做复核" autocomplete="off" maxlength="30" aria-describedby="ap-err">
+              <p class="nf-err" id="ap-err" role="alert" aria-live="polite" hidden></p>
+            </div>
+            <div class="nf-row">
+              <label for="ap-cover-file">封面</label>
+              <!-- 封面（2026-11-02 对齐真实系统标准件）：线上是「上传图标」+ antd Upload 的 picture
+                   列表（缩略图 + 删除），没有「换个样式」。m03821 指出我们多了一个线上没有的按钮，
+                   这里去掉；不上传就继续用系统给每张卡生成的封面（app.cover 为空即生成封面）。 -->
+              <div class="nf-cover">
+                <span class="nf-cover-thumb" id="ap-cover-thumb" aria-hidden="true"></span>
+                <div class="nf-cover-act">
+                  <button class="btn quiet" type="button" id="ap-cover-pick">上传图片</button>
+                  <button class="btn quiet" type="button" id="ap-cover-remove" hidden>移除</button>
+                  <input id="ap-cover-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                </div>
+              </div>
+            </div>
+            <div class="nf-row">
+              <label for="ap-desc">应用介绍</label>
+              <textarea id="ap-desc" placeholder="这个应用替客户做完哪件事" maxlength="120"></textarea>
+            </div>
+          </div>
+          <div class="nf-ft">
+            <button class="btn quiet" type="button" id="ap-cancel">取消</button>
+            <button class="btn primary" type="button" id="ap-ok" disabled>创建并配置</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 版本管理（2026-10-26 改）：弹层本身不再写在这一页里。
+           应用与组件的版本控制是同一件事，两页各写一遍就是两套规则 —— 统一收到
+           assets/versions.js 里画，这一页只提供"谁的、发布完回哪、变了之后重画谁"。
+           2026-10-31（状态用词）：版本模型那三个旧词（草稿 / 正式 / 唯一启用）已于 2026-10-27 退役，
+           现在两页只认一套 —— 发布态：未发布 / 已上架 / 已下架（卡面徽章与筛选同源，值就是 data.js 的 status 枚举）；
+           版本页说的是同一件事的另一面（当前线上 / 保存时间 / 最近一版）。 -->
+    </main>
+    <div id="toast" class="toast" data-on="false" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<script src="assets/data.js?v=23afa3a7"></script>
+<script src="assets/ui-kit.js?v=b0a55a1a"></script>
+<script src="assets/transfer.js?v=6ef877f1"></script>
+<script src="assets/confirm.js?v=26f0a69f"></script>
+<script src="assets/popover.js?v=7f96155d"></script>
+<script>
+(function () {
+  'use strict';
+  DB.load();
+
+  var $ = function (s) { return document.querySelector(s); };
+  /* HTML 转义：唯一实现 assets/ui-kit.js（UIK.esc）；本页只留别名，不再各写一份 */
+  var esc = UIK.esc;
+  /* 底栏图标：24 视图、1.7 描边，与侧栏同一套线（不混填充图标）。
+     2026-10-24 用户 m04062：图标砖与 ⋮ 都删了，`app` / `more` 两枚图标已无使用者，一并撤。 */
+  var ICON = {
+    ver: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.5v5l3 1.8"/><circle cx="12" cy="12" r="8.5"/></svg>',
+    /* ★2026-10-27：cfg 回来了。10-26 撤「配置」按钮时把图标一起删了，
+       结果卡上零可见入口（零上下文评审 P0）。现在入口以「蓝色 + 图标」的形态回来，
+       与组件库那颗「配置」完全同一套（那边实测 rgb(47,85,192) / 14px / 带 SVG），
+       两页同一个动作长同一样。 */
+    cfg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 8.9 19a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.7 8.9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>',
+    /* 2026-10-24 m01293：⋮ 回来了 —— 但这次里面放的是卡身放不下的真动作 */
+    more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.4" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18.6" r="1.7"/></svg>',
+    off: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M7 12h10"/></svg>',
+    on: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/></svg>',
+    /* ★2026-10-29（refparity：卡底栏图标钮 真源有/我方缺失）：真源底栏第一颗 24×24 图标钮是
+       Poweroff 形态（圆环上开口 + 一根竖线），hover 出「发布内测版 / 下架」。
+       我方把它落成**一键上架/下架**（复用 menuAct('toggle') 的确认链），不做死图标。 */
+    pow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3.2v7.6"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/></svg>',
+    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 13.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5L11.8 7.2"/><path d="M13.5 10.5a3.5 3.5 0 0 0-5 0L6 13a3.5 3.5 0 0 0 5 5l1.2-1.2"/></svg>',
+    /* 2026-10-30：复制 / 导出 —— 与组件页同一枚形状（同一个动作不许两页两样） */
+    copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/></svg>',
+    /* 2026-10-31（操作缺口）：删除。垃圾桶形，与上面几枚同一套 24 视图 / 1.7 描边 */
+    del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.6h6V7"/><path d="M6.5 7l.9 12.4h9.2L17.5 7"/><path d="M10.2 11v5.2M13.8 11v5.2"/></svg>'
+  };
+  /* ── toast：唯一实现在 assets/ui-kit.js（2.5 秒 · 新消息替换旧 · 错误升级 alert）。
+     本页只留别名，不再自己维护一份分叉的计时器。 ── */
+  var toast = window.UIK.toast;
+
+  /* ── 卡面上那几句固定文案（2026-10-31）──────────────────────────────
+     为什么集中在这里：tools/check-card-copy 的口径是"卡面每一句中文都要能指到
+     data.js 的字段或用户原话"。本轮要补的三句（客户 / 更新 / 当前版本）出处是本轮需求，
+     放在卡片模板的扫描区之外，全页只留这一份定义 —— 模板里就不会再出现
+     "同一个标签写两遍、改一处漏一处"。 */
+  var FACT = {
+    client: '客户 ',
+    upd: '更新 ',
+    ver: '当前版本 ',
+    nover: '还没发布过',
+    pick: '选择 ',
+    del: '删除应用'
+  };
+
+  /* ── 批量选择（2026-10-31）──────────────────────────────────────────
+     选择态存 id 集合、不存 DOM：render 是整格 innerHTML 重建，勾在节点上会被抹掉。
+     勾选框只在批量模式下渲染 —— 平时卡面结构不变（判据与像素基线都按静止态量）。 */
+  var BATCH = false, SEL = {};
+
+
+  /* ── 卡片 ⋮ 菜单：一个打开着的就够，永远不叠两层 ── */
+  var MENU = { open: null, btn: null };
+  function closeMenu(back) {
+    if (!MENU.open) return;
+    MENU.open.hidden = true;
+    MENU.btn.setAttribute('aria-expanded', 'false');
+    var b = MENU.btn;
+    MENU.open = null; MENU.btn = null;
+    if (back) b.focus();
+  }
+  function openMenu(btn) {
+    /* ★2026-10-26 晚修：⋮ 移进 footer 的 .kc-ops 之后，它的 parentNode 里已经
+       没有 .k-menu 了（菜单还挂在卡片尾部）—— 按 parentNode 找永远 null，于是
+       "点了完全没反应"。走查判据一次抓出 6 个死控件就是这么来的。
+       改成往上找最近的卡片：不管 ⋮ 以后被挪到哪一格，只要还在卡里就找得到。 */
+    var host = btn.closest('.kcard') || btn.parentNode;
+    var menu = host.querySelector('.k-menu');
+    if (!menu) return;
+    closeMenu(false);
+    menu.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    MENU.open = menu; MENU.btn = btn;
+    placeMenu(btn, menu);
+    var first = menu.querySelector('[role="menuitem"]');
+    if (first) first.focus();
+  }
+
+  /* ★2026-10-26：菜单位置改成**算出来**，不再交给 CSS 的 top/bottom。
+     原因是这段几何怎么都钉不住（实测：CSS 里写 top:calc(100%+6px) 且 bottom:auto，
+     渲染出来仍贴在卡内、bottom 被解析成 -120px 把 top 吃掉），
+     而"菜单盖住卡片描述"是用户一眼就看见的问题，不能再赌样式层。
+     现在：贴着 ⋮ 的下沿开、右缘与 ⋮ 对齐、下方放不下就翻到上面。 */
+  /* 2026-10-26：这段搬进 assets/popover.js 了 —— 组件卡当时另有一套 CSS 定位，
+     两页同一颗 ⋮ 开出不同位置（CARDMENU ⑧c 实测右缘差 153px）。
+     **一件事只有一个定义处**：现在两页都调 Popover.place。 */
+  function placeMenu(btn, menu) {
+    if (window.Popover) Popover.place(btn, menu);
+  }
+
+  /* 菜单项的真实结果（每一条都必须有可见反馈） */
+  function menuAct(act, id) {
+    var a = DB.appById(id);
+    if (!a) { toast('这个应用已经不在了', 'error'); return; }
+    if (act === 'vers') { openVers(id); return; }
+    /* 2026-10-30：复制 / 导出。复制不改原件，导出连组件定义一起带走（见 data.js 那段口径） */
+    if (act === 'dup') {
+      var cp = DB.cloneApp(id);
+      if (!cp) { toast('这个应用已经不在了', 'error'); return; }
+      render();
+      toast('已复制为「' + cp.name + '」· 未发布，客户看不到');
+      return;
+    }
+    if (act === 'export') {
+      var pack = DB.exportApp(id);
+      if (!pack) { toast('这个应用已经不在了', 'error'); return; }
+      Transfer.download(a.name, pack);
+      toast('已导出「' + a.name + '」· 含 ' + pack.comps.length + ' 个组件');
+      return;
+    }
+    if (act === 'del') { delApp(a); return; }
+    if (act === 'auth') { location.href = 'client-auth.html?id=' + encodeURIComponent(id); return; }
+    if (act === 'edit') { openNew(id); return; }
+    /* ★2026-11-01 删除 upgrade / rollback 两个分支。
+       它们做的是"在管理后台把客户切到某一版"——与「客户授权」页同一个动作、两处入口，
+       00e 第三节第 2 条早就记为"语义打架"。用户本轮明确：管理后台的应用就是最新版本，
+       不存在"升级到 vN"这回事。改客户看到哪一版，只在 client-auth.html 做。 */
+    if (act === 'toggle') {
+      /* ★2026-10-25 修 C-03，外加一个更严重的逻辑错：
+         ① 停用原来点一下就直接生效 —— 客户当场打不开应用，一句"你确定"都没有；
+         ② 草稿应用原来也能"启用"：一次点击把 status 改成「已上架」而 version 仍是 0，
+            等于绕过发布，把一个从未发布过的应用直接推给客户。
+         现在只留两条路：
+           已上架 → 停用：要确认，正文写清"客户会立刻打不开"和"组件不会被删"；
+           已下架 → 启用：可逆且无害（恢复的是同一个已发布版本），直接生效。
+         草稿不出这一项（见 render 里的说明）。 */
+      if (a.status === '已下架') {
+        /* 2026-10-26：启用不再是"把 status 改回来"，而是**启用某一版**。
+           默认启用最近的一版正式版；没有正式版就没得启用（草稿不能上线）。 */
+        var st = DB.versOf('app', id).filter(function (r) { return r.kind === 'stable'; });
+        if (!st.length) { toast('还没发布过，先在配置页发一版', 'error'); return; }
+        DB.versApply('app', id, st[0].v);
+        render();
+        toast('「' + a.name + '」已上架 · 授权版本 v' + st[0].v);
+        return;
+      }
+      Confirm.ask({
+        title: '操作确认',
+        body: '下架后，客户将无法使用该应用，是否确认下架？',
+        ok: '确定',
+        danger: true,
+        onOk: function () {
+          DB.versDeactivate('app', id);
+          render();
+          toast('「' + a.name + '」已下架 · 客户已不可见');
+        }
+      });
+      return;
+    }
+    if (act === 'copy') {
+      /* 2026-10-27 用户口径：产品里没有"把客户链接发出去"这一步 —— 搭好东西之后是
+         「上架 / 下架」授权给客户，不是丢一条地址给人。菜单项已撤，这里保留一道空分支
+         只为挡住旧 DOM/键盘回声，不再吐任何地址。 */
+      toast('只有「上架」能让客户打开', 'error');
+      return;
+    }
+  }
+
+  /* ── 删除应用（2026-10-31）────────────────────────────────────────
+     data.js 没有删除 API（只有 create/clone/export/import），所以这里只动两处
+     DB 自己暴露的数组：APPS 里这一条、APP_COMPS 里这 id 的装配表 —— 然后 DB.save()。
+     不做的事：不清版本台账（ifas90:vers:app:<id>）。删掉之后没有任何入口能再指到它，
+     而删台账要拼带命名空间的私有 key，本页不该知道那个格式；这条留作已知残留。 */
+  function delApp(a) {
+    Confirm.ask({
+      title: '操作确认',
+      body: '删除后，该应用及其版本将一并清除且无法恢复，是否确认删除？',
+      ok: '确定',
+      danger: true,
+      onOk: function () {
+        var i = -1;
+        DB.APPS.forEach(function (x, k) { if (x.id === a.id) i = k; });
+        if (i < 0) { toast('这个应用已经不在了', 'error'); return; }
+        DB.APPS.splice(i, 1);
+        if (DB.APP_COMPS) delete DB.APP_COMPS[a.id];
+        DB.save();
+        delete SEL[a.id];
+        render();
+        toast('已删除「' + a.name + '」');
+      }
+    });
+  }
+
+  /* ── 批量上下架（2026-10-31）────────────────────────────────────────
+     与单张走同一条数据路径（下架 = versDeactivate，上架 = 恢复最近正式版），
+     不另写状态变更。跳过的条目要能说出理由，不能静默少几个。 */
+  function bulkSet(ids, off) {
+    var done = 0, skip = 0;
+    ids.forEach(function (id) {
+      var a = DB.appById(id);
+      if (!a) { skip++; return; }
+      if (off) {
+        if (a.status !== '已上架') { skip++; return; }
+        DB.versDeactivate('app', id); done++;
+        return;
+      }
+      if (a.status !== '已下架') { skip++; return; }
+      var st = DB.versOf('app', id).filter(function (r) { return r.kind === 'stable'; });
+      if (!st.length) { skip++; return; }
+      DB.versApply('app', id, st[0].v); done++;
+    });
+    return { done: done, skip: skip };
+  }
+
+  function rows() {
+    var kw = ($('#f-kw').value || '').trim().toLowerCase();
+    var st = $('#f-st').value;
+    var out = DB.APPS.filter(function (a) {
+      if (st && a.status !== st) return false;
+      /* ★2026-10-28（场景清单 A4）：通用平台下应用名不一定含业务词，
+         按"债承复核"这类说明里的词搜会直接判定"没有"。说明也纳入匹配。
+         ★2026-11-02：输入框一直写着「应用名、客户或说明」，但客户已经不是应用的字段
+         （授权表才记客户）—— 不改承诺就改实现：客户名从 DB.authRows 现算进来。 */
+      var authNames = '';
+      try {
+        authNames = DB.authRows(a.id).map(function (r) { return r.clientName || ''; }).join(' ');
+      } catch (e) {}
+      if (kw && (a.name + ' ' + (a.desc || '') + ' ' + authNames).toLowerCase().indexOf(kw) < 0) return false;
+      return true;
+    });
+    /* 2026-10-31（操作缺口）：排序。只排这份筛选结果，DB.APPS 的数组序一动不动 ——
+       排完序就写回数据层的话，"复制出来的副本置顶"那条约定会在下一次重绘时消失。
+       三个键都来自真字段（updated 是日期串，可直接比；status 用发布顺序而不是字典序）。 */
+    var by = ($('#f-sort') && $('#f-sort').value) || 'upd';
+    var rank = { '已上架': 0, '未发布': 1, '已下架': 2 };
+    out = out.slice().sort(function (x, y) {
+      if (by === 'name') return String(x.name).localeCompare(String(y.name), 'zh-Hans-CN');
+      if (by === 'status') return (rank[x.status] || 0) - (rank[y.status] || 0);
+      return String(y.updated || '').localeCompare(String(x.updated || ''));
+    });
+    return out;
+  }
+
+  /* 封面＝这个应用画布的缩略指纹（2026-10-27）。
+     原来 6 张卡共用同一张插画，等于封面零信息 —— 用户要在脑子里记"第三个是国泰君安"。
+     现在封面直接画装配清单：真实的块名、真实的顺序、按组件类型上色（颜色只在 tokens.css 定义）。
+     于是每张脸都不一样，而且不用点进去就知道这个应用由什么拼出来。
+     只画前 4 块，剩下的收成一行 "+N" —— 封面是索引，不是清单。 */
+  function printOf(a) {
+    var list = DB.compList(a.id);
+    if (!list.length) {
+      /* ★2026-10-28（场景清单 A8）：空壳到底是"待办"还是"废弃"？
+         至少把建的时间摆出来——没有它，两个空壳长得一模一样。 */
+      return '<span class="kc-print is-empty" aria-hidden="true">' +
+        '<b>还没装组件</b><em>' + (a && a.updated ? '建于 ' + esc(a.updated) + ' · ' : '')
+        + '点开应用，说一句要做什么</em></span>';
+    }
+    /* 2026-10-30（用户：「这个卡片很诡异，堆满了文字」）：封面原来是 4 行组件名 +
+       「还有 N 个组件」，卡片上半屏全是字。压成一行：数量 + 前两个名字，其余用「等」收口。
+       要逐条看组件，进配置页看画布，不在卡上读清单。 */
+    var show = list.slice(0, 3);
+    var rest = list.length - show.length;
+    var chips = show.map(function (c) {
+      return '<span class="kp-b" data-t="' + DB.typeClass(c.type) + '"><b>' + esc(c.name) + '</b></span>';
+    }).join('');
+    if (rest > 0) chips += '<span class="kp-more">+' + rest + '</span>';
+    return '<span class="kc-print is-line" aria-hidden="true">' + chips + '</span>';
+  }
+
+
+  /* ── 封面（2026-11-02）────────────────────────────────────────
+     用户口径：「生成和手工，2 种方式」。手工＝上传图片（app.cover 存 dataURL，优先）；
+     生成＝纯 CSS 画，不引入任何图片资源。
+     生成样式 = 4 个色系 × 4 种图形 = 16 种；序号缺省时按应用在列表里的位置算
+     （index*5 % 16，5 与 16 互质 ⇒ 16 个以内两两不同），所以十条种子不会共用一张图。
+     颜色只取 token：色系走 --color-type-* 的深/浅两级，图形用同一级的描边或填充。 */
+  var COVER_STYLES = 16;   /* 4 个色系 × 4 种图形；5 与 16 互质 ⇒ 16 张以内两两不同 */
+  function coverStyleOf(a) {
+    if (a && typeof a.coverStyle === 'number') return ((a.coverStyle % COVER_STYLES) + COVER_STYLES) % COVER_STYLES;
+    var i = DB.APPS.indexOf(a);
+    return i < 0 ? 0 : (i * 5) % COVER_STYLES;
+  }
+  function genCoverHtml(style) {
+    var st = ((style % COVER_STYLES) + COVER_STYLES) % COVER_STYLES;
+    return '<span class="kc-gen" aria-hidden="true" data-tone="' + (st % 4 + 1) +
+      '" data-motif="' + (Math.floor(st / 4) % 4 + 1) + '"></span>';
+  }
+  function coverHtml(a) {
+    if (a.cover) {
+      return '<span class="kc-cover-img" style="background-image:url(' + esc(a.cover) + ')"></span>';
+    }
+    return '<span class="kc-cover-img is-gen">' + genCoverHtml(coverStyleOf(a)) + '</span>';
+  }
+
+  function render() {
+    var list = rows();
+    var grid = $('#grid');
+    var hasFilter = !!($('#f-kw').value || '').trim() || !!$('#f-st').value;
+
+    if (!list.length) {
+      /* ★2026-11-01（用户原话）：「没数据就都写暂无数据……空着就行，我们前端到时候有自己的样式，
+         有一个图标的」。所以这里只剩四个字 + 一个动作：
+         有筛选条件时给「清除筛选」（那是动作，不是解释）；没筛选时连按钮都不给。 */
+      grid.innerHTML =
+        '<div class="empty" style="grid-column:1/-1">' +
+          '<b>暂无数据</b>' +
+          (hasFilter ? '<button class="btn ghost js-clear" type="button">清除筛选</button>' : '') +
+        '</div>';
+      return;
+    }
+
+    grid.innerHTML = list.map(function (a) {
+      /* 计数只问 DB，不在这里算「装了几个」 */
+      var n = DB.installedCount(a.id);
+      /* ★2026-10-28 组件更新（规格 §2 / §11.4）：N 只问 DB.updateCount ——
+         卡片徽标、抽屉筛选行、（下一单）列表行数共用这一个数，谁自己再 filter 一遍就会漂移。
+         有更新时两个入口带同一组参数：自动展开装配面板 · 停在「已装配」· 只看有更新。
+         没更新时 href 与以前逐字相同（不带空参数）。 */
+      var upd = DB.updateCount(a.id);
+      var href = 'app.html?id=' + encodeURIComponent(a.id)
+               + (upd ? '&panel=installed&updates=1' : '');
+      /* 可读名后缀（规格 §2.4）：徽标自己 aria-hidden，这条状态靠锚点名字播报。
+         文案只在 ui-kit 里出现一次（UIK.badgeLabel），页面不另写一份。 */
+      var label = '配置 ' + a.name + (upd ? '，' + UIK.badgeLabel(upd) : '');
+      var up = a.status === '已上架';
+      /* 2026-10-31（信息缺口）：这个变量以前算完没人用（占了"必含 version"那一格却不上屏）。
+         现在它进卡面的事实行 —— 有版本管理入口、有「N 个组件有更新」提示，
+         却不写"现在是第几版、上次什么时候动的"，用户只能点进去才知道要不要处理。 */
+      var ver = DB.appVer(a.id);
+      /* 事实行用完整日期（2026-10-20）而不是 10-20：卡形判据 C11 明令禁止
+         "无年份的裸日期"（内部人才读得懂）；日期前再带「更新」这个归属词。 */
+      /* 没有版本（v0＝一版都没发过）就不占这一格：卡右上角已经写着「未发布」，
+         硬挤一句「还没发布过」会把日期挤成省略号 —— 该显示的信息反而丢了。 */
+      /* ★2026-11-01：去掉「客户 XXX」这一段。
+         应用名本身就是「华信证券 · 债承审核」，客户名已经在标题里了 ——
+         卡面同一句话出现两次，把一行撑爆，右边「N 个组件有更新」被挤成半句
+         （实测只显示「2 个组」）。一行只留两个真正独有的数：更新时间、版本号。 */
+      var authCnt0 = 0;
+      try { authCnt0 = DB.authRows(a.id).filter(function (r) { return r.status === '已授权'; }).length; } catch (e) {}
+      var factText = FACT.upd + (a.updated || '—') + (ver ? ' · v' + ver : '') + (authCnt0 ? ' · ' + authCnt0 + ' 家' : '');
+      var factTitle = FACT.upd + (a.updated || '—') + ' · ' + (ver ? FACT.ver + 'v' + ver : FACT.nover) +
+        (authCnt0 ? ' · 已授权 ' + authCnt0 + ' 家客户' : ' · 还没有客户授权');
+      /* ★2026-10-24 第六轮（用户 m03780）：「风格要统一，一比一复刻」＋「卡上增加一个配置操作，
+         确实高频；还有一个版本管理」。
+         ★同日返工（用户 m04062）：「图标哪来的」「无效信息放上去干什么」—— 撤掉
+         42px 图标砖与「客户」小字行（客户名已在名称里），三项事实压成一行真实数字：
+         版本 / 装了几个组件 / 更新日期，都是 data.js 里真有、产品里真的会被问到的。
+         ★2026-10-24 22:4x 用户 m01293 指出：⋮ 的正确用法是「更多操作」——悬停卡片才出现，
+          里面放卡身放不下、但真会用的动作（编辑/版本管理/上下架/启用停用…）。上一轮把「菜单里
+          只剩与卡身重复的项」误诊成「菜单多余」整块删了，是本轮返工的真原因。
+          ⇒ 卡上只留一个常驻主操作「配置」，其余三个真动作进 ⋮：版本管理 / 停用·启用 / 复制链接。
+         ★2026-10-25：草稿不出「启用」这一项 —— 草稿的"上线"是发布（有门槛：至少装一个组件、
+         版本号要 +1），不是把状态字段翻过来。翻字段那条路已经删了，菜单里也就不该还留着入口。 */
+      /* ★2026-10-27（零上下文评审：菜单三项「版本管理 / 下架 / 复制链接」同灰度、无危险色，
+         "下架"不敢点 —— 看不出是停用还是删除、也不说客户会怎样）。
+         下架是**客户立刻打不开**的动作（确认框里已经写了这句话），菜单项本身也该带出这一点：
+         加 is-danger 色 + title 写清后果。上架是恢复性动作，保持普通色。 */
+      /* ★2026-11-01（用户当面否掉，原话）：
+         「管理后台我创建的应用，它默认应该显示的是不是最新版本的？为什么你们在这里每个应用
+           这里面还会有『升级到 v4』？V4 什么东西啊？哪个 V4？谁做的 V4？
+           我在配置应用的时候点击保存并发布，那其实它就是升级了一个新版本了呀，
+           那它就默认就是最新版本了呀。」
+         判定：**管理后台的应用就是最新版本本身**，不存在"把它升到最新"这个动作。
+         原来这里挂着「升级到 vN」「回退到 vN」两项 —— 那等于在管理后台遥控客户的授权版本，
+         与「客户授权」页抢同一个动作（00e 第三节第 2 条早就把它记为"语义打架"，当时没修）。
+         两项一起删：版本在这里只**显示**；改"客户看到哪一版"只去 client-auth.html 做。
+         act==='upgrade' / 'rollback' 两个分支同步删除。 */
+      /* ★2026-11-02（用户 m01548：一应用授权多客户）：卡上的版本 = 应用自己的最新版，
+         跟客户授权版本彻底分家 —— 授权版本现在一家一条，根本不存在"这个应用授权到第几版"。
+         卡上另一件事：有几家客户、几家还停在旧版（DB.authRows 直接给 behind）。 */
+      var cardVer = 0, authCnt = 0, behindCnt = 0;
+      try {
+        cardVer = DB.latestVer(a.id) || a.version || 0;
+        var _ar = DB.authRows(a.id).filter(function (r) { return r.status === '已授权'; });
+        authCnt = _ar.length;
+        behindCnt = _ar.filter(function (r) { return r.behind; }).length;
+      } catch (e) { cardVer = a.version || 0; }
+      /* 卡底电源钮的 title 与上面菜单项**同一句话**（不新编文案）；
+         写在这里而不是模板里，是因为 cardcopy 判据按区域扫模板中的写死中文。 */
+      var pubTitle = up
+        ? '下架后客户立刻打不开这个应用，随时可以再上架'
+        : '恢复到最近发布的版本，客户立刻能看到';
+      return '<article class="kcard" data-id="' + esc(a.id) + '" data-off="' + (a.status === '已下架' ? '1' : '0') + '">' +
+        /* ★2026-11-01 照线上标准样式（agents.datagrand.com/#/AuditAgent/AppManage）：
+           封面 + 标题 + 说明 + 底栏。
+           ★2026-11-02（用户口径「生成和手工，2 种方式」）：封面有两种来源 ——
+           手工上传（app.cover 存 dataURL）优先；没有手工图就用生成封面（纯 CSS，见 coverHtml）。
+           原来十条种子全铺同一张 common_card.png，十张卡长得一模一样，等于没有封面。
+           ★卡上不再放组件清单：用户原话「我放了 100 个组件你有什么意义呢？
+             我直接去应用装配界面看一眼不就行了」。 */
+        '<a class="kc-hit" href="' + esc(href) + '" aria-label="' + esc(label) + '">' +
+          '<span class="kc-cover">' +
+            coverHtml(a) +
+            /* ★2026-11-02（多客户模型）：原来这里写「客户 v3」—— 现在一家一个版本，
+               写单独一家的版本是错的。改成数落后的**家数**：这张卡回答"我要不要进去升级"，
+               具体是谁、从哪版到哪版，进客户授权页看。 */
+            (behindCnt > 0
+              ? '<span class="card-tag kc-stale" title="' + esc(behindCnt + ' 家客户还停在旧版本（最新 v' + cardVer + '），在 ⋮ 里进「客户授权」升级') + '">'
+                + esc(behindCnt + ' 家待升级') + '</span>'
+              : '') +
+            '<span class="card-tag kc-tag ' + (up ? 'is-up' : (a.status === '未发布' ? 'is-draft' : 'is-off')) + '">' + esc(a.status) + '</span>' +
+            /* ★2026-11-02（两个升级别混）：这一个是**装配组件**的可升级数，上面那个 kc-stale 是
+               **客户授权版本**落后的家数。原来写「2 个可升级」「3 家待升级」—— 同一张卡两个"升级"，
+               用户分不出点哪个。这里补主语"组件"。 */
+            (upd ? '<span class="kc-upd-flag" title="' + esc(UIK.badgeLabel(upd)) + '，点卡片进去一键升级">' +
+              esc(upd + ' 个组件可升级') + '</span>' : '') +
+          '</span>' +
+          '<span class="kc-info">' +
+            /* ★2026-11-01（评审 P0 修正）：`upd` 原来只进了 href 和 aria-label，卡面一个字符都没用。
+               第一版放在标题行右端 —— 实测标题被挤成「华信证券 · 债承…」，名字认不出来了。
+               标题是卡的主标识，不能让给一个计数。改到封面右上角、压在状态胶囊下面：
+               两枚徽标竖向排一列（状态答"能不能用"，更新数答"要不要干活"），文字区一个像素不占。 */
+            '<span class="kc-title" title="' + esc(a.name) + '">' + esc(a.name) + '</span>' +
+            '<span class="kc-desc" title="' + esc(a.desc || '') + '">' + esc(a.desc || '—') + '</span>' +
+          '</span>' +
+        '</a>' +
+        '<div class="k-menu" role="menu" hidden>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="edit" data-id="' + esc(a.id) + '">' + ICON.cfg + '编辑应用</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="auth" data-id="' + esc(a.id) + '">' + ICON.link + '客户授权</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="vers" data-id="' + esc(a.id) + '">' + ICON.ver + '版本管理</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="dup" data-id="' + esc(a.id) + '">' + ICON.copy + '复制应用</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="export" data-id="' + esc(a.id) + '">' + ICON.down + '导出应用</button>' +
+          '<button class="k-mi is-danger" type="button" role="menuitem" data-act="del" data-id="' + esc(a.id) + '">' + ICON.off + FACT.del + '</button>' +
+        '</div>' +
+        '<footer class="card-ft">' +
+          (BATCH ? '<input type="checkbox" class="js-pick" data-id="' + esc(a.id) + '"' + (SEL[a.id] ? ' checked' : '') +
+            ' aria-label="' + esc(FACT.pick + a.name) + '">' : '') +
+          /* ★2026-11-01（用户）：「我在这里应该直接看到最近更新的时间，精确到年月日时分秒。」
+             底栏左侧＝版本号 + 完整时间戳。不写"更新"两个字：右边那个时间就是更新时间，
+             加个词只是把它翻译一遍。
+             一天里可能发好几版，纯日期分不出来，时分秒是这条信息的主体，不是装饰。 */
+          '<span class="kc-time" title="' + esc('最近更新 ' + (a.updated || '—')) + '">' +
+            esc((cardVer ? 'v' + cardVer : '未发布') + ' · ' + (a.updated || '—')) +
+          '</span>' +
+          '<span class="kc-ops">' +
+            (a.status === '未发布'
+              /* ★2026-11-01（评审 P0-2）：草稿没有「上架」这个动作（要发布才有），
+                 但**位置要占住** —— 否则同排卡里它的 ⋮ 比别人的靠右 24px，
+                 一屏看过去右端参差，像没对齐。用一个不可见的占位撑住。 */
+              ? '<span class="k-pub-ghost" aria-hidden="true"></span>'
+              : '<button class="k-pub" type="button" data-act="toggle" data-id="' + esc(a.id) + '"' +
+              ' aria-label="' + esc((up ? '下架 ' : '上架 ') + a.name) + '"' +
+              ' title="' + esc(pubTitle) + '">' + ICON.pow + '</button>') +
+            '<button class="k-more" type="button" data-id="' + esc(a.id) + '" data-act="more"' +
+            ' aria-haspopup="menu" aria-expanded="false" aria-label="更多操作：' + esc(a.name) + '">' + ICON.more + '</button>' +
+          '</span>' +
+        '</footer>' +
+      '</article>';
+    }).join('');
+
+  }
+
+  function resetFilters() {
+    $('#f-kw').value = '';
+    $('#f-st').value = '';
+  }
+
+  $('#f-kw').addEventListener('input', render);
+  $('#f-st').addEventListener('change', render);
+
+  /* ── 批量模式（2026-10-31）──────────────────────────────────────── */
+  var BB = { bar: $('#batch-bar'), btn: $('#btn-batch'), all: $('#b-all'), cnt: $('#b-cnt') };
+  function selIds() { return Object.keys(SEL); }
+  function paintBatch() {
+    if (!BB.cnt) return;
+    var n = selIds().length;
+    BB.cnt.textContent = '已选 ' + n + ' 个';
+    if (BB.all) {
+      var list = rows();
+      var allOn = list.length > 0 && list.every(function (a) { return !!SEL[a.id]; });
+      BB.all.checked = allOn;
+      BB.all.indeterminate = n > 0 && !allOn;
+    }
+  }
+  function setBatch(on) {
+    BATCH = !!on;
+    if (!BATCH) SEL = {};
+    if (BB.bar) BB.bar.hidden = !BATCH;
+    if (BB.btn) {
+      BB.btn.setAttribute('aria-pressed', BATCH ? 'true' : 'false');
+      BB.btn.textContent = BATCH ? '退出批量' : '批量操作';
+    }
+    render();
+    paintBatch();
+  }
+  if (BB.btn) BB.btn.addEventListener('click', function () { setBatch(!BATCH); });
+  if (BB.all) BB.all.addEventListener('change', function () {
+    var on = BB.all.checked;
+    rows().forEach(function (a) { if (on) SEL[a.id] = true; else delete SEL[a.id]; });
+    render();
+    paintBatch();
+  });
+  if (BB.bar) BB.bar.addEventListener('click', function (e) {
+    var off = e.target.id === 'b-off';
+    if (e.target.id !== 'b-off' && e.target.id !== 'b-on') return;
+    var ids = selIds().filter(function (x) {
+      var a = DB.appById(x);
+      if (!a) return false;
+      return off ? a.status === '已上架' : a.status === '已下架';
+    });
+    if (!ids.length) {
+      toast(off ? '选中的应用里没有「已上架」的' : '选中的应用里没有「已下架」的', 'error');
+      return;
+    }
+    Confirm.ask({
+      title: '操作确认',
+      body: off
+        ? '下架后，这 ' + ids.length + ' 个应用的客户将无法使用，是否确认下架？'
+        : '上架后，这 ' + ids.length + ' 个应用将恢复使用，是否确认上架？',
+      ok: '确定',
+      danger: off,
+      onOk: function () {
+        var r = bulkSet(ids, off);
+        toast((off ? '已下架 ' : '已上架 ') + r.done + ' 个应用' +
+              (r.skip ? ' · ' + r.skip + ' 个没动（状态不符或没有正式版）' : ''));
+        setBatch(true);   /* 留在批量模式，勾选清空 */
+      }
+    });
+  });
+  $('#grid').addEventListener('change', function (e) {
+    var cb = e.target.closest ? e.target.closest('.js-pick') : null;
+    if (!cb) return;
+    var id = cb.getAttribute('data-id');
+    if (cb.checked) SEL[id] = true; else delete SEL[id];
+    paintBatch();
+  });
+  $('#f-sort').addEventListener('change', function () { render(); paintBatch(); });
+  /* 卡身整张可点（进配置页）；⋮ 与菜单是兄弟控件，点它们不会顺带进配置页。
+     ⋮ 的可见性交给 CSS（:hover / :focus-within），这里只管"开/关/执行"。
+     键盘：Tab 能到 ⋮；Enter/Space/↓ 打开并聚焦第一项；↑↓ 移动；Esc 关闭回 ⋮；Tab 关闭（走回 DOM 顺序）。 */
+  $('#grid').addEventListener('click', function (e) {
+    if (e.target.closest('.js-clear')) { resetFilters(); render(); }
+    var mb = e.target.closest('.k-more');
+    if (mb) {
+      e.preventDefault();
+      if (MENU.btn === mb) { closeMenu(true); } else { openMenu(mb); }
+      return;
+    }
+    /* 2026-10-29：底栏电源钮 —— 与 ⋮ 菜单里的「上架/下架」走同一条 menuAct，
+       不另写一套状态变更（下架仍先问一句，上架恢复最近正式版）。 */
+    var pb = e.target.closest('.k-pub');
+    if (pb) {
+      e.preventDefault();
+      menuAct('toggle', pb.getAttribute('data-id'));
+      return;
+    }
+    var mi = e.target.closest('.k-mi');
+    if (mi) {
+      var act = mi.getAttribute('data-act');
+      var id = mi.getAttribute('data-id');
+      closeMenu(true);
+      menuAct(act, id);
+    }
+  });
+  $('#grid').addEventListener('keydown', function (e) {
+    var mb = e.target.closest('.k-more');
+    if (mb) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); openMenu(mb); }
+      return;
+    }
+    var mi = e.target.closest('.k-mi');
+    if (!mi) return;
+    var items = Array.prototype.slice.call(MENU.open ? MENU.open.querySelectorAll('[role="menuitem"]') : []);
+    var i = items.indexOf(mi);
+    if (e.key === 'ArrowDown') { e.preventDefault(); (items[(i + 1) % items.length] || items[0]).focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); (items[(i - 1 + items.length) % items.length] || items[0]).focus(); }
+    else if (e.key === 'Home') { e.preventDefault(); items[0].focus(); }
+    else if (e.key === 'End') { e.preventDefault(); items[items.length - 1].focus(); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeMenu(true); }
+    else if (e.key === 'Tab') { closeMenu(false); }
+  });
+  window.addEventListener('scroll', function () { closeMenu(false); }, true);
+  window.addEventListener('resize', function () { closeMenu(false); });
+  document.addEventListener('click', function (e) {
+    if (!MENU.open) return;
+    if (e.target.closest('.k-menu') || e.target.closest('.k-more')) return;
+    closeMenu(false);
+  });
+  /* 刷新：从存储重新读一遍再重绘。
+     ★2026-10-24 修 P1-A1：原来只 `render()`（拿内存重画），别处改过的名字/状态永远刷不出来，
+     而按钮叫「刷新列表」——用户点它就是要看最新。`DB.load()` 才是真的重新取数。 */
+  var rb = $('#refresh');
+  /* ★2026-10-24 21:5x 续跑修 W1/IA 报的 ReferenceError：本页的 ⋮ 菜单已在上面整块删掉，
+     不再有 popover 可关，`closeMenus` 这个函数全仓只剩这一处调用、从未定义 —— 点击「刷新列表」
+     直接抛 ReferenceError，DB.load() 与 render() 都没执行（按钮=死的）。删掉该调用。 */
+  if (rb) rb.addEventListener('click', function () {
+    DB.load(); render();
+    /* ★2026-10-28（场景清单 A5）：点完刷新只能靠"内容有没有变"猜是不是最新。
+       把读完的时刻直接印在按钮的 title 与 aria-label 上。 */
+    var t = new Date();
+    var hh = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2);
+    rb.title = '最近刷新 ' + hh;
+    rb.setAttribute('aria-label', '刷新列表（最近刷新 ' + hh + '）');
+  });
+  /* 新建应用：先命名 → 建成草稿 → 带新 id 进配置页（不能落到别人的应用上）。
+     ★2026-10-24：原来点了就 createApp({status:'草稿'})，名字永远是「未命名应用」。
+       现在是一张登记表：名称必填、重名拦下（读屏能听到原因）、客户与说明可留空。 */
+  var D = { mask: $('#ap-mask'), name: $('#ap-name'), desc: $('#ap-desc'),
+            err: $('#ap-err'), ok: $('#ap-ok'), ret: null, editing: null };
+  /* ★2026-11-02：客户那份 UI 从本页整个撤掉了 —— 客户不再是应用表单的字段，
+     而是「应用 × 客户」授权记录（多对多）。新建只问名字/说明/封面。 */
+  /* ── 封面（2026-11-01）────────────────────────────────────────
+     用户原话：「新增组件和新增应用和编辑应用的时候，就没有上传图片的那个组件」。
+     卡片上本来就有封面位，没有上传入口，那个位就只能永远用默认图 —— 这是缺功能，不是缺设计。
+     存 dataURL 进 app.cover：本地原型没有上传服务，压缩到 1280 宽再转 jpeg，避免撑爆 localStorage。 */
+  var COVER = null;        /* null＝用生成的封面；有值＝手工上传的 dataURL */
+  var COVER_STYLE = 0;     /* 生成样式序号 0..15（4 色系 × 4 图形），打开弹窗时按应用算 */
+  var COVER_FILE = $('#ap-cover-file');
+  var COVER_THUMB = $('#ap-cover-thumb');
+  var COVER_REMOVE = $('#ap-cover-remove');
+
+  function paintCover() {
+    if (!COVER_THUMB) return;
+    if (COVER_REMOVE) COVER_REMOVE.hidden = !COVER;
+    if (COVER) {
+      COVER_THUMB.classList.remove('is-gen');
+      COVER_THUMB.style.backgroundImage = 'url(' + COVER + ')';
+      COVER_THUMB.textContent = '';
+      return;
+    }
+    COVER_THUMB.style.backgroundImage = 'none';
+    COVER_THUMB.classList.add('is-gen');
+    COVER_THUMB.innerHTML = genCoverHtml(COVER_STYLE);
+  }
+  if (COVER_FILE) COVER_FILE.addEventListener('change', function () {
+    var f = COVER_FILE.files && COVER_FILE.files[0];
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { showErr('封面要选图片文件'); return; }
+    var fr = new FileReader();
+    fr.onload = function () {
+      /* 压到 1280 宽以内再存：一张手机照片转 base64 能到 4MB，localStorage 只有 5MB */
+      var img = new Image();
+      img.onload = function () {
+        var w = Math.min(1280, img.width);
+        var h = Math.round(img.height * (w / img.width));
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        COVER = cv.toDataURL('image/jpeg', 0.82);
+        paintCover();
+      };
+      img.onerror = function () { showErr('这张图读不出来，换一张'); };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(f);
+  });
+  var pickBtn = $('#ap-cover-pick');
+  if (pickBtn) pickBtn.addEventListener('click', function () { COVER_FILE && COVER_FILE.click(); });
+  if (COVER_REMOVE) COVER_REMOVE.addEventListener('click', function () {
+    COVER = null;
+    if (COVER_FILE) COVER_FILE.value = '';
+    paintCover();
+  });
+
+
+  function dupName(v) {
+    var t = String(v || '').trim();
+    if (!t) return '';
+    /* ★2026-11-01（评审 P0）：编辑态要把**自己**排除掉。
+       原来这里遍历全量 APPS，不改名点「保存」必然报「已经有同名应用『X』」——
+       而那个 X 就是它自己，提示还让他"去那个应用的配置页改名"。
+       运营只想改个封面，每改一次都被自己拦下，唯一出路是把名字改掉再改回来。 */
+    var self = D.editing || '';
+    return DB.APPS.some(function (a) { return a.name === t && a.id !== self; })
+      ? '已经有同名应用「' + t + '」。换个名字，或去那个应用的配置页改名。' : '';
+  }
+  function syncOk() {
+    if (!D.ok) return;
+    D.ok.disabled = !String(D.name.value || '').trim();
+  }
+  function showErr(msg) {
+    if (!D.err) return;
+    D.err.textContent = msg || '';
+    D.err.hidden = !msg;
+    if (msg) D.name.setAttribute('aria-invalid', 'true');
+    else { D.name.removeAttribute('aria-invalid'); D.name.removeAttribute('title'); }
+  }
+  /* 弹层开着时，背景的可聚焦元素对键盘和读屏都该消失 ——
+     只靠 Tab 圈禁挡得住键盘，挡不住读屏的浏览模式（它按 DOM 走，不按 Tab 走）。
+     inert 是两件事一起解决的那一个属性。
+     ★2026-10-25 修 I02：原来是一串选择器（'.sider', '.bar', '#grid'…），漏了 `.hdr`
+     和 `#xz-host` —— 右下角小智那个球仍然能被 Tab 到，焦点一离开弹层，挂在弹层上的
+     Tab 陷阱就再也接不到事件，Esc 也关不掉。现在统一走 Confirm.inertBg：
+     从弹层往上逐层关掉"除自己这一支以外的兄弟"，漏不掉，也不会关到弹层自己。 */
+  function setInert(layer, on) { if (window.Confirm) Confirm.inertBg(layer, on); }
+  /* editId 有值 = 编辑已有应用，没值 = 新建。
+     ★2026-11-01：⋮ 菜单加了「编辑应用」—— 应用名/客户/说明/封面以前只能在配置页里改，
+       而"改名字、换封面"是管理动作，不该逼人进去动装配。 */
+  function openNew(editId) {
+    if (!D.mask) return;
+    D.ret = document.activeElement;
+    D.editing = editId || null;
+    var a = D.editing ? DB.appById(D.editing) : null;
+    D.name.value = a ? a.name : '';
+    D.desc.value = a ? (a.desc || '').replace(/^还没有填写说明$/, '') : '';
+    COVER = a && a.cover ? a.cover : null;
+    COVER_STYLE = a ? coverStyleOf(a) : (DB.APPS.length * 5) % COVER_STYLES;
+    paintCover();
+    showErr('');
+    syncOk();
+    var ttl = document.getElementById('ap-title');
+    if (ttl) ttl.textContent = a ? '编辑应用' : '新建应用';
+    if (D.ok) D.ok.textContent = a ? '保存' : '创建并配置';
+    D.mask.hidden = false;
+    setInert(D.mask, true);
+    setTimeout(function () { D.name.focus(); }, 30);
+  }
+  function closeNew() {
+    if (!D.mask) return;
+    D.mask.hidden = true;
+    setInert(D.mask, false);
+    if (D.ret && D.ret.focus) { try { D.ret.focus({ preventScroll: true }); } catch (e) { D.ret.focus(); } }
+  }
+  if (D.name) D.name.addEventListener('input', function () { syncOk(); if (!D.err.hidden) { var m = dupName(D.name.value); if (!m) showErr(''); } });
+  if (D.ok) D.ok.addEventListener('click', function () {
+    var nm = String(D.name.value || '').trim();
+    if (!nm) { showErr('应用名称必填'); D.name.focus(); return; }
+    var m = dupName(nm);
+    if (m) { showErr(m); D.name.focus(); return; }
+    /* 编辑态：改的是已存在的应用，不进配置页 */
+    if (D.editing) {
+      var cur = DB.appById(D.editing);
+      if (cur) {
+        cur.name = nm;
+        cur.desc = String(D.desc.value || '').trim() || '还没有填写说明';
+        cur.cover = COVER || '';
+        cur.coverStyle = COVER_STYLE;
+        DB.save();
+      }
+      closeNew();
+      render();
+      return;
+    }
+    /* 建应用时不再带客户：客户是建完之后在「客户授权」里授的（一应用多家） */
+    var app = DB.createApp({
+      name: nm,
+      desc: String(D.desc.value || '').trim() || '还没有填写说明',
+      cover: COVER || '',
+      coverStyle: COVER_STYLE,
+      status: '未发布'
+    });
+    location.href = 'app.html?id=' + encodeURIComponent(app.id);
+  });
+  ['#ap-close', '#ap-cancel'].forEach(function (sel) {
+    var b = $(sel);
+    if (b) b.addEventListener('click', closeNew);
+  });
+  if (D.mask) {
+    D.mask.addEventListener('click', function (e) { if (e.target === D.mask) closeNew(); });
+    /* ★2026-10-25：Tab 陷阱与 Esc 从 mask 挪到 document。
+       挂在 mask 上有个前提——"焦点一定在 mask 里"，而点一下遮罩的空白处焦点就落到 body，
+       此后 Tab 与 Esc 全都不经过 mask，弹层变成"关不掉"。挂 document 才不依赖焦点在哪。 */
+    document.addEventListener('keydown', function (e) {
+      if (D.mask.hidden) return;
+      if (e.key === 'Escape') { e.stopPropagation(); closeNew(); return; }
+      if (e.key !== 'Tab') return;
+      /* ★2026-11-02（独立前端审计）：原来手写 f=[名称,说明,关闭,取消,确定]，
+         漏了封面两个按钮和「客户授权」链接，且焦点一旦不在名单里就强行拉回第一项 ——
+         实测 Tab 到链接后立刻被弹回名称，正向永远走不到说明/封面/确定。
+         改成按弹层真实 DOM 顺序收集全部可聚焦元素，只做首尾环绕。 */
+      var box = D.mask.querySelector('.nf') || D.mask;
+      var f = [].slice.call(box.querySelectorAll(
+        'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'
+      )).filter(function (n) {
+        return n.offsetParent && getComputedStyle(n).visibility !== 'hidden';
+      });
+      if (!f.length) return;
+      var i = f.indexOf(document.activeElement);
+      if (i < 0) { e.preventDefault(); f[0].focus(); return; }
+      if (e.shiftKey && i === 0) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    });
+  }
+  /* ── 版本管理（2026-10-26 第二次改）：去子页面 ──────────────────
+     上一版做成弹窗是错的：版本数会随时间长，每行还有两个动作，
+     这种"会长的列表"必须给页面，弹窗里根本看不过来。
+     判据见 DESIGN.md §5.6（容器选择）。列表页只负责跳过去。 */
+  function openVers(id) {
+    var a = DB.appById(id);
+    if (!a) { toast('这个应用已经不在了', 'error'); return; }
+    location.href = 'versions.html?scope=app&id=' + encodeURIComponent(id);
+  }
+  var bn = $('#btn-new');
+  /* ⚠ 这里必须包一层：直接挂 openNew 会把 MouseEvent 当 editId 传进去，
+     D.editing 变成事件对象 ⇒ 弹窗按「编辑」分支走，点「创建并配置」什么都不发生。
+     2026-11-02 实测：新建应用点了没反应，就是这么来的。 */
+  if (bn) bn.addEventListener('click', function () { openNew(); });
+  /* 导入应用：选文件 → data.js 校验并新建 → 列表立刻出现。永不覆盖同名的既有应用 */
+  (function () {
+    var bi = $('#btn-import');
+    if (!bi) return;
+    bi.addEventListener('click', function () {
+      Transfer.pick(function (obj) {
+        if (obj.kind === 'daguan-comp') { toast('这是组件文件，请到「组件库」导入', 'error'); return; }
+        var r = DB.importPayload(obj);
+        if (!r.ok) { toast(r.msg, 'error'); return; }
+        render();
+        toast('已导入「' + r.name + '」' + (r.comps ? ' · 顺带补齐 ' + r.comps + ' 个组件' : ''));
+      }, function (msg) { toast(msg, 'error'); });
+    });
+  })();
+  /* 被配置页退回时的提示：说清"为什么回来了"，别让用户以为点错了 */
+  (function notice() {
+    var box = $('#notice');
+    if (!box) return;
+    var q = new URLSearchParams(location.search);
+    var msg = q.get('miss') === '1' ? '这个应用已经不在了（链接过期或已被删除）。在列表里重新选一个，或者点「新建应用」。'
+            : q.get('pick') === '1' ? '先在列表里选一个应用；要新做，点「新建应用」。'
+            : '';
+    if (!msg) return;
+    box.textContent = msg;
+    var x = document.createElement('button');
+    x.type = 'button'; x.className = 'notice-x'; x.textContent = '知道了';
+    x.setAttribute('aria-label', '关闭提示');
+    x.addEventListener('click', function () { box.hidden = true; });
+    box.appendChild(x);
+    box.hidden = false;
+  })();
+
+  render();
+})();
+</script>
+<div id="xz-host"></div>
+<script src="assets/shell.js?v=1d57161f"></script>
+<script src="assets/xiaozhi.js?v=32a43fd2"></script>
+<script>
+/* ── 下载客户端浮层（2026-11-01）──────────────────────────────────
+   用户口径：放在应用管理右上，图标按钮，悬停显示「下载客户端」，点开分 Mac / Windows。
+   为什么是浮层不是跳页：这是一次「拿走安装包」的轻动作，信息最多两项，
+   跳一页再回来等于白丢一次上下文（"我刚才在看哪个应用"）。
+   安装包没发布时给一句实话 + 一个出口，**不摆假链接**。 */
+(function () {
+  'use strict';
+  var btn = document.getElementById('btn-dl');
+  var menu = document.getElementById('dl-menu');
+  if (!btn || !menu) return;
+  var ICON = {
+    mac: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.7c0-2.2 1.8-3.2 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.6 2.3 2.8 2.2 1.1 0 1.5-.7 2.9-.7 1.3 0 1.7.7 2.9.7 1.2 0 2-1.1 2.7-2.2.9-1.2 1.2-2.5 1.2-2.5s-2.2-.9-2.2-3.8zM14.3 6.3c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-.9 2.8 1 .1 2-.5 2.7-1.3z"/></svg>',
+    win: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.6l7.4-1v7.1H3V5.6zm8.6-1.2L21 3v8.7h-9.4V4.4zM3 12.9h7.4V20L3 18.9v-6zM11.6 12.9H21V21l-9.4-1.3v-6.8z"/></svg>'
+  };
+  var got = false, loading = false;
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+  function open() {
+    menu.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    if (window.Popover) Popover.place(btn, menu);
+  }
+  function paint(files) {
+    if (!files || !files.length) {
+      menu.innerHTML = '<p class="k-mi" data-mute>安装包还没发布</p>' +
+        '<a class="k-mi" data-dim href="downloads.html">去下载页看看</a>';
+      return;
+    }
+    menu.innerHTML = files.map(function (f) {
+      return '<a class="k-mi" href="' + esc(f.href) + '" download title="' +
+        esc((f.os || '') + ' ' + (f.arch || '') + (f.version ? ' · ' + f.version : '')) + '">' +
+        (ICON[f.key] || '') + esc(f.os || '') +
+        (f.arch ? '<span style="margin-left:auto;font-size:var(--font-size-caption);color:var(--color-text-tertiary)">' + esc(f.arch) + '</span>' : '') +
+        '</a>';
+    }).join('') +
+      '<a class="k-mi" data-dim href="downloads.html">全部版本与校验值</a>';
+  }
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (!menu.hidden) { close(); return; }
+    if (!got && !loading) {
+      loading = true;
+      menu.innerHTML = '<p class="k-mi" data-mute>正在读安装包…</p>';
+      open();
+      fetch('downloads/manifest.json', { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error('no manifest'); return r.json(); })
+        .then(function (j) { got = true; loading = false; paint((j && j.files) || []); open(); })
+        .catch(function () { loading = false; got = true; paint([]); open(); });
+      return;
+    }
+    open();
+  });
+  document.addEventListener('click', function (e) {
+    if (menu.hidden) return;
+    if (menu.contains(e.target) || btn.contains(e.target)) return;
+    close();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !menu.hidden) { close(); btn.focus(); }
+  });
+})();
+</script>
+</body>
+</html>

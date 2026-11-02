@@ -1,0 +1,254 @@
+/* ─────────────────────────────────────────────────────────────
+   configurator.css —— 配置器宿主外壳 + 内置配置器的排版。
+
+   边界（改这个文件前先读）：
+   · 这里只有**排版**，没有业务字段名。哪个字段叫什么由 manifest 决定，
+     所以"加一个配置器"不需要动这个文件。
+   · 取值只来自 tokens.css：颜色/圆角/间距全部 var(--*)，本文件不出现裸色值。
+     字号只取 11 / 12 / 13 三档（DESIGN §3）。圆角只用 --r-s / --r-m / --r-pill。
+   · 控件形态复用 component.html 已有的 .bd-field / .bd-input，
+     这里只补"配置器特有的"那几处（宽度、成组、预览、两栏比例、开关轨道）。
+   · 高度档：56（动作区，与悬浮条/顶栏同档）/ 48（标题）/ 32（控件）/ 28（小控件）/ 22（开关轨道）。
+     ⚠ 28 与 44×22 现在还是裸值：`--h-ctl-sm` / `--switch-w` / `--switch-h` 还没落
+       tokens.css，先写死再用会让 token-audit 的「引用不存在的 token」变红。
+       三个 token 一落地，这里替换即可（注释里已标出对应关系）。
+   ───────────────────────────────────────────────────────────── */
+
+/* ══ 配置器条（宿主画：选择 / 导入 / 设为默认）══════════════════
+   放在 #canvas-inner 之上，和画布内容同宽居中。不带 ?cfg 时整条 hidden，
+   零高度零占位 —— 所以"不带参数时页面与今天逐像素一致"。 */
+.cfg-bar{
+  max-width:1080px; margin:0 auto var(--space-12);
+  display:flex; align-items:center; gap:var(--space-8); flex-wrap:wrap;
+}
+.cfg-bar[hidden]{display:none}
+.cfg-bar .cfg-lb{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.cfg-bar .cfg-sp{flex:1; min-width:0}
+
+.cfg-sel{
+  height:28px; padding:0 var(--space-8); max-width:260px;      /* TODO(token): --h-ctl-sm */
+  border:1px solid var(--color-border-card); border-radius:var(--radius-xs);
+  background:var(--surface-page); color:var(--color-text-body); font-size:var(--font-size-caption);
+}
+.cfg-sel:focus-visible{outline:2px solid var(--color-focus-ring); outline-offset:1px}
+
+/* 状态字：保存过 / 改过没存 / 动作被拒，都落在这一格，且读屏能播报 */
+.cfg-memo{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+
+.cfg-btn{
+  height:28px; padding:0 12px;                              /* TODO(token): --h-ctl-sm */
+  border:1px solid var(--color-border-card); border-radius:var(--radius-xs);
+  background:var(--surface-page); color:var(--color-text-body); font-size:var(--font-size-caption);
+  cursor:pointer;
+}
+.cfg-btn:hover{background:var(--color-state-hover)}
+.cfg-btn:focus-visible{outline:2px solid var(--color-focus-ring); outline-offset:1px}
+.cfg-btn[data-kind="primary"]{
+  background:var(--color-brand); border-color:var(--color-brand); color:var(--color-text-inverse);
+}
+.cfg-btn[data-kind="primary"]:hover{
+  background:var(--color-brand-active); border-color:var(--color-brand-active);
+}
+/* 禁用态配方只在 sys.css 末尾「全站唯一表达」定义一次。
+   本文件晚于 sys.css 加载且自带 :hover，故这里只留反悬停护栏（不重复配方）。 */
+.cfg-btn[disabled]:hover, .cfg-btn[aria-disabled="true"]:hover, .cfg-btn.is-disabled:hover,
+.cfg-btn[disabled]:active, .cfg-btn[aria-disabled="true"]:active, .cfg-btn.is-disabled:active{
+  background:none; color:var(--btn-disabled-fg); border-color:transparent;
+}
+
+/* 导入成功 ≠ 生效（§4）：这条只挂"试用一次"和"设为默认"，不挂别的 */
+.cfg-importok{display:inline-flex; align-items:center; gap:var(--space-4)}
+
+/* ══ 宿主外壳：.cfg-hd / .cfg-bd / .cfg-ft ═══════════════════════
+   这三块由宿主画到底，配置器只往 .cfg-bd > .cfg-body 里填。
+   换配置器时 .cfg-hd 与 .cfg-ft 的结构和类名逐字不变 ——
+   一致性靠"配置器没有权限改"保证，不靠"作者记得别改"。 */
+.cfg-box{
+  background:var(--surface-page); border:1px solid var(--color-border-hairline);
+  border-radius:var(--radius-panel); overflow:hidden;
+}
+.cfg-hd{
+  display:flex; align-items:center; gap:var(--space-8);
+  height:48px; padding:0 16px; border-bottom:1px solid var(--color-border-hairline);
+}
+.cfg-hd b{font-size:var(--font-size-body); font-weight:600; color:var(--color-text-primary)}
+.cfg-hd .cfg-tag{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.cfg-hd .cfg-sp{flex:1; min-width:0}
+
+.cfg-bd{padding:16px; min-height:300px}
+
+.cfg-ft{
+  display:flex; align-items:center; gap:var(--space-8);
+  height:56px; padding:0 16px; border-top:1px solid var(--color-border-hairline);
+  background:var(--surface-subtle);
+}
+.cfg-ft .cfg-sp{flex:1; min-width:0}
+
+/* 宿主自己的提示区：冲突、回退说明、降级文案都落这里，不占用配置器的 .cfg-body */
+.cfg-notices:empty{display:none}
+.cfg-notices{margin-bottom:var(--space-12)}
+.cfg-conflict{
+  margin:0 0 var(--space-8); padding:var(--space-8) var(--space-12);
+  border:1px solid var(--color-border-card); border-left:2px solid var(--color-warning);
+  border-radius:var(--radius-xs); background:var(--color-warning-surface);
+  font-size:var(--font-size-caption); line-height:1.7; color:var(--color-text-body);
+}
+.cfg-conflict:last-child{margin-bottom:0}
+
+.cfg-empty-note{font-size:var(--font-size-body); line-height:1.7; color:var(--color-text-secondary)}
+.cfg-empty-act{margin-top:var(--space-12)}
+.cfg-link{font-size:var(--font-size-body); color:var(--color-brand); text-decoration:underline; text-underline-offset:2px}
+.cfg-link:hover{color:var(--color-brand-ink)}
+
+/* 三态（K9）：加载中与崩溃必须是两套外观，否则用户会一直等 */
+.cfg-loading{
+  display:flex; align-items:center; gap:var(--space-8);
+  font-size:var(--font-size-caption); color:var(--color-text-tertiary);
+}
+.cfg-loading::before{
+  content:''; width:6px; height:6px; border-radius:var(--radius-pill); background:var(--color-text-muted);
+}
+.cfg-crash{
+  display:flex; flex-direction:column; gap:var(--space-4);
+  padding:var(--space-12); border-radius:var(--radius-panel);
+  border:1px solid var(--color-border-card); background:var(--color-warning-surface);
+}
+.cfg-crash b{font-size:var(--font-size-body); font-weight:600; color:var(--color-warning)}
+.cfg-crash span{font-size:var(--font-size-caption); line-height:1.7; color:var(--color-text-secondary)}
+.cfg-crash code{font-size:var(--font-size-caption); color:var(--color-text-tertiary); word-break:break-all}
+.cfg-crash[data-why="throw"]{border-left:2px solid var(--color-danger)}
+.cfg-crash[data-why="throw"] b{color:var(--color-danger)}
+
+/* 不认得的块 / 没名字的字段：原地留痕，不丢内容、不抛错 */
+.cfg-unknown{
+  padding:var(--space-8) var(--space-12); border:1px dashed var(--color-border-card);
+  border-radius:var(--radius-xs); background:var(--surface-subtle);
+  font-size:var(--font-size-caption); line-height:1.7; color:var(--color-text-secondary);
+}
+.cfg-label{display:block; margin-bottom:var(--space-4); font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.cfg-label-unknown{color:var(--color-warning)}
+.cfg-hint{font-size:var(--font-size-caption); line-height:1.6; color:var(--color-text-tertiary)}
+.cfg-mt{margin-top:var(--space-12)}
+
+/* ══ 通用控件修饰（形态本体在 .bd-field / .bd-input，这里只补差异）══ */
+.cfg-ctl{width:100%; box-sizing:border-box; color:var(--color-text-body)}
+.cfg-ta{
+  height:auto; min-height:64px; padding:8px 10px;
+  display:block; resize:vertical; line-height:1.6;
+}
+.cfg-wide{grid-column:1 / -1}
+
+/* switch：与真源同形（44×22 圆轨道）。只在这里定义一次，
+   不许在 sys.css 再写一份 —— 两处各写一套是这个项目栽得最多的坑。
+   TODO(token): 44 → var(--switch-w)，22 → var(--switch-h)。 */
+/* ⚠ 必须比 component.html 里的 `.bd-field label{display:block}` 更具体（0,2,1 > 0,1,1），
+   否则 label 一行会把轨道压成 inline，宽度高度全失效 —— 屏幕上就"开关不见了"。
+   实测踩到：先写 `.cfg-switch` 单独一条，轨道整块消失。 */
+.cfg-body .cfg-switch{display:inline-flex; align-items:center; gap:var(--space-8); margin-bottom:0; cursor:pointer}
+.cfg-switch input{position:absolute; width:1px; height:1px; opacity:0; margin:0}
+.cfg-switch-track{
+  display:block;
+  position:relative; flex:0 0 44px; width:44px; height:22px;
+  border-radius:var(--radius-pill); background:var(--color-border-control);
+  transition:background .16s ease;
+}
+.cfg-switch-track::after{
+  content:''; position:absolute; top:2px; left:2px; width:18px; height:18px;
+  border-radius:var(--radius-pill); background:var(--surface-page);
+  transition:transform .16s ease;
+}
+.cfg-switch input:checked + .cfg-switch-track{background:var(--color-brand)}
+.cfg-switch input:checked + .cfg-switch-track::after{transform:translateX(22px)}
+.cfg-switch input:focus-visible + .cfg-switch-track{outline:2px solid var(--color-focus-ring); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){
+  .cfg-switch-track, .cfg-switch-track::after{transition:none}
+}
+
+/* 多选胶囊组（§2.2c）：未选 = .tag 的样子（22 高 / --r-s / 1px --ctl-line / 白底 / --ink-2 字）；
+   已选 = --brand-bg 底 + --brand-ink 字 + 1px --brand 描边。
+   不用勾选框：16 的方框和胶囊语言不是一套东西。 */
+.cfg-tags{display:flex; flex-wrap:wrap; gap:var(--space-8)}
+.cfg-tag{
+  height:22px; padding:0 var(--space-8);
+  border:1px solid var(--color-border-control); border-radius:var(--radius-xs);
+  background:var(--surface-page); color:var(--color-text-secondary);
+  font-size:var(--font-size-caption); line-height:1; cursor:pointer;
+}
+.cfg-tag:hover{border-color:var(--color-text-muted); color:var(--color-text-body)}
+.cfg-tag:focus-visible{outline:2px solid var(--color-focus-ring); outline-offset:1px}
+.cfg-tag.is-on{
+  border-color:var(--color-brand); background:var(--color-brand-surface); color:var(--color-brand-ink);
+}
+.cfg-tag.is-on:hover{border-color:var(--color-brand-ink); color:var(--color-brand-ink)}
+
+/* ══ 内置配置器一：标准表单式（左一屏字段 + 右即时预览）══════════ */
+.cfg-two{
+  display:grid; grid-template-columns:minmax(0,1fr) 240px;
+  gap:var(--space-16); align-items:start;
+}
+.cfg-fields{display:grid; grid-template-columns:1fr 1fr; gap:var(--space-12) var(--space-16)}
+
+.cfg-pv{
+  border:1px solid var(--color-border-hairline); border-radius:var(--radius-panel);
+  background:var(--surface-subtle); padding:12px;
+}
+.cfg-pv-hd{margin-bottom:var(--space-8); font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.cfg-pv-row{display:flex; align-items:center; gap:var(--space-8); min-width:0}
+.cfg-pv-name{font-size:var(--font-size-body); font-weight:600; color:var(--color-text-primary)}
+.cfg-pv-meta{margin-top:2px; font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.cfg-chips{display:flex; flex-wrap:wrap; gap:var(--space-4); margin-top:var(--space-8)}
+.cfg-chip{
+  height:22px; padding:0 var(--space-8);
+  border-radius:var(--radius-xs); background:var(--color-brand-surface); color:var(--color-brand-ink);
+  font-size:var(--font-size-caption); display:inline-flex; align-items:center;
+}
+.cfg-pv-desc{margin:var(--space-8) 0 0; font-size:var(--font-size-caption); line-height:1.7; color:var(--color-text-secondary)}
+
+/* ══ 内置配置器二：对话装配式（左一句话 → 右逐项接受）════════════
+   和表单式在**结构上**就不同：左边是"说一句"，右边是"一条条决定"，
+   没有预览卡片、字段不以输入框呈现。只换标题不叫换界面。 */
+.cfg-split{
+  display:grid; grid-template-columns:320px minmax(0,1fr);
+  gap:var(--space-16); align-items:start;
+}
+.cfg-say{
+  border:1px solid var(--color-border-hairline); border-radius:var(--radius-panel);
+  background:var(--surface-subtle); padding:12px;
+}
+.cfg-say-ft{display:flex; align-items:center; gap:var(--space-8); margin-top:var(--space-8)}
+
+.cfg-cands{list-style:none; margin:var(--space-8) 0 0; padding:0; display:flex; flex-direction:column; gap:var(--space-4)}
+.cfg-cand{
+  display:flex; align-items:center; gap:var(--space-4);
+  padding:var(--space-4) var(--space-8);
+  border:1px solid var(--color-border-card); border-radius:var(--radius-xs); background:var(--surface-page);
+}
+.cfg-cand b{flex:1; min-width:0; font-size:var(--font-size-caption); font-weight:600; color:var(--color-text-body)}
+.cfg-cand .cfg-ctl{width:auto; flex:1; min-width:0}
+
+.cfg-out{border:1px solid var(--color-border-hairline); border-radius:var(--radius-panel); padding:12px}
+.cfg-out-hd{display:flex; align-items:center; gap:var(--space-4); margin-bottom:var(--space-8); font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.cfg-out-hd b{font-size:var(--font-size-caption); font-weight:600; color:var(--color-text-body)}
+.cfg-picked{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+.cfg-picked li{
+  display:flex; align-items:center; gap:var(--space-8);
+  height:32px; padding:0 var(--space-8);
+  border-radius:var(--radius-xs); font-size:var(--font-size-caption); color:var(--color-text-body);
+}
+.cfg-picked li:nth-child(odd){background:var(--surface-subtle)}
+.cfg-picked li .cfg-x{margin-left:auto}
+.cfg-picked .cfg-none{color:var(--color-text-tertiary); background:none; height:auto; padding:6px 0}
+
+/* ══ app.html：配置模式下 legacy 画布让位，配置器自己撑起来 ═════════
+   作用域写死 body[data-app]（只有 app.html 有），所以这两条对 component.html 零影响。
+   #canvas-inner[hidden] 必须有 [hidden] 这一档：单独写 #canvas-inner{display:block}
+   会把 UA 的 display:none 压掉，不带参数时就会冒出一个空块。 */
+#canvas-inner[hidden]{display:none}
+body[data-app].cfg-mode #cfg-bar{padding:24px 24px 0}
+body[data-app].cfg-mode #canvas-inner{display:block; padding:0 24px 120px}
+
+/* ══ 配置器模式：输入条退出 ═══════════════════════════════════════
+   页面自带的那条对话输入不走宿主，它一按发送就会把 #canvas-inner 重画成
+   老骨架，把配置界面盖掉。动作区（.fk-ops）不在这里隐藏 ——
+   它的主按钮由宿主在 DOM 层摘掉（V4），容器留着（§8.4 的"可以是空的"）。 */
+body.cfg-mode .fk-bar{display:none}

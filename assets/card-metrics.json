@@ -1,0 +1,68 @@
+{
+  "_source": "达观线上系统 agents.datagrand.com/#/AuditAgent/AppManage 的现场 DOM 抓取件：主交付/架构demo/_素材/现场DOM/金融应用管理.html（2026-10-09 13:21），样式取自同目录 我的应用.html 内联的 emotion 规则（同一套 .app-card 组件）",
+  "_measuredAt": "2026-11-01（第二次：改用真实浏览器 bsk 量线上，不再是抓取件推断）",
+  "_viewport": 1440,
+  "_evidence": [
+    "卡片外壳：class=\"... w-full h-full rounded-xl border border-gray-200 overflow-hidden flex flex-col\" style=\"aspect-ratio: 0.9 / 1;\"",
+    "封面容器：class=\"relative w-full flex-1 min-h-0\" style=\"padding: 12px 12px 8px;\"",
+    "封面图：class=\"app-content-wrapper\" style=\"height:100%; background-size:cover; background-position:center bottom;\"",
+    "状态角标：<div style=\"position:absolute; top:25px; right:26px;\">",
+    "内容区：.app-card-content{padding:0 12px; display:flex; flex-direction:column; gap:4px;}",
+    "标题：.app-card-content .app-title{font-size:18px; font-weight:600; color:rgba(0,0,0,0.9);}",
+    "描述：.app-card-content .app-desc{font-size:12px; font-weight:400; color:#6c7da9; line-height:16px; height:38px;}",
+    "底栏：<footer ... style=\"padding:12px 12px 13px; color:rgb(37,37,36);\"> ← 左「2026-09-29创建」，右两枚 icon-only 按钮",
+    "栅格：<div class=\"grid 2xl:grid-cols-5 lg:grid-cols-4 grid-cols-4 gap-8 px-[8px]\"> ← gap-8 = 32px",
+    "真实浏览器实测（bsk + agents.datagrand.com/admin/#/应用管理，1440 视口）：grid 272.5px×4 / gap 32 / pad 0 8px；card 272.5×302.8；cover 270.5×179.8；img 246.5×159.8；radius 12；border 1px rgb(229,231,235)；coverPad 12 12 8；title 高 30 / 20px / 600；desc 高 38 / 12px / 16；foot 高 49 / pad 12 12 13",
+    "★标题 20px 是这次真实量出来的：抓取件 我的应用.html 写的是 18px，那是客户端卡片；管理端实际 20px/行高30"
+  ],
+  "card": {
+    "aspectRatio": "0.9 / 1",
+    "borderWidth": 1,
+    "borderColor": "#e5e7eb",
+    "radius": 12,
+    "overflow": "hidden",
+    "hoverShadow": "0 3px 9.7px 0 rgba(170,175,210,0.22)"
+  },
+  "cover": {
+    "flex": "1 1 0",
+    "padding": "12px 12px 8px",
+    "imgHeight": "100%",
+    "imgFit": "cover",
+    "imgPosition": "center bottom",
+    "imgRadius": 4
+  },
+  "badge": {
+    "top": 25,
+    "right": 26
+  },
+  "content": {
+    "padding": "0 12px",
+    "gap": 4
+  },
+  "title": {
+    "fontSize": 20,
+    "fontWeight": 600,
+    "color": "rgba(0,0,0,0.9)",
+    "lines": 1,
+    "lineHeight": 30
+  },
+  "desc": {
+    "fontSize": 12,
+    "lineHeight": 16,
+    "height": 38,
+    "color": "#6c7da9",
+    "lines": 2
+  },
+  "footer": {
+    "padding": "12px 12px 13px",
+    "height": 49,
+    "color": "#252524"
+  },
+  "grid": {
+    "gap": 32,
+    "cols": 4,
+    "cols2xl": 5,
+    "breakpoint2xl": 1536,
+    "_evidence": "线上 <div class=\"grid 2xl:grid-cols-5 lg:grid-cols-4 grid-cols-4 gap-8 px-[8px]\">；Tailwind 的 2xl = 1536"
+  }
+}

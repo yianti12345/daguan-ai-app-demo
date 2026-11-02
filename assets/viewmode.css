@@ -1,0 +1,69 @@
+/* 视图切换（预览 / 代码）· 组件层 2026-10-30
+   用户原话：「右上角再加个操作，可以看下这个设计，需要切换，默认都是预览模式」
+   ＋「做文件树视角，把四个页面接成工程结构」。
+   落点：两页顶栏 .tb-ops 最左；代码视图覆盖画布区，不遮顶栏与底部对话区。
+   令牌：--seg-h / --seg-item-h / --code-tree-w + 语义层间距与字色；本文件不出现裸色值。
+   说明：2px 是分段控件的内衬（结构性常量，不是间距刻度），3ch 是行号槽宽（按字符计）。 */
+
+.seg-view{
+  display:inline-flex; align-items:center; gap:2px;
+  height:var(--seg-h); padding:2px; margin-right:var(--space-8);
+  border-radius:var(--radius-control); background:var(--surface-sunken-2);
+}
+.seg-view button{
+  height:var(--seg-item-h); padding:0 var(--space-8); border:0; border-radius:var(--radius-sm);
+  background:none; color:var(--color-text-secondary);
+  font-family:inherit; font-size:var(--font-size-caption); line-height:1; cursor:pointer;
+}
+.seg-view button:hover{color:var(--color-text-primary)}
+.seg-view button[aria-pressed="true"]{background:var(--surface-page); color:var(--color-text-primary); font-weight:600}
+.seg-view button:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring); outline-offset:1px}
+
+.code-pane{
+  position:fixed; left:0; right:0; bottom:0; z-index:40;
+  display:flex; flex-direction:row;
+  background:var(--surface-page); border-top:1px solid var(--color-border-hairline);
+}
+/* 左文件树：运行时 / 页面 / assets 三组 */
+.code-tree{
+  width:var(--code-tree-w); flex:0 0 var(--code-tree-w); overflow:auto;
+  padding:var(--space-8) var(--space-8) var(--space-24);
+  background:var(--surface-subtle);
+  border-right:1px solid var(--color-border-hairline);
+}
+.code-tree-hd{padding:var(--space-8); font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.code-tree-group{padding:var(--space-12) var(--space-8) var(--space-4); font-size:var(--font-size-caption); color:var(--color-text-muted)}
+.code-file{
+  display:block; width:100%; text-align:left; border:0; background:none;
+  padding:var(--space-8); border-radius:var(--radius-sm);
+  font-family:inherit; font-size:var(--font-size-caption); line-height:var(--leading-body);
+  color:var(--color-text-secondary); cursor:pointer;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.code-file:hover{background:var(--color-state-hover); color:var(--color-text-body)}
+.code-file.on{background:var(--surface-page); color:var(--color-brand-ink); font-weight:600}
+.code-file:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring); outline-offset:-1px}
+.code-main{flex:1; min-width:0; display:flex; flex-direction:column}
+
+.code-pane-hd{
+  display:flex; align-items:center; justify-content:space-between; gap:var(--space-12);
+  padding:var(--space-8) var(--space-16); border-bottom:1px solid var(--color-border-hairline);
+  font-size:var(--font-size-caption); color:var(--color-text-tertiary);
+}
+.code-copy{
+  height:var(--seg-item-h); padding:0 var(--space-8); border:0; border-radius:var(--radius-sm);
+  background:var(--surface-subtle); color:var(--color-text-secondary);
+  font-family:inherit; font-size:var(--font-size-caption); cursor:pointer;
+}
+.code-copy:hover{background:var(--color-state-hover); color:var(--color-text-body)}
+.code-pane pre{
+  margin:0; padding:var(--space-12) var(--space-16) var(--space-24); overflow:auto; flex:1; min-height:0;
+  font-family:var(--font-family-mono);
+  font-size:var(--font-size-caption); line-height:var(--leading-body); color:var(--color-text-body);
+}
+.code-pane .lines{list-style:none; margin:0; padding:0; counter-reset:ln}
+.code-pane .lines>li{counter-increment:ln; white-space:pre-wrap; word-break:break-all}
+.code-pane .lines>li::before{
+  content:counter(ln); display:inline-block; width:3ch; margin-right:var(--space-12);
+  text-align:right; color:var(--color-text-muted); user-select:none;
+}

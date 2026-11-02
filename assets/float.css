@@ -1,0 +1,258 @@
+/* float.css —— 配置页的三件浮层：底部对话条 / 右下操作组 / 小智位。
+ *
+ * 为什么抽成一份：这三件在「组件配置」和「应用配置」两页上**完全一样**
+ * （一样的对话条、一样的保存草稿+发布新版本、一样的小智位）。
+ * 这个项目已经因为"同一类东西两处各写一套"返工过四次（.card-ic/.idc、两套间距 token、
+ * 两份组件清单、两处圆角档位），所以这次先抽共用件，页面只许调用、不许再写一份。
+ *
+ * 位置约定（2026-10-23 改过，这是唯一位置来源）：
+ *   对话区   底部居中，宽 min(760, 100vw-360)；上面历史面板、下面输入条
+ *   操作组   已从右下移到页面顶栏右侧（见 component.html #topbar）——
+ *            右下角只留小智一个浮球，三种形态（两矩形+一圆球）挤在一起是上一版最丑的地方
+ *   小智     右下，right:24，56×56
+ */
+
+/* 对话区在画布底部占多高 —— 由对话区自己的文件声明，画布只消费。
+   ★2026-10-29（值出处判据）：这个数原来直接写在 sys.css 的 .canvas padding 里，
+   而它的出处（输入条 60 高 + 底部 24 + 滚动到底的呼吸）全在本文件 —— 改一处看不见另一处。
+   172 = 输入条 60 + 底距 24 + 呼吸 88（2026-10-23 用户「不要遮挡」，148 时代输入条 56）。
+   ★2026-10-29 T1（未落）：正解是把它上移 tokens.css L3（跨文件令牌该在定义源里），
+   但那要先退役 tools/token-crossfile.tsv 的例外行——该件是判据锁内文件，不在本席写域，
+   本轮不动。现值仍由例外账放行，到期 2026-11-15。 */
+:root{ --fk-clear-bottom:172px; }
+
+/* ── 对话区：dock = 历史 + 输入条 ────────────────────────── */
+.fk-dock{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+  width:min(820px, calc(100vw - 144px));
+  display:flex; flex-direction:column; gap: 0; z-index:45;
+  /* 2026-10-30：长条常驻后，阴影与圆角归整块 dock，条与输入区不再各画一份 */
+  border-radius:var(--radius-panel); box-shadow:var(--shadow-floating);
+  transition:left .18s ease;
+}
+/* 历史面板与输入条是**一个整体**（上下拼起来的一张卡），不是两块浮卡：
+   上圆下平、底部无阴影，中间靠一条 1px 线分界。
+   ★ 2026-10-23 用户截图指出"打开历史样式变形"：接缝处原来是
+   「面板无下边框 + 输入条有上边框」—— 两个圆角块上下相接，那条线是画在
+   输入条上的，位置比面板的边沿内侧 1px，看起来就是**两块被硬拼在一起**。
+   现在线画在面板底部、输入条不再画上边框，接缝只有一条。 */
+.fk-hist{
+  background:var(--surface-page);
+  /* 2026-10-25 补回接缝线（体检 C15）：两块都是白底，阴影是 0 -2px（向上投），
+     所以接缝处什么分隔都没有 —— 面板和输入条糊成一整块，看不出是两段。
+     §1.1 允许的三种线之一就是"两块之间的分隔"，不是容器描边。 */
+  border:0; border-bottom:1px solid var(--color-border-hairline);
+  box-shadow:none;
+  border-radius:var(--radius-panel) var(--radius-panel) 0 0;
+  display:flex; flex-direction:column;
+  max-height:300px; min-height:0; overflow:hidden;
+}
+/* 2026-10-30：收起只收列表，长条留在输入框上面（用户要的"有一根长条"） */
+.fk-dock[data-hist="closed"] .fk-hist-list{display:none}
+.fk-hist-hd{
+  display:flex; align-items:center; gap:var(--space-4);
+  height:var(--hist-bar-h); padding:0 var(--space-8) 0 var(--space-12); flex:0 0 auto;
+}
+.fk-hist-tt{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.fk-hist-col{
+  height:28px; padding:0 var(--space-8); border:0; background:none; border-radius:var(--radius-sm);
+  color:var(--color-text-secondary); display:inline-flex; align-items:center; gap:var(--space-4);
+  font-family:inherit; font-size:var(--font-size-caption); cursor:pointer; flex:0 0 auto;
+}
+.fk-hist-col:hover{background:var(--color-state-hover); color:var(--color-text-body)}
+.fk-hist-col:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring); outline-offset:1px}
+.fk-hist-list{
+  padding: var(--space-12) var(--space-12) var(--space-12); overflow:auto; flex:1; min-height:96px;
+  display:flex; flex-direction:column; gap: var(--space-12);
+  /* 2026-10-30：列表现在在长条上面，分隔线画在它的下沿 */
+  border-bottom:1px solid var(--color-border-hairline);
+}
+.fk-hist-empty{color:var(--color-text-tertiary); font-size:var(--font-size-body); margin:0; padding:var(--space-4) 0; line-height:var(--leading-body)}
+/* 空历史时不占 96 的固定高度：一片白比一句提示更难看 */
+.fk-hist-list:has(.fk-hist-empty){min-height:0}
+.fk-msg{display:flex; flex-direction:column; gap:var(--space-4); font-size:var(--font-size-body); line-height:var(--leading-body); color:var(--color-text-body)}
+.fk-msg b{font-weight:400; font-size:var(--font-size-caption); line-height:var(--leading-caption); color:var(--color-text-tertiary)}
+.fk-msg.is-me{color:var(--color-text-secondary)}
+.fk-msg.is-me span{background:var(--surface-subtle); border-radius:var(--radius-sm); padding:var(--space-8) var(--space-12); align-self:flex-start}
+
+/* ── 发布后的改动卡（2026-10-27）──────────────────────────
+   版本号 + 一句人话 + 内容指纹 + 查看/恢复。
+   它必须和普通消息长得不一样：普通消息是"说了一句话"，这张卡是"这一版可以回去"。 */
+.fk-msg.is-card .fk-card{
+  align-self:stretch; border:1px solid var(--color-border-card); border-radius:var(--radius-panel);
+  background:var(--surface-page); padding:10px 12px;
+}
+.fk-card-hd{display:flex; align-items:center; gap:8px; margin-bottom:6px}
+.fk-card-v{
+  font-size:var(--font-size-caption); font-weight:600; color:var(--color-brand-ink);
+  background:var(--color-brand-surface); border-radius:var(--radius-pill); padding:2px 8px;
+}
+.fk-card-at{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.fk-card-hash{font-size:var(--font-size-caption); color:var(--color-text-tertiary); margin-left:auto; font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.fk-card-sum{margin:0 0 8px; font-size:var(--font-size-body); line-height:1.55; color:var(--color-text-body)}
+/* 版本记录已不在的历史卡：只说事实，不给动作（2026-11-02） */
+.fk-card.is-gone{background:var(--surface-page); opacity:.85}
+.fk-card.is-gone .fk-card-sum{margin-bottom:0; color:var(--color-text-tertiary)}
+/* 发布回执里的客户地址（2026-10-28 E44）：一行可读 + 一颗复制。
+   地址很长时截断而不换行 —— 卡面高度固定，换行会把下面两个动作挤出卡外。 */
+.fk-card-url{display:flex; align-items:center; gap:var(--space-8); margin:0 0 var(--space-8)}
+.fk-card-url code{
+  flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:var(--font-size-caption); color:var(--color-text-secondary);
+}
+.fk-card-ops{display:flex; align-items:center; gap:8px}
+.fk-card-link{font-size:var(--font-size-caption); color:var(--color-brand-ink); text-decoration:none}
+.fk-card-link:hover{text-decoration:underline}
+.fk-card-btn{
+  height:26px; padding:0 10px; border:1px solid var(--color-border-card); border-radius:var(--radius-sm);
+  background:var(--surface-page); color:var(--color-text-secondary); font-size:var(--font-size-caption); font-family:inherit; cursor:pointer;
+}
+.fk-card-btn:hover{border-color:var(--color-brand); color:var(--color-brand-ink)}
+
+/* 输入条：dock 内的一行，不再自己定位 */
+.fk-bar{
+  display:flex; align-items:center; gap: 8px; flex:0 0 auto;
+  background:var(--surface-page); border:0;
+  border-radius:0 0 var(--radius-panel) var(--radius-panel);
+  box-shadow:none; padding: 0 12px 0 0;
+  height:60px;
+}
+/* 历史收起时输入条才是独立的一张卡（四角都是圆的） */
+.fk-dock[data-hist="closed"] .fk-bar{border-radius:0 0 var(--radius-panel) var(--radius-panel); box-shadow:none}
+/* 展开态：接缝那条线由 .fk-hist 的下边框画，输入条不再画上边框 */
+.fk-dock[data-hist="open"] .fk-bar{border:0; box-shadow:none}
+.fk-bar:focus-within{box-shadow:var(--shadow-floating), 0 0 0 3px var(--color-focus-halo)}
+/* 展开历史时给画布补下边距：面板高 142 + 输入条 60 + 上下留白 ≈ 240。
+   不补的话，页面底部的表格/分页会被面板压住 —— 用户看到的"变形"有一半是这个。
+   用 body class 而不是 :has()，因为 .fk-dock 是 fixed 且由 JS 控制状态，class 更可靠。 */
+body.fk-hist-open #canvas{padding-bottom:248px}
+#canvas{transition:padding-bottom .2s ease}
+
+/* 展开态：左侧抓手 + 输入 + 发送 + 收起 */
+/* ★ 抓手同时是"这一页的输入区"的身份标记：品牌蓝方块 + 六点网格。
+   六点是拖动把手的标准符号；它不是 AI 标识 —— 小智在右下角那颗球上，
+   两者是不同层面的东西（全局操作代理 vs 页面级意图输入），不能长得像。 */
+.fk-grip{
+  /* 2026-10-30（用户：「拖拽操作没有样式」「左侧增加一个拖拽的图标」）：
+     原来只有一条 10px 的手势区、没有任何图形。现在宽 24、画六点网格，
+     hover 给底色，焦点有环 —— 看得见，也摸得到。 */
+  width:24px; height:40px; flex:0 0 24px; margin-left:4px;
+  background:none; border:0; cursor:grab;
+  display:grid; place-items:center; border-radius:var(--radius-sm);
+}
+.fk-grip:active{cursor:grabbing}
+.fk-grip:hover{background:var(--color-state-hover)}
+.fk-grip:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:1px}
+.fk-grip-ico{
+  width:12px; height:14px;
+  display:grid; grid-template-columns:repeat(2, 3px); grid-auto-rows:3px;
+  gap:2px 2.5px; place-content:center;
+}
+.fk-grip-ico i{display:block;width:3px;height:3px;border-radius:var(--radius-pill);background:var(--color-text-muted);opacity:.92}
+.fk-ta{
+  flex:1; min-width:0; border:0; outline:0; resize:none; background:transparent;
+  /* 2026-10-27 学飞象：输入框是阅读层，不是工具栏。16/26 让"说话"像正文，
+     14/21 会让人下意识写短句。布局仍是全屏画布 + 悬浮条，不分左右栏。 */
+  font-size:var(--font-size-heading); line-height:26px; color:var(--color-text-body); padding: 0; max-height:120px;
+  font-family:inherit;
+}
+.fk-ta::placeholder{color:var(--color-text-muted)}
+.fk-send{
+  width:32px; height:32px; flex:0 0 32px; border-radius:var(--radius-control);
+  /* 空闲态不能用白箭头压浅灰底（--bg 压在 --line-2 上 L=1.0，等于看不见，艾达截图证过）。
+     空闲用 --ink-3 让它可辨；只有"可发送"时才转成品牌底 + 白箭头。 */
+  background:var(--color-border-card); color:var(--color-text-tertiary); display:grid; place-items:center;
+  border:0; cursor:not-allowed;
+}
+.fk-send[data-ready="true"]{background:var(--color-brand); color:var(--color-text-inverse); cursor:pointer}
+.fk-send[data-ready="true"]:hover{background:var(--color-brand-active)}
+
+/* ── 操作组 ─────────────────────────────────────────────── */
+/* 右下浮动版：只给还没迁到顶栏的页面（app.html）用 */
+.fk-ops{
+  position:fixed; right:96px; bottom:24px; z-index:46;
+  display:flex; align-items:center; gap: 8px;
+}
+/* 顶栏操作组：只做布局，不新造按钮。
+   ★ 第一版我另写了一套 .tb-btn（32 高 / r-s / 字号 14），而 sys.css 的 .btn 早就是同一个东西
+   （.btn 32 高 / .btn.primary 品牌底 / .btn.ghost 白描边）—— 当场犯了这次要治的病：同名不同实现。
+   已删；顶栏布局沿用 sys.css 的 .tb-ops，float.css 不再重复定义。 */
+.fk-op{
+  height:32px; padding: 0 14px; border-radius:var(--radius-xs); font-size:var(--font-size-body);
+  border:0; background:var(--surface-page); color:var(--color-text-secondary); cursor:pointer; box-shadow:0 1px 3px var(--shadow-color-1);
+}
+.fk-op:hover{background:var(--color-state-hover); border-color:var(--color-brand); color:var(--color-text-body)}
+.fk-op[data-kind="primary"]{
+  background:var(--color-brand); border-color:var(--color-brand); color:var(--color-text-inverse);
+}
+.fk-op[data-kind="primary"]:hover{background:var(--color-brand-active); border-color:var(--color-brand-active)}
+
+/* ── 独立胶囊（应用页的「装配组件」这一类页面级动作）─────── */
+.fk-chip{
+  position:fixed; right:96px; bottom:76px; z-index:46;
+  height:36px; padding: 0 14px; border-radius:var(--radius-pill);
+  display:inline-flex; align-items:center; gap: 8px;
+  background:var(--surface-page); border:1px solid var(--color-border-card); box-shadow:var(--shadow-floating);
+  font-size:var(--font-size-body); color:var(--color-text-secondary); cursor:pointer;
+}
+.fk-chip:hover{border-color:var(--color-brand); color:var(--color-brand-ink)}
+.fk-chip b{font-weight:600; color:var(--color-text-body)}
+
+/* ── 小智位（由 xiaozhi.js 渲染浮球，这里只定初始位置）── */
+.fk-fab-slot{position:fixed; right:24px; bottom:24px; width:56px; height:56px; z-index:47; pointer-events:none}
+
+/* 输入条左侧的「对话」入口 = **折叠条**：收起时它同时是末条摘要 + 状态 + 未读点。
+   ★ 2026-10-28（设计判定：按"末条要不要用户动作"自适应）：告知就收起，提问／报错就展开。
+     收起态的全部意义是让表格能读，所以折叠条长在 60px 的输入条里、净增高 0 ——
+     另起一行要多 32px，那 32px 正好落回表格末几行上（实测行带 786–838）。
+   宽度上限 340：再宽就把输入框挤到 400 以下，"边看边改"的主路径先受损。 */
+/* 2026-10-30：长条 = 整条摘要区，不再是输入框里的胶囊按钮 */
+.fk-hist-btn{
+  flex:1 1 auto; min-width:0; max-width:none; height:var(--hist-bar-h); margin:0;
+  padding:0; border:0; border-radius:var(--radius-sm);
+  background:none; color:var(--color-text-secondary);
+  display:flex; align-items:center; gap:8px;
+  font-family:inherit; font-size:var(--font-size-caption); line-height:1;
+  text-align:left; cursor:pointer;
+  transition:background .16s, color .16s;
+}
+.fk-hist-btn:hover{background:var(--color-state-hover); color:var(--color-text-body)}
+/* 展开态长条继续在场 —— 它就是收起入口，不再让位 */
+
+.fk-peek-tt{flex:0 0 auto; color:var(--color-text-tertiary)}
+.fk-hist-btn[data-has="0"] .fk-peek-tt{color:var(--color-text-secondary)}
+.fk-peek-st{display:flex; align-items:center; gap:4px; flex:0 0 auto; font-weight:600}
+/* 点是"状态"的可视线索，颜色继承标签（currentColor），一处状态色只写一行 */
+.fk-peek-dot{width:6px; height:6px; border-radius:var(--radius-pill); background:currentColor; flex:0 0 6px}
+.fk-peek-sum{
+  flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  color:var(--color-text-secondary);
+}
+/* 未读点：收起期间新到过消息才出现；展开即清（setCollapsed 里清零） */
+.fk-peek-unread{width:6px; height:6px; border-radius:var(--radius-pill); background:var(--color-brand); flex:0 0 6px; display:none}
+.fk-hist-btn[data-unread="1"] .fk-peek-unread{display:block}
+/* 展开指示（F6）：箭头 + 「展开」两个字。★ 文字才是指示，颜色不是 ——
+   只把字色改深，用户仍然要靠猜"这块能不能点"。没有历史（data-has=0）时也在，
+   因为那时它只是一颗写着「对话」的条，更需要说明点下去会发生什么。 */
+.fk-peek-more{
+  flex:0 0 auto; display:inline-flex; align-items:center; gap:var(--space-4);
+  color:var(--color-text-secondary);
+}
+.fk-peek-more>span{white-space:nowrap}
+.fk-peek-more svg{display:block}
+/* 状态色只用 tokens.css 的语义档（成功／待确认／失败／进行中），不新造色 */
+.fk-hist-btn[data-st="ok"] .fk-peek-st{color:var(--color-success-ink)}
+.fk-hist-btn[data-st="ask"] .fk-peek-st{color:var(--color-warning)}
+.fk-hist-btn[data-st="err"] .fk-peek-st{color:var(--color-danger)}
+.fk-hist-btn[data-st="run"] .fk-peek-st{color:var(--color-text-secondary)}
+/* 还没有对话：只剩「对话」两个字，不留空的状态位 */
+.fk-hist-btn[data-has="0"] .fk-peek-st,
+.fk-hist-btn[data-has="0"] .fk-peek-sum,
+.fk-hist-btn[data-has="0"] .fk-peek-unread{display:none}
+
+/* 2026-10-30：以下五条原散在 sys.css 与 component.html（页面/全局层），
+   按 components.spec.md §25 收进对话浮条组件层，保证 .fk-dock 只有一个实现处。 */
+body[data-mode="view"] .fk-dock{display:none !important}
+body[data-drawer="on"] .fk-dock{left:50%}
+body.is-empty .fk-dock{top:calc(50% + 132px); bottom:auto}
+@media (prefers-reduced-motion:reduce){.fk-dock{transition:none}}

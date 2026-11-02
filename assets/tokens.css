@@ -1,0 +1,666 @@
+/* ─────────────────────────────────────────────────────────────
+   tokens.css —— 全站唯一的取值来源。
+   三层结构（2026-10-28 立，D3「令牌唯一真源」）：
+     L1 primitive  --p-*     原始值。只为 L2 提供原料，组件不许直接引用。
+     L2 semantic   意图名     组件只许引用这一层（--surface-* / --color-* / --space-* /
+                              --radius-* / --shadow-* / --duration-* / --font-size-*）。
+     L3 component  仅当语义层表达不了时加（如 --switch-status-w）。加之前先问：
+                    「这是不是一个新语义角色」——是就进 L2，不是才进 L3。
+     L0 兼容层     2026-10-28 之前的 126 个旧名，一个不删。全部转成 var(--语义名) 并标
+                    并标 @deprecated → 新名。页面仍在引用，迁移完成前不许删。
+   规矩：同一取值只允许在 L1 出现一次字面量；L2/L3/L0 只许写 var()。
+   出处：真源 http://172.26.26.61:10612/admin/#/claw/skills 实测（1920×873）。
+   ⚠ 底色以**像素**为准 —— 但**像素必须先做色彩管理再读**。
+     真源侧栏 computed 报 rgb(0,21,41) 深蓝，像素实为浅灰；只看 computed 会把整个侧栏刷成深蓝。
+     反过来，直接读截图原始字节也会错：bsk 抓的 PNG 内嵌显示器 ICC，直读按亮度分段偏
+     （近白 −2 / 中灰 −11 / 饱和 −18）。读像素要么按 iCCP 转 sRGB，要么同图注入已知色块当标尺。
+     量底色取**众数**，不取均值、不取中心像素、不量化。
+   ───────────────────────────────────────────────────────────── */
+
+/* ═══ L1 · primitive（原始值；只有这一层许写字面量）═══ */
+:root{
+  /* 中性：面与线（由浅到深） */
+  --p-white:#FFFFFF;
+  --p-gray-25:#FAFBFC;   --p-gray-50:#F5F6F9;   --p-gray-75:#F3F4F7;  --p-gray-85:#F3F4F6;
+  --p-gray-90:#F1F3F7;   --p-gray-100:#F1F2F6;  --p-gray-125:#EFF1F5; --p-gray-150:#F0F0F0;
+  --p-gray-200:#E5E7EB;  --p-gray-300:#D9D9D9;  --p-gray-350:#BBBFCD; --p-gray-400:#9DA3B2;
+  --p-gray-500:#7A8496;  --p-gray-600:#747F90;  --p-gray-650:#667085;
+  --p-slate-700:#5B6C98; --p-neutral-900:#252524;
+
+  /* 墨（黑/冷灰的透明度档） */
+  --p-ink-90:rgba(0,0,0,.9);   --p-ink-85:rgba(0,0,0,.85); --p-ink-70:rgba(0,0,0,.7);
+  --p-ink-65:rgba(0,0,0,.65);  --p-ink-58:rgba(0,0,0,.58); --p-ink-25:rgba(0,0,0,.25);
+  --p-ink-10:rgba(0,0,0,.1);   --p-ink-05:rgba(0,0,0,.05); --p-ink-03:rgba(0,0,0,.03);
+
+  /* 蓝：品牌主色族（浅 → 深） */
+  --p-blue-25:#F8FAFF;   --p-blue-50:#EEF2FF;  --p-blue-75:#ECF0FA;  --p-blue-100:#D9E3FB;
+  --p-blue-500:#5D83FF;  --p-blue-550:#517AFF; --p-blue-600:#587FFF; --p-blue-650:#3D6BFF;
+  --p-blue-700:#3D63E0;  --p-blue-800:#2F55C0;
+  --p-blue-a00:rgba(88,127,255,0);  --p-blue-a10:rgba(88,127,255,.10);
+  --p-blue-a24:rgba(88,127,255,.24); --p-blue-a42:rgba(88,127,255,.42);
+  --p-blue-a55:rgba(88,127,255,.55);
+
+  /* 靛 / 青 / 紫：类型编码与封面渐变 */
+  --p-indigo-600:#4B63F5; --p-indigo-400:#7A8CFF; --p-indigo-200:#B9C4FF;
+  --p-teal-650:#0E8FA8;   --p-teal-600:#0E9F8E;   --p-teal-400:#3BB6CE; --p-teal-200:#A6E4F0;
+  --p-violet-700:#6D4BE0; --p-violet-600:#7C5CF0; --p-violet-400:#9A7BFF; --p-violet-200:#D3C6FF;
+  --p-teal-a00:rgba(14,143,168,0); --p-teal-a07:rgba(14,143,168,.07);
+
+  /* 状态色 */
+  --p-green-500:#0ABC95; --p-green-50:#EBFAF7; --p-green-800:#0F6B49;
+  --p-amber-800:#9C4A08; --p-amber-700:#C2761B; --p-amber-100:#FDF1E3; --p-amber-50:#FCF1E3;
+  --p-red-700:#B91C1C;   --p-red-50:#FDECEC;
+  --p-violet-50:#F1EDFE; --p-teal-50:#E6F6F3;
+  --p-cyan-400:#31D6FF;
+
+  /* 投影 / 遮罩 / 玻璃（同一组冷灰的透明度档） */
+  --p-shadow-04:rgba(25,30,41,.04);  --p-shadow-06:rgba(25,30,41,.06);
+  --p-shadow-07:rgba(25,30,41,.07);  --p-shadow-08:rgba(25,30,41,.08);
+  --p-shadow-10:rgba(25,30,41,.10);  --p-shadow-12:rgba(25,30,41,.12);
+  --p-shadow-14:rgba(25,30,41,.14);  --p-shadow-22:rgba(25,30,41,.22);
+  --p-shadow-black-10:rgba(0,0,0,.1);
+  --p-shadow-lav-22:rgba(170,175,210,.22);
+  --p-overlay-52:rgba(25,30,41,.52);
+  --p-white-a55:rgba(255,255,255,.55); --p-white-a86:rgba(255,255,255,.86); --p-white-a92:rgba(255,255,255,.92);
+
+  /* 间距台阶（4 的倍数；--p-space-4 与 --p-size-4 同值不同刻度，不许互借） */
+  --p-space-4:4px;  --p-space-8:8px;  --p-space-12:12px;
+  --p-space-16:16px; --p-space-24:24px; --p-space-32:32px;
+
+  /* 圆角台阶 */
+  --p-radius-2:2px; --p-radius-4:4px; --p-radius-6:6px; --p-radius-8:8px;
+  --p-radius-12:12px; --p-radius-20:20px; --p-radius-999:999px;
+
+  /* 字号 / 行高台阶（真源口径：只用 12/14/16/20） */
+  --p-font-12:12px; --p-font-14:14px; --p-font-16:16px; --p-font-20:20px;
+  --p-line-16:16px; --p-line-18:18px; --p-line-19:19px; --p-line-20:20px;
+  --p-line-22:22px; --p-line-30:30px;
+
+  /* 尺寸基数（控件高、描边、定宽件的原料） */
+  --p-size-05:.5px;                                   /* 按压位移：与 sys.css `.btn:active` 同值 */
+  --p-size-1:1px;  --p-size-2:2px;   --p-size-6:6px;   --p-size-10:10px;
+  --p-size-16:16px; --p-size-20:20px;
+  --p-size-24:24px; --p-size-32:32px; --p-size-36:36px; --p-size-52:52px; --p-size-66:66px;
+  --p-size-168:168px; --p-size-200:200px; --p-size-220:220px; --p-size-236:236px;
+  --p-size-480:480px;  /* 2026-10-29：表格行高 52 / 弹窗最大宽 480，均为现盘已在用的尺寸，不是新刻度 */
+
+  /* 动效原料（150–250ms；这套界面没有"长动画"） */
+  --p-dur-150:150ms; --p-dur-200:200ms; --p-dur-250:250ms;
+  --p-ease-out:cubic-bezier(.2,.8,.2,1);
+  --p-ease-in-out:cubic-bezier(.4,0,.2,1);
+}
+
+/* ═══ L2 · semantic（组件只许引用这一层）═══ */
+:root{
+  /* 面 */
+  --surface-canvas:var(--p-gray-50);
+  --surface-page:var(--p-white);
+  --surface-sider:var(--p-gray-75);
+  --surface-raised:var(--p-white);
+  --surface-subtle:var(--p-gray-25);
+  --surface-sunken:var(--p-gray-100);
+  --surface-sunken-2:var(--p-gray-125);
+  --surface-overlay:var(--p-overlay-52);
+  --surface-veil:var(--p-white-a86);
+  --surface-glass:var(--p-white-a92);
+  --surface-glass-line:var(--p-white-a55);
+
+  /* 文字 */
+  --color-text-primary:var(--p-ink-90);
+  --color-text-body:var(--p-ink-85);
+  --color-text-secondary:var(--p-ink-65);
+  --color-text-tertiary:var(--p-ink-58);
+  --color-text-muted:var(--p-ink-25);
+  --color-text-inverse:var(--p-white);
+  --color-text-subtle:var(--p-gray-650);
+  --color-text-nav:var(--p-ink-70);
+  --color-text-card-meta:var(--p-slate-700);
+  --color-icon-nav:var(--p-gray-600);
+  --color-icon-card:var(--p-neutral-900);
+
+  /* 品牌 */
+  --color-brand:var(--p-blue-600);
+  --color-brand-hover:var(--p-blue-650);
+  --color-brand-active:var(--p-blue-700);
+  --color-brand-ink:var(--p-blue-800);
+  --color-brand-surface:var(--p-blue-50);
+  --color-brand-surface-2:var(--p-blue-100);
+  --color-brand-nav-active:var(--p-blue-550);
+  --color-brand-glow:var(--p-blue-a42);
+  --color-brand-glow-strong:var(--p-blue-a55);
+
+  /* 描边与焦点 */
+  --color-border-hairline:var(--p-gray-150);
+  --color-border-card:var(--p-gray-200);
+  --color-border-control:var(--p-gray-300);
+  --color-border-card-footer:var(--p-gray-85);
+  --color-focus-ring:var(--p-blue-600);
+  --color-focus-halo:var(--p-blue-a24);
+
+  /* 状态（三对同构：底 + 字） */
+  --color-success:var(--p-green-500);
+  --color-success-surface:var(--p-green-50);
+  --color-success-ink:var(--p-green-800);
+  --color-warning:var(--p-amber-800);
+  --color-warning-surface:var(--p-amber-100);
+  --color-danger:var(--p-red-700);
+  --color-danger-surface:var(--p-red-50);
+
+  /* 交互底 */
+  --color-state-hover:var(--p-ink-03);
+  --color-state-selected:var(--p-ink-05);
+
+  /* 类型编码（颜色只回答"这是什么零件"，不是装饰） */
+  --color-type-page:var(--p-blue-600);    --color-type-page-surface:var(--p-blue-50);
+  --color-type-cap:var(--p-violet-600);   --color-type-cap-surface:var(--p-violet-50);
+  --color-type-data:var(--p-teal-600);    --color-type-data-surface:var(--p-teal-50);
+  --color-type-cfg:var(--p-amber-700);    --color-type-cfg-surface:var(--p-amber-50);
+  --color-type-slate:var(--p-gray-500);   --color-type-slate-surface:var(--p-gray-90);
+
+  /* 角标 */
+  --color-badge-live-from:var(--p-blue-500); --color-badge-live-to:var(--p-cyan-400);
+  --color-badge-off-from:var(--p-gray-400);  --color-badge-off-to:var(--p-gray-350);
+
+  /* 渐变（三处：卡片面 / 预览舞台 / 小智浮球面板） */
+  --gradient-card-glow:
+    radial-gradient(72% 58% at 16% -8%, color-mix(in srgb,var(--color-brand) 30%,transparent) 0%, transparent 68%),
+    radial-gradient(62% 46% at 88% 2%, color-mix(in srgb,var(--color-brand) 17%,transparent) 0%, transparent 72%),
+    radial-gradient(96% 46% at 50% 0%, color-mix(in srgb,var(--color-brand) 11%,transparent) 0%, transparent 82%);
+  --gradient-stage:
+    radial-gradient(120% 90% at 50% -18%, var(--p-blue-a10), var(--p-blue-a00) 62%),
+    radial-gradient(80% 60% at 100% 100%, var(--p-teal-a07), var(--p-teal-a00) 60%);
+  --gradient-cover:linear-gradient(180deg,var(--p-blue-25) 0%,var(--p-blue-75) 100%);
+  --gradient-tile-page-from:var(--p-indigo-600); --gradient-tile-page-mid:var(--p-indigo-400); --gradient-tile-page-to:var(--p-indigo-200);
+  --gradient-tile-cap-from:var(--p-teal-650);    --gradient-tile-cap-mid:var(--p-teal-400);    --gradient-tile-cap-to:var(--p-teal-200);
+  --gradient-tile-form-from:var(--p-violet-700); --gradient-tile-form-mid:var(--p-violet-400); --gradient-tile-form-to:var(--p-violet-200);
+  --color-stop-thumb-fade:46%;
+
+  /* 间距（台阶 + 角色别名；角色别名只表达"用在哪儿"，不引入新值） */
+  --space-4:var(--p-space-4);   --space-8:var(--p-space-8);   --space-12:var(--p-space-12);
+  --space-16:var(--p-space-16); --space-24:var(--p-space-24); --space-32:var(--p-space-32);
+  --space-inline-xs:var(--space-4);  --space-inline-sm:var(--space-8);
+  --space-inline-md:var(--space-12); --space-inline-lg:var(--space-16);
+  --space-stack-sm:var(--space-8);   --space-stack-md:var(--space-12);
+  --space-stack-lg:var(--space-16);  --space-section:var(--space-24); --space-page:var(--space-32);
+  --space-menu-offset:var(--p-size-6);
+
+  /* 圆角 */
+  --radius-xs:var(--p-radius-2);
+  --radius-tag:var(--p-radius-4);
+  --radius-sm:var(--p-radius-6);
+  --radius-control:var(--p-radius-8);
+  --radius-panel:var(--p-radius-12);
+  --radius-overlay:var(--p-radius-20);
+  --radius-pill:var(--p-radius-999);
+
+  /* 字体 */
+  --font-family-sans:"PingFang SC","Inter",system-ui,-apple-system,"Microsoft YaHei",sans-serif;
+  --font-family-mono:"JetBrains Mono",ui-monospace,monospace;
+  --font-weight-regular:400; --font-weight-medium:500; --font-weight-semibold:600;
+  --font-size-caption:var(--p-font-12);
+  --font-size-body:var(--p-font-14);
+  --font-size-heading:var(--p-font-16);
+  --font-size-title:var(--p-font-20);   /* 卡片标题（真实浏览器实测线上 .app-title = 20px / 行高 30） */
+  --font-size-display:var(--p-font-20);
+  --leading-caption:var(--p-line-18);
+  --leading-caption-meta:var(--p-line-16);
+  --leading-card-desc:var(--p-line-19);
+  --leading-body:var(--p-line-20);
+  --leading-title:var(--p-line-22);
+  --leading-display:var(--p-line-30);
+  --measure-card-desc:20em;
+  --size-desc-2l:calc(2 * var(--leading-card-desc));
+
+  /* 尺寸 */
+  --size-sider:var(--p-size-200);
+  --size-control-h:var(--p-size-32);
+  --size-border-w:var(--p-size-1);
+  --size-focus-ring-w:var(--p-size-2);
+  --size-focus-ring-offset:var(--p-size-2);
+  --size-type-dot:var(--p-size-6);
+  --size-press-offset:var(--p-size-05);   /* 按下位移；规格 §6 要求"沿用 .btn:active 的位移" */
+
+  /* 阴影（颜色全部走 L1 的透明度档；一种影调，不写纯黑） */
+  --shadow-color-1:var(--p-shadow-04);
+  --shadow-color-2:var(--p-shadow-06);
+  --shadow-flat:0 1px 2px var(--shadow-color-1);
+  --shadow-thumb:0 1px 2px var(--p-shadow-07);
+  --shadow-card:0 2px 4px var(--p-shadow-10), 0 4px 10px var(--p-shadow-06), 0 8px 22px var(--p-shadow-07);
+  --shadow-card-hover:0 2px 6px var(--p-shadow-08), 0 10px 28px var(--p-shadow-12);
+  --shadow-card-soft:0 3px 9.7px 0 var(--p-shadow-lav-22);
+  --shadow-card-ring:0 0 0 var(--size-border-w) var(--shadow-color-1), var(--shadow-card);
+  --shadow-card-ring-hover:0 0 0 var(--size-border-w) var(--shadow-color-1), var(--shadow-card-hover);
+  --shadow-btn:0 2px 8px -2px var(--color-brand-glow);
+  --shadow-btn-hover:0 4px 14px -2px var(--color-brand-glow-strong);
+  --shadow-menu:0 4px 14px var(--p-shadow-black-10);
+  --shadow-dialog:0 24px 64px var(--p-shadow-22), 0 4px 12px var(--p-shadow-10);
+  --shadow-floating:0 8px 24px var(--p-shadow-14), 0 2px 6px var(--p-shadow-08);
+
+  /* 动效（新增；现行 sys.css 的 .15s/.16s/.18s 是迁移债务，见 DESIGN.md §6） */
+  --duration-fast:var(--p-dur-150);
+  --duration-base:var(--p-dur-200);
+  --duration-slow:var(--p-dur-250);
+  --ease-out:var(--p-ease-out);
+  --ease-in-out:var(--p-ease-in-out);
+}
+
+/* ═══ L3 · component（语义层表达不了才加；每条写明服务对象）═══ */
+:root{
+  --switch-status-w:var(--p-size-66);   /* 组件卡三态开关定宽：启用/禁用/未发布同宽 */
+  --switch-track-w:var(--p-size-36);    /* 布尔开关轨道 */
+  --switch-track-h:var(--p-size-20);
+  --switch-knob:var(--p-size-16);
+  --switch-status-dot:var(--p-size-6);  /* 状态开关左侧小点 */
+  --popover-w:var(--p-size-220);        /* 「被 N 个应用使用」浮层 */
+  --tooltip-max-width:var(--p-size-236);/* 组件卡浮层宽上限 */
+  --menu-min-width:var(--p-size-168);   /* ⋯ 菜单最小宽 */
+  --menu-item-h:var(--p-size-32);       /* 菜单项高（= 命中区 32） */
+  /* ★2026-10-28 组件更新提示（《设计-组件更新提示-20261028》§7 拍板结论）：
+     --chip-h 20 —— 状态胶囊的高。取现盘 .kc-tag 的实测高（20），
+       components.spec.md §6 那条 22 作废（不新造刻度，能复现盘就复用）。
+     --card-corner-inset 10 —— 卡内角标的上边位。原来 .kc-tag 的 top:10 是字面值，
+       这里把它变成一条有名字的位；既有 .kc-tag 一字未动（不动无关件），
+       新件 .kc-upd 与它同值 ⇒ 同一排两个标签基线一致。 */
+  --chip-h:var(--p-size-20);
+  --card-corner-inset:var(--p-size-10);
+
+  /* ── 2026-10-29 组件级令牌（DGS-03）────────────────────────────────
+     清单：《设计-前端组件令牌清单-20261029》§2（62 条，按组件顺序）。
+     规矩：L3 只写 var()；只引 L2；不得引入新值。
+     两条例外（清单 §1 点名）：--tb-row-h / --dialog-max-w 直引**新增 L1**
+     --p-size-52 / --p-size-480 —— 都是现盘已在用的具体尺寸，L2 无此角色。 */
+
+  /* 按钮 Button（6） */
+  --btn-height:var(--size-control-h);
+  --btn-radius:var(--radius-control);
+  --btn-pad-x:var(--space-inline-lg);
+  /* 2026-10-29 裁决 #1：原 `var(--space-inline-xs)`=4 无组件规范依据；
+     现盘 `.btn` gap 是 `--space-8`=8（sys.css:121），改值对齐并接线。
+     盘面证据：《设计-L3组件令牌29条裁决-20261029》§逐条 #1。 */
+  --btn-gap:var(--space-8);
+  --btn-disabled-bg:var(--surface-sunken-2);
+  --btn-disabled-fg:var(--color-text-secondary);
+
+  /* 列表卡 AppCard（5） */
+  --card-radius:var(--radius-panel);
+  /* 2026-10-29 裁决 #2：卡靠 1px 收边环分界（`.kcard` 现盘 sys.css:895 用 `--shadow-card-ring`）；
+     原 `--shadow-card` 无环，off 态（sys.css:452）用本令牌会丢环。改值对齐并接线。
+     盘面证据：《设计-L3组件令牌29条裁决-20261029》§逐条 #2。 */
+  /* ★2026-11-01（用户原话）：「为什么要加这种阴影就很诡异，你看我们原本的系统里没有这种阴影，
+     而且我觉得你这种卡片的阴影一点也不好看……原来的时候我们其实是选中的时候可能会有这么一个阴影，
+     是能够说哦，其实是选中状态」。**阴影是状态，不是默认装饰。**
+     改法：
+       常态 = 只有一圈 1px 的收边环（0 0 0 1px 4% 黑）。它不是阴影，是"边界"，不带方向、不投影。
+       悬停 = 环加深一档，仍然不投影。
+       选中 = 才用真正的阴影（--card-shadow-selected），三层叠加、带方向。
+     原来的 --shadow-card-ring 里塞了 --shadow-card（2/4/10 三层投影），
+     等于每张卡默认就"浮"着 —— 一屏六张，六块都浮，谁也没浮，只剩脏。
+     ★退出机制：如果以后产品改成"卡片是独立浮层/拖拽面板"，允许恢复默认投影；
+       纯列表页保持"默认无投影"。判据：卡片在页面流里 → 不投影；卡片浮在内容之上 → 投影。 */
+  --card-shadow:0 0 0 var(--size-border-w) var(--shadow-color-1);
+  --card-shadow-hover:0 0 0 var(--size-border-w) var(--shadow-color-2);
+  /* 选中态：这是"一个"阴影该有的样子 —— 有方向、有层次，且只出现在被选中的那张卡上 */
+  --card-shadow-selected:0 1px 2px var(--p-shadow-08), 0 8px 24px -6px var(--p-shadow-14);
+  --card-pad:var(--space-stack-lg);
+  --card-off-fg:var(--color-text-secondary);
+
+  /* 组件卡 ComponentCard（5） */
+  --ccard-radius:var(--radius-panel);
+  /* 2026-11-01：与 --card-shadow 同一条口径 —— 组件卡也不许默认浮着（用户：「阴影很诡异」）。
+     两页材质同源，改一起改。 */
+  --ccard-shadow:var(--card-shadow);
+  --ccard-shadow-hover:var(--card-shadow-hover);
+  --ccard-meta-fg:var(--color-text-secondary);
+  /* 2026-10-29 删除 `--ccard-dot`：组件卡 6px 类型点已从盘面移除（components.html 无 `.cc-dot`），
+     零消费端；点由 `--size-type-dot` / `--status-dot` 承担。裁决见《设计-L3组件令牌29条裁决-20261029》追加发现。 */
+
+  /* 版本行 VersionRow（5） */
+  --ver-radius:var(--radius-panel);
+  --ver-bg:var(--surface-sunken-2);
+  --ver-pad-y:var(--space-stack-sm);
+  --ver-pad-x:var(--space-inline-md);
+  --ver-gap:var(--space-stack-sm);
+
+  /* 表格 Table（5；`--tb-radius` 2026-10-29 删除：`.tb` 四角由外层容器裁，给表体加圆角会切行底，零落点。
+     裁决见《设计-L3组件令牌29条裁决-20261029》§逐条 #8） */
+  --tb-row-h:var(--p-size-52);
+  --tb-cell-pad-x:var(--space-inline-md);
+  --tb-line:var(--color-border-hairline);
+  --tb-hover-bg:var(--surface-subtle);
+  --tb-selected-bg:var(--color-state-selected);
+
+  /* 胶囊 Chip（2；--chip-h 已有）
+     `--chip-dot` 2026-10-29 删除：`.chip` / `.cond` 无点，点由 `--status-dot` / `--size-type-dot` 承担。
+     裁决见《设计-L3组件令牌29条裁决-20261029》§逐条 #10 */
+  --chip-radius:var(--radius-pill);
+  --chip-pad-x:var(--space-inline-sm);
+
+  /* 视图切换 / 代码面板（2026-10-30，服务 .seg-view / .code-pane / .code-tree）
+     这三条是组件尺寸，语义层表达不了；数值各只有一处消费者。 */
+  --seg-h:28px;
+  --seg-item-h:24px;
+  --code-tree-w:210px;
+  --hist-bar-h:40px;   /* 对话历史长条高度（服务 .fk-hist-hd / .fk-hist-btn） */
+
+  /* 开关 Switch（4；--switch-* 几何五条已有） */
+  --switch-radius:var(--radius-pill);
+  /* 2026-10-29 裁决 #11：「开」是布尔动作态，不是「成功」结果；success 只用于结果/状态。
+     现盘 `.nf-sw button[aria-checked="true"]` 用 `--color-brand` #587FFF（sys.css:385），改值对齐并接线。
+     盘面证据：《设计-L3组件令牌29条裁决-20261029》§逐条 #11。 */
+  --switch-on-bg:var(--color-brand);
+  --switch-off-bg:var(--color-border-control);
+  --switch-disabled-bg:var(--surface-sunken-2);
+
+  /* 菜单 Menu（4；--menu-min-width / --menu-item-h 已有） */
+  --menu-radius:var(--radius-sm);
+  --menu-pad-y:var(--space-inline-xs);
+  --menu-pad-x:var(--space-inline-md);
+  --menu-item-disabled-fg:var(--color-text-secondary);
+
+  /* 弹层 Dialog（5） */
+  --dialog-max-w:var(--p-size-480);
+  --dialog-radius:var(--radius-panel);
+  --dialog-shadow:var(--shadow-dialog);
+  /* 2026-10-29 裁决 #18：24 在刻度上且是现盘已上线值（`.nf-bd` sys.css:368 用 `--space-24`），
+     无组件规范写 16；原 `--space-stack-lg`=16。改值对齐并接线。
+     盘面证据：《设计-L3组件令牌29条裁决-20261029》§逐条 #18。 */
+  --dialog-pad:var(--space-24);
+  --dialog-footer-gap:var(--space-inline-sm);
+
+  /* 提示条 Status / Toast（5；--tooltip-max-width 已有） */
+  --status-dot:var(--size-type-dot);
+  --status-radius:var(--radius-sm);
+  --toast-radius:var(--radius-control);
+  --toast-shadow:var(--shadow-floating);
+  --toast-bottom:var(--space-page);
+
+  /* 输入 Input（6） */
+  --input-height:var(--size-control-h);
+  --input-radius:var(--radius-control);
+  --input-pad-x:var(--space-inline-md);
+  --input-disabled-bg:var(--surface-sunken-2);
+  --input-disabled-fg:var(--color-text-secondary);
+  --input-readonly-bg:var(--surface-subtle);
+
+  /* 空态 Empty（4） */
+  --empty-pad-y:var(--space-page);
+  --empty-pad-x:var(--space-inline-lg);
+  --empty-gap:var(--space-stack-md);
+  --empty-sub-fg:var(--color-text-secondary);
+
+  /* 装配候选行 PickRow（4） */
+  --row-radius:var(--radius-panel);
+  --row-pad-x:var(--space-inline-lg);
+  --row-gap:var(--space-stack-sm);
+  --row-hover-bg:var(--color-state-hover);
+
+  /* ── 2026-10-29 T1：跨文件引用的组件令牌上移（原声明在组件 CSS 里，定义源看不见）──
+     病：token-audit 的定义源只认本文件，令牌声明写在组件 CSS 里＝体系里"不存在"，
+     另一个文件 var() 它时判「引用不存在的 token」（rc=2）。
+     判法（为什么不是"改名摘出去"）：判据对 `--x` 一视同仁，改名不产生豁免；
+     唯一出口是进定义源。而它不是页面私有常量 —— 由 sys.css 声明、versions.html 消费（两个文件）。
+     几何类、不可主题化，正是 L3 的既有用法（--card-corner-inset / --chip-h / --menu-item-h 同类）。 */
+
+  /* 网格表 GTable（1）：行内距。行内通栏块用 calc(-1 * var(--gt-pad-x)) 抵边（versions.html），
+     两处同源。原来默认值写在 .gtable 上，页面引用它＝跨文件引用一条定义源看不见的值。 */
+  --gt-pad-x:var(--space-inline-lg);
+}
+
+/* ═══ L0 · 兼容层（2026-10-28 之前的旧名，一个不删；迁移完成前页面仍引用）═══ */
+:root{
+
+  /* 骨架尺寸 */
+  --sider-w:var(--size-sider); /* @deprecated → --size-sider */
+  /* --rail-w 已删：对话历史栏在 2026-10-22 取消（用户原话"每次都是从新开始，历史毫无意义"），
+     base.css 里的 .rail 规则也一起删了。留着这个 token 会让人以为还有那一栏。 */
+
+  /* 面 */
+  --bg:var(--surface-page); /* @deprecated → --surface-page */
+  /* 侧栏面：真源 computed rgb(243,244,247)。旧值走 var(--surface)=#F1F2F6（241,242,246），
+     与之差 2/2/1 —— 而 241,242,246 正好是 #F3F4F7 未做色彩管理时的读数。
+     直写值、不再走别名：--surface 被 xiaozhi.css 引 18 次，改别名会顺带改掉小智那颗球。 */
+  --sider-bg:var(--surface-sider); /* @deprecated → --surface-sider */
+  --sub:var(--surface-subtle); /* @deprecated → --surface-subtle */           /* 会话页对话栏等次级面 */
+  --sub-2:var(--surface-sunken-2); /* @deprecated → --surface-sunken-2 */
+  --canvas:var(--surface-canvas); /* @deprecated → --surface-canvas */
+  --surface:var(--surface-sunken); /* @deprecated → --surface-sunken */
+
+  /* 线 */
+  --line:var(--color-border-hairline); /* @deprecated → --color-border-hairline */          /* 真源卡片描边 / 顶栏底线 */
+  --line-2:var(--color-border-card); /* @deprecated → --color-border-card */        /* 卡片描边（真源 rgb(229,231,235)） */
+  --ctl-line:var(--color-border-control); /* @deprecated → --color-border-control */      /* 控件描边（真源按钮/输入框 rgb(217,217,217)）——与卡片描边**不是同一个值**，
+                              之前合成一个 --line-2，控件描边比线上浅一档 */
+
+  /* 文字（真源均为 rgba 黑，不是 hex 灰） */
+  --ink-0:var(--color-text-primary); /* @deprecated → --color-text-primary */  /* 卡片标题 */
+  --ink:var(--color-text-body); /* @deprecated → --color-text-body */
+  --ink-2:var(--color-text-secondary); /* @deprecated → --color-text-secondary */
+  /* ★2026-10-25：.45 → .58。起因是 check-visual-lint 全站量出 44 处低于 AA（一次把 54 条违规里的
+     44 条打掉）：侧栏 19 个二级项压在 --sider-bg 上是 3.30:1、td.ref / span.who / app-meta 压白是
+     3.35:1。这跟 --sub-ink（真源 #98A2B3 只有 2.9:1 ⇒ 加深到 4.98:1）、--card-ds（4.08 → 5.19:1）
+     是同一条处置：**照抄真源只在能过 AA 的范围内成立**，过不了就加深，色相不动。
+     .58 压白 5.33:1、压 --sider-bg 4.80:1、压 #FAFBFC 5.20:1，三个底都过 4.5；
+     与 --ink-2(.65) 仍差一档，层级没塌。全站唯一一处非文字用法是
+     sys.css:318 `.btn.quiet:hover` 的描边，跟着深一档，观感更清楚，不是副作用。 */
+  --ink-3:var(--color-text-tertiary); /* @deprecated → --color-text-tertiary */
+  --ink-4:var(--color-text-muted); /* @deprecated → --color-text-muted */
+  --sub-ink:var(--color-text-subtle); /* @deprecated → --color-text-subtle */       /* 次级文字：真源是 #98A2B3，但压白只有 2.9:1 不达 AA ⇒ 加深到 4.98:1 */
+  --hover:var(--color-state-hover); /* @deprecated → --color-state-hover */ /* 行悬浮底（VS Code 同款：只换底，不位移不阴影） */
+  --sel:var(--color-state-selected); /* @deprecated → --color-state-selected */   /* 选中/激活底（分段控件、列表选中） */
+  --veil:var(--surface-veil); /* @deprecated → --surface-veil */ /* 浮在画布上的按钮底（返回钮/工具钮） */
+
+  /* 品牌 */
+  --brand:var(--color-brand); /* @deprecated → --color-brand */          /* 真源实测：图标/描边/纯色块用它，视觉与线上一致 */
+  /* ★2026-10-22 改：主按钮底改成**真源的 rgb(88,127,255)**。
+     我原来为了白字过 AA 把它加深到 #3D63E0 —— 那是"我改的"，不是"线上的"。
+     用户连着三次要"跟真源一致"，那就照抄；3.56:1 这条欠账如实登记（DESIGN §2 与 J2 白名单）。
+     ★2026-10-26 用户再次明确"按照真源来" ⇒ 主色保持 #587FFF，不为 AA 4.5 偏离。
+       代价是白字对比度 3.56:1，长期阅读会累；这是**用户定的口径**，不是我的取舍。
+     加深一档留作 hover，这仍然是我定的，但 hover 真源取不到（伪类）。 */
+  --brand-btn:var(--color-brand); /* @deprecated → --color-brand */
+  --brand-btn-hover:var(--color-brand-active); /* @deprecated → --color-brand-active */
+  --brand-hover:var(--color-brand-hover); /* @deprecated → --color-brand-hover */
+  --brand-link:var(--color-brand); /* @deprecated → --color-brand */    /* 链接 / 操作列 / 面包屑悬停：真源实测 rgb(88,127,255)，照抄 */
+  --brand-bg:var(--color-brand-surface); /* @deprecated → --color-brand-surface */
+  --brand-ink:var(--color-brand-ink); /* @deprecated → --color-brand-ink */
+  --brand-bg-2:var(--color-brand-surface-2); /* @deprecated → --color-brand-surface-2 */
+
+  /* 导航（2026-10-22 真源 AppManage 实测）
+     ⚠ 线上侧栏的"当前项"是第四个蓝：rgb(81,122,255)。它既不是 --brand（#587FFF）
+       也不是 --brand-link（为过 AA 加深到 #3D63E0）。线上本来就是两个值，
+       所以这里如实登记成独立语义，不合并、不"统一"成一个。
+       压白 3.77:1，不过 14px 正文的 AA —— 这是**照抄线上**的代价，登记在 DESIGN §6 欠账。 */
+  --nav-on:var(--color-brand-nav-active); /* @deprecated → --color-brand-nav-active */        /* 菜单当前项：字 + 图标 */
+  --nav-ink:var(--color-text-nav); /* @deprecated → --color-text-nav *//* 菜单常规文字（与线上等值） */
+  --nav-ico:var(--color-icon-nav); /* @deprecated → --color-icon-nav */       /* 菜单图标常规色（线上 rgb(116,127,144) 实色，不是 opacity） */
+
+  /* 卡片（2026-10-22 真源 AppManage 逐项实测，273×303 / aspect-ratio 0.9:1）
+     ⚠ 描述与底栏日期是同一个灰蓝 rgb(108,125,169) —— 规范文档里曾把它记成
+       "日期 14px rgb(37,37,36)"，那是外层 footer 的 color，不是文本实际色。以元素为准。 */
+  /* 卡描边与控件描边是同一个值 #E5E7EB ⇒ 直接用 --line-2，不另开一个同值 token */
+  /* ★2026-10-24：真源值 #6C7DA9 压白底实测只有 4.08:1，低于 AA —— 而它承载的正是
+     「这个组件是干什么的」那句话，12px 小字又放大了可读性问题。
+     往深里推一档到 #5B6C98（白底 5.19:1，过 AA），色相不动，所以整片的观感不变。 */
+  --card-ds:var(--color-text-card-meta); /* @deprecated → --color-text-card-meta */       /* 卡描述 + 底栏日期（真源 rgb(108,125,169) 的加深档） */
+  --card-ft-line:var(--color-border-card-footer); /* @deprecated → --color-border-card-footer */  /* 底栏上边线 */
+  --card-ic:var(--color-icon-card); /* @deprecated → --color-icon-card */       /* 底栏图标钮 rgb(37,37,36) */
+  /* --card-shadow 已于 2026-10-29 退休：名称让给 L3 §列表卡 AppCard 的同名组件令牌
+     （映射 --shadow-card）。旧值 --shadow-card-soft 全站引用 0 次
+     （grep 'var(--card-shadow)' assets/*.css *.html = 0），而 L0 在文件末尾会静默覆盖 L3 同名条，
+     ⇒ 同名只许留一条。旧值本身仍在 L2 --shadow-card-soft，要回退直接用 L2。
+     --sh-card / --sh-card-hover 仍指向 --shadow-card / --shadow-card-hover，未受影响。 */
+  --tag-up-a:var(--color-badge-live-from); --tag-up-b:var(--color-badge-live-to); /* @deprecated → --color-badge-live-from,--color-badge-live-to */     /* 已上架角标渐变 */
+  --tag-off-a:var(--color-badge-off-from); --tag-off-b:var(--color-badge-off-to); /* @deprecated → --color-badge-off-from,--color-badge-off-to */   /* 未上架 / 草稿角标渐变 */
+
+  /* 组件类型色（2026-10-27）──────────────────────────────────────
+     颜色在这套界面里只干一件事：**编码"这一块是什么零件"**。
+     同一个类型，在组件库卡、画布块标签、应用封面指纹、版本差异里都是同一个色，
+     所以扫一眼就能认出"这个应用由什么构成"。不是装饰色，别处不许拿去当点缀。
+     新增类型只许在这里加一行，不许在页面里写死色值。 */
+  --c-page:var(--color-type-page);  --c-page-bg:var(--color-type-page-surface); /* @deprecated → --color-type-page,--color-type-page-surface */   /* 页面类：拼出客户看到的一屏 */
+  --c-cap:var(--color-type-cap);   --c-cap-bg:var(--color-type-cap-surface); /* @deprecated → --color-type-cap,--color-type-cap-surface */    /* 能力类：抽取 / 规则 / 结论 */
+  --c-data:var(--color-type-data);  --c-data-bg:var(--color-type-data-surface); /* @deprecated → --color-type-data,--color-type-data-surface */   /* 数据类：源数据与台账 */
+  --c-cfg:var(--color-type-cfg);   --c-cfg-bg:var(--color-type-cfg-surface); /* @deprecated → --color-type-cfg,--color-type-cfg-surface */    /* 配置类：规则组、口径、参数 */
+  --c-slate:var(--color-type-slate); --c-slate-bg:var(--color-type-slate-surface); /* @deprecated → --color-type-slate,--color-type-slate-surface */  /* 未分类 */
+
+  /* 组件卡（2026-10-28 · 三列两区形态，《组件卡样式规范-20261028》§4.1）
+     ─ 语义层：卡面材质、开关定宽、类型点、说明行宽
+     收边环复用 --shadow-1（同值 .04）+ --bw，与应用卡 sys.css 的 `.kcard` 同一手法，
+     只是在这里**令牌化**：材质只有一种表达，页面里不许再写一遍四段投影。 */
+  --cc-shadow:var(--shadow-card-ring); /* @deprecated → --shadow-card-ring */
+  --cc-shadow-hover:var(--shadow-card-ring-hover); /* @deprecated → --shadow-card-ring-hover */
+  /* 开关定宽：12px 三字 36 + 点 6 + 间距 8 + 内距 16 = 66。
+     定宽是为了**三态同宽**（启用 / 禁用 / 未发布）—— 不定宽时「未发布」会把
+     右侧引用数与动作整体推移 12px，同一列控件就不再等位了。 */
+  --cc-sw-w:var(--switch-status-w); /* @deprecated → --switch-status-w */
+  --cc-dot:var(--size-type-dot); /* @deprecated → --size-type-dot */            /* 类型点直径：回答「这是什么零件」的那一个点，五个 --c-* 共用 */
+  --cc-measure:var(--measure-card-desc); /* @deprecated → --measure-card-desc */       /* 说明行宽上限：379 宽的卡里一行到底会读岔，20 个汉字是下限 */
+  /* ─ 组件层：把字号/行高成对钉住（行高原来全是裸 px，改一档要改三处） */
+  --cc-title-lh:var(--leading-display); /* @deprecated → --leading-display */      /* 20px 名称 */
+  --cc-desc-lh:var(--leading-card-desc); /* @deprecated → --leading-card-desc */       /* 14px 说明 */
+  --cc-meta-lh:var(--leading-caption-meta); /* @deprecated → --leading-caption-meta */       /* 12px 引用数 / 开关文字 */
+  --cc-desc-2l:var(--size-desc-2l); /* @deprecated → --size-desc-2l */   /* 说明区固定两行 = 38（卡高由它推出） */
+  /* ─ 规范件没列、但「裸值扫描归零」必须有的三条：值的出处写在旁边 */
+  --cc-menu-gap:var(--space-menu-offset); /* @deprecated → --space-menu-offset */       /* ⋮ 菜单与按钮的间距（沿用现盘 6，不动观感） */
+  --cc-pop-w:var(--tooltip-max-width); /* @deprecated → --tooltip-max-width */        /* 「被哪些应用使用」浮层宽（沿用现盘 236，列名放得下） */
+  --focus-w:var(--size-focus-ring-w); /* @deprecated → --size-focus-ring-w */           /* 焦点环宽：全站同值，WCAG 2.4.7 的可见性靠这 2px */
+  --focus-off:var(--size-focus-ring-offset); /* @deprecated → --size-focus-ring-offset */         /* 焦点环外距：压在卡白底上，不和卡边贴成一条 */
+
+  /* 状态 */
+  --tag-ok:var(--color-success); --tag-ok-bg:var(--color-success-surface); /* @deprecated → --color-success,--color-success-surface */   /* 别名：列表标签与状态字是同一个绿 */
+  /* 成功绿只有一套：--tag-ok/--tag-ok-bg 是同一个语义的旧名，现已改成别名指向这里。
+     同语义两个名字会让"我只改了一个"变成隐形 bug。 */
+  --ok:var(--color-success); /* @deprecated → --color-success */            /* 成功绿：字、描边、标签 */
+  --ok-bg:var(--color-success-surface); /* @deprecated → --color-success-surface */         /* 成功绿底 */
+  --ok-on-tint:var(--color-success-ink); /* @deprecated → --color-success-ink */
+  /* ★2026-10-24 22:5x（独立评审席 P2）：原值 #B45309 落在 --warn-bg #FDF1E3 上是 **4.51:1**，
+     只比 WCAG AA 的 4.5 高 0.01 —— 等于"恰好及格"，任一显示器伽马差异就会掉线。
+     改 #9C4A08 ⇒ **5.55:1**（留约 1.0 余量）。语义不变，仍是"警示橙"这一族。 */
+  --warn:var(--color-warning); /* @deprecated → --color-warning */
+  --warn-bg:var(--color-warning-surface); /* @deprecated → --color-warning-surface */
+  --err:var(--color-danger); /* @deprecated → --color-danger */
+  --err-bg:var(--color-danger-surface); /* @deprecated → --color-danger-surface */        /* 驳回/失败浅底。与 --ok-bg / --warn-bg 同构，三者是一组 */
+  --mask:var(--surface-overlay); /* @deprecated → --surface-overlay */
+
+  /* 圆角 */
+  --r-s:var(--radius-xs); /* @deprecated → --radius-xs */               /* 真源按钮 2 —— 保留给"表格里的微型控件"（分页号、小标签） */
+  /* ★ 2026-10-23 新增：控件圆角 8。
+     真源线上按钮是 2px，但 2px 在这套画布里显得"硬、旧、像十年前的 ERP"。
+     用户明确要求「按钮样式好看一些」并给了小智面板作参照（12–16 圆角、柔和阴影）。
+     按钮与输入框统一到 8：介于 2 与 12 之间，既不像药丸也不像方砖。
+     这是**对真源的一次有意偏离**，出处写在这里，不藏在某个页面的内联样式里。 */
+  --r-ctl:var(--radius-control); /* @deprecated → --radius-control */
+  /* 控件尺寸：按钮、输入框、图标钮统一 32 高。三处各写 32px 就是三个来源，
+     改一档要改三处、漏一处就出现"按钮 32 / 输入 30"这种错位。 */
+  --h-ctl:var(--size-control-h); /* @deprecated → --size-control-h */
+  --bw:var(--size-border-w); /* @deprecated → --size-border-w */                /* 控件描边宽 */
+  /* 投影色：白底上的卡片/浮层都用这一个冷灰，不用纯黑透明 ——
+     纯黑阴影在白底上偏脏，冷灰（25,30,41）才是这套界面的影调。 */
+  --shadow-1:var(--shadow-color-1); /* @deprecated → --shadow-color-1 */   /* 卡片贴地 */
+  --shadow-2:var(--shadow-color-2); /* @deprecated → --shadow-color-2 */   /* 小控件轻抬 */
+  /* 三层投影：只有三个来源，页面里不许自己写 box-shadow。
+     判据 C3 会把 box-shadow 里的 px 当成"组件内字面值"报红 —— 那不是在挑刺：
+     同一套界面里出现五六种不同偏移的阴影，就是"看起来糊"的直接原因。 */
+  --sh-flat:var(--shadow-flat); /* @deprecated → --shadow-flat */
+/* ★2026-10-28：封面缩略色带 .kp-b 的贴地阴影。原来是 sys.css 里的裸值
+   `0 1px 2px rgba(25,30,41,.07)`。**没有并进 --sh-flat**：--sh-flat 走 --shadow-1(.04)，
+   实测换成它以后色带区域 10,925 个像素变浅、单通道最大差 5/255（色带悬在瓷面上，
+   阴影是唯一的边界，浅一档条子就"贴不住"）。所以保留原 alpha 单开一枚，
+   服务：sys.css `.kp-b` 的 box-shadow。 */
+--sh-kp:var(--shadow-thumb); /* @deprecated → --shadow-thumb */
+/* 无边框容器的"托起"阴影。描边去掉之后，层次只剩阴影这一种手段能用：
+   alpha 必须比 shadow-1/2 高一个量级，否则在 #F5F6F9 画布上等于没有（实测：只留 0.04 时
+   卡片和底色的差肉眼不可辨）。两段式（贴地 + 扩散）比单段更像"浮着"。 */
+/* ★2026-10-26：实测卡片与页面底色亮度比只有 1.11:1（等于没有边界，看着发虚）。
+   用户明确不要边框，所以只能靠阴影：把**贴地那圈**压实（1px/.06 → 2px/.10），
+   远处那圈略降。视觉上边界清楚了，但不会出现一条线。 */
+--sh-card:var(--shadow-card); /* @deprecated → --shadow-card */
+--sh-card-hover:var(--shadow-card-hover); /* @deprecated → --shadow-card-hover */          /* 贴地（卡片、次要按钮） */
+  --sh-btn:var(--shadow-btn); /* @deprecated → --shadow-btn */    /* 主按钮 */
+  --sh-btn-hover:var(--shadow-btn-hover); /* @deprecated → --shadow-btn-hover */
+  --brand-glow:var(--color-brand-glow); /* @deprecated → --color-brand-glow */   /* 主按钮投影 */
+  --brand-glow-2:var(--color-brand-glow-strong); /* @deprecated → --color-brand-glow-strong */
+  --r-m:var(--radius-panel); /* @deprecated → --radius-panel */        /* 别名：面板级与卡片同档（原 8px 出档，2026-10-22 收敛） */
+  --r-l:var(--radius-panel); /* @deprecated → --radius-panel */
+  /* 面板级圆角（小智浮层 430px 宽那种大面）。主站卡片是 --r-l=12，
+     浮层比卡片高一层，圆角也应比卡片大一档 —— 同尺寸圆角套在不同尺寸的面上，
+     小面看着圆、大面看着方，这是圆角必须随层级走的物理原因。 */
+  --r-xl:var(--radius-overlay); /* @deprecated → --radius-overlay */              /* 真源卡片 12 */
+  --r-pill:var(--radius-pill); /* @deprecated → --radius-pill */
+
+  /* 间距台阶（六档，名字就是 px 值）。新写的间距只许用这几档，见 DESIGN.md §5。
+     ⚠ 命名沿用项目里已有的 --sp-8 / --sp-12：同一件事不许有两种命名法，
+       所以不另开 --sp-1..--sp-6 这种序号台阶（2026-10-22 加过又撤掉）。
+     --sp-24：2026-10-23 加回来。曾被"全站零引用"删掉，但真源表单行距实测就是 24 ——
+       它原来不是"没人用"，是"缺一档"。档位缺了，写页面的人只能用裸值，而裸值没有判据能拦。
+     全站还有 27 种越界取值没迁完，规矩是"改到哪块收哪块"，不许机械全局替换。 */
+  --sp-4:var(--space-4);  --sp-8:var(--space-8);   --sp-12:var(--space-12); /* @deprecated → --space-4,--space-8,--space-12 */
+  --sp-16:var(--space-16); --sp-24:var(--space-24); --sp-32:var(--space-32); /* @deprecated → --space-16,--space-24,--space-32 */
+
+  /* ★★★ 字号四档 = 全站唯一数阶，2026-10-23 收敛完成。
+     依据不是我的审美，是真源规范的硬口径（`88-真源组件与字体规范/规范.md` §1.2 + 验收第 8/9 条）：
+       主字号 14px（真源出现 122 次）、body 16px、
+       「全页字号只出现 12 / 14 / 16（卡片页允许 20 的标题）」「除 12/14/16/20 外不得新增，低于 12 一律不用」。
+     ⇒ 所以是四档，不是六档。曾经的 --fs-2xs:11 违反"低于 12 不用"，已删；
+       DESIGN.md §3 曾写 11/12/13/15/16/22 六档——那张表是我拍的，不是真源的，已按真源重写。
+     判据 `gate-tokens.mjs` 的 J1 现在**从这个文件解析**档位，不再自己手写集合：
+       一处定义、三处跟随（代码 / 文档 / 判据）。这是"体系"与"散装样式"的唯一区别。 */
+  --fs-xs:var(--font-size-caption);  --fs-sm:var(--font-size-body);  --fs-md:var(--font-size-heading);  --fs-lg:var(--font-size-display); /* @deprecated → --font-size-caption,--font-size-body,--font-size-heading,--font-size-display */
+
+  /* 其他 */
+  /* ★2026-10-24（K-2 实测）：原来是 #B9C6E8，白底 1.71:1、侧栏底 1.61:1，
+     键盘走到卡片图标钮上几乎看不出焦点在哪（WCAG 1.4.11 要求非文本指示 ≥3:1）。
+     改用 --brand 本身（#587FFF，白底 3.56:1），一处改、所有 :focus-visible 跟随。 */
+  --focus-ring:var(--color-focus-ring); /* @deprecated → --color-focus-ring */
+  --focus-halo:var(--color-focus-halo); /* @deprecated → --color-focus-halo */  /* 聚焦时的外光晕。原散在 .field/.nf-row 三处裸写 */
+
+  /* ★★★ 2026-10-24 用户定调：要渐变、要风格。
+     原规矩是「渐变、光晕、玻璃拟态都不加」（DESIGN.md §1.3，2026-10-22 立的），
+     那条是照着"真源页面长什么样"推出来的——真源确实没有大面积渐变。
+     现在这条被**用户当面推翻**：m03024「增加一些渐变，增加一些什么，风格什么的都可以」。
+     所以改法不是"到处刷渐变"，是把渐变收成**令牌**，只允许出现在三处：
+       ① 组件库/应用库卡片的封面瓷面（认东西的地方）
+       ② 配置页的预览舞台底（把白色内容托起来的地方）
+       ③ 小智浮球与面板头（已有的那两处，本来就在用）
+     不许用在：正文文字底、按钮底、表格行底 —— 那些地方渐变会削弱可读性。
+     色族 ≤3（靛蓝 / 青 / 紫），一个组件卡只属于一族，同页最多三族混排。 */
+  --grad-tile-1a:var(--gradient-tile-page-from); --grad-tile-1b:var(--gradient-tile-page-mid); --grad-tile-1c:var(--gradient-tile-page-to); /* @deprecated → --gradient-tile-page-from,--gradient-tile-page-mid,--gradient-tile-page-to */  /* 页面类：靛蓝 */
+  --grad-tile-2a:var(--gradient-tile-cap-from); --grad-tile-2b:var(--gradient-tile-cap-mid); --grad-tile-2c:var(--gradient-tile-cap-to); /* @deprecated → --gradient-tile-cap-from,--gradient-tile-cap-mid,--gradient-tile-cap-to */  /* 能力类：青 */
+  --grad-tile-3a:var(--gradient-tile-form-from); --grad-tile-3b:var(--gradient-tile-form-mid); --grad-tile-3c:var(--gradient-tile-form-to); /* @deprecated → --gradient-tile-form-from,--gradient-tile-form-mid,--gradient-tile-form-to */  /* 表单/规则类：紫 */
+  /* 预览舞台：画布中央一块极淡的径向光 + 冷灰回落。
+     比"整片纯灰"多一点落点，又不到"发光"那种程度（发光会盖过内容）。 */
+  /* 卡片面顶部光（2026-10-25 落成令牌）。三层径向、左上最亮，照小智面板 .xz-panel::before 的口径，
+     浓度按"同屏最多 8 张卡"降到 1/3。组件卡与应卡片用同一枚令牌，只是 --glow-h 不同。 */
+  /* ★2026-10-26 晚：组件卡改用**小智面板的渐变**（用户原话「完全可以参考小智的那个弹窗啊，
+       那个渐变色作为卡片就很好看」）。数值原样搬自 assets/xiaozhi.css 的 .xz-panel::before：
+       三层径向 30% / 17% / 11%，偏移 16% -8% ／ 88% 2% ／ 50% 0。
+       ⚠ 不要自己调浓度 —— 我上一版手调 15/22/28 单层，既不像小智也不像真源。 */
+  --grad-card-glow:var(--gradient-card-glow); /* @deprecated → --gradient-card-glow */
+  --grad-stage:var(--gradient-stage); /* @deprecated → --gradient-stage */
+  /* ★2026-10-28：应用卡封面的瓷面底。原来这行裸写在 sys.css
+     `.kcard .kc-cover-img.kbtn` 里，是「渐变只许出现在三处」的第一处（认东西的地方），
+     却唯一没有令牌 —— 值原样搬上来，零视觉变化。服务：sys.css 该选择器的 background-image。 */
+  --grad-cover:var(--gradient-cover); /* @deprecated → --gradient-cover */
+  /* 封面缩略色带的渐变收口点（色带从类型色淡出到 --bg 的位置）。
+     裸写在 sys.css `.kp-b` 的 background 里；同一个 46% 还决定"哪一段还看得见颜色"，
+     抽出来是为了改这一个数时不用翻样式表。服务：sys.css `.kp-b` 的第二个色标。 */
+  --kp-fade:var(--color-stop-thumb-fade); /* @deprecated → --color-stop-thumb-fade */
+  /* 玻璃胶囊（落在瓷面上）：半透明白 + 一层内白描边，任何色族上都能读 */
+  --glass-on-tile:var(--surface-glass); /* @deprecated → --surface-glass */
+  --glass-line:var(--surface-glass-line); /* @deprecated → --surface-glass-line */
+
+  --menu-shadow:var(--shadow-menu); /* @deprecated → --shadow-menu */   /* 卡上 ⋮ 菜单的浮起阴影（比卡片 hover 更近、更硬） */
+  --shadow-fab:var(--shadow-floating); /* @deprecated → --shadow-floating */
+  --shadow-dlg:var(--shadow-dialog); /* @deprecated → --shadow-dialog */
+
+  /* ── 兼容别名：旧规则写法不改，值仍只在这里一处 ── */
+  /* --nav-w 已删：侧栏宽度的唯一名字是 --sider-w。 */
+  /* 小智（xiaozhi.css）用到的语义名，全部映射到上面同一批值，不新增取值 */
+  --fw-semibold:var(--font-weight-semibold); /* @deprecated → --font-weight-semibold */
+  --r-2xs:var(--radius-tag); /* @deprecated → --radius-tag */   /* 真源 ant-tag 的圆角（应用卡状态标签专用，不进主档位） */
+  --r-sm:var(--radius-sm); /* @deprecated → --radius-sm */
+  --ink-meta:var(--color-text-tertiary); /* @deprecated → --color-text-tertiary */
+  --muted:var(--color-text-tertiary); /* @deprecated → --color-text-tertiary */
+  --on-brand:var(--color-text-inverse); /* @deprecated → --color-text-inverse */
+  /* --surface-subtle：旧名保留，定义已上移到 L2（同名，勿在兼容层重复定义，否则成环） */
+}

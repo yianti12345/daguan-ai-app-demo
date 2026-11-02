@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>历史版本</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
+<link rel="stylesheet" href="assets/sys.css?v=42fb1b98">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=5808cd0c">
+<style>
+/* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
+.page-hd{margin:0 0 4px}
+.page-hd h1{margin:0;font-size:var(--font-size-display);font-weight:600;line-height:var(--leading-display);color:var(--color-text-primary)}
+.vl-who{margin:0;font-size:var(--font-size-body);color:var(--color-text-secondary)}
+/* 状态行：这一屏最重要的那句话，单独一行、字号比正文大一档 */
+.vl-now{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:var(--font-size-body);color:var(--color-text-secondary)}
+.vl-now b{color:var(--color-text-primary);font-weight:600}
+.vl-now .dot{width:6px;height:6px;border-radius:50%;background:var(--color-success)}
+.vl-now[data-off="1"] .dot{background:var(--color-text-muted)}
+/* 工具条：卡片的标题行。原来它孤零零悬在页面顶部（左侧全空、只有右端一个搜索框），
+   读起来像"页面还没做完"。现在它是这张卡的标题栏，搜索与动作都归位。 */
+.vl-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--color-border-hairline)}
+.vl-bar .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+/* 卡片：这一屏只有一件事（一排快照），它必须落在一张卡上。
+   裸表格浮在半空，是"半成品"最典型的形状。 */
+.vl-card{background:var(--surface-page);border-radius:var(--radius-panel);box-shadow:var(--shadow-card);overflow:hidden}
+/* 未入档改动：一张小表，和快照表同一个卡片里。只在真有改动时出现。 */
+.vl-chg{padding:12px 16px;background:var(--surface-subtle);border-bottom:1px solid var(--color-border-hairline)}
+.vl-chg-hd{margin:0 0 6px;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.vl-chg-hd b{color:var(--color-text-secondary);font-weight:600}
+.chg-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;padding:var(--space-4) 0;font-size:var(--font-size-body)}
+.chg-t{color:var(--color-text-tertiary);font-size:var(--font-size-caption);font-variant-numeric:tabular-nums}
+.chg-b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-body)}
+.chg-b em{font-style:normal;color:var(--color-text-tertiary);font-size:var(--font-size-caption);margin-left:6px}
+/* 表：固定表头 + 单行 52。列宽用固定值，保证版本号能上下对齐 —— 这一屏就是靠对齐说话的。
+   ★ 2026-10-29（VERSIONS T2b）：轨道／列距／左右内距不再在本页写第二份，全部来自
+   sys.css 的 .gtable；本页只声明**列组合**（--gt-cols 是数据，不是样式）与这一屏的密度/字色。
+   页面里再写 display:grid 或 padding-inline 去"修"对齐，就是把同源拆回两份，T2b 会复发。 */
+.vl-table{--gt-cols:120px 120px minmax(0,1fr) 220px}
+.vl-head{height:36px;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.vl-head span:last-child{text-align:right}
+/* ★2026-10-28：版本摘要从悬停提到可见 */
+.vl-sum{grid-column:1 / -1;margin:4px 0 0;font-size:var(--font-size-caption);line-height:1.6;color:var(--color-text-tertiary)}
+.vl-row{min-height:52px;padding-top:8px;padding-bottom:8px;font-size:var(--font-size-body)}
+.vl-row.is-now,
+.vl-row.is-now:hover{background:var(--color-brand-surface)}
+.vl-v b{font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary);font-variant-numeric:tabular-nums}
+.vl-v{display:flex;align-items:baseline;gap:8px}
+.vl-on,.vl-off{display:inline-flex;align-items:center;gap:6px;font-size:var(--font-size-body)}
+.vl-on{color:var(--color-success-ink);font-weight:500}
+.vl-on::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--color-success)}
+.vl-off{color:var(--color-text-tertiary)}
+.vl-at{font-size:var(--font-size-body);color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
+.vl-o{display:flex;flex-wrap:wrap;align-items:center;gap:6px;justify-content:flex-end}
+.vl-btn{
+  height:30px;padding:0 10px;border:0;border-radius:var(--radius-sm);background:none;
+  font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-secondary);cursor:pointer;white-space:nowrap;
+  transition:background .16s,color .16s;
+}
+.vl-btn:hover{background:var(--color-state-hover);color:var(--color-text-primary)}
+.vl-btn:focus-visible{outline:2px solid var(--color-brand);outline-offset:1px}
+/* 主操作不带描边：层级靠颜色（用户口径：好看的审美一般都不带边框） */
+.vl-btn.is-main{color:var(--color-brand-ink);font-weight:500}
+.vl-btn.is-main:hover{background:var(--color-brand-surface);color:var(--color-brand-ink)}
+.vl-btn.is-primary{background:var(--color-brand);color:var(--color-text-inverse)}
+.vl-btn.is-primary:hover{background:var(--color-brand-active);color:var(--color-text-inverse)}
+.vl-btn.is-quiet{color:var(--color-text-tertiary)}
+.vl-btn.is-quiet:hover{color:var(--color-text-secondary);background:var(--color-state-hover)}
+/* 行内确认 = 这一行的**第二行**，不是一个单元格里的补充说明。
+   所以它通栏铺开：左右各抵掉行的内距（= .vl-row 的 var(--sp-16)），从表格左缘一直铺到右缘；
+   底下垫一层 --sub-2，让它读起来是一块地方，而不是压在「时间」列值下方的一行字。
+   ⚠ 左右负边距必须与 .vl-row 的左右内距同值，否则块会缩在表格里、贴不到边。 */
+.vl-row[data-cf="1"]{padding-top:10px;padding-bottom:0}
+.vl-cf{
+  grid-column:1/-1;
+  margin:0 calc(-1 * var(--gt-pad-x));
+  padding:var(--space-12) var(--space-16);
+  display:flex;align-items:center;gap:var(--space-8);
+  background:var(--surface-sunken-2);
+  font-size:var(--font-size-body);line-height:var(--leading-body);color:var(--color-text-secondary);
+}
+/* 后果从头读起（左对齐，与「版本」列同一条线）；两个动作收在右端，落在操作列里 */
+.vl-cf-t{flex:1 1 auto;text-align:left}
+.vl-cf b{color:var(--color-text-primary);font-weight:600}
+.vl-foot{display:flex;align-items:center;gap:12px;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.vl-empty{padding:56px 16px;text-align:center;color:var(--color-text-tertiary);font-size:var(--font-size-body)}
+.vl-empty b{display:block;color:var(--color-text-primary);font-size:var(--font-size-heading);font-weight:600;margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="sider" data-active="apps"></nav>
+  <div class="workspace">
+    <header class="hdr">
+      <!-- 层级只说一次：面包屑里的上一级就是回列表的入口（是真链接，href 由页尾脚本按 scope 改）。
+           原来它下面还有一条「‹ 返回应用管理」，和面包屑说的是同一件事，白占一行首屏。 -->
+      <nav class="crumb" id="crumb">
+        <b>AI 应用方案</b>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <a id="crumb-mid" href="apps.html">应用管理</a>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <b>历史版本</b>
+      </nav>
+      <div class="me"><span>admin</span><u>ad</u></div>
+    </header>
+
+    <main class="main">
+      <div class="page-hd">
+        <h1 id="owner">—</h1>
+        <p class="vl-who" id="owner-sub"></p>
+      </div>
+      <p class="vl-now" id="now"><span class="dot" aria-hidden="true"></span><span id="now-t"></span></p>
+
+      <div class="vl-card">
+        <div class="vl-bar">
+          <div class="right">
+            <label class="field w180">
+              <input id="kw" placeholder="搜版本号" autocomplete="off">
+            </label>
+            <!-- 2026-10-31 修假按钮：原来这里写死 href="#" —— id 无效时 boot 提前 return，
+                 这个 href 没人改写，点下去页面跳回自己。静态默认先给列表页（scope 由脚本改写），
+                 正常态仍由 paint() 改回画布地址。 -->
+            <a class="btn ghost" id="go-config" href="apps.html">回到画布</a>
+          </div>
+        </div>
+
+        <!-- 还没保存的改动（自动保存攒下来的）。放在版本列表上面：
+             这一页本来就回答"这个应用有过什么、现在到哪了"。 -->
+        <div class="vl-chg" id="chg-box" hidden>
+          <p class="vl-chg-hd"><b>还没保存的改动</b><span id="chg-tip"></span></p>
+          <div id="chg-list" role="list"></div>
+        </div>
+
+        <div class="vl-table gtable">
+          <div class="vl-head gtable-head" id="head" aria-hidden="true">
+            <span>版本</span><span>状态</span><span>保存时间</span><span>操作</span>
+          </div>
+          <div class="vl-body gtable-body" id="list" role="list" aria-label="版本列表"></div>
+          <div class="vl-foot gtable-foot"><span id="total"></span></div>
+        </div>
+      </div>
+    </main>
+    <div id="toast" class="toast" data-on="false" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<script src="assets/data.js?v=23afa3a7"></script>
+<script src="assets/ui-kit.js?v=b0a55a1a"></script>
+<script src="assets/confirm.js?v=26f0a69f"></script>
+<script src="assets/versions.js?v=6b303be7"></script>
+<script>
+/* 侧栏当前项跟着 scope 走：从应用进来的，高亮「应用管理」；从组件库进来的，高亮「组件库」。
+   壳是 shell.js 生成的，所以要在它之前把 data-active 改好。
+   面包屑的上一级同时是"回列表"的唯一入口，所以 href 必须跟着 scope 改 —— 这一处写成 <b> 就不是链接了。 */
+(function () {
+  var q = new URLSearchParams(location.search);
+  var scope = q.get('scope') === 'comp' ? 'comp' : 'app';
+  document.querySelector('.sider').setAttribute('data-active', scope === 'comp' ? 'components' : 'apps');
+  var mid = document.getElementById('crumb-mid');
+  mid.textContent = scope === 'comp' ? '组件库' : '应用管理';
+  mid.setAttribute('href', scope === 'comp' ? 'components.html' : 'apps.html');
+})();
+</script>
+<script src="assets/shell.js?v=1d57161f"></script>
+<div id="xz-host"></div>
+<script src="assets/xiaozhi.js?v=32a43fd2"></script>
+<script>Versions.boot();</script>
+</body>
+</html>

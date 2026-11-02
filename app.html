@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>应用配置</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
+<link rel="stylesheet" href="assets/sys.css?v=42fb1b98">
+<link rel="stylesheet" href="assets/float.css?v=31ab1375">
+<link rel="stylesheet" href="assets/viewmode.css?v=583dee86">
+<link rel="stylesheet" href="assets/generated.css?v=f89c421a">
+<link rel="stylesheet" href="assets/configurator.css?v=59b1113c">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=5808cd0c">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   应用配置页 · 页面胶水（2026-10-29 结构债第一批：内联 35,517 B → 0）
+   本页已无组件样式。全部归位 assets/sys.css，按段名 grep：
+     「画布壳 · Canvas Shell」   .canvas / .topbar / .float-hd / .sheet / .blk
+     「画布块 · Canvas Block」   .cv-blk* / .cv-op* / .view-ver / 客户视图 / 表格骨架
+     「批量指派 · Batch Assign」 .tb-ck / .tb-batch* / .tb-pick*
+     「结果提示条 · Toast」      .hint*（含抽屉开着时让位）
+     「装配面板 · Assemble Panel」.mask / .panel / .p-* / 已装行有更新 / .btn-update / .btn-plain / .btn-text
+     「内容块 · Content Blocks」 .flow* / .cmp / .orig / .fx / .rule-*
+     「空态 · Empty State」      .cv-empty / .cv-say*
+     「生成块 · Gen Shell」      .blk-bd--gen .bd-*
+   两处页面级前缀：.canvas 挂 body[data-app]（component.html 也有 main.canvas，裸写会跨页泄漏）。
+   本页只负责组装 + 业务数据。组件样式不许写回这里：
+   同一种按钮在别的页面会各写一遍（check-component-first B/C 直接红）。 */
+</style>
+</head>
+<body data-app="">
+
+<!-- 配置器容器（只在 ?cfg=1 时启用）。
+     ⚠ 为什么这两个容器在 #canvas **外面**（别合并进去）：
+       app.js 的 renderCanvas() 是 `cv.innerHTML = …` 整块重画，放进去会被擦掉；
+       而擦掉**不报错**——表现只是"配置器条不见了"，会被当成样式问题查很久。
+     放在外面则互不相干：不带 ?cfg 时两个都 hidden，零高度零占位；
+       带 ?cfg=1 时 legacy #canvas 让位（configurator.js 按"是不是兄弟节点"判断，不按 id 写死）。 -->
+<div class="cfg-bar" id="cfg-bar" hidden></div>
+
+<!-- 画布：这个应用现在长什么样。装了什么就长什么，没装就是空的。 -->
+<main class="canvas" id="canvas" aria-label="当前装配"></main>
+
+<div class="hint" id="hint" role="status" aria-live="polite" data-on="false" data-kind="info"></div>
+
+<div class="topbar">
+  <div class="float-hd">
+    <a class="back" id="act-back" href="apps.html" aria-label="返回应用管理">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <h1 class="app-name" id="app-name" data-bind="app-name">应用配置</h1>
+    <span class="hd-sub">
+      <span class="app-meta" id="app-meta" data-bind="app-meta" hidden></span>
+      <span class="app-edit" id="app-edit"></span>
+    </span>
+  </div>
+  <div class="tb-ops">
+    <!-- 按钮上是**动作**（装配组件），括号里才是**状态**（已装几个）。
+         改前把动作词删掉只剩「已装配 3/6」，小智在元素快照里按「装配组件」定位不到这个按钮，
+         用户说"点一下装配组件"它直接答"没有动页面" —— 动作词是产品能力，不是文案偏好。
+         首帧占位写 0 / 8：JS 起来前也不能让用户看见 0 / 0（分母由 paintApp 按 DB.COMPS 现算）。 -->
+    <button type="button" class="btn ghost" id="act-assemble">装配组件 <span class="count-badge" id="act-count">已装 0 / 8</span></button>
+    <!-- ★2026-11-01（用户原话）：「装配了 100 个插件，我一个个点升级吗？是不是应该有一个一键升级，
+         括号里有 76 个」。
+         只在有落后组件时出现；数字就是待升级的个数，跟卡片徽标、装配面板筛选行**同一个算法**
+         （DB.updatesOf），三处不会漂。 --> 
+    <button type="button" class="btn ghost" id="act-upgrade-all" hidden>一键升级 <span class="count-badge" id="upg-count">0</span></button>
+    <!-- 顶栏两个动作：看历史版本、存一版。 -->
+    <!-- ★2026-10-31 按 `00e-版本与授权模型.md` 改语义：这颗只**存档**，客户看不到变化。
+         要客户用上新版本，得去「客户授权」页升级——那是另一个动作、另一个人拍板。
+         原来是「发布给客户」：点一下客户的界面当场就变了，等于把存档和上线合成一步，
+         是整个产品最容易误解的地方（2026-10-28 那次误判也是它引起的）。
+         按钮文案跟着语义走：叫「存成新版本」，不再叫「发布」。 -->
+    <a class="btn ghost" id="act-versions" href="versions.html?scope=app">历史版本</a>
+    <button type="button" class="btn primary" id="act-publish">存成新版本</button>
+  </div>
+</div>
+
+<!-- 装配组件：头部 64 + 独占一行搜索 + 两个平文本切段 + 56 行列表 + 48 底注 -->
+<div class="mask" id="mask" data-open="false" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+  <div class="panel">
+    <div class="p-hd">
+      <b id="dlg-title">装配组件</b>
+      <span class="cnt" id="dlg-total">库里 0 个 · 已装 0 个</span>
+      <!-- ★2026-10-28 设计审查 C4：搜索原来独占一层，六层压成四层后并入头部 -->
+      <div class="p-search">
+        <input id="dlg-search" type="text" placeholder="搜索组件名或介绍" aria-label="搜索组件" autocomplete="off">
+      </div>
+      <button type="button" class="p-x" id="dlg-close" aria-label="关闭">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="p-tabs" role="tablist" aria-label="组件范围">
+      <button type="button" role="tab" class="p-tab" id="tab-avail" data-tab="avail" aria-selected="true">可装配 <span id="n-avail">0</span></button>
+      <button type="button" role="tab" class="p-tab" id="tab-on" data-tab="on" aria-selected="false">已装配 <span id="n-on">0</span></button>
+    </div>
+    <!-- 只看有更新：一行筛选说明，不是第三个页签（规格 §5.2）。
+         页签计数 = 已装总数；这一行的数 = 可更新数；两者不同源也不同义。
+         只在带参进来时出现；「显示全部」是唯一的退出入口（空态里不再放第二颗按钮）。 -->
+    <div class="p-filter" id="p-filter" hidden>
+      <span class="p-filter-n" id="p-filter-n"></span>
+      <button type="button" class="btn-text" id="p-showall">显示全部</button>
+    </div>
+    <div class="p-list" id="dlg-list" role="tabpanel"></div>
+    <div class="p-ft">装配后画布立刻更新，随时可卸下</div>
+  </div>
+</div>
+
+<script src="assets/ui-kit.js?v=b0a55a1a"></script>
+<script src="assets/gen.js?v=ac80bd3b"></script>
+<script src="assets/data.js?v=23afa3a7"></script>
+<script src="assets/confirm.js?v=26f0a69f"></script>
+<script src="assets/drag.js?v=cc6ccb06"></script>
+<script src="assets/float.js?v=5db8733d"></script>
+<script src="assets/app.js?v=8e08e5e6"></script>
+<script src="assets/configurators/app-standard.js?v=a478d9a2"></script>
+<script src="assets/configurator.js?v=4558be01"></script>
+<div id="xz-host"></div>
+<script src="assets/xiaozhi.js?v=32a43fd2"></script>
+<script src="assets/viewmode.js?v=fe643a47"></script>
+</body>
+</html>

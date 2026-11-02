@@ -1,0 +1,231 @@
+/* generated.css —— 「生成出来的页面」的版式契约（唯一来源）。
+ *
+ * 为什么单独一个文件（2026-10-23）：
+ *   生成结果现在有两个渲染入口 —— 组件配置页的整页画布、应用配置页里的一个块。
+ *   这些 .bd-* / .page* 规则原来只写在 component.html 的 <style> 里，
+ *   于是 app.html 拿到同样的 HTML 却是裸的（没有分栏、没有只读态、没有分页样式）。
+ *   搬到这里之后两页共用一份，页面文件里不许再留副本。
+ *
+ * 内容：块容器 / 块标题 / 表格外壳 / 字段（可编辑 · 只读）/ 卡片组 / 说明段 /
+ *       筛选条 / 分页 / 两栏并排 / 页面壳。
+ * 取值一律走 tokens.css，不出现裸色值。
+ */
+
+/* ── 生成出来的页面本身 ───────────────────────────────────── */
+.page{
+  background:var(--surface-page); border:0; border-radius:var(--radius-panel); overflow:hidden;
+  box-shadow:var(--shadow-card);
+  display:flex; flex-direction:column;
+  /* 画布 = 这个组件的最终页面，所以它得先"像一页"：内容少时也要铺到视口底部，
+     否则一屏白底下半截空着，看起来像一张没画完的卡片而不是一个页面。
+     176px = 画布上下留白（72 + 104），由画布自己的 padding 决定视觉边距。 */
+  min-height:calc(100vh - 176px);
+  display:flex; flex-direction:column;
+}
+.page-hd{display:flex; align-items:center; gap: 10px; height:60px; padding: 0 24px}
+/* 块与块之间的间距：`.page` 是 flex 列且没有 gap，之前块之间是 0 —— 单块页面看不出来，
+   多块（并排 + 说明、两个块）就全贴在一起。状态条与筛选条不加：它们贴着卡片头是
+   antd 的样子（告警条 + 工具条是一组）；其余块之间 12px。 */
+.page > .bd-group,
+.page > .bd-two-col,
+.page > .bd-note,
+.page > .err-strip{margin-top:12px}
+/* 列表页形态：一屏一页。
+   ★ 为什么：10 行表 + 表头 + 筛选就 946 高，超出视口 900，分页被压到屏幕外 ——
+     用户看到的是"一张长得没头、也没有分页的表"。后台列表的标准形态是
+     容器撑满视口、表格体内部滚动、分页钉在底部（antd Table 的 scroll.y 就是这个）。
+   只对含表格的页面启用，表单页/详情页仍按内容自然长度。 */
+.page.has-table{height:calc(100vh - 176px);min-height:0}
+.page.has-table > .bd-group{flex:1;min-height:0;display:flex;flex-direction:column}
+.page.has-table .tb-wrap{flex:1;min-height:0;overflow:auto}
+/* 表头在内部滚动时钉住 —— 滚到第 10 行还知道每列是什么。
+   ⚠ border-collapse 必须是 separate：collapse 模式下 Chrome 的 sticky th 边框不跟着滚，
+     表头会变成"没有下边框的一条"。separate + border-spacing:0 视觉等价。 */
+.page.has-table .tb{border-collapse:separate;border-spacing:0}
+.page.has-table .tb thead th{position:sticky;top:0;z-index:1}
+.page-hd b{font-size:var(--font-size-body); font-weight:600}
+.page-tag{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+/* 卡头动作直接用 .btn primary（32 高 / 8 圆角 / 14 号）。
+   原来是另一套 .page-btn：28 高 / 2 圆角 / 12 号 —— 同一件东西的第二个实现。 */
+.page-act{margin-left:auto}
+/* 页头预览：一条 48 高的横条，左边应用名、右边状态与动作 ——
+   就是它装到应用顶部时的样子，不用文字描述"它长什么样"。 */
+.bd-hdprev{
+  display:flex; align-items:center; gap:10px; height:48px; padding: 0 16px;
+  border:0; border-radius:var(--radius-control); background:var(--surface-subtle);
+}
+/* 预览条里的应用名降到 12px：它是"示例"，不该跟页面标题同权重 ——
+   14px 会让它看起来像第二个标题（同屏两串一样的大字）。 */
+.bd-hdprev b{font-size:var(--font-size-caption); font-weight:600; color:var(--color-text-body)}
+.bd-hdprev-act{
+  margin-left:auto; height:26px; padding:0 10px; border-radius:var(--radius-control);
+  background:var(--color-brand-surface); color:var(--color-brand-ink); font-size:var(--font-size-caption);
+  display:inline-flex; align-items:center;
+}
+/* 双栏骨架（工作台 / 表单共用） */
+.bd-two{display:grid; grid-template-columns:220px minmax(0,1fr); flex:1; min-height:0}
+/* 左栏用 --sider-bg(#F3F4F7) 而不是 --sub(#FAFBFC)：后者压在白卡上等于白，
+   两栏看起来像一栏。分隔线用 --line-2(#E5E7EB)，--line(#F0F0F0) 在白底上看不见。 */
+.bd-flow{background:var(--surface-sider); border-right:1px solid var(--color-border-card); padding: 12px}
+.bd-orig{padding: 16px; display:flex; flex-direction:column; gap: 14px; min-width:0}
+.bd-sec{display:flex; align-items:baseline; gap: 8px; margin-bottom: 8px; font-size:var(--font-size-caption); font-weight:600; color:var(--color-text-secondary)}
+.bd-sec .src{font-weight:400; color:var(--color-text-tertiary)}
+/* 审批流分组：每一行是"一个筛选"的完整命中区（30 → 34 高，圆角 + 悬停底）。
+   ★ 原来 30 高、无 hover、无分隔，三行紧贴在一起，看起来是一段被切碎的文字而不是三个可点的筛选项。 */
+.bd-seg{
+  display:flex; align-items:center; gap: 8px; height:32px; padding: 0 10px;
+  border-radius:var(--radius-xs); font-size:var(--font-size-caption); color:var(--color-text-secondary); cursor:pointer;
+}
+.bd-seg:hover{background:var(--color-state-hover)}
+.bd-seg[aria-current="true"]{background:var(--surface-page); color:var(--color-brand-ink); font-weight:600;
+  box-shadow:inset 2px 0 0 var(--color-brand)}
+.bd-seg b{margin-left: auto; font-size:var(--font-size-caption); font-weight:600; color:var(--color-text-secondary); font-variant-numeric:tabular-nums}
+.bd-seg[aria-current="true"] b{color:var(--color-brand-ink)}
+/* 任务卡：三条之间要有界线，否则三块白叠在灰底上像一团。
+   选中项用白底 + 左二像素品牌色，与上面分组项的选中态是同一套语言。 */
+.bd-list{list-style:none; margin: 12px 0 0; padding: 0; display:flex; flex-direction:column; gap: 4px;
+  margin-top:14px; padding-top:0}
+.bd-list li{padding: 8px 10px; border-radius:var(--radius-xs); font-size:var(--font-size-caption); color:var(--color-text-body); cursor:pointer}
+.bd-list li:hover{background:var(--color-state-hover)}
+.bd-list li[aria-current="true"]{background:var(--surface-page); box-shadow:inset 2px 0 0 var(--color-brand)}
+.bd-list li b{display:block; font-weight:600; font-variant-numeric:tabular-nums}
+.bd-list li span{display:block; margin-top:2px; font-size:var(--font-size-caption); color:var(--color-text-secondary)}
+.bd-doc{background:var(--surface-page); border:0; border-radius:var(--radius-panel); padding: 14px 16px 14px 18px;
+  box-shadow:inset 3px 0 0 var(--color-brand-surface-2), 0 1px 2px var(--shadow-color-1)}
+/* 2026-10-24：原文对照升到 14 号 / 行距 1.9 —— 12 号读合同条款太挤；
+   左侧一道浅蓝书脊把它标成「引文」，和下面的规则表拉开层次。 */
+.bd-doc p{margin: 0 0 10px; font-size:var(--font-size-body); line-height:1.9; color:var(--color-text-secondary)}
+.bd-doc p:last-child{margin:0}
+.bd-doc mark{background:var(--color-brand-surface-2); color:var(--color-text-body); padding:0 2px; border-radius:var(--radius-xs)}
+.bd-doc p:last-child{margin: 0}
+/* 规则结论：右栏的下半块。
+   ★ 2026-10-23：原来只有 3 行细字，右栏下半 250px 全空 —— 整块像"没画完"。
+   现在给它真正的表格（表头浅底、行高 52、边框 --line-2）并 flex:1 撑满剩余高度：
+   空白从"没内容"变成"表格的呼吸"，同样是空，观感完全不同。 */
+.bd-rules{
+  border:0; border-radius:var(--radius-panel); overflow:hidden; box-shadow:0 1px 2px var(--shadow-color-1);
+  display:flex; flex-direction:column;
+  /* 不用 flex:1：只有 3 行时它会把容器拉到整栏高度，表格下方空出一整块 ——
+     那样空白看起来像"表格没画完"。按内容排，空白留在右栏底部，是背景，不是缺口。 */
+}
+.bd-rules .bd-sec{
+  margin:0; padding:10px 12px; font-size:var(--font-size-caption); font-weight:600; color:var(--color-text-body);
+  background:var(--surface-subtle);
+}
+.bd-rules table{width:100%; border-collapse:collapse}
+.bd-rules th{
+  font-size:var(--font-size-caption); font-weight:600; color:var(--color-text-primary); text-align:left;
+  padding: 8px 12px; background:var(--surface-page); border-bottom:1px solid var(--color-border-hairline);
+}
+.bd-rules td{
+  font-size:var(--font-size-caption); color:var(--color-text-secondary);
+  padding: 12px; height: 48px; border-bottom:1px solid var(--color-border-hairline);
+}
+.bd-rules tr:last-child td{border-bottom:0}
+/* 处理记录：时间 + 人 + 做了什么。三列定宽，文本可换行 —— 不做成时间线圆点，
+   那要连接线，在卡片里会跟表格的分隔线打架。 */
+.bd-trail{border:0; border-radius:var(--radius-panel); overflow:hidden; background:var(--surface-page); box-shadow:0 1px 2px var(--shadow-color-1)}
+.bd-trail .bd-sec{margin:0; padding:10px 12px; background:var(--surface-subtle)}
+/* 状态字：浅底/白底深字，取值全在 token 里 */
+/* 2026-10-24：状态在原页里是纯色字，列表页里是 chip —— 同一件事两种形态。
+   这里统一成 chip（22 高 / 8 圆角 / 12 号 600），色仍然走同一组语义令牌。 */
+/* 2026-10-30：.bd-st-* 已并入 assets/sys.css 的状态胶囊单一声明（§26.5）。 */
+/* 列表页骨架 */
+.bd-one{padding: 16px}
+.bd-filters{display:flex; align-items:center; gap: 8px; padding: 12px 16px; border-bottom:1px solid var(--color-border-hairline)}
+.bd-search{
+  flex:1; min-width:0; height:28px; padding: 0 10px; border-radius:var(--radius-xs);
+  border:1px solid var(--color-border-card); font-size:var(--font-size-caption); color:var(--color-text-tertiary);
+  display:flex; align-items:center;
+}
+.bd-chip{height:28px; padding: 0 10px; border-radius:var(--radius-xs); border:0; background:var(--surface-sunken-2); font-size:var(--font-size-caption); color:var(--color-text-secondary); display:inline-flex; align-items:center}
+.bd-pager{display:flex; align-items:center; gap: 8px; padding: 12px 16px; border-top:1px solid var(--color-border-hairline); font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.bd-pager .pg{min-width:24px; height:24px; padding: 0 8px; border:1px solid var(--color-border-card); border-radius:var(--radius-xs); display:grid; place-items:center; font-size:var(--font-size-caption); color:var(--color-text-secondary)}
+.bd-pager .pg[aria-current="true"]{border-color:var(--color-brand); color:var(--color-brand-ink)}
+/* 表单页骨架 */
+.bd-form-hd{padding: 16px 24px; border-bottom:1px solid var(--color-border-hairline)}
+.bd-form-hd b{display:block; font-size:var(--font-size-body); font-weight:600}
+.bd-form-hd span{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.bd-fields{display:grid; grid-template-columns:1fr 1fr; gap: 12px 16px}
+.bd-field{min-width:0}
+.bd-field label{display:block; margin-bottom: 4px; font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+.bd-input{
+  display:flex; align-items:center; height:var(--size-control-h); padding: 0 10px; border-radius:var(--radius-control);
+  border:1px solid var(--color-border-card); background:var(--surface-page); font-size:var(--font-size-caption); color:var(--color-text-secondary);
+}
+/* ★ width:100% 不能省。`.page` 是 flex 列，而 flex 交叉轴上的 `margin:0 auto`
+   会让这个 item **收缩到内容宽度**再居中 —— 表现为"内容挤在中间一小条"，
+   而不是 640 宽的居中列。这个坑在 form 骨架里一直在，只是没人细看。 */
+.bd-single{width:100%; max-width:640px; margin: 0 auto; padding: 24px}
+/* ── 生成结果的容器（模型出结构，这里定样式）──────────────────
+   .bd-group 之前在 JS 里被用过、只有一条"相邻间距"规则、没有块本身的边界，
+   表现为"装到应用顶部时的样子"和三个字段裸在白底上、没有边界。
+   现在它是"页面里的一块"，与 .bd-rules 同一套边界语言。 */
+.bd-group{
+  border:0; border-radius:var(--radius-panel);
+  overflow:hidden; background:var(--surface-page);
+  box-shadow:var(--shadow-card);
+}
+.bd-group > .bd-sec{
+  margin:0; padding:10px 14px; background:var(--surface-subtle);
+  font-size:var(--font-size-caption); font-weight:600; color:var(--color-text-body);
+}
+.bd-group > .tb th:first-child, .bd-group > .tb td:first-child{padding-left:14px}
+.bd-group > .tb th:last-child, .bd-group > .tb td:last-child{padding-right:14px}
+.bd-group > .bd-fields{padding:14px}
+/* 左右并排：两块各占一半，顶部对齐。
+   ★ 2026-10-23：用户说「左边原文、右边字段对照」，模型把它当文案写进标题，
+     实际渲染成上下两块 —— 结构指令没被执行。现在并排走独立的行容器，
+     两块之间 12px，宽度各半，高度各自（不互相拉扯）。 */
+.bd-two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:stretch}
+/* 两栏等高：并排的两块底边必须齐平 —— 一高一矮会读成"左边没画完"。
+   所以每栏是弹性列，栏内正文（原文文档 / 字段表）吃掉剩余高度。 */
+.bd-two-col > .bd-group{min-width:0;display:flex;flex-direction:column}
+.bd-two-col > .bd-group > .bd-doc{flex:1}
+/* 只读字段：不是输入框。没有边框、没有白底，值直接落在一条细线上。
+   ★ 为什么要有：详情/对照页的 form 之前跟"新建表单"用同一个 .bd-input，
+     每个值都套一个输入框 —— 用户看到的是"一页不能填的表单"，而不是"一条数据"。 */
+.bd-ro{
+  display:block; margin-top:2px; padding:7px 0 8px;
+  font-size:var(--font-size-caption); line-height:1.6; color:var(--color-text-body);
+  border-bottom:1px solid var(--color-border-hairline); word-break:break-word;
+}
+.bd-field.is-read .bd-lbl{color:var(--color-text-tertiary)}
+/* 分页：页码是真按钮（点了真切行），不是画上去的装饰 */
+.bd-pager .pg-wrap{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.bd-pager button.pg{
+  font:inherit; background:var(--surface-page); cursor:pointer; padding:0 8px;
+  min-width:24px; height:24px; border:1px solid var(--color-border-card); border-radius:var(--radius-xs);
+  display:grid; place-items:center; color:var(--color-text-secondary);
+}
+.bd-pager button.pg:hover{border-color:var(--color-text-muted); color:var(--color-text-body)}
+.bd-pager button.pg[aria-current="true"]{border-color:var(--color-brand); color:var(--color-brand-ink); font-weight:600}
+/* 字段：标签在上、值在下。标签 12/次色，值走控件高度 —— 与表单控件同一套尺寸 */
+.bd-lbl{display:block; margin-bottom:4px; font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
+/* 卡片组：一列一条。卡片里再套卡片网格会跟外层卡片抢层次 */
+.bd-cards{display:flex; flex-direction:column}
+.bd-card{
+  display:flex; align-items:baseline; gap:10px; padding:11px 14px;
+  border-bottom:1px solid var(--color-border-hairline); font-size:var(--font-size-caption);
+}
+.bd-card:last-child{border-bottom:0}
+.bd-card b{font-weight:600; color:var(--color-text-body); flex:0 0 auto}
+.bd-card p{margin:0; flex:1; min-width:0; color:var(--color-text-secondary)}
+.bd-card .cond{flex:0 0 auto}
+/* 说明段：一段灰字，可换行 */
+.bd-note{margin:0 0 12px; font-size:var(--font-size-caption); line-height:1.75; color:var(--color-text-secondary)}
+.bd-note:last-child{margin-bottom:0}
+/* 筛选条上"当前选中"的 chip：之前五个 chip 长得一模一样，看不出现在筛的是什么 */
+.bd-chip.is-on{background:var(--color-brand-surface); border-color:var(--color-brand); color:var(--color-brand-ink); font-weight:600}
+.bd-single .bd-fields{display:block}
+.bd-single .bd-field{margin-bottom: 12px}
+.bd-single .bd-field:last-child{margin-bottom: 0}
+.bd-form-acts{display:flex; gap: 8px; padding-top: 4px}
+.bd-form-acts .ghost{
+  height:32px; padding: 0 14px; border-radius:var(--radius-xs);
+  border:1px solid var(--color-border-card); background:var(--surface-page); font-size:var(--font-size-body); color:var(--color-text-body);
+}
+.bd-form-acts .primary{
+  height:32px; padding: 0 14px; border-radius:var(--radius-xs);
+  background:var(--color-brand); color:var(--color-text-inverse); font-size:var(--font-size-body);
+}

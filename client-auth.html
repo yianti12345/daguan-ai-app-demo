@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>授权总览 · AI 应用方案</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
+<link rel="stylesheet" href="assets/sys.css?v=42fb1b98">
+<link rel="stylesheet" href="assets/client-auth.css?v=eb93aad2">
+</head>
+<body>
+
+<div class="app">
+  <!-- 2026-11-01：客户授权不是一级模块，高亮跟着「应用管理」走（它属于应用）。 -->
+  <nav class="sider" data-active="apps"></nav>
+  <div class="workspace">
+    <header class="hdr">
+      <!-- 2026-11-02（独立走查 P1-3）：分隔符与 apps.html 统一成 ›；带 id 时把应用名放进面包屑
+           （可点回配置页），末级固定「客户授权」——原来末级是应用名、h1 又写一遍应用名+客户授权。 -->
+      <nav class="crumb">
+        <b>AI 应用方案</b>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <a href="apps.html">应用管理</a>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <a id="crumb-app" hidden></a>
+        <span class="sep" id="crumb-sep2" aria-hidden="true" hidden><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <b id="crumb-page">授权总览</b>
+      </nav>
+      <div class="me"><span>admin</span><u>ad</u></div>
+    </header>
+
+    <main class="main">
+      <!-- 2026-11-02（独立走查 P1-3）：平台标准件（员工管理页）与 apps.html 都没有页内大标题，
+           标题由面包屑承担。这里删掉可见 h1（否则同一句话在面包屑和正文各写一遍，
+           工具条也被压低 52px），只留读屏可读的 h1。 -->
+      <h1 id="pg-title" class="sr-only">授权总览</h1>
+
+      <!-- 2026-11-02 第二次整改（用户 m04120）：
+           「为什么 2 块列表？狗屎逻辑」——原来上面是授权记录、下面是客户台账，同一批客户
+           出现两次，两处"新增"（新增授权 / 新增客户）也分不清。现在合成一张：
+           一行 = 一家客户；授权了就有版本/时间/有效期与升级动作，没授权就是「授权」入口。
+           样式照线上平台的标准列表（员工管理页）：灰色表头、通栏行、文字链操作、右侧分页。 -->
+      <div class="au-card">
+        <div class="au-bar">
+          <!-- 工具栏照平台标准（员工管理页）：主按钮在左，搜索在右。
+               最新版本是这张表的"基准"，跟搜索一起靠右，不单独占一行。 -->
+          <button class="btn primary" type="button" id="act-add">新增授权</button>
+          <button class="btn" type="button" id="act-add-client">新增客户</button>
+          <div class="right">
+            <span class="au-latest" id="au-latest" hidden>最新版本 <b>—</b></span>
+            <label class="field w180">
+              <input id="kw" placeholder="搜客户或租户 ID" autocomplete="off">
+            </label>
+          </div>
+        </div>
+        <div class="au-table gtable">
+          <div class="au-head gtable-head" id="head" aria-hidden="true">
+            <span>客户</span><span>租户 ID</span><span>应用</span><span>授权版本</span><span>授权时间</span><span>有效期</span><span>操作</span>
+          </div>
+          <div class="au-body gtable-body" id="list" role="list" aria-label="客户授权列表"></div>
+          <div class="au-foot gtable-foot">
+            <span id="total"></span>
+            <span class="au-pager" id="pager"></span>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div id="toast" class="toast" data-on="false" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- 新增授权（2026-11-02 重做）：选应用 + 多选客户 + 有效期。
+     版本不给选 —— 用户口径「新增授权和升级版本时，默认都指向当前应用的最新版本」。
+     一次可以选多家客户（真实系统的 tenantIds 也是多选）：同一应用下各家客户
+     从此各有一条自己的授权记录，各自记着自己那一版。 -->
+<!-- 新增/编辑客户：名字 + 租户 ID。两个都必填且唯一 —— 重名会让"这家有几个应用"永远算错。 -->
+<div class="mask" id="cl-mask" data-open="false">
+  <div class="panel au-dlg" role="dialog" aria-modal="true" aria-labelledby="cl-title">
+    <div class="p-hd">
+      <b id="cl-title">新增客户</b>
+      <button class="p-x" type="button" id="cl-x" aria-label="关闭">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="p-bd au-bd">
+      <div class="fm">
+        <div class="fm-row">
+          <label for="cl-name">客户名称</label>
+          <input id="cl-name" maxlength="20" placeholder="比如：中金公司" autocomplete="off">
+        </div>
+        <div class="fm-row">
+          <label for="cl-tenant">租户 ID</label>
+          <input id="cl-tenant" maxlength="32" placeholder="甲方系统里的租户 ID" autocomplete="off" aria-describedby="cl-hint">
+          <p class="fm-hint" id="cl-hint">租户 ID 是客户在甲方系统里的唯一标识，授权记录按它对号。建好后授权时不用再手打。</p>
+        </div>
+      </div>
+    </div>
+    <div class="p-ft au-ft">
+      <button class="btn ghost" type="button" id="cl-cancel">取消</button>
+      <button class="btn primary" type="button" id="cl-ok">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="mask" data-open="false">
+  <div class="panel au-dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+    <div class="p-hd">
+      <b id="dlg-title">新增授权</b>
+      <button class="p-x" type="button" id="dlg-x" aria-label="关闭">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="p-bd au-bd">
+      <div class="fm">
+        <div class="fm-row">
+          <label for="fm-app">应用</label>
+          <select id="fm-app"></select>
+        </div>
+        <div class="fm-row">
+          <span class="fm-label">选择客户</span>
+          <!-- 勾选列表而不是下拉：一屏能看见「谁已经授权过」，不用点开才知道。
+               已授权的置灰勾不上；显示「已取消」的那条再勾 = 恢复并升到最新。 -->
+          <div class="fm-clients" id="fm-clients" role="group" aria-label="选择客户"></div>
+        </div>
+        <div class="fm-row">
+          <span class="fm-label">授权版本</span>
+          <p class="fm-note" id="fm-ver-note">—</p>
+        </div>
+        <div class="fm-row">
+          <label for="fm-exp">有效期</label>
+          <select id="fm-exp">
+            <option value="6">6 个月</option>
+            <option value="12" selected>12 个月</option>
+            <option value="24">24 个月</option>
+            <option value="36">36 个月</option>
+            <!-- ★2026-11-02：真实系统用 9999-12-31 表示长期，原来这里没有这一项 -->
+            <option value="0">长期（不设到期）</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="p-ft au-ft">
+      <button class="btn ghost" type="button" id="dlg-cancel">取消</button>
+      <button class="btn primary" type="button" id="dlg-ok">确定授权</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/data.js?v=23afa3a7"></script>
+<script src="assets/ui-kit.js?v=b0a55a1a"></script>
+<script src="assets/confirm.js?v=26f0a69f"></script>
+<script src="assets/shell.js?v=1d57161f"></script>
+<script src="assets/client-auth.js?v=3a0c9439"></script>
+</body>
+</html>

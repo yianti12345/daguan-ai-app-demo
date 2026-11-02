@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>下载客户端</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
+<link rel="stylesheet" href="assets/sys.css?v=42fb1b98">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=5808cd0c">
+<style>
+/* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
+.dl-hd{margin:0 0 6px}
+.dl-hd h1{margin:0;font-size:var(--font-size-display);font-weight:600;line-height:28px;color:var(--color-text-primary)}
+.dl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-16);margin-top:var(--space-16);max-width:860px}
+.dl-card{background:var(--surface-page);border-radius:var(--radius-panel);box-shadow:var(--shadow-card);padding:var(--space-24)}
+.dl-os{display:flex;align-items:center;gap:var(--space-8);font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
+.dl-os svg{width:20px;height:20px;color:var(--color-icon-card)}
+.dl-sub{margin:var(--space-4) 0 var(--space-16);font-size:var(--font-size-body);color:var(--color-text-tertiary)}
+.dl-meta{margin:0 0 var(--space-16);padding:0;list-style:none;font-size:var(--font-size-body);color:var(--color-text-secondary)}
+.dl-meta li{display:flex;gap:var(--space-8);padding:3px 0}
+.dl-meta b{min-width:56px;font-weight:400;color:var(--color-text-tertiary)}
+.dl-cta{width:100%}
+.dl-how{margin:var(--space-12) 0 0;font-size:var(--font-size-caption);line-height:1.7;color:var(--color-text-tertiary)}
+.dl-sha{margin:var(--space-12) 0 0;font-size:var(--font-size-caption);color:var(--color-text-tertiary);word-break:break-all}
+.dl-sha-btn{border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
+.dl-sha-btn:hover{color:var(--color-brand-ink)}
+.dl-sha code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--color-text-secondary)}
+.dl-empty{margin-top:var(--space-16);max-width:860px;background:var(--surface-page);border-radius:var(--radius-panel);box-shadow:var(--shadow-card);padding:var(--space-24);font-size:var(--font-size-body);color:var(--color-text-secondary)}
+.dl-empty b{display:block;margin-bottom:var(--space-4);font-size:var(--font-size-heading);color:var(--color-text-primary)}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="sider" data-active="downloads"></nav>
+  <div class="workspace">
+    <header class="hdr">
+      <nav class="crumb">
+        <b>AI 应用方案</b>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <b>下载客户端</b>
+      </nav>
+      <div class="me"><span>admin</span><u>ad</u></div>
+    </header>
+
+    <main class="main">
+      <div class="dl-hd">
+        <h1>下载客户端</h1>
+
+      </div>
+
+      <div id="dl-grid" class="dl-grid" hidden></div>
+      <div id="dl-empty" class="dl-empty" hidden>
+        <b>安装包还没发布</b>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="xz-host"></div>
+<script src="assets/shell.js?v=1d57161f"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (s) { return document.querySelector(s); };
+
+  var ICON = {
+    mac: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.7c0-2.2 1.8-3.2 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.6 2.3 2.8 2.2 1.1 0 1.5-.7 2.9-.7 1.3 0 1.7.7 2.9.7 1.2 0 2-1.1 2.7-2.2.9-1.2 1.2-2.5 1.2-2.5s-2.2-.9-2.2-3.8zM14.3 6.3c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-.9 2.8 1 .1 2-.5 2.7-1.3z"/></svg>',
+    win: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.6l7.4-1v7.1H3V5.6zm8.6-1.2L21 3v8.7h-9.4V4.4zM3 12.9h7.4V20L3 18.9v-6zM11.6 12.9H21V21l-9.4-1.3v-6.8z"/></svg>'
+  };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function mb(n) { return n ? (n / 1048576).toFixed(1) + ' MB' : '—'; }
+
+  function card(f) {
+    return '<section class="dl-card" data-os="' + esc(f.key) + '">' +
+      '<div class="dl-os">' + (ICON[f.key] || '') + '<span>' + esc(f.os) + '</span></div>' +
+      '<p class="dl-sub">' + esc(f.arch) + '</p>' +
+      '<ul class="dl-meta">' +
+        '<li><b>版本</b>' + esc(f.version || '') + '</li>' +
+        '<li><b>大小</b>' + mb(f.size) + '</li>' +
+        '<li><b>系统</b>' + esc(f.requires || '') + '</li>' +
+      '</ul>' +
+      '<a class="btn primary dl-cta" href="' + esc(f.href) + '" download>' +
+        '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 11l4.5 4.5L16.5 11"/><path d="M5 19.5h14"/></svg>' +
+        '下载 ' + esc(f.os) + ' 版' + '</a>' +
+      '<p class="dl-how">' + esc(f.how) + '</p>' +
+      (f.sha256 ? '<p class="dl-sha">SHA-256 <button type="button" class="dl-sha-btn" data-sha="' + esc(f.sha256) + '" title="点击复制">' + esc(f.sha256) + '</button></p>' : '') +
+    '</section>';
+  }
+
+  fetch('downloads/manifest.json', { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error('no manifest'); return r.json(); })
+    .then(function (m) {
+      var files = (m && m.files) || [];
+      if (!files.length) throw new Error('empty');
+      $('#dl-grid').innerHTML = files.map(card).join('');
+      $('#dl-grid').hidden = false;
+    })
+    .catch(function () { $('#dl-empty').hidden = false; });
+
+  /* 2026-11-01（体检 C07）：SHA-256 原来只显示前 16 后 8，中间用省略号 —— 校验文件时用不了。
+     现在显示完整 64 位，点一下复制。 */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.dl-sha-btn');
+    if (!b) return;
+    var v = b.getAttribute('data-sha') || '';
+    if (!v) return;
+    /* 2026-11-02（IA 判据实测）：原来 clipboard 被拒时走空函数 —— 点了什么都不发生，
+       用户不知道是复制失败还是没点上；无头环境里这条按钮因此被判成"哑控件"。
+       失败也必须当场回话，并且退回到 execCommand 那条老路再试一次。 */
+    var flash = function (t) {
+      var old = b.textContent; b.textContent = t;
+      setTimeout(function () { b.textContent = old; }, 1200);
+    };
+    var done = function () { flash('已复制'); };
+    var fail = function () { flash('复制失败'); };
+    var legacy = function () {
+      var ta = document.createElement('textarea');
+      ta.value = v; document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (err) {}
+      document.body.removeChild(ta);
+      (ok ? done : fail)();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(v).then(done, legacy);
+    } else {
+      legacy();
+    }
+  });
+})();
+</script>
+<script src="assets/xiaozhi.js?v=32a43fd2"></script>
+</body>
+</html>
