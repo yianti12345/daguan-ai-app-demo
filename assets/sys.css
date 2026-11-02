@@ -233,34 +233,18 @@ input, select, textarea{font-family:inherit; font-size:inherit; color:inherit;}/
    草稿＝中性灰底白字；已下架＝暗底白字，三态底色明度分离，色相只用一个绿。 *//* 已下架用"白底描边"而不是更深一档实底：形状上就能与两种实底标签分开，
    不靠明度差去猜；字色 --ink-2 配白底 5.6:1，过 AA。 *//* 对象标识块（装配面板的行图标用；卡上已改成封面区，这里只服务面板行）
    40×40、圆角 12、品牌浅底 + 品牌色首字。 */
-.idc{
-  width:40px;height:40px;border-radius:var(--radius-panel);background:var(--color-brand-surface);color:var(--color-brand);
-  display:grid;place-items:center;font-size:var(--font-size-heading);font-weight:600;flex:0 0 40px;
-}/* 底栏图标钮：24×24、圆角 2、色 rgb(37,37,36)、间距 10（真源三个数） */
-.icbtn{
-  /* 24px 图标钮的圆角从 2 改 8：2 是真源的旧值，而全站其余按钮都是 8。
-     24px 上 2 与 8 的差别肉眼很明显，同一张卡里两种圆角就是没做完。 */
-  width:24px;height:24px;border-radius:var(--radius-control);color:var(--color-icon-card);
-  display:grid;place-items:center;background:none;border:0;padding:0;cursor:pointer;
-}
-.icbtn svg{width:20px;height:20px}/* 真源：按钮 24×24，里面图标 20×20 */
-.icbtn + .icbtn{margin-left:10px}
-.icbtn:hover{background:var(--color-state-hover)}
-.icbtn:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:1px}
+/* 底栏图标钮：24×24、圆角 2、色 rgb(37,37,36)、间距 10（真源三个数） */
+
+/* 真源：按钮 24×24，里面图标 20×20 */
+
+
+
 /* 禁用态见文件末尾唯一配方（不在组件旁写第二份）。 */
 /* 卡上 ⋮ 菜单：线上是"客户配置 / 编辑 / 查看 / 导出"，本 demo 只有配置这一件事真做得到，
    所以菜单里只放两个**真有行为**的项。一个点了没反应的按钮比没有这个按钮更糟。 */
-.cmenu{
-  position:absolute;right:8px;bottom:46px;z-index:6;min-width:132px;
-  background: var(--surface-page);border:0;border-radius:var(--radius-panel);
-  box-shadow:var(--shadow-menu);padding:var(--space-4);
-}
-.cmenu a,.cmenu button{
-  display:flex;align-items:center;width:100%;height:32px;padding:0 10px;border-radius:var(--radius-sm);
-  font-size:var(--font-size-body);color:var(--color-text-body);background:none;border:0;font-family:inherit;
-  text-align:left;cursor:pointer;
-}
-.cmenu a:hover,.cmenu button:hover{background:var(--color-state-hover)}/* 组件的形态预览：占位同封面区，画的是这个组件长什么样（不套用应用的封面图）。
+
+
+/* 组件的形态预览：占位同封面区，画的是这个组件长什么样（不套用应用的封面图）。
    四种形态用同一套线（--line-2 描边、--brand 一条强调），不混不同粗细。 */
 .tag{height:22px;padding:0 var(--space-8);border-radius:var(--radius-sm);font-size:var(--font-size-caption);display:inline-flex;align-items:center;border:1px solid transparent}
 .tag.ok{background:var(--color-success-surface);color:var(--color-success);border-color:var(--color-success)}/* 草稿：存了但没发布，还不能被任何应用装。用暖色提醒，不用灰 —— 灰色读起来像"已下架" */
@@ -283,7 +267,7 @@ input, select, textarea{font-family:inherit; font-size:inherit; color:inherit;}/
 .pager .pg[aria-current="true"]{border-color:var(--color-brand);color:var(--color-brand)}/* ── 空态 ── */
 .empty{padding:64px var(--empty-pad-x);text-align:center;color:var(--color-text-tertiary);font-size:var(--font-size-body)}
 .empty b{display:block;font-size:var(--font-size-body);font-weight:400;color:var(--color-text-secondary);margin-bottom:var(--space-8)}/* 空态必须自己带出口：造成空态的有三个控件，文案不能只说"清空搜索词" */
-.empty .empty-sub{display:block;margin-bottom:var(--empty-gap)}
+
 
 :focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 /* 2026-10-25 删 opacity:.68（体检 C12）：下面 [disabled] 那条已经用
@@ -484,32 +468,18 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 /* 已下架/停用：整卡降饱和，靠"灰"而不是靠"另一种颜色"区分
    （2026-10-25：原来这里是给彩条换灰渐变；彩条已撤，改为整卡描边与文字降一档） */
 .kcard[data-off="1"]{box-shadow:var(--card-shadow), inset 0 0 0 1px var(--color-border-card)}
-.kcard[data-off="1"] .card-tt{color:var(--card-off-fg)}
-.kcard-hit{
-  display:flex;flex-direction:column;gap:var(--space-8);flex:1;min-height:0;
-  /* 2026-10-25：18/16/10 → 16/16/12。18 与 10 都不在 4/8 刻度上（锚：ant-pro 卡内距 16–24；
-     判据 check-token-scale T1）。三边各差 2px，单卡看不出来，六张并排时内距不齐就会被读成"没对齐"。 */
-  padding:var(--card-pad) var(--card-pad) var(--space-12);color:inherit;text-decoration:none;border-radius:var(--radius-panel) var(--radius-panel) 0 0;
-}
-.kcard-hit:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:-2px}
-.kcard-hit:hover .card-tt{color:var(--color-brand-ink)}
-.k-hit{display:flex;align-items:flex-start;gap:var(--space-8);min-width:0}
-.card-tt{
-  display:block;min-width:0;
-  /* 2026-10-25 统一（体检 S04）：应用卡标题原来是 --fs-lg(20)，组件卡是 --fs-md(16)，
-     同一个角色两种大小。20 在 277 宽的卡里占两行、把描述挤下去；统一到 16，
-     与组件卡同值，也与 DESIGN §4.3「标题 16/600」一致。 */
-  font-size:var(--font-size-heading);font-weight:600;line-height:var(--leading-title);color:var(--color-text-primary);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
+
+
+
+
+
+
 /* 状态胶囊：与组件配置页顶栏的 .comp-status、表格里的 .bd-st-* 同一套语义色 */
 /* 2026-10-30 合并：状态胶囊全站一份声明。
    应用卡 .card-tag / 配置页顶栏 #topbar .comp-status / 表格 .bd-st-* 共用同一组基础属性，
    变体只按语义色分组。改高度/内距/字号只改这一处。 */
 .card-tag,
-#topbar .comp-status,
-.bd-st-ok,.bd-st-warn,.bd-st-bad,
-.tb td .bd-st-ok,.tb td .bd-st-warn,.tb td .bd-st-bad{
+#topbar .comp-status{
   display:inline-flex;align-items:center;flex:0 0 auto;
   height:22px;padding:0 var(--space-8);border-radius:var(--radius-sm);
   font-size:var(--font-size-caption);font-weight:600;line-height:var(--leading-title);white-space:nowrap;
@@ -519,26 +489,11 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
    这条能冒出来，是因为胶囊从"压在卡片白底上"挪到了"压在自己的浅底上"—— 位置一变，
    对比度就换算了。 */
 .card-tag.is-up,
-#topbar .comp-status[data-st="on"],#topbar .comp-status[data-st="up"],
-.bd-st-ok,.tb td .bd-st-ok{background:var(--color-success-surface);color:var(--color-success-ink)}
+#topbar .comp-status[data-st="on"],#topbar .comp-status[data-st="up"]{background:var(--color-success-surface);color:var(--color-success-ink)}
 .card-tag.is-draft,
-#topbar .comp-status[data-st="off"],
-.bd-st-warn,.tb td .bd-st-warn{background:var(--color-warning-surface);color:var(--color-warning)}
+#topbar .comp-status[data-st="off"]{background:var(--color-warning-surface);color:var(--color-warning)}
 .card-tag.is-off{background:var(--color-state-hover);color:var(--color-text-secondary);box-shadow:inset 0 0 0 1px var(--color-border-card)}
-.bd-st-bad,.tb td .bd-st-bad{background:var(--color-danger-surface);color:var(--color-danger)}
-.card-desc{
-  margin:0;font-size:var(--font-size-body);line-height:var(--leading-title);color:var(--color-text-card-meta);min-height:44px;
-  /* 2026-10-25：两行 clamp → 单行省略。理由不是美观，是**判据实测**：
-     卡片高度固定 212，说明折成两行时那一格高 28.59，而其余卡是 19 ——
-     同一行的格子被挤得不等高（card-uniform ⑨c/⑩a/⑩b 三条同时报）。
-     卡高固定这一条是用户 2026-10-24 定的（不许每张卡尺寸不同），它优先。
-     全名放 title，能看到的是一行，要读全的悬停。 */
-  /* 2026-10-25 回退：上一轮误把这里改成单行 clamp，而 min-height 仍是 44（两行高），
-     结果是"截成一行 + 留两行的空白"，省略号卡在句子中间、后面还续着字（布局 agent L02）。
-     应用卡的高度结构是 min-height 44 = 两行 × 22，所以内容也必须给两行。
-     组件卡的 .cl-desc 才是单行（卡高 212 放不下两行）。两个类名相近，别再改错。 */
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
+
 /* 一行真实关系：refs 由 APP_COMPS 现算；没有应用用它时说的是"还没有应用用"，不是"暂未装配"。
    状态胶囊挪到这一行（原来跟标题抢同一行，272px 的卡里标题只能显示 6 个字，
    截断成"华信证券 · 债承…"）。标题独占整行，状态与数字同排，扫一行就能读完。 */
@@ -611,7 +566,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
    一行 = 一个版本：版本号 / 状态 / 日期，三列对齐，扫一眼能比。 */
 /* 2026-10-30：.ver-app/.ver-list/.ver-row 整段删除 —— 全仓 0 消费者（版本面板改子页面后遗留），
    契约见 components.spec.md §26.2；要复用先在 spec 里改状态与消费者，再加回来。 */
-.ver-note{margin:var(--space-12) 0 0;font-size:var(--font-size-caption);line-height:var(--leading-caption);color:var(--color-text-tertiary)}
+
 
 /* ── 组件库：同类型卡片统一尺寸（2026-10-24 用户原话：「为什么每个卡片大小都是不一样的？
    统一不知道吗？这是最基本的设计理念、设计规范。同样类型的卡片样式组件，为什么要设计成不同的？」
@@ -730,7 +685,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 .cc-hd{display:flex;align-items:center;gap:var(--space-8);min-width:0}
 /* 2026-10-31：家族图标位。尺寸由 SVG 自带（20×20），这里只管对齐与颜色 ——
    颜色取三级文字色：它只回答"这是哪一族"，不该比名称更抢眼（颜色已经在讲启用状态了）。 */
-.cc-fam{display:inline-flex;align-items:center;flex:none;color:var(--ink-3)}
+
 .cc-hd .cl-tt{
   position:relative;margin:0;flex:1 1 auto;min-width:0;
   /* ★2026-10-31：删掉这里的 padding-left:16。它原本是给"名称左侧那个 6px 类型点"让位
@@ -751,7 +706,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
   flex:none;font-size:var(--font-size-caption);line-height:1.25;
   color:var(--color-text-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap;
 }
-.cc-hd .cl-tt .cc-dot{position:absolute;left:0;top:50%;transform:translateY(-50%)}
+
 .cc-hd .cl-nm{min-width:0}
 /* 2026-10-30：卡名成为进详情的入口（此前整张卡没有热区，用户点名字＝「组件点不了」）。
    只把名称做成链接，不加整卡热区 —— 卡内还有开关/引用/配置/⋮ 四个动作，整卡可点会抢命中。
@@ -765,24 +720,16 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
    视觉刻意压到最低：无底色 + 发丝边 + caption 字号 + tertiary 字色 ——
    它是"这是哪一类零件"的提示，不许跟下面的状态开关抢分量。
    最多显示 2 个，其余收成 +N（组件卡被点名过"堆满文字"，不再往上加行）。 */
-.cc-tags{display:inline-flex;align-items:center;gap:var(--space-4);flex:none;min-width:0;overflow:hidden}
-.cc-tag{
-  display:inline-flex;align-items:center;height:20px;padding:0 6px;flex:none;
-  border:1px solid var(--color-border-hairline);border-radius:var(--radius-xs);
-  font-size:var(--font-size-caption);line-height:1;color:var(--color-text-tertiary);white-space:nowrap;
-}
+
+
 
 /* 编辑信息弹窗里的标签选择（多选，最多 3 个）：选中态用品牌色底+描边，没选是白底灰字 */
-.ei-sub{margin-left:var(--space-8);font-size:var(--font-size-caption);font-weight:400;color:var(--color-text-tertiary)}
-.ei-tags{display:flex;flex-wrap:wrap;gap:var(--space-8);margin:0 0 14px}
-.ei-tag{
-  height:30px;padding:0 12px;border:1px solid var(--color-border-card);border-radius:var(--radius-pill);
-  background:var(--surface-page);font-family:inherit;font-size:var(--font-size-body);
-  color:var(--color-text-secondary);cursor:pointer;transition:background .16s,border-color .16s,color .16s;
-}
-.ei-tag:hover{border-color:var(--color-brand);color:var(--color-brand-ink)}
-.ei-tag[aria-pressed="true"]{border-color:var(--color-brand);background:var(--color-brand-surface);color:var(--color-brand-ink)}
-.ei-tag:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset)}
+
+
+
+
+
+
 /* .cc-dot 的尺寸/颜色/行内位置一律在 components.html 的页内 <style>（规范件 §1 落点表）—— 
    它和 --c-* 的映射是同一件事，分两处写就会"改了一处、另一个色不对"。
    ★2026-10-29：components.html 的页内 <style> 已清空（.cc-meta 迁入本段）。
@@ -1053,18 +1000,11 @@ button.cc-meta:focus-visible{
 .kc-tag{position:static}
 /* 信息区高度见 .kcard 的 --kc-body-h（87 = 302 − 166 − 49）：
    封面压缩腾出的 15 全部给到这里，名字四周的留白因此变宽，卡片总高不变。 */
-.kc-body{
-  flex:none;padding:var(--space-4) var(--space-12) 0;
-  display:flex;flex-direction:column;
-  min-height:var(--kc-body-h);height:var(--kc-body-h);
-}
+
 /* 状态行：左「更新提示」右「状态」。两端对齐，中间留白 —— 让卡片左侧不再空着。 */
-.kc-meta{
-  display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);
-  height:20px;margin-bottom:2px;
-}
-.kc-meta .card-tag{flex:none}
-.kc-meta .kc-upd{margin:0}
+
+
+
 
 /* ── 整卡热区（2026-10-26 晚）────────────────────────────────────
    一张卡只留**一个**"进配置页"的入口：封面那个锚点，热区靠它的 ::after 撑到信息区下沿。
@@ -1152,25 +1092,17 @@ button.cc-meta:focus-visible{
    箭头只在 hover / focus-within 出，静止态卡面不添任何多余元素。
    ⚠ 不用 transform 出场：卡片 hover 一旦带 transform，菜单（fixed）会被拽进
      卡片坐标系 —— 这个坑犯过一次（见 .kcard:hover 的注释）。这里只动 opacity。 */
-.kc-go{
-  position:absolute;right:calc(var(--space-12) + var(--space-8));bottom:calc(var(--space-12) + var(--space-8));
-  display:inline-flex;align-items:center;justify-content:center;
-  width:28px;height:28px;border-radius:var(--radius-pill);
-  background:var(--surface-page);color:var(--color-brand-ink);box-shadow:var(--shadow-card);
-  opacity:0;pointer-events:none;transition:opacity .12s ease;
-}
-.kc-go svg{width:16px;height:16px;display:block}
-.kcard:hover .kc-go,.kcard:focus-within .kc-go{opacity:1}
+
+
+
 /* 没有 hover 的设备（触屏）：箭头必须常显 —— 否则"卡能点"这条提示在触屏上等于不存在，
    而触屏也没有 hover 去发现它。这一档只在无 hover 的媒体下生效，桌面形态不变。 */
-@media (hover:none){.kc-go{opacity:1}}
 /* 主入口的悬停回执：标题升品牌色（原来挂在 .kcard-hit 上，而那个类早已不在 DOM 里） */
-.kcard:hover .kc-body .card-tt,
-.kcard:focus-within .kc-body .card-tt{color:var(--color-brand-ink)}
+
 /* 真源实测：标题 20px / 行高 30 / 600 / rgba(0,0,0,.9)。原来写 16/22 —— 这是"尺寸不一样"的主因。 */
-.kc-body .card-tt{margin:0;font-size:var(--font-size-display);font-weight:600;color:var(--color-text-primary);line-height:var(--leading-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kc-body .card-desc{margin:6px 0 0;font-size:var(--font-size-caption);line-height:var(--leading-card-desc);color:var(--color-text-secondary);height:38px;overflow:hidden;white-space:normal;display:block}/* 2026-10-29：真源 12px（refparity 卡描述 fs）；14→12，行高/高不变（12/19 两行 38） */
-.kc-meta{font-size:var(--font-size-caption);color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 2026-10-29：真源 12px（refparity 卡描述 fs）；14→12，行高/高不变（12/19 两行 38） */
+
 .kcard .card-ft{
   display:flex;align-items:center;justify-content:space-between;gap:0;
   margin:0;padding:var(--space-12) var(--space-12) 13px;height:49px;flex:none;
@@ -1198,16 +1130,10 @@ button.cc-meta:focus-visible{
    ⋮ 菜单里也没有"打开配置"。可发现性不能依赖鼠标悬停。
    形态刻意做成**灰字标签**而不是蓝底按钮：蓝底会把一个"标签"加冕成主按钮，
    于是又回到"一颗蓝按钮 + 一个图标钮谁更重要"的老问题。 */
-.kcard .kc-ops .k-open{
-  /* ★2026-10-30：这里原来还写着 height:24 / padding:0 6px —— 选择器比下面那条
-     `.card-ft .k-open` 更具体（3 个类 vs 2 个类），于是"三件同档 32×32"对「配置」
-     根本没有生效（实测它一直是 24 高）。几何只剩下面那一处定义，本条只留颜色与字号。 */
-  text-decoration:none;border-radius:var(--radius-xs);
-  font-size:var(--font-size-body);color:var(--color-brand-ink);
-}
-.kcard .kc-ops .k-open .k-open-gt{display:none}
-.kcard .kc-ops .k-open:hover{color:var(--color-brand-ink);background:var(--surface-sunken-2)}
-.kcard .kc-ops .k-open:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:1px}
+
+
+
+
 /* ★2026-10-27：菜单里的破坏性动作要看得出来。下架 = 客户立刻打不开，
    与「版本管理」同灰度会让人不敢点也不敢不点。上架是恢复性动作，保持普通色。 */
 /* 不可点的菜单项必须看得出来（前端席 P1-1）：原来只有 aria-disabled，视觉与可点项一模一样 */
@@ -1222,14 +1148,7 @@ button.cc-meta:focus-visible{
 
 /* 应用卡描述：固定两行（真源信息区 72 高，标题 22 + 描述 38 + 间距 6）。
    用高特异性压掉旧 .card-desc 的 22 行高 —— 否则实测 44，与组件卡 38 不一致。 */
-.kcard .kc-body .card-desc{
-  /* ★必须显式写 min-height:38 —— 旧规则里有一个 min-height:44 在撑高，
-     只写 height:38 会被 min-height 顶回去（实测 44，而组件卡是 38）。 */
-  margin:6px 0 0;height:38px;min-height:38px;max-height:38px;flex:0 0 38px;line-height:var(--leading-card-desc);
-  /* 2026-10-29：真源 12px（refparity 卡描述 fs 12）。14→12 后 12/19 × 2 行仍 = 38，卡高不变。 */
-  font-size:var(--font-size-caption);color:var(--color-text-secondary);
-  overflow:hidden;display:block;white-space:normal;text-overflow:clip;
-}
+
 
 /* ── 应用卡状态标签：对齐真源 ant-tag（2026-10-26 晚）────────────
    真源实测：50×20 / 12px / 行高 20 / padding 0 7px / radius 4px / 白字压蓝底。
@@ -1248,7 +1167,7 @@ button.cc-meta:focus-visible{
 
 /* ── 应用卡 footer：真源无 border、日期 12/16 蓝灰 ── */
 .kcard .card-ft{border-top:0}
-.kcard .kc-meta{font-size:var(--font-size-caption);line-height:var(--leading-caption-meta);color:var(--color-text-tertiary)}
+
 
 /* ── 组件卡「禁用」状态（2026-10-28 改回浅灰底）────────────────────
    2026-10-26 这里写过一条 `.crow[data-on="0"] .cc-sw{background:var(--sel)}`，
@@ -1295,7 +1214,7 @@ button.cc-meta:focus-visible{
   color:var(--color-warning);background:var(--color-warning-surface);
   pointer-events:none;
 }
-.chip-count{font-variant-numeric:tabular-nums}
+
 /* 行内紧凑态：同一枚胶囊降一档高（16 = 12 号字的行高），内距跟着收一档 */
 .chip-sm{height:var(--leading-caption-meta);padding:0 var(--space-4)}
 /* 2026-10-29 结构债第一批：app.html 里那三条 .chip{height:22px…} / .chip[data-s=on|off]
@@ -1845,11 +1764,11 @@ body[data-drawer="on"] .hint{
 .fx{padding: 2px var(--space-8);border-radius:var(--radius-sm);background:var(--surface-sunken-2);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
 
 /* 逐条结论 */
-.rule-row{display:flex;align-items:center;gap: var(--space-8);padding: var(--space-8) 0;border-bottom:1px solid var(--color-border-hairline)}
-.rule-row:last-child{border-bottom:0}
-.rule-nm{flex:1;font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+
+
+
 /* 状态 chip 已迁到 sys.css（.cond）——两页共用一份 */
-.off-note{margin: 10px 0 0;font-size:var(--font-size-caption);line-height:1.6;color:var(--color-text-tertiary)}
+
 
 /* ══ 空态 · Empty State ═══════════════════════════════════════════════════════
    一张居中的提示卡，不是一整块撑满画布的白板（min-height 让它有呼吸，但不铺满）。 */
@@ -1910,7 +1829,6 @@ body[data-drawer="on"] .hint{
    原因与出口写在同一句里（title / aria-label），例：components.html 禁用卡上的「配置」。 */
 .btn[disabled], .btn[aria-disabled="true"], .btn.is-disabled,
 .kbtn.act[aria-disabled="true"], .kbtn.act.is-disabled,
-.icbtn[aria-disabled="true"], .icbtn.is-disabled,
 .cv-op[disabled], .cv-op[aria-disabled="true"], .cv-op.is-disabled,
 .cfg-btn[disabled], .cfg-btn[aria-disabled="true"], .cfg-btn.is-disabled,
 .tb-pick-ok:disabled, .tb-pick-ok[aria-disabled="true"], .tb-pick-ok.is-disabled,
@@ -1937,7 +1855,6 @@ body[data-drawer="on"] .hint{
 }
 /* 文字 / 图标类禁用件：不加按钮面，只降字色与光标 —— 同一个状态、同两个字色令牌。 */
 .kbtn.act[aria-disabled="true"], .kbtn.act.is-disabled,
-.icbtn[aria-disabled="true"], .icbtn.is-disabled,
 .cv-op[disabled], .cv-op[aria-disabled="true"], .cv-op.is-disabled,
 .cfg-btn[disabled], .cfg-btn[aria-disabled="true"], .cfg-btn.is-disabled{
   background:none; border-color:transparent;
@@ -1954,7 +1871,6 @@ body[data-drawer="on"] .hint{
    修法不动它 24×24 的**可见盒**（真源 + ref-parity 要的就是这个数），
    改的是它的**热区**：给 ::after 一块 32×32 的隐形命中面，hover 底色也画在它上面。
    于是三件：图标 16、悬停块 32×32、可点区 ≥32 —— 与 ⋮ 同级，且盒子读数仍是真源的 24。 */
-.card-ft .k-open,
 .card-ft .k-more{
   height:32px; min-width:32px; padding:0 var(--space-8);
   display:inline-flex; align-items:center; justify-content:center; gap:var(--space-4);
@@ -1975,10 +1891,9 @@ body[data-drawer="on"] .hint{
   border-radius:var(--radius-sm);background:none;
   transition:background .16s;
 }
-.card-ft .k-open:hover,
 .card-ft .k-more:hover{background:var(--color-state-hover); color:var(--color-text-primary)}
 .card-ft .k-pub:hover::after{background:var(--color-state-hover)}
-.card-ft .k-open svg,.card-ft .k-pub svg,.card-ft .k-more svg{width:16px;height:16px}
+.card-ft .k-pub svg,.card-ft .k-more svg{width:16px;height:16px}
 .card-ft .kc-ops{gap:var(--space-8)}
 
 /* 封面摘要（2026-10-30）：数量 + 前两个组件名，超出用省略号 */
@@ -2100,7 +2015,7 @@ body[data-drawer="on"] .hint{
    它会让真源的封面层直接消失 —— 而封面正是真源卡的主体。已删，改由文末真源节定义。 */
 
 /* 芯片条：24 高、单行、左起 */
-.kcard .kc-print-slot{display:block;height:var(--kc-strip-h);flex:none;overflow:hidden}
+
 .kcard .kc-print{
   position:static;height:var(--kc-strip-h);display:flex;flex-direction:row;align-items:center;
   gap:var(--space-4);overflow:hidden;
@@ -2111,42 +2026,20 @@ body[data-drawer="on"] .hint{
 .kcard .kc-print.is-empty em{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 
 /* 标题行：名称占满，状态胶囊跟在右边 */
-.kcard .kc-head{
-  display:flex;align-items:center;gap:var(--space-8);
-  margin-top:var(--space-12);flex:none;
-}
-.kcard .kc-head .card-tt{
-  flex:1 1 auto;min-width:0;margin:0;
-  font-size:var(--font-size-display);font-weight:600;line-height:var(--kc-title-lh);
-  color:var(--color-text-primary);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.kcard .kc-head .kc-tag{position:static;flex:none}
+
+
+
 
 /* 说明：两行截断 */
-.kcard .kc-cover-img .card-desc{
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-  margin:var(--space-4) 0 0;height:var(--kc-desc-h);
-  font-size:var(--font-size-caption);line-height:var(--leading-card-desc);
-  color:var(--color-text-secondary);overflow:hidden;
-}
+
 
 /* 末行：左「客户 · 更新 · 版本」右「N 个组件有更新」 */
-.kcard .kc-row{
-  display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);
-  margin-top:auto;padding-top:var(--space-8);flex:none;min-width:0;
-}
-.kcard .kc-facts{
-  flex:1 1 auto;min-width:0;
-  font-size:var(--font-size-caption);line-height:var(--leading-caption);
-  color:var(--color-text-tertiary);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.kcard .kc-row .kc-upd{flex:none;margin:0}
+
+
+
 
 /* 底栏：三个动作同一灰度；几何统一由文件尾部 canonical 段定义（2026-11-02 收口）。
    这里不再写 padding/gap —— 多代叠加正是 60/68 与 4px/12px 混用的根因。 */
-.kcard .kc-ops .k-open,
 .kcard .kc-ops .k-pub,
 .kcard .kc-ops .k-more{
   width:32px;height:32px;padding:0;
@@ -2159,8 +2052,7 @@ body[data-drawer="on"] .hint{
   font-size:0;                        /* 「配置」两个字只给读屏，视觉上只留图标 */
   transition:background .14s,color .14s;
 }
-.kcard .kc-ops .k-open{width:auto;padding:0 var(--space-8);font-size:var(--font-size-caption)}
-.kcard .kc-ops .k-open:hover,
+
 .kcard .kc-ops .k-pub:hover,
 .kcard .kc-ops .k-more:hover{
   background:var(--color-state-hover);color:var(--color-text-primary);
@@ -2168,17 +2060,14 @@ body[data-drawer="on"] .hint{
 /* 下架是"客户立刻打不开"，只在悬停时出血色 —— 常态和另外两颗一样灰，
    不再像原来那样常驻一颗棕色按钮钉在那儿（用户：「三个不同的颜色不同的风格」）。 */
 .kcard .kc-ops .k-pub:hover{color:var(--color-danger)}
-.kcard .kc-ops .k-open svg,
 .kcard .kc-ops .k-pub svg,
 .kcard .kc-ops .k-more svg{width:16px;height:16px}
 
 /* 卡片三段（2026-11-01 二轮）：标题独占一行；末行「状态 · 档案 · 更新」三段 */
-.kcard .kc-row{gap:var(--space-8);padding-top:var(--space-8)}
-.kcard .kc-row .kc-tag{position:static;flex:none;margin:0}
-.kcard .kc-facts{
-  flex:1 1 auto;min-width:0;text-align:left;
-}
-.kcard .kc-row .kc-upd{flex:none;margin:0}
+
+
+
+
 /* 统一卡高：描述一行与两行的卡必须等高，否则一屏参差 */
 
 /* 空应用（还没装组件）也有档案行，只是版本那一格省略 —— 不许因此变矮 */
@@ -2199,8 +2088,8 @@ body[data-drawer="on"] .hint{
 .kcard .kc-ops .k-pub{color:var(--color-text-body)}
 /* 2026-11-01：底栏三颗彻底同档 —— 「配置」不许是蓝字（那会让它读成主按钮，
    而它和另外两颗一样只是个入口）。三者同灰度、同 32×32、同 hover 底。 */
-.kcard .kc-ops .k-open{color:var(--color-text-tertiary)}
-.kcard .kc-ops .k-open:hover{color:var(--color-text-primary);background:var(--color-state-hover)}
+
+
 /* 空应用的条：左对齐，和别的卡同一只左手 */
 .kcard .kc-print.is-empty{justify-content:flex-start}
 
@@ -2222,19 +2111,13 @@ body[data-drawer="on"] .hint{
 .page-components .cc-ft .k-more{color:var(--color-text-body)}
 .page-components .cc-ft .k-more:hover{color:var(--color-text-primary)}
 /* 描述固定两行：height 单写会被旧规则的 min-height:44 顶回去（实测 44），两处都要写 */
-.kcard .kc-cover-img .card-desc,
-.kcard .card-desc{min-height:var(--kc-desc-h);height:var(--kc-desc-h)}
+
 
 /* ── 窄屏（≤1120）卡片末行折成两行 ───────────────────────────────
    1024 实测：应用卡宽 240，末行三段（已上架 / 更新 2026-10-20 · v3 / 2 个组件有更新）
    塞不下，「已上架」被裁成「上架」、「2 个组件有更」被切掉半个字 ——
    被裁的是状态和待办，恰恰是最不该丢的两样。
    所以窄屏不让它们抢宽度，直接换行：第一行状态 + 更新提示，第二行档案。 */
-@media (max-width:1120px){
-  .kcard .kc-row{flex-wrap:wrap;row-gap:4px}
-  .kcard .kc-facts{flex:1 1 100%;order:3;padding-top:2px}
-
-}
 /* 等高：grid 行内卡片必须拉伸到同一高度，否则说明一行/两行、有无更新提示会让卡片参差 */
 
 
@@ -2348,19 +2231,11 @@ body[data-drawer="on"] .hint{
 /* 未发布：电源动作不存在，但按钮位必须占住；disabled 用 25% ink，不是隐形 ghost。 */
 .kcard .kc-ops .k-pub:disabled{color:var(--color-text-muted);cursor:not-allowed;background:none}
 .kcard .kc-ops .k-pub:disabled:hover{background:none;color:var(--color-text-muted)}
-.kcard .kc-ops .k-open svg,
 .kcard .kc-ops .k-pub svg,
 .kcard .kc-ops .k-more svg{width:20px;height:20px;display:block}
 
 /* 未装配标记：贴在封面左下，一句事实，不是组件清单 */
-.kcard .kc-empty-flag{
-  position:absolute;left:calc(var(--space-12) + 8px);bottom:calc(var(--space-8) + 8px);
-  font-size:var(--font-size-caption);line-height:var(--leading-caption);
-  color:var(--color-text-tertiary);
-  background:var(--surface-page);
-  padding:0 var(--space-4);border-radius:var(--radius-xs);
-  pointer-events:none;
-}
+
 
 /* ★2026-11-01 删除：这一段是"封面塌成 20px → flex:1 1 0 → 再改成 2.1:1 → 再把卡 aspect-ratio 关掉"
    的四连补丁，四次都在互相抵消。根因是**卡片没有比例**：卡高由内容撑，封面只能被钉死或塌掉。
@@ -2479,7 +2354,7 @@ body[data-drawer="on"] .hint{
   background-size:cover;
 }
 .nf-cover-act{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap}
-.nf-cover-hint{font-size:var(--font-size-caption);color:var(--color-text-tertiary);line-height:var(--leading-body)}
+
 
 /* ★2026-11-02（1280 实测）：卡底栏宽度 = 卡宽 − 107.7，1280 下只有 121px，
    「v4 · 2026-10-20 14:32:08」要 145px ⇒ 每张卡的更新时间都被省略号截断（用户截图指的就是这里）。
