@@ -7,7 +7,7 @@
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=42fb1b98">
+<link rel="stylesheet" href="assets/sys.css?v=62eef879">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=5808cd0c">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -50,7 +50,7 @@
       <!-- 被配置页退回时的一次性提示（?pick=1 没给 id / ?miss=1 id 查不到） -->
       <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
 
-      <div class="bar">
+      <div class="bar bar-main">
         <!-- ★2026-10-24 修 P0-3：原来这里是 <a href="app.html">——不带 id，
              app.html 回落到列表第一条，于是「新建应用」= 打开别人的应用，改完保存改错人。
              现在是一颗真按钮：建草稿 → 带新 id 进配置页。 -->
@@ -64,13 +64,13 @@
              停用 10 个应用 ＝ 开 10 次 ⋮ + 答 10 次确认。这里是"进入多选"的模式开关，
              不是动作本身；按下后每张卡底栏左侧出一枚勾选框，并出现一条批量操作条。 -->
         <button class="btn" id="btn-batch" type="button" aria-pressed="false">批量操作</button>
-        <!-- 2026-11-02（独立走查 P0）：全局授权页原来没有任何入口 —— 一张有数据的表只能靠记 URL 进。
-             侧栏按用户 11-01 定调只有 应用管理/组件库 两项，所以入口放在列表工具条上：这里是"跨应用看授权"的位置。 -->
-        <a class="btn" href="client-auth.html" title="所有应用、所有客户的授权">授权总览</a>
         <div class="right">
           <!-- 2026-10-31（操作缺口）：列表原来只有"库里的顺序"（DB.APPS 数组序，新件 unshift 到最前），
                想知道"最近动过哪几个"只能逐条点进去看。默认按更新时间倒序 ——
                它同时也是用户最常问的那一句。只排当前筛选结果，不改 DB 里的顺序。 -->
+          <label class="field w220">
+            <input id="f-kw" placeholder="搜应用名或客户" autocomplete="off">
+          </label>
           <label class="field" style="width:120px">
             <select id="f-sort" style="border:0;background:transparent;outline:0;font:inherit;color:var(--color-text-body);width:100%">
               <option value="upd">最近更新</option>
@@ -92,9 +92,6 @@
                    选「全部状态」能看见它，按状态筛却永远筛不到它。 -->
               <option value="已下架">已下架</option>
             </select>
-          </label>
-          <label class="field w220">
-            <input id="f-kw" placeholder="搜应用名或客户" autocomplete="off">
           </label>
           <!-- 32×32 描边图标钮：线上工具栏右端就是这个位置、这个尺寸（真源 32×32 / border rgb(217,217,217)）。
                它必须有真行为，否则就是死控件 —— 这里做"重绘列表"（筛选条件不变）。 -->
@@ -461,28 +458,13 @@
   }
 
 
-  /* ── 封面（2026-11-02）────────────────────────────────────────
-     用户口径：「生成和手工，2 种方式」。手工＝上传图片（app.cover 存 dataURL，优先）；
-     生成＝纯 CSS 画，不引入任何图片资源。
-     生成样式 = 4 个色系 × 4 种图形 = 16 种；序号缺省时按应用在列表里的位置算
-     （index*5 % 16，5 与 16 互质 ⇒ 16 个以内两两不同），所以十条种子不会共用一张图。
-     颜色只取 token：色系走 --color-type-* 的深/浅两级，图形用同一级的描边或填充。 */
-  var COVER_STYLES = 16;   /* 4 个色系 × 4 种图形；5 与 16 互质 ⇒ 16 张以内两两不同 */
-  function coverStyleOf(a) {
-    if (a && typeof a.coverStyle === 'number') return ((a.coverStyle % COVER_STYLES) + COVER_STYLES) % COVER_STYLES;
-    var i = DB.APPS.indexOf(a);
-    return i < 0 ? 0 : (i * 5) % COVER_STYLES;
-  }
-  function genCoverHtml(style) {
-    var st = ((style % COVER_STYLES) + COVER_STYLES) % COVER_STYLES;
-    return '<span class="kc-gen" aria-hidden="true" data-tone="' + (st % 4 + 1) +
-      '" data-motif="' + (Math.floor(st / 4) % 4 + 1) + '"></span>';
-  }
+  /* ★2026-11-02（按线上现场）：没有手工上传时用产品线的 common_card.png，
+     不再画自己那套几何图 —— 正式环境每张卡就是这个封面。 */
   function coverHtml(a) {
     if (a.cover) {
       return '<span class="kc-cover-img" style="background-image:url(' + esc(a.cover) + ')"></span>';
     }
-    return '<span class="kc-cover-img is-gen">' + genCoverHtml(coverStyleOf(a)) + '</span>';
+    return '<span class="kc-cover-img"></span>';
   }
 
   function render() {
@@ -577,7 +559,7 @@
         /* ★2026-11-01 照线上标准样式（agents.datagrand.com/#/AuditAgent/AppManage）：
            封面 + 标题 + 说明 + 底栏。
            ★2026-11-02（用户口径「生成和手工，2 种方式」）：封面有两种来源 ——
-           手工上传（app.cover 存 dataURL）优先；没有手工图就用生成封面（纯 CSS，见 coverHtml）。
+           手工上传（app.cover 存 dataURL）优先；没有手工图就用线上同一张 common_card.png。
            原来十条种子全铺同一张 common_card.png，十张卡长得一模一样，等于没有封面。
            ★卡上不再放组件清单：用户原话「我放了 100 个组件你有什么意义呢？
              我直接去应用装配界面看一眼不就行了」。 */
@@ -796,8 +778,7 @@
      用户原话：「新增组件和新增应用和编辑应用的时候，就没有上传图片的那个组件」。
      卡片上本来就有封面位，没有上传入口，那个位就只能永远用默认图 —— 这是缺功能，不是缺设计。
      存 dataURL 进 app.cover：本地原型没有上传服务，压缩到 1280 宽再转 jpeg，避免撑爆 localStorage。 */
-  var COVER = null;        /* null＝用生成的封面；有值＝手工上传的 dataURL */
-  var COVER_STYLE = 0;     /* 生成样式序号 0..15（4 色系 × 4 图形），打开弹窗时按应用算 */
+  var COVER = null;        /* null＝用默认封面 common_card.png；有值＝手工上传的 dataURL */
   var COVER_FILE = $('#ap-cover-file');
   var COVER_THUMB = $('#ap-cover-thumb');
   var COVER_REMOVE = $('#ap-cover-remove');
@@ -811,9 +792,9 @@
       COVER_THUMB.textContent = '';
       return;
     }
-    COVER_THUMB.style.backgroundImage = 'none';
-    COVER_THUMB.classList.add('is-gen');
-    COVER_THUMB.innerHTML = genCoverHtml(COVER_STYLE);
+    COVER_THUMB.classList.remove('is-gen');
+    COVER_THUMB.style.backgroundImage = '';
+    COVER_THUMB.textContent = '';
   }
   if (COVER_FILE) COVER_FILE.addEventListener('change', function () {
     var f = COVER_FILE.files && COVER_FILE.files[0];
@@ -887,7 +868,6 @@
     D.name.value = a ? a.name : '';
     D.desc.value = a ? (a.desc || '').replace(/^还没有填写说明$/, '') : '';
     COVER = a && a.cover ? a.cover : null;
-    COVER_STYLE = a ? coverStyleOf(a) : (DB.APPS.length * 5) % COVER_STYLES;
     paintCover();
     showErr('');
     syncOk();
@@ -917,7 +897,6 @@
         cur.name = nm;
         cur.desc = String(D.desc.value || '').trim() || '还没有填写说明';
         cur.cover = COVER || '';
-        cur.coverStyle = COVER_STYLE;
         DB.save();
       }
       closeNew();
@@ -929,7 +908,6 @@
       name: nm,
       desc: String(D.desc.value || '').trim() || '还没有填写说明',
       cover: COVER || '',
-      coverStyle: COVER_STYLE,
       status: '未发布'
     });
     location.href = 'app.html?id=' + encodeURIComponent(app.id);

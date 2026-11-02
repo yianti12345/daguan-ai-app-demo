@@ -147,6 +147,10 @@ a:hover{color:var(--color-brand-hover)}
    这里不再写第二份 —— 两套禁用表达正是 2026-10-29 要收掉的违约之一。 *//* 顶栏里的一组动作：与标题同一行，右端对齐 */
 .tb-ops{display:flex; align-items:center; gap:var(--space-8); margin-left:auto}
 .bar .right{margin-left:auto;display:flex;align-items:center;gap:var(--space-8)}
+/* ★2026-11-02（照线上应用管理工具条）：筛选与主按钮同一行、紧接在左，不再甩到最右；
+   只有「下载客户端」留在右端。线上是 新增核心专家 + 搜索 + 4 个下拉 + 筛选图标的一条过滤带。 */
+.bar-main .right{flex:1 1 auto;margin-left:0}
+.bar-main .dl-btn{margin-left:auto}
 .field{
   height:var(--input-height);display:flex;align-items:center;gap:var(--space-8);padding:0 var(--input-pad-x);
   border:0;border-radius:var(--input-radius);background:var(--surface-sunken-2);font-size:var(--font-size-body);color:var(--color-text-secondary);
@@ -2471,65 +2475,6 @@ body[data-drawer="on"] .hint{
 }
 /* 卡高由 grid 行拉伸时不参与（否则一行里最高的卡会把别的撑开） */
 .grid{align-items:start}
-
-/* ── 生成封面（2026-11-02，用户口径「生成和手工，2 种方式」）──────────────
-   手工＝app.cover（dataURL）铺 background-image；生成＝下面这组，纯 CSS，不引入图片资源。
-   组合＝4 个色系（tone）× 4 种图形（motif）＝16 种，序号存在 app.coverStyle。
-   颜色只取 token：--color-type-* 的深/浅两级；不写死色值，否则 gate-tokens 会判红。 */
-.kcard .kc-cover-img.is-gen,
-.nf-cover-thumb.is-gen{background-image:none;position:relative;overflow:hidden}
-.kc-gen{
-  position:absolute;inset:0;display:block;pointer-events:none;border-radius:inherit;
-  /* 底色是纯色不是渐变：DESIGN.md §1.7 明写「渐变只许三处」，封面不在其中。 */
-  background:var(--kc-bg)
-}
-/* 只用冷色四族：应用卡没有"类型"含义，套暖色会跟配置类（琥珀）撞语义，
-   而琥珀 700 压在琥珀 100 上会发土，是这一组里最难看的一张。 */
-.kc-gen[data-tone="1"]{--kc-line:var(--color-type-page);--kc-bg:var(--color-type-page-surface)}
-.kc-gen[data-tone="2"]{--kc-line:var(--color-type-cap);--kc-bg:var(--color-type-cap-surface)}
-.kc-gen[data-tone="3"]{--kc-line:var(--color-type-data);--kc-bg:var(--color-type-data-surface)}
-.kc-gen[data-tone="4"]{--kc-line:var(--color-brand-ink);--kc-bg:var(--color-brand-surface-2)}
-.kc-gen::before,.kc-gen::after{content:"";position:absolute;display:block}
-/* 四个图形都往左下压，右上留给状态胶囊（客户 v3 / 已上架 / N 个可升级）——
-   图形和徽标抢同一块角，是上一版最直接的毛病。 */
-/* ⚠ 尺寸全部按封面框的百分比写，不写 px：同一张封面要在大卡（247×160）和
-   新建/编辑弹窗的缩略图（约 96×64）里用，写死 px 的圆在缩略图里会顶满整块。 */
-/* 1 圆：实心大圆出画 + 挖空小圆（看起来像缺一角的印） */
-.kc-gen[data-motif="1"]::before{
-  width:56%;aspect-ratio:1;right:7.3%;bottom:-29%;border-radius:50%;
-  background:var(--kc-line);opacity:.8
-}
-.kc-gen[data-motif="1"]::after{
-  width:22.7%;aspect-ratio:1;right:22.7%;bottom:3.8%;border-radius:50%;
-  background:var(--kc-bg);opacity:.95
-}
-/* 2 带：两条同角度斜带，一粗一细 */
-.kc-gen[data-motif="2"]::before{
-  top:-32%;left:6%;width:17.8%;height:180%;transform:rotate(26deg);
-  background:var(--kc-line);opacity:.75
-}
-.kc-gen[data-motif="2"]::after{
-  top:-32%;left:10.5%;width:4.9%;height:180%;transform:rotate(26deg);
-  background:var(--kc-line);opacity:.4
-}
-/* 3 片：一块斜置实心方片 + 角上一小块 */
-.kc-gen[data-motif="3"]::before{
-  width:43.7%;aspect-ratio:1;right:10.5%;bottom:-16.3%;transform:rotate(14deg);
-  border-radius:var(--radius-panel);background:var(--kc-line);opacity:.75
-}
-.kc-gen[data-motif="3"]::after{
-  width:13.8%;aspect-ratio:1;left:12.1%;bottom:15%;transform:rotate(14deg);
-  border-radius:var(--radius-sm);background:var(--kc-line);opacity:.38
-}
-/* 4 环：两道同心圆弧从底边升起（弧心在画外，所以只看得到上半圈） */
-.kc-gen[data-motif="4"]::before{
-  width:93%;aspect-ratio:1;right:-22.7%;bottom:-93.8%;border-radius:50%;
-  border:4px solid var(--kc-line);opacity:.85
-}
-.kc-gen[data-motif="4"]::after{
-  width:60.7%;aspect-ratio:1;right:-5.7%;bottom:-60%;border-radius:50%;
-  border:3px solid var(--kc-line);opacity:.6
-}
 
 /* 封面选择（新建/编辑应用弹窗）2026-11-01 */
 .nf-cover{display:flex;align-items:center;gap:var(--space-12)}
