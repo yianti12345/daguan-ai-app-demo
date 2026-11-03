@@ -1599,7 +1599,7 @@
             超过 5 个折成「…等 N 个」，不在确认框里堆 76 行；
          ② 只改装配版本，**不碰客户可见版本** —— 要客户看到还得去「客户授权」页升级；
          ③ 升完不算存版：还要点「存成新版本」才进历史。toast 里把这句话说出来。 */
-    on('#act-upgrade-all', 'click', function () {
+    function upgradeAllAsk() {
       var ups = DB.updatesOf(app.id);
       if (!ups.length) { hint('没有要升级的组件', { ms: 4000 }); return; }
       var names = ups.slice(0, 5).map(function (u) { return u.name + ' ' + u.from + '→' + u.to; }).join('、');
@@ -1611,12 +1611,13 @@
         onOk: function () {
           var r = DB.upgradeAll(app.id);
           if (!r || !r.n) { hint('没升成功：这台电脑写不进去', { kind: 'err', ms: 9000 }); return; }
-          paintApp(); renderCanvas();
-          if (typeof paintCounts === 'function') paintCounts();
+          renderList(); paintCounts(); paintApp(); renderCanvas();
           hint('已升级 ' + r.n + ' 个组件到最新版 · 记得「存成新版本」', { ms: 9000 });
         }
       });
-    });
+    }
+    on('#act-upgrade-all', 'click', upgradeAllAsk);
+    on('#p-upgrade-all', 'click', upgradeAllAsk);
 
     /* 存一次通知一次：谁在存、存成没成，界面不该靠轮询猜 */
     DB.onSave = function (ok) { paintSaveState(); };
@@ -1722,40 +1723,22 @@
     });
   }
 
+  /* ★2026-11-03（用户 m03795）：已装配行里如果有新版本，要能在弹窗里一眼看到，
+     并且一次全升。只在真有落后组件时出现，数字与卡片徽标、顶栏同源（DB.updatesOf）。 */
+  function paintUpdBar() {
+    var bar = $('#p-upd'), lab = $('#p-upd-n');
+    if (!bar) return;
+    var n = Object.keys(updNow || {}).length;
+    bar.hidden = !n;
+    if (n && lab) lab.textContent = n + ' 个组件有新版本';
+  }
+
   function paintCounts() {
-    var n = app.comps.length, total = DB.COMPS.length;
+    var n = app.comps.length;
     if (ui && ui.setChipCount) ui.setChipCount(n);
-    /* 2026-10-23：这里原来写「库里 8 个 · 已装 3 个」，而页签写「可装配 3 / 已装配 3」——
-       同一件事说两遍，且 8 和 6 对不上（差的是 2 个已下架）。计数交给页签一处，
-       头部只说这是一件什么事。 */
-    /* 抽屉里把「为什么总数比组件库少」说清：禁用的不显示，但有名字有数量。 */
-    var b = $('#dlg-total');
-    if (b) {
-      var hidden = total - (n + listOf('avail').length);
-      b.textContent = hidden > 0 ? '另有 ' + hidden + ' 个组件已禁用，装配面板里不显示' : '';
-    }
-    /* ★2026-10-28（产品分析打回）：平均数不是"配齐"的判据——它只说别人装了多少，
-       不说你缺哪一块。真正的参照是**别人都有、而你没有的那几块**。 */
-    var ft = document.querySelector('#mask .p-ft');
-    if (ft) {
-      var others = DB.APPS.filter(function (a) { return a.id !== appId; });
-      var cnt = {};
-      others.forEach(function (a) {
-        (a.comps || []).forEach(function (id) { cnt[id] = (cnt[id] || 0) + 1; });
-      });
-      var mine = {};
-      (app.comps || []).forEach(function (id) { mine[id] = 1; });
-      var common = Object.keys(cnt).filter(function (id) {
-        return cnt[id] === others.length && !mine[id];
-      }).map(function (id) { var c = DB.compById(id); return c ? c.name : id; });
-      if (!others.length) ft.textContent = '这个应用装了 ' + n + ' 块';
-      else if (common.length) ft.textContent = '其他 ' + others.length + ' 个应用都装了这些，你这个还没装：'
-        + common.slice(0, 3).join('、') + (common.length > 3 ? ' 等 ' + common.length + ' 块' : '');
-      /* ★2026-10-28（场景清单判）：原句「其他 N 个应用也都装了这几块」在"没有共同缺失"时并不成立——
-         别的应用可能装了完全不同的块，只是它们没形成"全员都有而你没有"的集合。这是一句过度安抚。
-         这里只陈述能核实的事实，不做断言。 */
-      else ft.textContent = '这个应用装了 ' + n + ' 块';
-    }
+    /* ★2026-11-03 用户 m03795：「这个应用装了 4 块？这什么狗屎提示，有任何意义吗？」
+       头部计数与底注都删了：页签已经写着可装配/已装配，底部再复述一遍装配数
+       只是在替用户数数，不回答任何下一步动作。 */
     var c = $('#n-avail'); if (c) c.textContent = listOf('avail').length;
     var d = $('#n-on'); if (d) d.textContent = listOf('on').length;
   }
@@ -1932,6 +1915,7 @@
     });
     if (wantOn && updFilter) rows = rows.filter(function (c) { return inUpdView(c.id); });
     paintFilter();
+    paintUpdBar();
     if (!rows.length) {
       /* 筛选空态（§5.3）：只留一句事实。清除筛选的入口是上面那行「显示全部」，
          同一屏同一动作不开第二个入口 —— 所以这里**不放按钮**。 */
@@ -2252,10 +2236,7 @@
     /* 抽屉标题要说清"往哪个应用里装" —— 原来只有「装配组件」四个字，
        而同一个人手上可能开着好几个应用的配置页。 */
     var ttl = $('#dlg-title');
-    if (ttl) {
-      ttl.textContent = '装配组件 · ' + app.name;
-      ttl.setAttribute('title', '装配组件 · ' + app.name);
-    }
+    if (ttl) { ttl.textContent = '装配组件'; ttl.removeAttribute('title'); }
     /* 画布让出抽屉宽度（app.html body[data-drawer]）：装完当场看见变化，不被自己挡住。 */
     document.body.setAttribute('data-drawer', 'on');
     mask.setAttribute('data-open', 'true');

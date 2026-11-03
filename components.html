@@ -6,7 +6,7 @@
 <title>组件库</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=1d1b0358">
+<link rel="stylesheet" href="assets/sys.css?v=01bd64e7">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=798c12a1">
 <!-- 2026-10-29：本页 <style> 已清空（原 3,683 B）。`.nf-*`（2026-10-24）与
      引用数格 `.cc-meta`（2026-10-29）都在 assets/sys.css 的组件层：
@@ -76,7 +76,7 @@
     </div>
     <div class="nf-bd">
       <div class="nf-row">
-        <label for="nf-name">组件名称 <span class="nf-req">必填</span></label>
+        <label for="nf-name">组件名称 <span class="nf-req" aria-hidden="true">*</span></label>
         <input id="nf-name" type="text" placeholder="比如：复核队列" autocomplete="off" maxlength="24"
                aria-describedby="nf-err">
         <!-- ★2026-10-24 修 P0-2：原来重名只给 input 设 aria-invalid + title ——
@@ -143,7 +143,7 @@
 <script src="assets/transfer.js?v=6ef877f1"></script>
 <script src="assets/confirm.js?v=26f0a69f"></script>
 <script src="assets/popover.js?v=7f96155d"></script>
-<script src="assets/scope.js?v=3c92decf"></script>
+<script src="assets/scope.js?v=69520925"></script>
 <script>
 /* 组件库列表。
    ⚠ 这里**不许**再写一份组件清单：本页曾自带 const COMPS（8 条，字段 n/k/d/on/refs），

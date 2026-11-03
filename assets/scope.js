@@ -106,6 +106,19 @@
         if (!r.checked) return;
         self.value.mode = r.value;
         self.paintBody();
+        /* ★2026-11-03 m03795：弹窗固定高度后，选「指定」会展开三行；
+           不把这一段滚进视野，用户只看到标题被底栏切住，以为坏了。 */
+        if (r.value === 'custom') {
+          /* 直接把这一组的底边顶进滚动区，而不是 scrollIntoView：
+             后者只要顶部露着就判定「已可见」，展开出来的三行仍藏在底栏下面。
+             延后 30ms：radio 的焦点滚动在事件结束后才发生，同步设的 scrollTop 会被拉回 0。 */
+          setTimeout(function () {
+            var bd = self.el.closest('.nf-bd');
+            if (!bd) return;
+            var over = self.el.getBoundingClientRect().bottom - bd.getBoundingClientRect().bottom + 12;
+            if (over > 0) bd.scrollTop += over;
+          }, 30);
+        }
         closeMenu();
       });
     });

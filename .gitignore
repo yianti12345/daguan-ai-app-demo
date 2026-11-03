@@ -1,0 +1,21 @@
+# 2026-10-30 入库口径
+# 背景：这个工作面此前从未入过 git（产品只活在未跟踪的工作树里，换机器就丢）。
+# 收：页面源码、设计/契约文档、判据工具。
+# 不收：证据与备份 —— 合计 223MB，且多为可重生成的截图与中间件。
+_reports/
+_bak/
+_bak-*/
+_rollback-*/
+blind-inputs/
+.gate-stamp
+.gate-stamp-partial
+.vislint-last.json
+.DS_Store
+
+# 桌面客户端：源码入库，依赖与打包产物不入库（可重打包，单个包 100MB+）
+client/node_modules/
+client/dist/
+client/icon.iconset/
+downloads/
+
+client/.cache/

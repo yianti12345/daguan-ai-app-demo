@@ -1,0 +1,72 @@
+# 目标文件：~/.dsh/profiles/web/cordis.patch.yml
+# 现状（2026-11-02 实测）：4 行注释 + 一行 `[]`。
+# 做法：把 `[]` 那一行换成下面的块；注释行留着。
+#
+# ══ 先做这条：不用装任何插件 ═════════════════════════════════════
+# DSH 自带工具结果折叠器，但 web-app 层默认把它 disabled 了（配合 spill 的
+# maxInlineBytes 50000 ⇒ 一条命令吐 50KB 就原样进上下文，并随每轮重发）。
+# 写下面这段即开回，实测 --dump-config 组合成功（disabled 消失、config 生效）：
+#
+#   # 2026-11-02：开回工具结果折叠
+#   - id: tool-result-pruner
+#     disabled: false
+#     config:
+#       thresholdChars: 6000   # >6KB 才折
+#       headChars: 3000        # 保头
+#       tailChars: 800         # 保尾，原文进 spill 侧车可再读
+#
+# 注意：改完 --dump-config 能看到，但**热加载不重建插件**——本机实测
+# `seq 1 3000`（13893 字符）仍原样返回，未被折叠。要看到生效必须重启
+# dsh 服务，然后用同一条大输出命令复测：返回体应变成 头 3000 + 尾 800 + 抑制行数。
+#
+# ── 三条实测事实（本机 dsh 0.1.5-rc.2，2026-11-02）─────────────────
+#
+# 1) 插件自带补丁层。dsh-token-saver 的 package.json 里写着
+#      "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+#    它自己的 cordis.patch.yml 内容是：
+#      - insert:
+#          - id: dsh-token-saver
+#            name: dsh-token-saver
+#    ⇒ `dsh plugin add` 之后它自己就进树了，**你不需要写 insert**。
+#    你要写的是"对已入树条目的 config 覆盖"，entry id 是 `dsh-token-saver`。
+#
+# 2) 默认值已经就是这几项（源码 lib/types/config.d.ts 的 DEFAULTS）：
+#      mode conservative · headBytes 16384 · tailBytes 8192
+#      grepMaxMatches 30 · grepContextLines 2 · preserveStructure true
+#    ⇒ 什么都不写=这组值。把默认值抄一遍，改出来是零。
+#
+# 3) id 写错不报错：rc 仍是 0，只在 stderr 打一行
+#      dsh: [/…/cordis.patch.yml] patch: entry "token-saver" not found
+#    上一版这份 sample 写的 id 就是 `token-saver`（错），结局正是这个。
+#    正确 id 是 `dsh-token-saver`。
+#
+# ── 装依赖（先装这一个就够）─────────────────────────────────────
+#   dsh plugin --profile web add github:LoveDoLove/dsh-token-saver
+#   npm 上没有同名包（npm view dsh-token-saver → 404），只能走 github: 前缀。
+#
+# ── 装完先验证，再决定要不要写配置 ──────────────────────────────
+#   dsh --profile web --dump-config | grep -A6 'id: dsh-token-saver'
+#   并确认 stderr 没有 patch: entry ... not found
+#   （dump-config 只组合树、不启动服务，不会影响正在跑的 GUI）
+
+# ── 只有想改默认值时才需要下面这段 ────────────────────────────────
+# 唯一有实际意义的一项是例外工具名：真实工具名必须对得上，写错的只是不匹配、不报错。
+# 实测工具表里存在 `ask_user_question`；
+# `interaction.ask_user` / `interaction.confirm` 在 DSH 里 0 次命中（旧版写的就是这两个）。
+- id: dsh-token-saver
+  config:
+    excludeToolNames:
+      - ask_user_question
+
+# ── 另一个包：seainml/dsh-token-slim（未装，别当可用件抄）──────────
+# 实测它 package.json 里**没有 dsh 字段**，仓库里也没有 cordis.patch.yml（HTTP 404）。
+# ⇒ `dsh plugin add` 只把包装进 profile，不会进树；要用得自己写 insert：
+#
+# - insert:
+#     - id: noise-filter
+#       name: 'dsh-token-slim/noise-filter'     # 它的 exports 路径，不是包名
+#       config:
+#         minChars: 2000
+#         minSavingsChars: 500
+#
+# 上面这段来自它的 package.json exports 与描述，**没装、没跑过**，字段名未核到源码。

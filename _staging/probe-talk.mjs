@@ -1,0 +1,10 @@
+import { openMine } from '../tools/px-parity.mjs';
+const b=await openMine('http://127.0.0.1:8941/app.html?id=gf-xm');
+await new Promise(r=>setTimeout(r,600));
+const t=await b.ev('document.querySelector("#cv-talk")?document.querySelector("#cv-talk").textContent.trim():""');
+await b.ev('document.querySelector("#cv-talk").click()');
+await new Promise(r=>setTimeout(r,400));
+const act=await b.ev('document.activeElement&&document.activeElement.id');
+const open=await b.ev('(function(){var i=document.querySelector("#fk-input");return !!(i&&i.offsetParent)})()');
+console.log(JSON.stringify({btn:t,active:act,inputVisible:open}));
+b.close();

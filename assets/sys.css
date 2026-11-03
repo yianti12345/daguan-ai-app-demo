@@ -395,7 +395,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 .nf-row input::placeholder,.nf-row textarea::placeholder{color:var(--color-text-tertiary)}
 .nf-row textarea{resize:vertical;min-height:76px;line-height:1.5}
 .nf-row input:focus,.nf-row textarea:focus,.nf-row select:focus{border-color:var(--color-brand);box-shadow:0 0 0 2px var(--color-focus-halo)}/* 必填标记：只标「应用名称」这一类真的不能空的，不整排都挂星号 */
-.nf-req{font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-weight:400}
+.nf-req{font-size:var(--font-size-body);color:var(--color-danger);font-weight:600;margin-left:2px}
 .nf-sw{display:flex;align-items:center;gap:var(--space-8)}
 .nf-sw button{width:var(--switch-track-w);height:var(--switch-track-h);border-radius:var(--switch-radius);background:var(--color-border-card);border:0;position:relative;cursor:pointer;transition:background .15s}
 .nf-sw button::after{content:"";position:absolute;top:2px;left:2px;width:var(--switch-knob);height:var(--switch-knob);border-radius:var(--switch-radius);background:var(--surface-page);transition:left .15s}
@@ -1603,10 +1603,10 @@ body[data-mode="view"] .cv-blk:hover{background:none;box-shadow:none}
    左边仍是搜索+页签+列表，但一行能放完整信息；四周留出画布边缘，关掉就回画布。
    背板用 30% 压暗（抽屉时代不铺遮罩，是因为要贴着画布看；现在把"看结果"交给关闭之后）。 */
 .panel{
-  /* ★2026-10-28 设计审查 H1：固定 760 高时，已装态空白 282px（55%）、可装态 398px（78%）。
-     改成高度自适应、只留上限：内容少就矮，内容多才撑到 760 并滚动。 */
+  /* ★2026-11-03 用户 m03795：「弹窗为什么不是固定高度宽度，然后内部滚动的？」
+     固定 1120×(720 / 视口高−96)，列表自己滚；不再随内容忽高忽低。 */
   position:relative;inset:auto;width:min(1120px,82vw);
-  height:auto;max-height:min(80vh,760px);
+  height:min(720px,calc(100vh - 96px));
   border-radius:var(--radius-overlay);display:flex;flex-direction:column;overflow:hidden;
   background:var(--surface-page);box-shadow:var(--shadow-dialog);pointer-events:auto;
   /* 入场只做 12px 位移 + 淡入。面板内没有 position:fixed 的子元素，
@@ -1627,7 +1627,6 @@ body[data-app] .canvas{transition:padding-right .18s ease}
 @media (prefers-reduced-motion:reduce){body[data-app] .canvas,.topbar{transition:none}}
 .p-hd{flex:0 0 auto;height:64px;display:flex;align-items:center;gap:var(--space-12);padding: 0 var(--space-16);margin-bottom:var(--space-8)}
 .p-hd b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-body)}
-.p-hd .cnt{font-size:var(--font-size-caption);color:var(--color-text-subtle)}
 .p-x{flex:0 0 auto;margin-left: auto;width:32px;height:32px;border-radius:var(--radius-sm);display:grid;place-items:center;color:var(--color-text-tertiary)}
 .p-x:hover{background:var(--surface-sunken-2);color:var(--color-text-body)}
 .p-search{flex:1;min-width:0;padding:0;margin:0}
@@ -1644,12 +1643,12 @@ body[data-app] .canvas{transition:padding-right .18s ease}
 /* 空态要横跨两列，否则它只占左边半个格子，看着像"加载了一半" */
 .p-list > .p-empty{grid-column:1 / -1}
 /* 抽屉只有 380：候选卡一列，不再两列并排（两列时每张不到 170，组件名会被截） */
-.p-list{flex:1;min-height:0;overflow:auto;padding:0 var(--space-16) var(--space-16);
-  /* ★2026-10-28：弹窗宽 1120，单列会让 520px 空着。两列，一屏能扫到的组件翻倍。
-     flex 0 1 auto：块数少时列表只占自己需要的高度，面板跟着变矮（H1）。 */
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-12);align-content:start;
-  flex:0 1 auto;max-height:calc(min(80vh,760px) - 220px)}
-.p-ft{flex:0 0 48px;height:48px;display:flex;align-items:center;padding: 0 var(--space-16);font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.p-list{flex:1 1 auto;min-height:0;overflow:auto;padding:0 var(--space-16) var(--space-16);
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-12);align-content:start}
+.p-upd{flex:0 0 auto;display:flex;align-items:center;gap:var(--space-12);margin:0 var(--space-16) var(--space-8);padding:var(--space-8) var(--space-12);border-radius:var(--radius-6);background:var(--surface-subtle)}
+.p-upd[hidden]{display:none}
+.p-upd-n{font-size:var(--font-size-caption);color:var(--ink-2)}
+.p-upd .btn-text{margin-left:auto;color:var(--color-brand);font-weight:600}
 
 /* PickRow（.row）2026-10-29 已归位组件层：assets/sys.css「PickRow · 装配候选行」段。
    组件规范 §8 点名的类名，不许再在页面里定义（check-spec-contract S1）。
@@ -2353,12 +2352,16 @@ body[data-drawer="on"] .hint{
 .nf-cover{display:flex;align-items:center;gap:var(--space-16)}
 .nf-cover-thumb{
   width:88px;height:88px;flex:none;border-radius:var(--radius-sm);
-  display:grid;place-items:center;cursor:pointer;
-  border:1px dashed var(--color-border-strong);
-  background:var(--surface-page) center / cover no-repeat;
-  color:var(--color-text-tertiary);font-size:var(--font-size-caption);
-  transition:border-color .15s,color .15s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;
+  /* ★2026-11-03（m04000）：原来的 --color-border-strong 根本不存在，整条 border 被浏览器判无效，
+     88×88 的方框只剩字，看起来像一个 36 高的文字按钮。改用已定义的 border-card。 */
+  border:1px dashed var(--color-border-card);
+  background:var(--surface-subtle) center / cover no-repeat;
+  color:var(--color-text-tertiary);font-size:var(--font-size-caption);line-height:1.4;text-align:center;
+  transition:border-color .15s,color .15s,background-color .15s;
 }
+.nf-cover-thumb::before{content:"+";font-size:20px;line-height:1;color:var(--color-text-tertiary)}
+.nf-cover-thumb:not(.is-empty)::before{display:none}
 .nf-cover-thumb:hover{border-color:var(--color-brand);color:var(--color-brand)}
 .nf-cover-thumb:focus-within{outline:2px solid var(--color-brand);outline-offset:2px}
 .nf-cover-thumb.is-empty{background-image:none}
@@ -2441,13 +2444,13 @@ body[data-drawer="on"] .hint{
    一处定义，四个弹窗共用：应用新建/编辑、组件新建/编辑。
    菜单用 fixed 挂 body —— 弹窗 .nf 是 overflow:hidden，内联绝对定位会被裁掉。 */
 .sc{display:grid;gap:var(--space-8);padding-top:var(--space-4)}
-.sc-top{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-12)}
-.sc-title{flex:none;width:84px;font-size:var(--font-size-body);font-weight:600;color:var(--ink-1)}
+.sc-top{display:block}
+.sc-title{display:block;font-size:var(--font-size-body);font-weight:600;color:var(--ink-1);margin-bottom:var(--space-8)}
 .sc-opts{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-16)}
 .sc-opt{display:inline-flex;align-items:center;gap:6px;font-size:var(--font-size-body);color:var(--ink-1);cursor:pointer}
 .sc-opt input{width:14px;height:14px;margin:0;accent-color:var(--color-brand)}
 .sc-body{display:grid;gap:var(--space-8);padding:var(--space-12);background:var(--surface-subtle);border:1px solid var(--color-border-hairline);border-radius:var(--radius-6)}
-.sc-field{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:var(--space-8)}
+.sc-field{display:grid;gap:6px}
 .sc-fl{font-size:var(--font-size-body);color:var(--ink-2)}
 .sc-pick{height:34px;width:100%;padding:0 var(--space-8);border:1px solid var(--color-border);border-radius:var(--radius-6);background:var(--surface-page);color:var(--ink-1);font:inherit;font-size:var(--font-size-body);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sc-pick[data-empty="1"]{color:var(--ink-3)}
