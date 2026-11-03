@@ -125,10 +125,10 @@
            2026-10-23 加：原来这条汇总是画布级硬编码，于是任何应用都会顶上一条
            「审核中 · 5 条」，哪怕它装的是合同用印申请、跟审核一点关系没有。
            状态汇总属于「任务池」这种组件自己的附属物，不属于画布。 */
-        { id: 'monitor-screen', tags: ['page_frame'], name: '管理后台整页', label: '监控大屏', layout: 'full', status: '已上架', ver: 'v1', refs: 0, config: {}, block: { kind: 'monitor' },
+        { id: 'monitor-screen', tags: ['page_frame'], name: '管理后台整页', label: '监控大屏', layout: 'full', status: '已上架', ver: 'v1', refs: 0, config: {}, block: null,
           updated: '2026-11-03 14:20:00',
-          desc: '一整个系统界面：导航、顶栏、指标、漏斗、趋势、榜单同屏。',
-          fields: ['左侧导航', '顶栏', '指标卡', '漏斗', '趋势图', '榜单'] },
+          desc: '整页后台的容器，内容由对话生成。',
+          fields: [] },
         { id: 'task-list', tags: ['task_flow'],    name: '审核任务列表', label: '待办任务',       layout: 'full', status: '已上架', ver: 'v3', refs: 0, config: {}, strip: true, block: { kind: 'table', src: 'tasks' },
           updated: '2026-10-29 17:03:41',
           desc: '装上后，任务按状态列在一张表里，可勾选多条批量指派处理人。',

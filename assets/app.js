@@ -743,67 +743,10 @@
       + '<div class="blk-bd blk-bd--gen">' + out.sections.join('') + '</div></section>';
   }
 
-  /* ── 整页系统：一整个管理后台（2026-11-03）────────────────────────
-     用户原话：「真正的应用就是一个完整的系统」。所以这里的示例不是"再装一个零件"，
-     而是一屏真实后台：左侧导航 + 顶栏 + 指标卡 + 漏斗 + 趋势图 + 榜单。
-     它是画布上的"应用界面"本身，不是可拆装的头部零件。 */
-  function monitorBlock() {
-    var labels = ['10/5','10/7','10/9','10/11','10/13','10/15','10/17','10/19','10/21','10/23','10/25','10/27','10/29','10/31','11/1','11/2','11/3']
-      .map(function (t) { return '<span>' + t + '</span>'; }).join('');
-    function chart(title, legs, cls) {
-      var leg = legs.map(function (x) {
-        return '<span><i style="background:' + x[1] + '"></i>' + x[0] + '</span>';
-      }).join('');
-      return '<div class="mon-card mon-chart' + (cls || '') + '">'
-        + '<div class="mon-chhead"><b>' + title + '</b><div class="mon-leg">' + leg + '</div></div>'
-        + '<div class="mon-plot"><div class="mon-ya"><span>1</span><span>0</span></div>'
-        + '<svg viewBox="0 0 600 150" preserveAspectRatio="none" aria-hidden="true">'
-        + '<line x1="0" y1="1" x2="600" y2="1" stroke="#EEF1F7"/>'
-        + '<line x1="0" y1="75" x2="600" y2="75" stroke="#EEF1F7"/>'
-        + '<line x1="0" y1="149" x2="600" y2="149" stroke="#E3E8F2"/>'
-        + '<polyline points="0,149 600,149" fill="none" stroke="' + legs[0][1] + '" stroke-width="2"/>'
-        + '</svg></div>'
-        + '<div class="mon-xa">' + labels + '</div></div>';
-    }
-    var nav = [['监控大屏',1],['核心专家库',0],['知识库',0],['任务中心',0],['能力管理',0]];
-    var navHtml = nav.map(function (n) {
-      return '<a class="mon-ni' + (n[1] ? ' on' : '') + '">' + n[0] + '</a>';
-    }).join('');
-    var steps = ['排队中','AI解析中','AI审核中','人工干预中','已完成审核'];
-    return '<div class="mon">'
-      + '<aside class="mon-nav"><div class="mon-brand"><b>DataGrand</b><i>IFAS</i><em>智能审核平台</em></div>'
-      + navHtml + '<div class="mon-fold">«</div></aside>'
-      + '<div class="mon-main">'
-      +   '<header class="mon-top"><b>监控大屏</b><span class="mon-sp"></span>'
-      +     '<i class="mon-ti">▦</i><i class="mon-ti">♟</i><i class="mon-ti">▤</i><i class="mon-ti">▣</i><i class="mon-ti">⚙</i>'
-      +     '<div class="mon-user">郑世纪<small>管理员</small></div></header>'
-      +   '<div class="mon-body">'
-      +     '<div class="mon-filter"><button class="on">今日</button><button>近7天</button><button>近14天</button><button>近30天</button>'
-      +       '<span>近30天 · 截至 14:23:12</span><em>2026-10-05 → 2026-11-03</em></div>'
-      +     '<div class="mon-kpis">'
-      +       '<div class="mon-card mon-kpi"><span>审核任务数</span><b>0<small>条</small></b></div>'
-      +       '<div class="mon-card mon-kpi"><span>问答会话数</span><b>0<small>条</small></b></div>'
-      +       '<div class="mon-card mon-funnel"><div class="mon-chhead"><b>审核任务</b></div><div class="mon-steps">'
-      +         steps.map(function (s, i) { return '<div class="mon-step s' + i + '"><span>' + s + '</span><b>0<small>单</small></b></div>'; }).join('')
-      +       '</div></div>'
-      +     '</div>'
-      +     chart('审核数 / 问答数趋势', [['审核数','#3D5AFE'],['问答数','#7C8CFF']], ' mon-wide')
-      +     '<div class="mon-row">'
-      +       chart('AI 审核结果趋势', [['AI通过','#23935B'],['AI不通过','#E5484D'],['转人工','#F0A020'],['异常','#C9A227']])
-      +       chart('人工审核结果趋势', [['人工通过','#23935B'],['人工不通过','#E5484D'],['转人工','#F0A020']])
-      +     '</div>'
-      +     '<div class="mon-card mon-top10"><div class="mon-chhead"><b>核心专家使用 TOP10</b><div class="mon-tabs"><button class="on">任务总数</button><button>问答</button><button>审核</button></div></div>'
-      +       '<div class="mon-tb" role="table" aria-label="核心专家使用排行">'
-      +         '<div class="mon-tr mon-th" role="row"><span>#</span><span>核心专家</span><span>问答</span><span>审核</span><span>合计</span></div>'
-      +         '<div class="mon-tr mon-empty" role="row"><span>暂无数据</span></div></div></div>'
-      +   '</div></div></div>';
-  }
-
   function blockFor(c, lead) {
     /* 优先级：模型生成的结构 > 组件自己声明的画法 > 老的按 id 兜底。
        第一条让"生成出来的新组件"能画；第二条让"人工建的组件"也能画；
        第三条只是兼容早期没有 block 的数据，新数据不该走到那里。 */
-    if (c.block && c.block.kind === 'monitor') return monitorBlock();
     if (c.spec && window.Gen) return specBlock(c, lead);
     var b = c.block || null;
     if (b && b.kind) {
@@ -945,8 +888,7 @@
     }
     /* 整页系统＝画布本身铺满：不留左右边距、不套 1080 卡片、不留圆角。
        用户 2026-11-03：「无限画布是指背景画布的所有内容都可以铺满」。 */
-    var sysOn = installedComps().some(function (c) { return c.block && c.block.kind === 'monitor'; });
-    document.body.setAttribute('data-sys', sysOn ? 'on' : 'off');
+    document.body.setAttribute('data-sys', 'off');
     var v = visualList();
     if (!v.order.length) {
       /* 「按业务长成页面」是内部话术（长成 = 生成）。客户听不懂，也不关心实现。
@@ -976,9 +918,6 @@
     var part = function (c) {
       /* 整页系统（kind:'monitor'）：这本身就是应用界面，不再套「01 · 名称 / 改这一块」的编辑器壳。
          套壳会让它看起来仍是一堆可拆零件 —— 用户明确否定的正是这个模型。 */
-      if (c.block && c.block.kind === 'monitor') {
-        return '<section class="cv-blk cv-blk--sys" data-comp="' + esc(c.id) + '">' + monitorBlock() + '</section>';
-      }
       return frameBlock(c, blockFor(c, c.strip === true ? strip : ''), idx[c.id], total, false);
     };
 
