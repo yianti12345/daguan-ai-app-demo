@@ -53,7 +53,7 @@
   /* ★2026-11-02 bump 15 → 16：授权模型从「应用挂一个客户 + 一个授权版本」改成
      「应用 × 客户授权表」。不 bump，浏览器里那份旧存档会按旧模型读回来，
      新页面看到的是 0 条授权 —— 看起来像没做。 */
-  var SEED_VER = '16';
+  var SEED_VER = '17';
   var SEED_KEY = 'ifas90:seed' + NS;
 
   /* ── 种子：APP 与 COMPS 的现有内容 ── */
@@ -98,8 +98,10 @@
         { id: 'swhy-jd', name: '申万宏源 · 尽调报告核验', client: '申万宏源', status: '已上架', updated: '2026-10-31 15:07:12', version: 1,
           tenantId: 'a1b2c3d4e5f60718', authAt: '2026-10-31 15:07:12', expireAt: '2027-10-31',
           desc: '尽调底稿按清单核验，缺件与超期在正文旁标出。' },
-        { id: 'dfzq-zg', name: '东方证券 · 资管合同审查', client: '东方证券', status: '已下架', updated: '2026-10-29 20:53:30', version: 3,
+        { id: 'dfzq-zg', name: '东方证券 · 资管合同审查', client: '东方证券', status: '内测中', updated: '2026-10-29 20:53:30', version: 3,
           desc: '资管合同要素与备案信息交叉核对，差异逐条列出。' },
+        { id: 'ifas-mon', name: 'DataGrand IFAS · 监控大屏', client: 'DataGrand', status: '已上架', updated: '2026-11-03 14:20:00', version: 1,
+          desc: '完整的管理后台：左侧导航、顶栏、指标卡、漏斗、趋势图与 Top10，一屏即一个系统。' },
         { id: 'gx-pj',   name: '蓝湾互娱 · 关卡内容生成', client: '蓝湾互娱', status: '未发布', updated: '2026-10-26 13:29:05', version: 0,
           desc: '关卡文案与数值逐项校对，对不上的地方标红。' }
       ],
@@ -119,14 +121,14 @@
         { appId: 'swhy-jd', clientName: '申万宏源', version: 1, authAt: '2026-10-31 15:07:12', expireAt: '2027-10-31' }
       ],
       comps: [
-        { id: 'app-header', tags: ['page_frame'],   name: '应用头', label: '客户标识',            layout: 'full', status: '已上架', ver: 'v1', refs: 0, config: {}, block: { kind: 'head' },
-          updated: '2026-10-12 09:15:22',
-          desc: '装上后，这个应用顶部带上客户的名字。',
-          fields: ['应用名', '客户标识', '全局操作位'] },
         /* strip: true —— 这个组件头上带一条状态汇总（审核中 · N 条）。
            2026-10-23 加：原来这条汇总是画布级硬编码，于是任何应用都会顶上一条
            「审核中 · 5 条」，哪怕它装的是合同用印申请、跟审核一点关系没有。
            状态汇总属于「任务池」这种组件自己的附属物，不属于画布。 */
+        { id: 'monitor-screen', tags: ['page_frame'], name: '管理后台整页', label: '监控大屏', layout: 'full', status: '已上架', ver: 'v1', refs: 0, config: {}, block: { kind: 'monitor' },
+          updated: '2026-11-03 14:20:00',
+          desc: '一整个系统界面：导航、顶栏、指标、漏斗、趋势、榜单同屏。',
+          fields: ['左侧导航', '顶栏', '指标卡', '漏斗', '趋势图', '榜单'] },
         { id: 'task-list', tags: ['task_flow'],    name: '审核任务列表', label: '待办任务',       layout: 'full', status: '已上架', ver: 'v3', refs: 0, config: {}, strip: true, block: { kind: 'table', src: 'tasks' },
           updated: '2026-10-29 17:03:41',
           desc: '装上后，任务按状态列在一张表里，可勾选多条批量指派处理人。',
@@ -166,15 +168,16 @@
            承诺与画面正面打脸。渲染层（app.js 的 blockFor → rule-panel → tableBlock）
            本来就能画规则名/结论/依据三行，缺的只是装配清单里这一项。
            顺序有意义：页面类块在前、规则结论收在最后。 */
-        'hx-zc':   ['app-header', 'task-list', 'task-detail', 'rule-panel'],
-        'zj-cg':   ['app-header', 'doc-extract', 'rule-panel'],
-        'gtja-zc': ['app-header', 'task-list', 'verify-queue', 'rule-panel'],
-        'zs-dj':   ['app-header', 'verify-queue'],
-        'ht-zc':   ['app-header', 'task-list', 'verify-queue'],
+        'hx-zc':   [],
+        'zj-cg':   [],
+        'gtja-zc': [],
+        'zs-dj':   [],
+        'ht-zc':   [],
         'gf-xm':   [],
-        'zxjt-yy': ['app-header', 'task-list', 'task-detail', 'rule-panel'],
-        'swhy-jd': ['app-header', 'doc-extract', 'rule-panel'],
-        'dfzq-zg': ['app-header', 'task-list', 'rule-panel'],
+        'zxjt-yy': [],
+        'swhy-jd': [],
+        'dfzq-zg': [],
+        'ifas-mon': [],
         'gx-pj':   []
       }
     };

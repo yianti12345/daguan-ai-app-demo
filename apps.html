@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=d84a54a7">
+<link rel="stylesheet" href="assets/sys.css?v=b7468653">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=798c12a1">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -20,10 +20,6 @@
    浮层与去向不变（Mac / Windows 分包，没有包就给去下载页的出口）。 */
 .dl-btn{height:32px;padding:0 var(--space-8);display:inline-flex;align-items:center;gap:var(--space-8);flex:none;white-space:nowrap}
 .dl-btn[aria-expanded="true"]{background:var(--color-state-hover);color:var(--color-brand-ink)}
-.dl-menu{min-width:216px}
-.dl-menu .k-mi[data-mute]{cursor:default;color:var(--color-text-tertiary)}
-.dl-menu .k-mi[data-mute]:hover{background:none}
-.dl-menu .k-mi[data-dim]{color:var(--color-text-tertiary);font-size:var(--font-size-caption)}
 </style>
 
 </head>
@@ -60,10 +56,6 @@
         </button>
         <!-- 2026-10-30：导入是一个"从文件新建"的入口，与新建同级、权重更低（次要按钮） -->
         <button class="btn" id="btn-import" type="button">导入应用</button>
-        <!-- 2026-10-31（操作缺口）：列表原来没有任何多选。按注释里的 30–50 条规模，
-             停用 10 个应用 ＝ 开 10 次 ⋮ + 答 10 次确认。这里是"进入多选"的模式开关，
-             不是动作本身；按下后每张卡底栏左侧出一枚勾选框，并出现一条批量操作条。 -->
-        <button class="btn" id="btn-batch" type="button" aria-pressed="false">批量操作</button>
         <div class="right">
           <!-- 2026-10-31（操作缺口）：列表原来只有"库里的顺序"（DB.APPS 数组序，新件 unshift 到最前），
                想知道"最近动过哪几个"只能逐条点进去看。默认按更新时间倒序 ——
@@ -87,10 +79,11 @@
             <select id="f-st" style="border:0;background:transparent;outline:0;font:inherit;color:var(--color-text-body);width:100%">
               <option value="">全部状态</option>
               <option value="已上架">已上架</option>
-              <option value="未发布">未发布</option>
+              <option value="内测中">内测中</option>
+              <option value="未上架">未上架</option>
               <!-- ★2026-10-24 修 P1-A3：种子与列表里都有「已下架」应用，但筛选只有三值 ⇒
                    选「全部状态」能看见它，按状态筛却永远筛不到它。 -->
-              <option value="已下架">已下架</option>
+
             </select>
           </label>
           <!-- 32×32 描边图标钮：线上工具栏右端就是这个位置、这个尺寸（真源 32×32 / border rgb(217,217,217)）。
@@ -99,29 +92,6 @@
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.5 5.7"/><path d="M20 5v6h-6"/></svg>
           </button>
         
-          <!-- 下载客户端（2026-11-02）：m03821 要求更明显 —— 图标按钮改成「下载客户端」文字按钮。
-               仍是浮层而不是跳页：最多两项（Mac / Windows），跳一页再回来是白丢一次上下文。
-               安装包没发布时，浮层里给一句实话 + 一个去下载页的出口，不摆假链接。 -->
-          <button class="btn ghost dl-btn" id="btn-dl" type="button"
-                  title="下载客户端" aria-haspopup="menu" aria-expanded="false">
-            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 11l4.5 4.5L16.5 11"/><path d="M5 19.5h14"/></svg>
-            <span>下载客户端</span>
-          </button>
-          <div class="k-menu dl-menu" id="dl-menu" role="menu" hidden></div>
-        </div>
-      </div>
-
-      <!-- 批量操作条（2026-10-31）：只在批量模式下出现，平时卡面与工具条一个像素不变。
-           两个动作都走 Confirm.ask —— 批量下架一次影响 N 家客户，比单张更需要问清楚。 -->
-      <div class="bar" id="batch-bar" hidden style="margin:0 0 var(--space-12);padding:var(--space-8) var(--space-12);background:var(--color-state-hover);border-radius:var(--radius-control)">
-        <label style="display:inline-flex;align-items:center;gap:var(--space-8);font-size:var(--font-size-caption);color:var(--color-text-body);cursor:pointer">
-          <input type="checkbox" id="b-all" style="width:var(--space-16);height:var(--space-16);margin:0;cursor:pointer">
-          全选当前结果
-        </label>
-        <span id="b-cnt" role="status" aria-live="polite" style="font-size:var(--font-size-caption);color:var(--color-text-secondary)">已选 0 个</span>
-        <div class="right">
-          <button class="btn" type="button" id="b-on">批量上架</button>
-          <button class="btn" type="button" id="b-off">批量下架</button>
         </div>
       </div>
 
@@ -152,17 +122,17 @@
               <p class="nf-err" id="ap-err" role="alert" aria-live="polite" hidden></p>
             </div>
             <div class="nf-row">
-              <label for="ap-cover-file">封面</label>
-              <!-- 封面（2026-11-02 对齐真实系统标准件）：线上是「上传图标」+ antd Upload 的 picture
-                   列表（缩略图 + 删除），没有「换个样式」。m03821 指出我们多了一个线上没有的按钮，
-                   这里去掉；不上传就继续用系统给每张卡生成的封面（app.cover 为空即生成封面）。 -->
+              <label for="ap-cover-file">应用图标</label>
+              <!-- 应用图标（2026-11-03 统一上传件）：与真源同一件 —— 方框本身即上传键，
+                   框内写「上传图标」；选中后框内换成缩略图，右侧只留「移除」。不再另起一枚按钮。 -->
               <div class="nf-cover">
-                <span class="nf-cover-thumb" id="ap-cover-thumb" aria-hidden="true"></span>
+                <label class="nf-cover-thumb is-empty" id="ap-cover-thumb" for="ap-cover-file">上传图标</label>
                 <div class="nf-cover-act">
-                  <button class="btn quiet" type="button" id="ap-cover-pick">上传图片</button>
+                  <span class="nf-hint">PNG / JPG · 建议 1:1 · 不超过 2 MB</span>
                   <button class="btn quiet" type="button" id="ap-cover-remove" hidden>移除</button>
                   <input id="ap-cover-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
                 </div>
+              </div>                </div>
               </div>
             </div>
             <div class="nf-row">
@@ -188,7 +158,7 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=23afa3a7"></script>
+<script src="assets/data.js?v=62e13a2b"></script>
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/transfer.js?v=6ef877f1"></script>
 <script src="assets/confirm.js?v=26f0a69f"></script>
@@ -315,6 +285,70 @@
        它们做的是"在管理后台把客户切到某一版"——与「客户授权」页同一个动作、两处入口，
        00e 第三节第 2 条早就记为"语义打架"。用户本轮明确：管理后台的应用就是最新版本，
        不存在"升级到 vN"这回事。改客户看到哪一版，只在 client-auth.html 做。 */
+    /* ★2026-11-03 三态动作（真源）：未上架→发布内测版→内测中→上架正式版→已上架；下架回未上架。 */
+    if (act === 'trial') {
+      /* ★2026-11-03 盲审：已上架时原来只弹一条 toast、零变更 —— 菜单里挂着一个点不动的死项。
+         真源里已上架确实保留「发布内测版」（内测版是版本级、不是状态级）：
+         这里落一条内测发布时间，正式客户仍看当前版本，徽章保持已上架。 */
+      if (pubState(a) === '已上架') {
+        Confirm.ask({
+          title: '发布内测版',
+          body: '发布后，内测客户可以试用当前改动；正式客户仍然使用已上架版本。',
+          ok: '发布',
+          onOk: function () {
+            a.trialAt = new Date().toISOString(); DB.save(); render();
+            toast('「' + a.name + '」已发布内测版 · 正式客户仍用当前版本');
+          }
+        });
+        return;
+      }
+      Confirm.ask({
+        title: '发布内测版',
+        body: '发布后，内测客户可以立即使用；正式客户仍然看不到。',
+        ok: '发布',
+        onOk: function () {
+          a.status = '内测中'; DB.save(); render();
+          toast('「' + a.name + '」已发布内测版');
+        }
+      });
+      return;
+    }
+    if (act === 'live') {
+      var stv = DB.versOf('app', id).filter(function (r) { return r.kind === 'stable'; });
+      /* ★2026-11-03 盲审：种子里的 v0 草稿没有正式版，点「上架正式版」直接报错 —— 又是一个死项。
+         上架就是"把当前内容发成正式版"：没有正式版时先发 v1，再启用它。 */
+      Confirm.ask({
+        title: '上架正式版',
+        body: stv.length
+          ? '上架后，所有已授权客户都会看到这个应用。'
+          : '当前还没有正式版本。上架会把现在的内容发布为 v1，所有已授权客户都能看到。',
+        ok: '上架',
+        onOk: function () {
+          var v = stv.length ? stv[0].v : DB.versPublish('app', id, null);
+          if (!v) { toast('上架失败：版本号冲突，请重试', 'error'); return; }
+          DB.versApply('app', id, v);
+          a.status = '已上架'; DB.save(); render();
+          toast('「' + a.name + '」已上架 · 授权版本 v' + v);
+        }
+      });
+      return;
+    }
+    if (act === 'off') {
+      if (pubState(a) === '未上架') { toast('还没上架，不用下架'); return; }
+      Confirm.ask({
+        title: '下架',
+        body: '下架后，客户将无法使用该应用，是否确认下架？',
+        ok: '确定',
+        danger: true,
+        onOk: function () {
+          DB.versDeactivate('app', id);
+          a.status = '未上架'; DB.save(); render();
+          toast('「' + a.name + '」已下架 · 客户已不可见');
+        }
+      });
+      return;
+    }
+    if (act === 'view') { location.href = 'app.html?id=' + encodeURIComponent(id) + '&mode=view'; return; }
     if (act === 'toggle') {
       /* ★2026-10-25 修 C-03，外加一个更严重的逻辑错：
          ① 停用原来点一下就直接生效 —— 客户当场打不开应用，一句"你确定"都没有；
@@ -341,6 +375,10 @@
         danger: true,
         onOk: function () {
           DB.versDeactivate('app', id);
+          /* ★2026-11-03 盲审：底栏电源钮只调 versDeactivate，状态被写回「已下架」，
+             而 pubState 把「已下架」翻译成「内测中」—— 点"下架"徽章却变"内测中"。
+             两个入口（⋮ 与电源钮）必须落同一个态：未上架。 */
+          a.status = '未上架'; DB.save();
           render();
           toast('「' + a.name + '」已下架 · 客户已不可见');
         }
@@ -402,11 +440,21 @@
     return { done: done, skip: skip };
   }
 
+  /* ── 三态（2026-11-03）：真源只有 未上架 / 内测中 / 已上架 ──────────
+     底层数据还留着历史字段（未发布 / 已下架），这一层只做一次翻译，
+     页面上的徽章、筛选、排序、动作全部只认 pubState()，不再各写一份判断。 */
+  function pubState(a) {
+    if (!a) return '未上架';
+    if (a.status === '未发布') return '未上架';
+    if (a.status === '已下架' || a.status === '内测中') return '内测中';
+    return a.status === '已上架' ? '已上架' : '未上架';
+  }
+
   function rows() {
     var kw = ($('#f-kw').value || '').trim().toLowerCase();
     var st = $('#f-st').value;
     var out = DB.APPS.filter(function (a) {
-      if (st && a.status !== st) return false;
+      if (st && pubState(a) !== st) return false;
       /* ★2026-10-28（场景清单 A4）：通用平台下应用名不一定含业务词，
          按"债承复核"这类说明里的词搜会直接判定"没有"。说明也纳入匹配。
          ★2026-11-02：输入框一直写着「应用名、客户或说明」，但客户已经不是应用的字段
@@ -422,10 +470,10 @@
        排完序就写回数据层的话，"复制出来的副本置顶"那条约定会在下一次重绘时消失。
        三个键都来自真字段（updated 是日期串，可直接比；status 用发布顺序而不是字典序）。 */
     var by = ($('#f-sort') && $('#f-sort').value) || 'upd';
-    var rank = { '已上架': 0, '未发布': 1, '已下架': 2 };
+    var rank = { '已上架': 0, '内测中': 1, '未上架': 2 };
     out = out.slice().sort(function (x, y) {
       if (by === 'name') return String(x.name).localeCompare(String(y.name), 'zh-Hans-CN');
-      if (by === 'status') return (rank[x.status] || 0) - (rank[y.status] || 0);
+      if (by === 'status') return (rank[pubState(x)] || 0) - (rank[pubState(y)] || 0);
       return String(y.updated || '').localeCompare(String(x.updated || ''));
     });
     return out;
@@ -505,6 +553,7 @@
          文案只在 ui-kit 里出现一次（UIK.badgeLabel），页面不另写一份。 */
       var label = '配置 ' + a.name + (upd ? '，' + UIK.badgeLabel(upd) : '');
       var up = a.status === '已上架';
+      var ps = pubState(a);
       /* 2026-10-31（信息缺口）：这个变量以前算完没人用（占了"必含 version"那一格却不上屏）。
          现在它进卡面的事实行 —— 有版本管理入口、有「N 个组件有更新」提示，
          却不写"现在是第几版、上次什么时候动的"，用户只能点进去才知道要不要处理。 */
@@ -580,7 +629,7 @@
               ? '<span class="card-tag kc-stale" title="' + esc(behindCnt + ' 家客户还停在旧版本（最新 v' + cardVer + '），在 ⋮ 里进「客户授权」升级') + '">'
                 + esc(behindCnt + ' 家待升级') + '</span>'
               : '') +
-            '<span class="card-tag kc-tag ' + (up ? 'is-up' : (a.status === '未发布' ? 'is-draft' : 'is-off')) + '">' + esc(a.status) + '</span>' +
+            '<span class="card-tag kc-tag ' + (up ? 'is-up' : (ps === '内测中' ? 'is-trial' : 'is-off')) + '">' + esc(ps) + '</span>' +
             /* ★2026-11-02（两个升级别混）：这一个是**装配组件**的可升级数，上面那个 kc-stale 是
                **客户授权版本**落后的家数。原来写「2 个可升级」「3 家待升级」—— 同一张卡两个"升级"，
                用户分不出点哪个。这里补主语"组件"。 */
@@ -597,12 +646,20 @@
           '</span>' +
         '</a>' +
         '<div class="k-menu" role="menu" hidden>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="edit" data-id="' + esc(a.id) + '">' + ICON.cfg + '编辑应用</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="auth" data-id="' + esc(a.id) + '">' + ICON.link + '客户授权</button>' +
+          (ps === '未上架'
+            ? '<button class="k-mi" type="button" role="menuitem" data-act="trial" data-id="' + esc(a.id) + '">' + ICON.on + '发布内测版</button>' +
+              '<button class="k-mi" type="button" role="menuitem" data-act="live" data-id="' + esc(a.id) + '">' + ICON.pow + '上架正式版</button>'
+            : ps === '内测中'
+              ? '<button class="k-mi" type="button" role="menuitem" data-act="live" data-id="' + esc(a.id) + '">' + ICON.pow + '上架正式版</button>' +
+                '<button class="k-mi is-danger" type="button" role="menuitem" data-act="off" data-id="' + esc(a.id) + '">' + ICON.off + '下架</button>'
+              : '<button class="k-mi" type="button" role="menuitem" data-act="trial" data-id="' + esc(a.id) + '">' + ICON.on + '发布内测版</button>' +
+                '<button class="k-mi is-danger" type="button" role="menuitem" data-act="off" data-id="' + esc(a.id) + '">' + ICON.off + '下架</button>') +
+          '<button class="k-mi" type="button" role="menuitem" data-act="auth" data-id="' + esc(a.id) + '">' + ICON.link + '客户配置</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="edit" data-id="' + esc(a.id) + '">' + ICON.cfg + '编辑</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="view" data-id="' + esc(a.id) + '">' + ICON.ver + '查看</button>' +
           '<button class="k-mi" type="button" role="menuitem" data-act="vers" data-id="' + esc(a.id) + '">' + ICON.ver + '版本管理</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="dup" data-id="' + esc(a.id) + '">' + ICON.copy + '复制应用</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="export" data-id="' + esc(a.id) + '">' + ICON.down + '导出应用</button>' +
-          '<button class="k-mi is-danger" type="button" role="menuitem" data-act="del" data-id="' + esc(a.id) + '">' + ICON.off + FACT.del + '</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="export" data-id="' + esc(a.id) + '">' + ICON.down + '导出</button>' +
+          '<button class="k-mi is-danger" type="button" role="menuitem" data-act="del" data-id="' + esc(a.id) + '">' + ICON.off + '删除</button>' +
         '</div>' +
         '<footer class="card-ft">' +
           (BATCH ? '<input type="checkbox" class="js-pick" data-id="' + esc(a.id) + '"' + (SEL[a.id] ? ' checked' : '') +
@@ -612,16 +669,16 @@
              加个词只是把它翻译一遍。
              一天里可能发好几版，纯日期分不出来，时分秒是这条信息的主体，不是装饰。 */
           '<span class="kc-time" title="' + esc('最近更新 ' + (a.updated || '—')) + '">' +
-            esc((cardVer ? 'v' + cardVer : '未发布') + ' · ' + (a.updated || '—')) +
+            esc((cardVer ? 'v' + cardVer : '未上架') + ' · ' + (a.updated || '—')) +
           '</span>' +
           '<span class="kc-ops">' +
-            (a.status === '未发布'
+            (ps === '未上架'
               /* ★2026-11-02（用户 m06188 + 官网标准）：草稿没有上下架动作，但**位置必须占住**，
                  而且要和其它卡长得一样 —— 用官网同款 24×24 电源钮的 disabled 态，
                  不再用不可见 ghost（ghost 24 + 真钮 32 造成动作簇 60/68 不齐，用户已投诉三轮）。
                  文案只陈述事实：未发布，不能上下架。 */
               ? '<button class="k-pub" type="button" disabled aria-disabled="true"' +
-              ' aria-label="未发布，不能上下架"' +
+              ' aria-label="未上架，不能上下架"' +
               ' title="发布后才能上架">' + ICON.pow + '</button>'
               : '<button class="k-pub" type="button" data-act="toggle" data-id="' + esc(a.id) + '"' +
               ' aria-label="' + esc((up ? '下架 ' : '上架 ') + a.name) + '"' +
@@ -799,17 +856,19 @@
     if (COVER) {
       COVER_THUMB.classList.remove('is-gen');
       COVER_THUMB.style.backgroundImage = 'url(' + COVER + ')';
+      COVER_THUMB.classList.remove('is-empty');
       COVER_THUMB.textContent = '';
       return;
     }
     COVER_THUMB.classList.remove('is-gen');
     COVER_THUMB.style.backgroundImage = '';
-    COVER_THUMB.textContent = '';
+    COVER_THUMB.classList.add('is-empty');
+    COVER_THUMB.textContent = '上传图标';
   }
   if (COVER_FILE) COVER_FILE.addEventListener('change', function () {
     var f = COVER_FILE.files && COVER_FILE.files[0];
     if (!f) return;
-    if (!/^image\//.test(f.type)) { showErr('封面要选图片文件'); return; }
+    if (!/^image\//.test(f.type)) { showErr('图标要选图片文件'); return; }
     var fr = new FileReader();
     fr.onload = function () {
       /* 压到 1280 宽以内再存：一张手机照片转 base64 能到 4MB，localStorage 只有 5MB */

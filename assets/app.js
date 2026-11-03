@@ -743,10 +743,67 @@
       + '<div class="blk-bd blk-bd--gen">' + out.sections.join('') + '</div></section>';
   }
 
+  /* ── 整页系统：一整个管理后台（2026-11-03）────────────────────────
+     用户原话：「真正的应用就是一个完整的系统」。所以这里的示例不是"再装一个零件"，
+     而是一屏真实后台：左侧导航 + 顶栏 + 指标卡 + 漏斗 + 趋势图 + 榜单。
+     它是画布上的"应用界面"本身，不是可拆装的头部零件。 */
+  function monitorBlock() {
+    var labels = ['10/5','10/7','10/9','10/11','10/13','10/15','10/17','10/19','10/21','10/23','10/25','10/27','10/29','10/31','11/1','11/2','11/3']
+      .map(function (t) { return '<span>' + t + '</span>'; }).join('');
+    function chart(title, legs, cls) {
+      var leg = legs.map(function (x) {
+        return '<span><i style="background:' + x[1] + '"></i>' + x[0] + '</span>';
+      }).join('');
+      return '<div class="mon-card mon-chart' + (cls || '') + '">'
+        + '<div class="mon-chhead"><b>' + title + '</b><div class="mon-leg">' + leg + '</div></div>'
+        + '<div class="mon-plot"><div class="mon-ya"><span>1</span><span>0</span></div>'
+        + '<svg viewBox="0 0 600 150" preserveAspectRatio="none" aria-hidden="true">'
+        + '<line x1="0" y1="1" x2="600" y2="1" stroke="#EEF1F7"/>'
+        + '<line x1="0" y1="75" x2="600" y2="75" stroke="#EEF1F7"/>'
+        + '<line x1="0" y1="149" x2="600" y2="149" stroke="#E3E8F2"/>'
+        + '<polyline points="0,149 600,149" fill="none" stroke="' + legs[0][1] + '" stroke-width="2"/>'
+        + '</svg></div>'
+        + '<div class="mon-xa">' + labels + '</div></div>';
+    }
+    var nav = [['监控大屏',1],['核心专家库',0],['知识库',0],['任务中心',0],['能力管理',0]];
+    var navHtml = nav.map(function (n) {
+      return '<a class="mon-ni' + (n[1] ? ' on' : '') + '">' + n[0] + '</a>';
+    }).join('');
+    var steps = ['排队中','AI解析中','AI审核中','人工干预中','已完成审核'];
+    return '<div class="mon">'
+      + '<aside class="mon-nav"><div class="mon-brand"><b>DataGrand</b><i>IFAS</i><em>智能审核平台</em></div>'
+      + navHtml + '<div class="mon-fold">«</div></aside>'
+      + '<div class="mon-main">'
+      +   '<header class="mon-top"><b>监控大屏</b><span class="mon-sp"></span>'
+      +     '<i class="mon-ti">▦</i><i class="mon-ti">♟</i><i class="mon-ti">▤</i><i class="mon-ti">▣</i><i class="mon-ti">⚙</i>'
+      +     '<div class="mon-user">郑世纪<small>管理员</small></div></header>'
+      +   '<div class="mon-body">'
+      +     '<div class="mon-filter"><button class="on">今日</button><button>近7天</button><button>近14天</button><button>近30天</button>'
+      +       '<span>近30天 · 截至 14:23:12</span><em>2026-10-05 → 2026-11-03</em></div>'
+      +     '<div class="mon-kpis">'
+      +       '<div class="mon-card mon-kpi"><span>审核任务数</span><b>0<small>条</small></b></div>'
+      +       '<div class="mon-card mon-kpi"><span>问答会话数</span><b>0<small>条</small></b></div>'
+      +       '<div class="mon-card mon-funnel"><div class="mon-chhead"><b>审核任务</b></div><div class="mon-steps">'
+      +         steps.map(function (s, i) { return '<div class="mon-step s' + i + '"><span>' + s + '</span><b>0<small>单</small></b></div>'; }).join('')
+      +       '</div></div>'
+      +     '</div>'
+      +     chart('审核数 / 问答数趋势', [['审核数','#3D5AFE'],['问答数','#7C8CFF']], ' mon-wide')
+      +     '<div class="mon-row">'
+      +       chart('AI 审核结果趋势', [['AI通过','#23935B'],['AI不通过','#E5484D'],['转人工','#F0A020'],['异常','#C9A227']])
+      +       chart('人工审核结果趋势', [['人工通过','#23935B'],['人工不通过','#E5484D'],['转人工','#F0A020']])
+      +     '</div>'
+      +     '<div class="mon-card mon-top10"><div class="mon-chhead"><b>核心专家使用 TOP10</b><div class="mon-tabs"><button class="on">任务总数</button><button>问答</button><button>审核</button></div></div>'
+      +       '<div class="mon-tb" role="table" aria-label="核心专家使用排行">'
+      +         '<div class="mon-tr mon-th" role="row"><span>#</span><span>核心专家</span><span>问答</span><span>审核</span><span>合计</span></div>'
+      +         '<div class="mon-tr mon-empty" role="row"><span>暂无数据</span></div></div></div>'
+      +   '</div></div></div>';
+  }
+
   function blockFor(c, lead) {
     /* 优先级：模型生成的结构 > 组件自己声明的画法 > 老的按 id 兜底。
        第一条让"生成出来的新组件"能画；第二条让"人工建的组件"也能画；
        第三条只是兼容早期没有 block 的数据，新数据不该走到那里。 */
+    if (c.block && c.block.kind === 'monitor') return monitorBlock();
     if (c.spec && window.Gen) return specBlock(c, lead);
     var b = c.block || null;
     if (b && b.kind) {
@@ -765,25 +822,32 @@
 
   /* 空态只有一套骨架，两个入口共用：一个组件都没装 / 只装了应用头。
      之前只装了应用头时，head 被吃掉后三个槽位全空，输出只剩头部 + 状态条 —— 整片白。 */
-  function emptyHtml(title, desc, btnText, starters) {
-    /* 空态本身就是一块（.blk + .cv-empty）：它占的是"这里本该有内容"的位置，
-       不能只飘一段字 —— 否则量 .blk 时会被当成"画布还是空的"。 */
-    /* 不带 .blk：空态是"画布本来就该是空的"，不是"这里摆了一张卡"。
-       组件配置页的空态已经是纯空白，两边必须长一样 —— 同一类状态两种外观就是不自洽。 */
+  function emptyHtml(title, desc) {
+    /* 空态是"画布本来就该是空的"，不是"这里摆了一张卡"。
+       不带 .blk：组件配置页的空态也是纯空白，两边必须长一样。 */
     return '<section class="cv-empty">'
       + (title ? '<b>' + esc(title) + '</b>' : '')
       + '<p>' + esc(desc) + '</p>'
-      /* 起步句（2026-10-27）：空白画布最贵的一步是"我该说什么"。
-         这里给两句真的能用的，点一下填进对话条 —— 不替人做主，只省打字。 */
-      + (starters && starters.length
-          ? '<div class="cv-say">' + starters.map(function (s) {
-              return '<button type="button" class="cv-say-b" data-say="' + esc(s) + '">' + esc(s) + '</button>';
-            }).join('') + '</div>'
-          : '')
-      /* ★ 2026-10-25 修 F05：文案写「开始对话」，点击却 openDlg('avail') 打开装配面板。
-         一个按钮承诺 A、执行 B，是最容易让人不信任的那类问题。
-         空应用时用户要做的确实是"装点什么"（对话生成在组件页），所以按行为改文案。 */
-      + '<button type="button" class="btn primary" id="cv-install">' + esc(btnText || '装配组件') + '</button></section>';
+      /* ★2026-11-03 用户：配置页进来是全空画布，要明确"可以用对话生成内容"。
+         两条起步路必须都看得见：对话生成是主路，装配组件是备路。
+         改前只有一颗「装配组件」，说明里却写"告诉小智…" —— 承诺 A、只给 B。 */
+      + '<div class="cv-acts">'
+      + '<button type="button" class="btn primary" id="cv-talk">和小智说需求</button>'
+      + '<button type="button" class="btn" id="cv-install">装配组件</button>'
+      + '</div></section>';
+  }
+
+  /* 空态两颗按钮：前者把光标送进对话条（展开后聚焦），后者仍开装配面板。
+     各自做各自承诺的事，不再共用一颗按钮。 */
+  function bindEmptyActions() {
+    on('#cv-install', 'click', function (e) { openDlg('avail', e.currentTarget); });
+    on('#cv-talk', 'click', function () {
+      var peek = document.querySelector('#fk-hist-btn');
+      if (peek && peek.offsetParent) peek.click();
+      var inp = document.querySelector('#fk-input');
+      if (inp) { try { inp.focus({ preventScroll: true }); } catch (err) { inp.focus(); } }
+      else { hint('对话条在页面底部，点「对话」就能开始'); }
+    });
   }
 
   /* ── 画布上的组件边界（P0，2026-10-26）──────────────────────────
@@ -879,20 +943,25 @@
         + '<p>' + (viewMissing ? '链接指向的版本不存在或已失效。' : '这个应用现在没有对客户开放。') + '</p></section>';
       return;
     }
+    /* 整页系统＝画布本身铺满：不留左右边距、不套 1080 卡片、不留圆角。
+       用户 2026-11-03：「无限画布是指背景画布的所有内容都可以铺满」。 */
+    var sysOn = installedComps().some(function (c) { return c.block && c.block.kind === 'monitor'; });
+    document.body.setAttribute('data-sys', sysOn ? 'on' : 'off');
     var v = visualList();
     if (!v.order.length) {
       /* 「按业务长成页面」是内部话术（长成 = 生成）。客户听不懂，也不关心实现。
        空态要说的只有两件事：现在是什么、下一步做什么。 */
       /* ★2026-10-28 用户定调：空态只要一句话说清"有哪两种起步方式"，**不要示例句、不要模板**。 */
-      cv.innerHTML = emptyHtml('这个应用还是空的',
-        '告诉小智你要做什么业务，它边问边搭；也可以自己装配组件。', '装配组件');
-      on('#cv-install', 'click', function (e) { openDlg('avail', e.currentTarget); });
+      cv.innerHTML = emptyHtml('这个应用还没有内容',
+        '跟小智说：谁用、审核什么、要看到什么。它会边问边生成页面；也可以自己装配组件。');
+      bindEmptyActions();
       return;
     }
 
     if (!v.full.length && !v.left.length && !v.right.length) {
-      cv.innerHTML = emptyHtml('', '再告诉小智要补哪些组件，比如待办、详情、规则结论。');
-      on('#cv-install', 'click', function (e) { openDlg('avail', e.currentTarget); });
+      cv.innerHTML = emptyHtml('页面还差内容',
+        '跟小智说还缺哪几块（待办、详情、规则结论），它补上后你随时改。');
+      bindEmptyActions();
       return;
     }
 
@@ -905,6 +974,11 @@
        没人声明 strip ⇒ strip 是空串，行为与改前一致。 */
     var strip = stripHtml(v.two);
     var part = function (c) {
+      /* 整页系统（kind:'monitor'）：这本身就是应用界面，不再套「01 · 名称 / 改这一块」的编辑器壳。
+         套壳会让它看起来仍是一堆可拆零件 —— 用户明确否定的正是这个模型。 */
+      if (c.block && c.block.kind === 'monitor') {
+        return '<section class="cv-blk cv-blk--sys" data-comp="' + esc(c.id) + '">' + monitorBlock() + '</section>';
+      }
       return frameBlock(c, blockFor(c, c.strip === true ? strip : ''), idx[c.id], total, false);
     };
 

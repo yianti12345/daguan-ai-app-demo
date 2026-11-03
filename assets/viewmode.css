@@ -67,3 +67,8 @@
   content:counter(ln); display:inline-block; width:3ch; margin-right:var(--space-12);
   text-align:right; color:var(--color-text-muted); user-select:none;
 }
+
+/* 整页系统顶栏（2026-11-03）：分段控件并入单条操作栏，去底色、右侧细分隔线 */
+body[data-sys="on"] .seg-view{height:30px;margin-right:2px;padding:0 10px 0 0;gap:2px;background:transparent;border-radius:0;border-right:1px solid var(--color-border-hairline)}
+body[data-sys="on"] .seg-view button{height:28px;padding:0 8px;border-radius:6px;font-size:12px}
+body[data-sys="on"] .seg-view button[aria-pressed="true"]{background:var(--surface-sunken-2)}

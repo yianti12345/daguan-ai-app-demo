@@ -717,6 +717,11 @@
   }
   var START_LAYOUT = HAS_CONTENT ? LAYOUTS[layoutByName(COMP.name, EDIT_COMP && EDIT_COMP.fields)] : LAYOUTS.workbench;
 
+  /* ★2026-11-03（用户 m02760）：「每个应用或者组件进去，我不是都说了要都清空，变为空态吗？」
+     组件页原来一进来就铺满示例（任务表/详情/规则面板），看的人会以为这里已经有真实内容。
+     现在一律从空态起步：要什么，对话里说一句再生成。 */
+  HAS_CONTENT = false;
+
   /* ══ 4. 画布渲染 ═════════════════════════════════════════════ */
   var canvasEl = $('#canvas');
   var canvasInner = $('#canvas-inner');

@@ -490,7 +490,6 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
    对比度就换算了。 */
 .card-tag.is-up,
 #topbar .comp-status[data-st="on"],#topbar .comp-status[data-st="up"]{background:var(--color-success-surface);color:var(--color-success-ink)}
-.card-tag.is-draft,
 #topbar .comp-status[data-st="off"]{background:var(--color-warning-surface);color:var(--color-warning)}
 .card-tag.is-off{background:var(--color-state-hover);color:var(--color-text-secondary);box-shadow:inset 0 0 0 1px var(--color-border-card)}
 
@@ -1162,8 +1161,8 @@ button.cc-meta:focus-visible{
      所以一起进 tools/lint-allow.tsv，同一到期日 2026-12-31 一起处置。 */
   color:var(--color-text-inverse);background:var(--color-brand);
 }
-.kcard .kc-tag.is-draft{background:var(--color-warning);color:var(--color-text-inverse)}
 .kcard .kc-tag.is-off{background:var(--color-text-muted);color:var(--color-text-inverse)}
+.kcard .kc-tag.is-trial{background:var(--color-warning);color:var(--color-text-inverse)}
 
 /* ── 应用卡 footer：真源无 border、日期 12/16 蓝灰 ── */
 .kcard .card-ft{border-top:0}
@@ -1766,23 +1765,15 @@ body[data-drawer="on"] .hint{
    ★ 原来 min-height:calc(100vh - 240px) 让它铺满整屏，中间一行字 —— 看起来像
      "页面没画完"，而不像"这里本来就该是空的"。卡片一收拢，空就成了有意的空。 */
 .cv-empty{
-  max-width:480px; margin: 0 auto; padding: 0;
+  max-width:560px; margin: 0 auto; padding: 0;
   min-height:calc(100vh - 300px);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap: var(--space-12);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center;
 }
-.cv-empty p{margin:0; font-size:var(--font-size-body); color:var(--color-text-tertiary)}
-.cv-empty b{display:block;font-size:var(--font-size-body);font-weight:600;color:var(--color-text-body);margin-bottom: var(--space-8)}.cv-empty p{margin: 0 0 var(--space-16);font-size:var(--font-size-caption);line-height:1.7;color:var(--color-text-secondary)}
-/* 起步句：空白画布上最贵的一步是"我该说什么"。两句可点的话，点一下填进对话条。 */
-.cv-say{display:flex;flex-direction:column;gap:6px;width:100%;margin:0 0 var(--space-16)}
-.cv-say-b{
-  text-align:left;padding:var(--space-8) var(--space-12);border:1px solid var(--color-border-card);border-radius:var(--radius-control);
-  background:var(--surface-page);font-family:inherit;font-size:var(--font-size-body);line-height:1.5;color:var(--color-text-secondary);
-  cursor:pointer;transition:border-color .16s,color .16s,background .16s;
-}
-.cv-say-b::before{content:"“";margin-right:2px;color:var(--color-text-muted)}
-.cv-say-b::after{content:"”";margin-left:2px;color:var(--color-text-muted)}
-.cv-say-b:hover{border-color:var(--color-brand);color:var(--color-brand-ink);background:var(--color-brand-surface)}
-.cv-say-b:focus-visible{outline:2px solid var(--color-brand);outline-offset:1px}
+.cv-empty b{display:block;font-size:var(--font-size-title);font-weight:600;color:var(--color-text-body);letter-spacing:-.01em}
+.cv-empty p{margin:var(--space-8) 0 0;max-width:430px;font-size:var(--font-size-body);line-height:1.75;color:var(--color-text-secondary)}
+/* 两条起步路：主路（对话生成）实心，备路（装配）描边。 */
+.cv-acts{display:flex;align-items:center;justify-content:center;gap:var(--space-8);margin-top:var(--space-16)}
 
 /* ══ 生成块 · Gen Shell（.blk-bd--gen 把生成结果的卡壳收掉）═══════════════════ */
 /* ── 生成内容装进「一个块」里（.blk-bd--gen）────────────────────
@@ -2357,13 +2348,19 @@ body[data-drawer="on"] .hint{
 .grid{align-items:start}
 
 /* 封面选择（新建/编辑应用弹窗）2026-11-01 */
-.nf-cover{display:flex;align-items:center;gap:var(--space-12)}
+.nf-cover{display:flex;align-items:center;gap:var(--space-16)}
 .nf-cover-thumb{
-  width:104px;height:64px;flex:none;border-radius:var(--radius-xs);
-  background:url(common_card.png) center bottom / cover no-repeat, var(--color-brand-surface);
-  border:1px solid var(--color-border-card);
-  background-size:cover;
+  width:88px;height:88px;flex:none;border-radius:var(--radius-sm);
+  display:grid;place-items:center;cursor:pointer;
+  border:1px dashed var(--color-border-strong);
+  background:var(--surface-page) center / cover no-repeat;
+  color:var(--color-text-tertiary);font-size:var(--font-size-caption);
+  transition:border-color .15s,color .15s;
 }
+.nf-cover-thumb:hover{border-color:var(--color-brand);color:var(--color-brand)}
+.nf-cover-thumb:focus-within{outline:2px solid var(--color-brand);outline-offset:2px}
+.nf-cover-thumb.is-empty{background-image:none}
+.nf-cover-thumb:not(.is-empty){border-style:solid;border-color:var(--color-border-card)}
 .nf-cover-act{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap}
 
 
@@ -2437,3 +2434,101 @@ body[data-drawer="on"] .hint{
 }
 .hist-dm{margin:0;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 .hist-thread{display:flex;flex-direction:column;gap:var(--space-12);padding:var(--space-8) 0 0}
+
+/* ══ 整页系统 · 管理后台（2026-11-03）═══════════════════════════════════════
+   用户给的真源：一整个管理后台（导航/顶栏/指标/漏斗/趋势/榜单）。
+   应用 = 完整系统，不是"应用头 + 若干卡片"。以下样式只服务 kind:'monitor'。 */
+.mon{display:flex;width:100%;min-height:780px;background:#F5F7FB;border:1px solid #E3E8F2;border-radius:12px;overflow:hidden;font-size:12px;color:#222A3A}
+.mon-nav{width:190px;flex:none;display:flex;flex-direction:column;gap:2px;padding:14px 10px 40px;background:linear-gradient(180deg,#222D74 0%,#1A2360 100%);color:#C6D0FA;position:relative}
+.mon-brand{padding:2px 8px 18px;display:flex;align-items:baseline;gap:4px;flex-wrap:wrap}
+.mon-brand b{font-size:17px;letter-spacing:-.02em;color:#fff}
+.mon-brand i{font-style:normal;font-size:11px;padding:1px 5px;border:1px solid rgba(255,255,255,.5);border-radius:3px;color:#fff}
+.mon-brand em{flex-basis:100%;font-style:normal;font-size:11px;color:#93A3E8;letter-spacing:.16em}
+.mon-ni{padding:10px 12px;border-radius:6px;color:#B9C5F5;font-size:13px;line-height:1.2;cursor:default}
+.mon-ni.on{background:#3B4CC9;color:#fff;box-shadow:0 2px 8px rgba(20,30,90,.35)}
+.mon-fold{position:absolute;left:12px;bottom:12px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.12);color:#D6DEFF;font-size:12px}
+.mon-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.mon-top{height:48px;flex:none;display:flex;align-items:center;gap:14px;padding:0 16px;background:#fff;border-bottom:1px solid #EDF0F6;color:#2A3142}
+.mon-top b{font-size:13px;font-weight:600}
+.mon-sp{flex:1}
+.mon-ti{font-style:normal;color:#6B7488;font-size:14px}
+.mon-user{margin-left:6px;font-size:12px;line-height:1.15;text-align:right;color:#2A3142;padding-left:12px;border-left:1px solid #EEF0F5}
+.mon-user small{display:block;color:#8A93A8;font-size:10px}
+.mon-body{padding:14px 16px 18px;display:flex;flex-direction:column;gap:12px}
+.mon-filter{display:flex;align-items:center;gap:6px;color:#5A6478}
+.mon-filter button{border:1px solid #DFE5F0;background:#fff;border-radius:4px;padding:4px 10px;font-size:12px;color:#4A5468;font-family:inherit}
+.mon-filter button.on{background:#F0F3FF;border-color:#C9D4FF;color:#2E43C8;font-weight:600}
+.mon-filter span{margin-left:8px;font-size:11px;color:#8A93A8}
+.mon-filter em{margin-left:auto;font-style:normal;font-size:11px;color:#4A5468;border:1px solid #DFE5F0;background:#fff;border-radius:4px;padding:4px 8px}
+.mon-kpis{display:grid;grid-template-columns:180px 180px 1fr;gap:12px}
+.mon-card{background:#fff;border:1px solid #E8ECF4;border-radius:8px;padding:12px 14px;min-width:0}
+.mon-kpi span{font-size:12px;color:#6B7488}
+.mon-kpi b{display:block;font-size:32px;line-height:1.2;font-weight:600;color:#1E2433;margin-top:6px}
+.mon-kpi small{font-size:12px;font-weight:400;color:#6B7488;margin-left:2px}
+.mon-chhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.mon-chhead b{font-size:13px;font-weight:600;color:#1E2433}
+.mon-leg{margin-left:auto;display:flex;gap:12px;color:#5A6478;font-size:11px}
+.mon-leg i{display:inline-block;width:8px;height:3px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.mon-steps{display:flex;gap:0;margin-top:8px}
+.mon-step{flex:1;padding:8px 10px;background:linear-gradient(90deg,#EDF1FF,#E2E8FF);clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%,10px 50%);color:#26307A}
+.mon-step span{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4353A8}
+.mon-step b{display:block;font-size:16px;font-weight:600;color:#232C6E;margin-top:2px}
+.mon-step small{font-size:10px;font-weight:400;color:#5C6AB5;margin-left:2px}
+.mon-plot{display:flex;gap:8px;height:150px}
+.mon-wide .mon-plot{height:180px}
+.mon-ya{display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#98A1B5;padding:0 2px}
+.mon-plot svg{flex:1;min-width:0;height:100%}
+.mon-xa{display:flex;justify-content:space-between;font-size:10px;color:#98A1B5;margin-top:6px;padding-left:16px}
+.mon-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mon-tabs{margin-left:auto;display:flex;gap:0;border:1px solid #DFE5F0;border-radius:4px;overflow:hidden}
+.mon-tabs button{border:0;background:#fff;padding:4px 10px;font-size:12px;color:#4A5468;font-family:inherit}
+.mon-tabs button+button{border-left:1px solid #EAEFF7}
+.mon-tabs button.on{background:#2E43C8;color:#fff;font-weight:600}
+.mon-top10 table{width:100%;border-collapse:collapse}
+.mon-top10 th{text-align:left;font-size:11px;font-weight:500;color:#6B7488;padding:8px 10px;border-bottom:1px solid #EEF1F7}
+.mon-top10 td{padding:22px 10px;text-align:center;color:#98A1B5;font-size:12px}
+.cv-blk--sys{padding:0;border:0;background:transparent}
+.cv-blk--sys .mon{border-radius:14px}
+.mon-xa span:nth-child(even){display:none}
+.mon-tb{margin-top:2px}
+.mon-tr{display:grid;grid-template-columns:44px 1fr 90px 90px 90px;align-items:center}
+.mon-th{font-size:11px;color:#6B7488;padding:8px 10px;border-bottom:1px solid #EEF1F7}
+.mon-empty{justify-content:center;grid-template-columns:1fr;padding:22px 10px;color:#98A1B5;font-size:12px;text-align:center}
+
+.mon-steps .mon-step:nth-child(1){background:linear-gradient(90deg,#EDF1FF,#E2E8FF)}
+.mon-steps .mon-step:nth-child(2){background:linear-gradient(90deg,#E7ECFF,#DAE2FF)}
+.mon-steps .mon-step:nth-child(3){background:linear-gradient(90deg,#E1E7FF,#D2DCFF)}
+.mon-steps .mon-step:nth-child(4){background:linear-gradient(90deg,#DAE2FF,#C9D5FF)}
+.mon-steps .mon-step:nth-child(5){background:linear-gradient(90deg,#D2DCFF,#C2D0FF)}
+/* ── 整页系统：画布铺满（2026-11-03）──────────────────────────────────
+   无限画布不是"内容被装进一张 1080 宽的卡"，而是内容可以把整块背景画布铺满：
+   去掉左右边距、卡片描边/阴影/圆角，内容直接落到视口边缘。 */
+body[data-app][data-sys="on"] .canvas{padding:calc(var(--space-16) + 48px + var(--space-8)) 0 0;background:var(--surface-page)}
+body[data-app][data-sys="on"] .sheet{max-width:none;width:100%;margin:0;border-radius:0;box-shadow:none;background:transparent}
+body[data-app][data-sys="on"] .sheet-bd{padding:0}
+body[data-app][data-sys="on"] .cv-blk--sys{padding:0;margin:0;border-radius:0}
+body[data-sys="on"] .mon{min-height:calc(100vh - 96px);border:0;border-radius:0}
+/* ── 整页系统：顶栏收成一条完整操作栏（2026-11-03）────────────────────
+   用户截图指出「上面太丑了，要么直接就一个长条的操作栏」。
+   原来左一个胶囊（返回+名字+版本）、右一组胶囊（预览/代码/装配/存版本），中间一片空。
+   现在整条 56 高、通栏白底、一条细分割线：左名字、右操作，不再是一堆悬浮药丸。 */
+body[data-sys="on"] .topbar{
+  top:0;left:0;right:0;height:56px;padding:0 16px;gap:12px;
+  background:var(--surface-page);border-bottom:1px solid var(--color-border-hairline);
+  box-shadow:none;border-radius:0;
+}
+body[data-sys="on"] .float-hd{
+  flex:1 1 auto;min-width:0;min-height:0;padding:0;gap:8px;
+  background:transparent;border:0;border-radius:0;box-shadow:none;
+}
+body[data-sys="on"] .float-hd .back{background:transparent;width:28px;height:28px}
+body[data-sys="on"] .float-hd .back:hover{background:var(--surface-subtle)}
+body[data-sys="on"] .tb-ops{margin-left:0;flex:0 0 auto}
+body[data-sys="on"] .tb-ops .btn{height:32px}
+body[data-app][data-sys="on"] .canvas{padding-top:56px}
+body[data-sys="on"] .float-hd .app-name{font-size:14px;font-weight:600;letter-spacing:0}
+body[data-sys="on"] .float-hd .app-edit{font-size:11px;color:var(--color-text-tertiary)}
+body[data-sys="on"] .tb-ops .btn{height:30px;padding:0 10px;border-radius:6px;background:transparent;border-color:transparent;box-shadow:none}
+body[data-sys="on"] .tb-ops .btn:hover{background:var(--surface-sunken-2)}
+body[data-sys="on"] .tb-ops .btn.primary{background:var(--color-brand);color:var(--color-text-inverse)}
+body[data-sys="on"] .tb-ops .btn.primary:hover{background:var(--color-brand)}
