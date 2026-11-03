@@ -3278,7 +3278,8 @@ function xzAsk(me, fromVoice){
 }
 
 /* 静态预览没有 /xz/plan 这个转发接口，指向不存在的地址只会 404 —— 明确标出来，不假装能跑 */
-XZ_CFG.endpoint = '/xz/plan';
+/* ★2026-11-03：这里原来把 endpoint 硬写回 '/xz/plan'，把上面的公网分流覆盖掉了，
+   公网页因此永远拿到 404、退回内置规则。删掉这行，统一用上面的 endpoint 取值。 */
 document.addEventListener('DOMContentLoaded', renderXz);
 
 /* ★2026-10-22：两个播报节点**一开始就建好**（空内容）。
