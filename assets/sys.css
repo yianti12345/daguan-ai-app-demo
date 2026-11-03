@@ -2349,23 +2349,21 @@ body[data-drawer="on"] .hint{
 .grid{align-items:start}
 
 /* 封面选择（新建/编辑应用弹窗）2026-11-01 */
-.nf-cover{display:flex;align-items:center;gap:var(--space-16)}
+.nf-cover{display:flex;align-items:center;gap:var(--space-8)}
+/* ★2026-11-03（m04089）：按用户截图 1:1 复刻，不是另设计一个上传件。
+   截图量得：88×32，1px 实线 #D9D9D9，白底，14px 近黑字，无图标、无虚线、无加号。 */
 .nf-cover-thumb{
-  width:88px;height:88px;flex:none;border-radius:var(--radius-sm);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;
-  /* ★2026-11-03（m04000）：原来的 --color-border-strong 根本不存在，整条 border 被浏览器判无效，
-     88×88 的方框只剩字，看起来像一个 36 高的文字按钮。改用已定义的 border-card。 */
-  border:1px dashed var(--color-border-card);
-  background:var(--surface-subtle) center / cover no-repeat;
-  color:var(--color-text-tertiary);font-size:var(--font-size-caption);line-height:1.4;text-align:center;
-  transition:border-color .15s,color .15s,background-color .15s;
+  width:88px;height:32px;flex:none;border-radius:0;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  border:1px solid var(--color-border-control);
+  background:var(--surface-page) center / cover no-repeat;
+  color:var(--color-text-primary);font-size:var(--font-size-body);line-height:1;
+  transition:border-color .15s,color .15s;
 }
-.nf-cover-thumb::before{content:"+";font-size:20px;line-height:1;color:var(--color-text-tertiary)}
-.nf-cover-thumb:not(.is-empty)::before{display:none}
 .nf-cover-thumb:hover{border-color:var(--color-brand);color:var(--color-brand)}
 .nf-cover-thumb:focus-within{outline:2px solid var(--color-brand);outline-offset:2px}
 .nf-cover-thumb.is-empty{background-image:none}
-.nf-cover-thumb:not(.is-empty){border-style:solid;border-color:var(--color-border-card)}
+.nf-cover-thumb:not(.is-empty){border-color:var(--color-border-control)}
 .nf-cover-act{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap}
 
 
