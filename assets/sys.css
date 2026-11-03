@@ -1349,22 +1349,17 @@ body[data-app] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gra
   display:flex;align-items:center;gap: var(--space-8);pointer-events:none;
 }
 .topbar > *{pointer-events:auto}
-/* ★2026-10-24（用户：应用配置页"设计不合理"）：
-   原来名字 + 客户 · 状态 · 说明 + 三个动作全挤在同一行（实测那一行横向 700+px），
-   44 字的应用名被截成「…逐条规则给出…」，客户名和说明跟着一起被截。
-   现在名字独占第一行、客户/状态/说明退到第二行小字；胶囊跟着长成 48 高两行。
-   动作按钮仍在最右，与标题不在同一条视线里。 */
+/* ★2026-11-03（用户 m00984：「就显示当前应用名称、版本号就行了」）：
+   原来两行 —— 名字一行，客户 · 发布态 + 编辑态一行（48 高）。现在一行：返回 + 名字 + 版本号。
+   ★ 高度仍是 48（min-height 不动）：顶栏底边 = top 16 + 48 = 64，画布几何、px 基线、
+     盲审取点坐标都按这个数写的（见本文件 1320 附近那条同步提醒）。
+     一行内容靠 flex 垂直居中，所以改行数不改高度。 */
 .float-hd{
-  display:grid;grid-template-columns:auto minmax(0,1fr);column-gap: var(--space-8);row-gap:var(--size-border-w);
-  align-items:center;min-height:48px;padding: 6px var(--space-16) 6px var(--space-4);border-radius:var(--radius-panel);
+  display:flex;align-items:center;gap: var(--space-8);
+  min-height:48px;padding: 6px var(--space-16) 6px var(--space-4);border-radius:var(--radius-panel);
   background:var(--surface-veil);border:1px solid var(--color-border-card);box-shadow:var(--shadow-flat);
 }
-.float-hd .back{grid-row:1 / span 2}
-.float-hd .app-name{grid-column:2;grid-row:1}
-/* 第二行：客户/状态 + 当前编辑态。两组都是 12px 次要信息，放在同一行同一基线，
-   所以用一个 flex 容器承接，而不是两个各占 grid 第二行的元素（那样会重叠）。 */
-.float-hd .hd-sub{grid-column:2;grid-row:2;display:flex;align-items:center;gap:var(--space-8);min-width:0}
-.float-hd .app-meta{margin-left:0;min-width:0}
+.float-hd .app-name{flex:0 1 auto}
 .count-badge{
   min-width:18px;height:18px;padding: 0 var(--space-4);border-radius:var(--radius-pill);
   background:var(--surface-sunken-2);color:var(--color-text-secondary);font-size:var(--font-size-caption);line-height:var(--leading-caption);text-align:center;
@@ -1379,23 +1374,18 @@ body[data-app] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gra
   font-size:var(--font-size-body);font-weight:600;color:var(--color-text-body);line-height:1.2;
   max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-/* ★2026-10-24：新建应用时填的「所属客户 / 一句话说明」原来存进了数据却哪儿都不显示
-   （拿它新建一条，再进来只看得见名字）。这一行把它们摆在顶栏名字后面：
-   客户是谁、这应用干什么，一眼能对上，不用再去翻列表。 */
-.app-meta{
-  font-size:var(--font-size-caption);color:var(--color-text-tertiary);line-height:1.2;margin-left: var(--space-4);
-  max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.app-meta[hidden]{display:none}
-/* 这一行只回答一个问题：现在的内容和线上那一版是什么关系。
-   三种常态（2026-10-28 修 P0-2）：「还没保存过版本」/「与线上 vN 一致」/「有改动还没保存成版本」，
-   文案由 app.js 的 paintSaveState() 按版本台账 + 当前内容比对后写入。
-   它不是按钮 —— 「保存」按钮做的是把当前内容存成一版（客户立刻看到），不是"把自动保存补一下"。 */
+/* 版本号：顶栏里唯一的次要信息（2026-11-03 收口）。
+   文案由 app.js 的 paintSaveState() 写：常态只有一个版本号（如 v2）；内容偏离存档版时
+   追加「· 未保存」。它不是按钮 —— 存档是右上那颗「存成新版本」。 */
 .app-edit{
   flex:0 0 auto;font-size:var(--font-size-caption);color:var(--color-text-tertiary);line-height:1.2;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-variant-numeric:tabular-nums;
 }
 .app-edit[hidden]{display:none}
+/* 「未保存」必须能一眼看见：它是"下一步该点右上那颗按钮"的唯一提示。
+   --color-warning 是深琥珀（amber-800），压在白色浮标上不刺眼也够对比。 */
+.app-edit[data-dirty="1"]{color:var(--color-warning);font-weight:600}
 /* 保存失败必须是红的：这一行是"改的到底存下来没有"的唯一提示 */
 .app-edit[data-err="1"]{color:var(--color-danger);font-weight:600}
 
@@ -1499,7 +1489,6 @@ body[data-app] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gra
 body[data-mode="view"] .topbar .back,
 body[data-mode="view"] .topbar .tb-ops,
 body[data-mode="view"] .topbar .app-edit,
-body[data-mode="view"] .topbar .app-meta,
 body[data-mode="view"] .cv-blk-more,
 body[data-mode="view"] .cv-blk-ops,
 /* 2026-10-28 P1-A：块头常驻的「改这一块」也是管理侧控件，客户视图里不许出现；

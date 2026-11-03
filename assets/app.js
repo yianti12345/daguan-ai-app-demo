@@ -221,23 +221,11 @@
   /* ══ 2. 应用名铺到页面（左上浮标 + 画布标题），没有一处写死 ══════ */
   function paintApp() {
     var shownName = (VIEW_SNAP && VIEW_SNAP.name) ? VIEW_SNAP.name : app.name;
-    var shownClient = (VIEW_SNAP && VIEW_SNAP.client != null) ? VIEW_SNAP.client : app.client;
-    var shownStatus = (VIEW_SNAP && VIEW_SNAP.status) ? VIEW_SNAP.status : app.status;
     $$('[data-bind="app-name"]').forEach(function (n) { n.textContent = shownName; });
-    /* 客户 / 说明 / 状态（2026-10-24）：新建应用时填的两项从这里才看得见。
-       占位式的「待填写客户」「还没有填写说明」不当正文播 —— 那是没填，不是内容，
-       所以只在客户真的填了的时候显示客户，其余情况显示状态。 */
-    $$('[data-bind="app-meta"]').forEach(function (n) {
-      /* 2026-10-25 用户：「别加多余的标注和描述，让布局自己说话」。
-         这里原来把整段应用描述（20–43 字）拼进 12px 灰字，塞在顶栏第二行 ——
-         顶栏只需回答"我是谁、什么状态"；描述属于应用本身，卡面上有，这里重复就是噪声。 */
-      var bits = [];
-      /* 客户名就是标题的前缀时不再重复（「华信证券 · 债承审核」下面再写一遍「华信证券」） */
-      if (shownClient && shownClient !== '待填写客户' && shownName.indexOf(shownClient) < 0) bits.push(shownClient);
-      if (shownStatus) bits.push(shownStatus);
-      n.textContent = bits.join(' · ');
-      n.hidden = !bits.length;
-    });
+    /* ★2026-11-03：顶栏第二行（客户 · 发布态）已删（用户 m00984：只留应用名 + 版本号）。
+       删的是**显示**，不是数据：客户在客户授权页、发布态在应用卡与客户授权页，
+       各自都有动作可做；顶栏里它们既不能点、也回答不了"我现在能干什么"。
+       唯一保留的状态是"未保存/保存失败"——那两件会改变下一步动作，见 paintSaveState()。 */
     var cnt = $('#act-count');
     /* ★ 2026-10-26：「装配组件 3」里的 3 没有单位 —— 是"还能装 3 个"还是"已装 3 个"？
        现在写成「已装 3 / 8」：分母是组件库总数，从 DB.COMPS 现取，不写死。
@@ -269,8 +257,6 @@
          纯定制应用是常见形态，按钮永远可点，不许禁用、不许改文案。 */
     var pub = $('#act-publish');
     if (pub) pub.textContent = '存成新版本';
-    var vs = $('#act-versions');
-    if (vs) vs.setAttribute('href', 'versions.html?scope=app&id=' + encodeURIComponent(appId));
     /* ★2026-10-27：客户视图（?mode=view）里不该出现「应用配置」——
        客户不需要知道这是个配置页，他只知道"这是我的审核应用"。
        注意这一行在 paintApp 里，会覆盖上面 VIEW_MODE 分支设过的 title，
@@ -320,37 +306,36 @@
     if (!ed) return;
     /* 写盘失败优先：先报"没存上"，版本关系等写盘恢复了再说 */
     if (DB.lastSaveOk === false) {
-      ed.textContent = '保存失败：改动只在这次会话里';
+      ed.textContent = '保存失败';
       ed.setAttribute('data-err', '1');
       ed.title = '本机存储写不进去（隐私模式或空间满了）。别关页；换个浏览器或清出空间后再改。';
       return;
     }
     ed.removeAttribute('data-err');
     ed.removeAttribute('title');
+    ed.removeAttribute('data-dirty');
     if (VIEW_SNAP) { ed.textContent = '只读'; return; }
+    /* ★2026-11-03（用户 m00984）：「左上角…就显示当前应用名称、版本号就行了」。
+       这一行原来印「已存成 v2 · 1 家客户 · 都是最新」——三件事，全都只在别处才有动作
+       （存版本在右上按钮、客户在客户授权页），读得到却做不了，等于噪声。
+       现在只印一个版本号 = **最新存档版**（我刚存下的那版）；"客户在用哪版"一家客户
+       一个答案，没有单一数字可写，所以不在这里说。
+       只有两种状态才追加文字，因为它们是下一步动作的输入：
+         · 内容和存档版不一致 → 「未保存」（该去点「存成新版本」）
+         · 写盘失败          → 「保存失败」（红字，上面已 early return）
+       一版都没存过时印 v0：数据层里草稿的 version 就是 0，不另造一个词。 */
     var stables = DB.versOf('app', appId).filter(function (r) { return r.kind === 'stable'; });
-    if (!stables.length) { ed.textContent = '还没保存过版本'; return; }
-    var act = DB.versActive('app', appId);
-    /* ★2026-10-31（盲审抓出）：原来这里拿"当前授权版本"比内容，
-       于是刚存完 v4、客户还在 v3 时，永远比不上一律显示「有改动还没保存成版本」——
-       用户明明存过了，界面还在催他存。
-       00e 之后这是两件事：**最新存档版**（我刚存的）和**授权版本**（v3）。
-       状态行要把这两个都说出来，用户才知道自己处在哪一步。 */
-    var top = stables.reduce(function (a, b) { return b.v > a.v ? b : a; }, stables[0]);
-    var same = sameAsSnap(top.snap);
-    /* ★2026-11-02（用户 m01548：一应用授权多客户）：没有"这个应用授权到第几版"了 ——
-       授权版本是**一家客户一条**。所以这里说家数与落后家数，版本号交给客户授权页按家说。 */
-    var auths = [];
-    try { auths = DB.authRows(appId).filter(function (r) { return r.status === '已授权'; }); } catch (e) {}
-    var behind = auths.filter(function (r) { return r.behind; }).length;
-    var custTxt = auths.length
-      ? (auths.length + ' 家客户' + (behind ? ' · ' + behind + ' 家待升级' : ' · 都是最新'))
-      : '还没有客户授权';
-    ed.textContent = same
-      ? ('已存成 v' + top.v + ' · ' + custTxt)
-      : (top.v > (act ? act.v : 0)
-          ? ('有改动还没存成版本 · 最新存档 v' + top.v + ' · ' + custTxt)
-          : ('有改动还没存成版本 · ' + custTxt));
+    var top = stables.length
+      ? stables.reduce(function (a, b) { return b.v > a.v ? b : a; }, stables[0])
+      : null;
+    var ver = 'v' + (top ? top.v : (app.version || 0));
+    if (top && !sameAsSnap(top.snap)) {
+      ed.setAttribute('data-dirty', '1');
+      ed.textContent = ver + ' · 未保存';
+      ed.title = '当前内容和 v' + top.v + ' 不一样，点「存成新版本」才会存下来；客户看到的仍是已授权给他们的那一版。';
+    } else {
+      ed.textContent = ver;
+    }
   }
 
   /* ══ 3. 画布：装了什么就长什么样 ══════════════════════════════
@@ -1174,7 +1159,7 @@
       /* ★2026-10-31 用户明确：撤回这件事整个不要。原文：「没有任何一家 Agent 平台做这种撤回」
          「撤回一次是不是还要支持撤回好几步…撤回了之后是不是还有说再取消撤回」。
          这句只回一句话说清替代路径，**不落到模型那一路** —— 否则模型会编一个"已撤回"的假动作。 */
-      return { msg: '这里没有撤回。要退到以前的样子，去「历史版本」点「替换」；不想留这次的改动，离开时选「不保存」。' };
+      return { msg: '这里没有撤回。要退到以前的样子，去「应用管理」这张卡的菜单 →「历史版本」点「替换」；不想留这次的改动，离开时选「不保存」。' };
     }
     var m = /(?:加|新增|增加|插入)\s*(?:一)?(?:列|栏)\s*[「"“]?([^」"”，,。\s]{1,12})[」"”]?/.exec(text);
     if (!m) return null;
