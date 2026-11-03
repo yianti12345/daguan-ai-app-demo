@@ -239,7 +239,8 @@
        "点了完全没反应"。走查判据一次抓出 6 个死控件就是这么来的。
        改成往上找最近的卡片：不管 ⋮ 以后被挪到哪一格，只要还在卡里就找得到。 */
     var host = btn.closest('.kcard') || btn.parentNode;
-    var menu = host.querySelector('.k-menu');
+    var isStatus = btn.classList.contains('k-pub');
+    var menu = host.querySelector(isStatus ? '.k-menu--status' : '.k-menu:not(.k-menu--status)');
     if (!menu) return;
     closeMenu(false);
     menu.hidden = false;
@@ -450,7 +451,10 @@
   function pubState(a) {
     if (!a) return '未上架';
     if (a.status === '未发布') return '未上架';
-    if (a.status === '已下架' || a.status === '内测中') return '内测中';
+    /* ★2026-11-03（真源）：系统只有 未上架/内测中/已上架；没有「已下架」这个界面态。
+       下架后是「未上架」，不是「内测中」——旧映射把下架误读成内测。 */
+    if (a.status === '已下架') return '未上架';
+    if (a.status === '内测中') return '内测中';
     return a.status === '已上架' ? '已上架' : '未上架';
   }
 
@@ -665,7 +669,15 @@
             '<span class="kc-desc" title="' + esc(a.desc || '') + '">' + esc(a.desc || '—') + '</span>' +
           '</span>' +
         '</a>' +
+        /* ★2026-11-03（m04500 实机）：真源里状态动作在**电源钮**上，⋮ 只放通用动作。
+           两条菜单分开，不再把「上架/下架」混进 ⋮ —— 这是真系统的逻辑，不是猜的。 */
         '<div class="k-menu" role="menu" hidden>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="auth" data-id="' + esc(a.id) + '">' + ICON.link + '客户配置</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="edit" data-id="' + esc(a.id) + '">' + ICON.cfg + '编辑</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="view" data-id="' + esc(a.id) + '">' + ICON.ver + '查看</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="export" data-id="' + esc(a.id) + '">' + ICON.down + '导出</button>' +
+        '</div>' +
+        '<div class="k-menu k-menu--status" role="menu" hidden>' +
           (ps === '未上架'
             ? '<button class="k-mi" type="button" role="menuitem" data-act="trial" data-id="' + esc(a.id) + '">' + ICON.on + '发布内测版</button>' +
               '<button class="k-mi" type="button" role="menuitem" data-act="live" data-id="' + esc(a.id) + '">' + ICON.pow + '上架正式版</button>'
@@ -674,12 +686,6 @@
                 '<button class="k-mi is-danger" type="button" role="menuitem" data-act="off" data-id="' + esc(a.id) + '">' + ICON.off + '下架</button>'
               : '<button class="k-mi" type="button" role="menuitem" data-act="trial" data-id="' + esc(a.id) + '">' + ICON.on + '发布内测版</button>' +
                 '<button class="k-mi is-danger" type="button" role="menuitem" data-act="off" data-id="' + esc(a.id) + '">' + ICON.off + '下架</button>') +
-          '<button class="k-mi" type="button" role="menuitem" data-act="auth" data-id="' + esc(a.id) + '">' + ICON.link + '客户配置</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="edit" data-id="' + esc(a.id) + '">' + ICON.cfg + '编辑</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="view" data-id="' + esc(a.id) + '">' + ICON.ver + '查看</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="vers" data-id="' + esc(a.id) + '">' + ICON.ver + '版本管理</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="export" data-id="' + esc(a.id) + '">' + ICON.down + '导出</button>' +
-          '<button class="k-mi is-danger" type="button" role="menuitem" data-act="del" data-id="' + esc(a.id) + '">' + ICON.off + '删除</button>' +
         '</div>' +
         '<footer class="card-ft">' +
           (BATCH ? '<input type="checkbox" class="js-pick" data-id="' + esc(a.id) + '"' + (SEL[a.id] ? ' checked' : '') +
@@ -692,17 +698,12 @@
             esc((cardVer ? 'v' + cardVer : '未上架') + ' · ' + (a.updated || '—')) +
           '</span>' +
           '<span class="kc-ops">' +
-            (ps === '未上架'
-              /* ★2026-11-02（用户 m06188 + 官网标准）：草稿没有上下架动作，但**位置必须占住**，
-                 而且要和其它卡长得一样 —— 用官网同款 24×24 电源钮的 disabled 态，
-                 不再用不可见 ghost（ghost 24 + 真钮 32 造成动作簇 60/68 不齐，用户已投诉三轮）。
-                 文案只陈述事实：未发布，不能上下架。 */
-              ? '<button class="k-pub" type="button" disabled aria-disabled="true"' +
-              ' aria-label="未上架，不能上下架"' +
-              ' title="发布后才能上架">' + ICON.pow + '</button>'
-              : '<button class="k-pub" type="button" data-act="toggle" data-id="' + esc(a.id) + '"' +
-              ' aria-label="' + esc((up ? '下架 ' : '上架 ') + a.name) + '"' +
-              ' title="' + esc(pubTitle) + '">' + ICON.pow + '</button>') +
+            /* ★2026-11-03（m04500 实机）：未上架卡也有电源钮，点开是「发布内测版 / 上架正式版」，
+               不是 disabled。真系统三态都有这颗钮。 */
+            '<button class="k-pub" type="button" data-act="status" data-id="' + esc(a.id) + '"' +
+            ' aria-haspopup="menu" aria-expanded="false"' +
+            ' aria-label="' + esc('状态操作：' + a.name + '，当前' + ps) + '"' +
+            ' title="' + esc(pubTitle) + '">' + ICON.pow + '</button>' +
             '<button class="k-more" type="button" data-id="' + esc(a.id) + '" data-act="more"' +
             ' aria-haspopup="menu" aria-expanded="false" aria-label="更多操作：' + esc(a.name) + '">' + ICON.more + '</button>' +
           '</span>' +
@@ -805,12 +806,12 @@
       if (MENU.btn === mb) { closeMenu(true); } else { openMenu(mb); }
       return;
     }
-    /* 2026-10-29：底栏电源钮 —— 与 ⋮ 菜单里的「上架/下架」走同一条 menuAct，
-       不另写一套状态变更（下架仍先问一句，上架恢复最近正式版）。 */
+    /* ★2026-11-03（真源）：电源钮开**状态菜单**（发布内测/上架/下架），⋮ 开通用菜单。
+       两条菜单不再混在一起；状态动作仍走 menuAct。 */
     var pb = e.target.closest('.k-pub');
     if (pb) {
       e.preventDefault();
-      menuAct('toggle', pb.getAttribute('data-id'));
+      if (MENU.btn === pb) { closeMenu(true); } else { openMenu(pb); }
       return;
     }
     var mi = e.target.closest('.k-mi');
@@ -822,7 +823,7 @@
     }
   });
   $('#grid').addEventListener('keydown', function (e) {
-    var mb = e.target.closest('.k-more');
+    var mb = e.target.closest('.k-more, .k-pub');
     if (mb) {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); openMenu(mb); }
       return;
@@ -842,7 +843,7 @@
   window.addEventListener('resize', function () { closeMenu(false); });
   document.addEventListener('click', function (e) {
     if (!MENU.open) return;
-    if (e.target.closest('.k-menu') || e.target.closest('.k-more')) return;
+    if (e.target.closest('.k-menu') || e.target.closest('.k-more') || e.target.closest('.k-pub')) return;
     closeMenu(false);
   });
   /* 刷新：从存储重新读一遍再重绘。
