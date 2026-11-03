@@ -1428,13 +1428,13 @@
     var prev = getVer();
     var next = topVer() + 1;
     Confirm.ask({
-      title: '存成新版本 v' + next + '？',
+      title: '存成 v' + next + '？',
       /* ★2026-10-31 按 00e 拆开两件事：存一版 ≠ 让客户看到。
          原来这里写「客户会立刻看到这一版」，等于把「存档」和「上线」合成一步，
          用户以为在留档，实际客户的界面当场就变了 —— 这是最贵的一类误解。 */
-      body: '装配、每块的内容和应用信息会一起存成 v' + next + '，之后可以随时回到它。' +
-            (prev ? ' 客户那边仍是 v' + prev + ' —— 要让客户用上这一版，去这家应用的「客户授权」页升级。'
-                  : ' 这一版还不会给客户看到 —— 要让客户用上，去这家应用的「客户授权」页授权。'),
+      body: '当前内容存为 v' + next + '，可随时回退。' +
+            (prev ? ' 客户仍看 v' + prev + '；升级授权后才可见。'
+                  : ' 客户看不到；授权后才可见。'),
       ok: '存成 v' + next,
       onOk: commitPublish
     });
@@ -1547,10 +1547,8 @@
     var actNow = DB.versActive('app', appId);
     Confirm.ask({
       title: '把画布内容换成 v' + want + '？',
-      body: '装配、每块的内容和应用信息会一起换成 v' + want + ' 那一版。' +
-        '还没保存成版本的改动会丢，没有第二份。' +
-        '客户不受影响：客户那边仍是 v' + (actNow ? actNow.v : '—') + '；' +
-        '要让客户用上这一版，去「客户授权」页升级。',
+      body: '画布换成 v' + want + '，未保存的改动会丢。' +
+        '客户不受影响，仍看 v' + (actNow ? actNow.v : '—') + '；需在「客户授权」升级后才可见。',
       ok: '换成 v' + want,
       onOk: function () {
         var r = DB.versApply('app', appId, want, true);   /* keepActive：不换客户版本 */
