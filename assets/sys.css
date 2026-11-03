@@ -949,16 +949,9 @@ button.cc-meta:focus-visible{
 }
 .toast[data-on="true"]{opacity:1;transform:translate(-50%,0)}
 .toast[data-kind="error"]{background:var(--color-warning)}
-/* 编辑信息弹窗的字段样式（复用 nf 骨架，但这两页的 .nf-row 里没有 label/textarea） */
-.nf-lb{display:block;font-size:var(--font-size-body);color:var(--color-text-secondary);margin:0 0 6px}
-.nf-in{
-  width:100%;border:1px solid var(--color-border-card);border-radius:var(--radius-xs);background:var(--surface-page);
-  padding:var(--space-8) 11px;font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-body);margin:0 0 14px;
-}
-.nf-in:focus{border-color:var(--color-brand);box-shadow:0 0 0 2px var(--color-focus-halo);outline:none}
-.nf-note{margin:0;font-size:var(--font-size-caption);color:var(--color-text-tertiary);line-height:var(--leading-caption)}
-/* 标签选到上限时的提示：要看得出来是"这次没生效"，不是又一句说明（走查 P1） */
-.nf-note.is-warn{color:var(--color-warning);font-weight:500}
+/* ★2026-11-03（m04152）：编辑弹窗改用统一的 .nf-row（标签→控件 8，字段之间 16）。
+   原来 label 6 + gap 16 = 22、input margin 14 + gap 16 = 30，一组大一组小；
+   同时删掉表单底部那句解释性长文案。 */
 /* ── 确认框（2026-10-25）─────────────────────────────────────────
    复用 nf 骨架，但它是问句不是表单：比表单窄一档、没有输入框、正文只有一句。
    为什么单独一档宽度：确认框里最长的东西是一句人话，480 的宽度会把这句话

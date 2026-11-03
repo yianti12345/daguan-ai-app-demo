@@ -6,7 +6,7 @@
 <title>组件库</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=5a8cf4f5">
+<link rel="stylesheet" href="assets/sys.css?v=67465879">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=798c12a1">
 <!-- 2026-10-29：本页 <style> 已清空（原 3,683 B）。`.nf-*`（2026-10-24）与
      引用数格 `.cc-meta`（2026-10-29）都在 assets/sys.css 的组件层：
@@ -119,14 +119,17 @@
           </button>
         </div>
         <div class="nf-bd">
-          <label class="nf-lb" for="ei-name">名称</label>
-          <input class="nf-in" id="ei-name" type="text" maxlength="40" autocomplete="off">
-          <label class="nf-lb" for="ei-desc">说明</label>
-          <textarea class="nf-in" id="ei-desc" maxlength="120" rows="3"></textarea>
+          <div class="nf-row">
+            <label for="ei-name">名称</label>
+            <input id="ei-name" type="text" maxlength="40" autocomplete="off">
+          </div>
+          <div class="nf-row">
+            <label for="ei-desc">说明</label>
+            <textarea id="ei-desc" maxlength="120" rows="3"></textarea>
+          </div>
           <!-- ★2026-11-03（m03263）：编辑已有组件时同样能改范围。 -->
           <div id="ei-scope-vis"></div>
           <div id="ei-scope-cfg"></div>
-          <p class="nf-note" id="ei-note" role="status" aria-live="polite"></p>
         </div>
         <div class="nf-ft">
           <button class="btn quiet" type="button" id="ei-cancel">取消</button>
@@ -228,7 +231,7 @@
   }
 
   /* 编辑信息弹窗：改真实字段，落 DB，重画 */
-  const EI = { mask: $('#ei-mask'), title: $('#ei-title'), name: $('#ei-name'), desc: $('#ei-desc'), note: $('#ei-note'), id: null, ret: null,
+  const EI = { mask: $('#ei-mask'), title: $('#ei-title'), name: $('#ei-name'), desc: $('#ei-desc'), id: null, ret: null,
                vis: window.Scope ? Scope.render($('#ei-scope-vis'), { kind: 'vis' }) : null,
                cfg: window.Scope ? Scope.render($('#ei-scope-cfg'), { kind: 'cfg' }) : null };
   function eiOpen(id) {
@@ -241,15 +244,6 @@
     EI.desc.value = c.desc || '';
     if (EI.vis) EI.vis.set(c.visScope);
     if (EI.cfg) EI.cfg.set(c.cfgScope);
-    /* ★2026-10-26 修（盲审 v11 P1）：原来只写「改完立刻生效」，而一个组件可能被多个应用装着 ——
-       改一个名字瞬间改掉 N 个应用里的显示，没有任何影响面提示。用户在弹层里看不到爆炸半径。
-       现在把引用数写进同一句：有引用就点名数量，没引用才说「还没被用」。 */
-    var users = DB.APPS.filter(function (a) { return (a.comps || []).indexOf(id) >= 0; });
-    var impact = users.length
-      ? '它现在被 ' + users.length + ' 个应用装着，改完立刻在这些应用里生效。'
-      : '它还没被任何应用装配，改完只影响组件库。';
-    EI.note.textContent = '名称是它在库里和在装配面板里的同一个名字；说明是卡片上那一行。' + impact;
-    EI.note.classList.remove('is-warn');
     EI.mask.hidden = false;
     dlgInert(EI.mask, true);
     EI.name.focus();
@@ -264,7 +258,7 @@
     const c = DB.compById(EI.id);
     if (!c) { eiClose(); toast('这个组件已经不在了', 'error'); return; }
     const name = EI.name.value.trim(), desc = EI.desc.value.trim();
-    if (!name) { EI.note.textContent = '名称不能为空 —— 卡片标题就是它。'; EI.name.focus(); return; }
+    if (!name) { toast('名称不能为空', 'error'); EI.name.focus(); return; }
     c.name = name; c.label = name; c.desc = desc;
     if (EI.vis) c.visScope = EI.vis.get();
     if (EI.cfg) c.cfgScope = EI.cfg.get();
