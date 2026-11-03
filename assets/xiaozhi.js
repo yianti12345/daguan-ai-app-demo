@@ -2681,7 +2681,7 @@ function xzMsgsHtml(){
          现在播报只留给 #xzAlert（常驻 + 延迟写文本 + 不被重建），
          可见块只负责"给人看、可停留、带出口"，用 group 装起来即可。 */
       /* ★2026-10-22（team-lead 判必修）：原来这个出口复用了 `.chip`
-         （= 推荐问题的样式），于是它看起来像"再问小智一句"，实际是"滚过去并高亮"。
+         （= 推荐问题的样式），于是它看起来像"再说需求一句"，实际是"滚过去并高亮"。
          外观与行为错位比"点不动"更坏：不会报错、不会红，只会让人反复点错。
          现在改成**文字链**样式（内联，不新增 CSS 规则）+ 导航语汇：
            · 文案「跳到「目标」」明确是"带你去某处"，不是"要执行什么"；
@@ -3036,7 +3036,7 @@ function xzHtml(mode){
         + (isHist ? '' : '<div class="xz-task" id="xzTask"' + xzTaskAttrs() + (taskHtml ? '' : ' hidden') + '>' + taskHtml + '</div>')
         + '<div class="xz-body' + (isHist ? ' is-hist' : '') + '" id="xzBody">' + (isHist ? xzHistBodyHtml() : xzMsgsHtml()) + '</div>'
         + (isHist ? '' : '<div class="xz-foot"><div class="xz-inputwrap">'
-          + '<input data-act="xzInput" aria-label="问小智" placeholder="跟小智说你要做什么">'
+          + '<input data-act="xzInput" aria-label="说需求" placeholder="直接说你要做什么">'
           + '<button class="xz-mic" data-act="xzMic" aria-label="按下说话" aria-pressed="false" title="按下说话">' + sv('mic') + '</button>'
           + '<button class="xz-send" data-act="xzSend" aria-label="发送">' + sv('right') + '</button>'
           + '</div></div>'
@@ -3105,7 +3105,7 @@ function xzPaint(){
    不做说完自动发送：转错一个字就发出去，取消重说比多按一下贵得多。
    识别在本机做（xz-server 的 /asr → whisper.cpp），不走外网。 */
 var XZ_MIC = { st:'', mr:null, ch:[], stream:null, timer:0 };
-var XZ_MIC_PH = '跟小智说你要做什么';
+var XZ_MIC_PH = '直接说你要做什么';
 
 function xzMicUi(){
   var b = document.querySelector('[data-act="xzMic"]');

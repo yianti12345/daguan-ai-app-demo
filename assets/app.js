@@ -832,7 +832,7 @@
          两条起步路必须都看得见：对话生成是主路，装配组件是备路。
          改前只有一颗「装配组件」，说明里却写"告诉小智…" —— 承诺 A、只给 B。 */
       + '<div class="cv-acts">'
-      + '<button type="button" class="btn primary" id="cv-talk">和小智说需求</button>'
+      + '<button type="button" class="btn primary" id="cv-talk">直接说需求</button>'
       + '<button type="button" class="btn" id="cv-install">装配组件</button>'
       + '</div></section>';
   }
@@ -953,14 +953,14 @@
        空态要说的只有两件事：现在是什么、下一步做什么。 */
       /* ★2026-10-28 用户定调：空态只要一句话说清"有哪两种起步方式"，**不要示例句、不要模板**。 */
       cv.innerHTML = emptyHtml('这个应用还没有内容',
-        '跟小智说：谁用、审核什么、要看到什么。它会边问边生成页面；也可以自己装配组件。');
+        '直接在下面说：谁用、要看到什么。页面会边问边生成，也可以自己装配组件。');
       bindEmptyActions();
       return;
     }
 
     if (!v.full.length && !v.left.length && !v.right.length) {
       cv.innerHTML = emptyHtml('页面还差内容',
-        '跟小智说还缺哪几块（待办、详情、规则结论），它补上后你随时改。');
+        '直接在下面说还缺哪几块，页面补上后你随时改。');
       bindEmptyActions();
       return;
     }
