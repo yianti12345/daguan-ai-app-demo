@@ -1,4 +1,4 @@
-/* scope.js —— 可见范围 / 可配置范围（2026-11-03 用户 m03263 点名加）
+/* scope.js —— 可用范围 / 可配置范围（2026-11-03 用户 m03263 点名加）
  *
  * 为什么单独一件：应用与组件、新建与编辑，四个弹窗都要同一套「谁可见 / 谁能改」，
  * 各写一遍就会出现四种口径、四种文案。这里只定义一次，四个入口调用它。
@@ -62,22 +62,19 @@
     var self = this;
     var kind = opt.kind === 'cfg' ? 'cfg' : 'vis';
     var id = 'sc' + (++UID);
-    var allowPublic = kind === 'vis';
-    var title = kind === 'vis' ? '可见范围' : '可配置范围';
-    var tip = kind === 'vis'
-      ? '角色、部门、用户为并集，满足其一即可看到并使用；默认创建者可用。'
-      : '角色、部门、用户为并集，满足其一即可修改配置；默认创建者可用。';
+    /* ★2026-11-03（用户 m03707）：两段统一成三档「仅自己 / 公开 / 指定」，
+       字段名用真源里的「可用范围」；问号和必填星号都去掉 —— 默认已选中，
+       再标必填是假精度，问号更是纯占位。 */
+    var title = kind === 'vis' ? '可用范围' : '可配置范围';
     var hint = kind === 'vis'
-      ? '角色、部门、用户满足其一即可见；都不选时，仅创建者可见。'
-      : '满足其一即可修改配置；都不选时，仅创建者可改。';
+      ? '角色、部门、用户满足其一即可用；都不选时，仅自己可用。'
+      : '角色、部门、用户满足其一即可修改配置；都不选时，仅自己可改。';
     this.kind = kind;
     this.host = host;
     this.value = norm(opt.value);
     this.id = id;
 
-    var modes = allowPublic
-      ? [['self', '仅自己'], ['public', '公开可用'], ['custom', '指定范围']]
-      : [['self', '仅自己'], ['custom', '指定范围']];
+    var modes = [['self', '仅自己'], ['public', '公开'], ['custom', '指定']];
     var modeHtml = modes.map(function (m) {
       return '<label class="sc-opt"><input type="radio" name="' + id + '-mode" value="' + m[0] + '">' + m[1] + '</label>';
     }).join('');
@@ -92,9 +89,7 @@
     host.innerHTML =
       '<div class="sc" data-kind="' + kind + '">' +
         '<div class="sc-top">' +
-          '<span class="sc-title">' + title + ' <span class="sc-req" aria-hidden="true">*</span>' +
-            '<span class="sc-q" tabindex="0" role="note" aria-label="' + esc(tip) + '" title="' + esc(tip) + '">?</span>' +
-          '</span>' +
+          '<span class="sc-title">' + title + '</span>' +
           '<div class="sc-opts" role="radiogroup" aria-label="' + title + '">' + modeHtml + '</div>' +
         '</div>' +
         '<div class="sc-body" hidden>' + fields + '<p class="sc-hint">' + hint + '</p></div>' +
