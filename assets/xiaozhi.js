@@ -22,7 +22,7 @@ function att(s){
 }
 function here(){ return location.hash.split('?')[0]; }
 function xzHost(){ return document.getElementById('xz-host'); }
-function render(){ xzPaint(); renderXz(); }
+function render(){ xzPaint(); renderXz(); try { xzHistSaveSoon(); } catch (e) {} }
 
 var XZ_SV = {
   close: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
@@ -208,6 +208,45 @@ document.addEventListener('click', function(e){
   if (!b) return;
   var act = b.getAttribute('data-act');
   var arg = b.getAttribute('data-arg') || '';
+  /* 对话历史（2026-11-02）：图标只在小智面板里生效；装配对话框那套
+     也发 hist* 动作，靠 closest('.xz-panel') 隔离，互不抢事件。 */
+  if (act.indexOf('hist') === 0){
+    if (!b.closest('.xz-panel')) return;
+    e.stopPropagation(); e.preventDefault();
+    var H = xzState();
+    if (act === 'histToggle'){
+      H.view = (H.view === 'chat' || !H.view) ? 'list' : 'chat';
+      H.detail = '';
+      renderXz();
+      setTimeout(function(){
+        if (H.view === 'list'){
+          var f = document.querySelector('.xz-panel .hist-item');
+          if (f) f.focus();
+        } else xzFocusPanel();
+      }, 0);
+      return;
+    }
+    if (act === 'histOpen'){
+      H.view = 'detail'; H.detail = arg;
+      renderXz();
+      setTimeout(function(){
+        var f = document.querySelector('.xz-panel .hist-back');
+        if (f) f.focus();
+      }, 0);
+      return;
+    }
+    if (act === 'histBack'){
+      H.view = 'list'; H.detail = '';
+      renderXz();
+      setTimeout(function(){
+        var f = document.querySelector('.xz-panel .hist-item');
+        if (f) f.focus();
+      }, 0);
+      return;
+    }
+    if (act === 'histNew'){ xzHistNew(); return; }
+    return;
+  }
   /* ★2026-10-22：这里必须 stopPropagation。
      实测：xiaozhi.js 内部还有一套事件代理，同一次点击会被两边各处理一次 ⇒
      两个 xzRun 并发跑，m 对象互相覆盖，面板会莫名其妙消失或状态打架。
@@ -223,6 +262,7 @@ document.addEventListener('click', function(e){
          关闭一律不动 unread。 */
     if (X.open){
       X.open = false;                       /* 收起：保留未读，别替用户宣布"已处理" */
+      X.view = 'chat'; X.detail = '';        /* 下次打开回到对话，不留在历史里 */
     } else {
       X.open = true; X.unread = 0; X.unreadReason = '';   /* 展开：这才是"看过" */
     }    /* ★2026-10-22：开合状态落 sessionStorage。原因见 xzDocRoot 的注释 ——
@@ -358,6 +398,7 @@ document.addEventListener('keydown', function(e){
   if (xzPageModalOpen()) return;
   e.stopPropagation();
   X.open = false; X.unread = 0;
+  X.view = 'chat'; X.detail = '';
   try { sessionStorage.setItem('xz:open', '0'); } catch (err) {}
   renderXz();
   /* 收起后焦点回浮球（同 xzToggle 里的原因：节点重建，焦点会掉回 body） */
@@ -1219,10 +1260,12 @@ function xzClaimedAction(stages){
 function xzRun(intent, list){
   var t0 = xzNow();
   list.push({ who:'me', text:intent });
+  xzHistTouch();
   /* ask＝这一轮的原话，「再说一次」重跑的就是它；plan＝这一轮声明的步骤（与阶段打勾同一批对象）。 */
   var m = { who:'xz', text:'正在读这一页…', stages:[], foot:'', err:'', ask:intent,
             plan:null, fail:'', suspect:'', userIrrev: XZ_USER_IRREV.test(intent) };
   list.push(m);
+  xzHistTouch();
   G.xzBusy = 1;
   xzPaint();
   /* ★2026-10-24：等的时候要让人知道"还在等、等了多久"。
@@ -2407,6 +2450,124 @@ function xzActLabel(a, el){
   return '';
 }
 
+/* ── 对话历史（2026-11-02）────────────────────────────────────────
+   用户要的是：同一个"圆圈里有时钟"的图标，点开一条条历史，每条有名字，
+   点一条在同一个弹窗里看当时的对话。
+   小智原来只有内存里一段 X.box，刷新就没；这里升级成按 admin/client 分开的多会话，
+   会话正文落 localStorage，标题取第一条用户原话（不改写、不总结）。
+   ★ 历史只读：点开旧会话不会把它切成"当前"，避免用户以为接着聊。 */
+var XZ_CKEY = 'ifas90:xz:convs:v1';
+var XZ_C_MAX = 30;
+var XZ_C_MSG_MAX = 120;
+
+function xzHistId(){ return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function xzHistBlank(){ return { id:xzHistId(), at:Date.now(), msgs:[] }; }
+function xzHistInit(X){
+  if (X.__histReady) return;
+  X.__histReady = 1;
+  X.convs = X.convs || {admin:[], client:[]};
+  X.cur = X.cur || {};
+  if (!X.view) X.view = 'chat';
+  if (X.detail == null) X.detail = '';
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(XZ_CKEY) || 'null'); } catch (e) { raw = null; }
+  if (raw && raw.convs){
+    ['admin','client'].forEach(function(k){
+      if (!Array.isArray(raw.convs[k])) return;
+      X.convs[k] = raw.convs[k].filter(function(c){
+        return c && Array.isArray(c.msgs) && c.msgs.length;
+      }).slice(0, XZ_C_MAX).map(function(c){
+        return { id:String(c.id || xzHistId()), at:+c.at || Date.now(),
+                 msgs:c.msgs.slice(-XZ_C_MSG_MAX) };
+      });
+    });
+    if (raw.cur){
+      X.cur.admin = raw.cur.admin || '';
+      X.cur.client = raw.cur.client || '';
+    }
+  }
+  ['admin','client'].forEach(function(k){
+    /* 旧版只有内存 X.box：第一次升级时把那一段搬进历史，不丢用户刚说的话 */
+    if ((!X.convs[k] || !X.convs[k].length) && X.box && X.box[k] && X.box[k].length){
+      X.convs[k] = [{ id:xzHistId(), at:Date.now(), msgs:X.box[k].slice(-XZ_C_MSG_MAX) }];
+    }
+    if (!X.convs[k] || !X.convs[k].length) X.convs[k] = [xzHistBlank()];
+    var hit = null;
+    for (var i = 0; i < X.convs[k].length; i++){
+      if (X.convs[k][i].id === X.cur[k]){ hit = X.convs[k][i]; break; }
+    }
+    if (!hit) hit = X.convs[k][0];
+    X.cur[k] = hit.id;
+    X.box[k] = hit.msgs;
+  });
+}
+function xzHistCur(k){
+  var X = xzState();
+  var arr = X.convs[k] || [];
+  for (var i = 0; i < arr.length; i++) if (arr[i].id === X.cur[k]) return arr[i];
+  return arr[0] || null;
+}
+function xzHistById(k, id){
+  var arr = xzState().convs[k] || [];
+  for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i];
+  return null;
+}
+function xzHistSave(){
+  var X = xzState();
+  try {
+    var out = { v:1, cur:{admin:X.cur.admin || '', client:X.cur.client || ''},
+                convs:{admin:[], client:[]} };
+    ['admin','client'].forEach(function(k){
+      out.convs[k] = (X.convs[k] || []).slice(0, XZ_C_MAX).map(function(c){
+        return { id:c.id, at:c.at, msgs:(c.msgs || []).slice(-XZ_C_MSG_MAX) };
+      });
+    });
+    localStorage.setItem(XZ_CKEY, JSON.stringify(out));
+  } catch (e) {}
+}
+function xzHistSaveSoon(){
+  var X = xzState();
+  if (X.__histT) clearTimeout(X.__histT);
+  X.__histT = setTimeout(function(){ X.__histT = 0; xzHistSave(); }, 200);
+}
+/* 有新消息时把当前会话顶到最前、刷新时间；只在发/收消息时调，不在每次重绘时调，
+   否则等待秒数一跳，"最后一次对话"的时间就跟着乱动。 */
+function xzHistTouch(){
+  var X = xzState();
+  var k = X.mode === 'client' ? 'client' : 'admin';
+  var c = xzHistCur(k);
+  if (!c) return;
+  if (X.box[k] && X.box[k] !== c.msgs) c.msgs = X.box[k];
+  c.at = Date.now();
+  var arr = X.convs[k], i = arr.indexOf(c);
+  if (i > 0){ arr.splice(i, 1); arr.unshift(c); }
+  xzHistSaveSoon();
+}
+function xzHistList(k){
+  var X = xzState();
+  /* 只列"真的说过话"的对话：空会话（只有开场白）不算历史，
+     否则列表里会多一条「新对话 · 0 条」，点开还是空白。 */
+  return (X.convs[k] || []).filter(function(c){
+    return (c.msgs || []).some(function(m){ return m && m.who === 'me'; });
+  });
+}
+function xzHistNew(){
+  var X = xzState();
+  var k = X.mode === 'client' ? 'client' : 'admin';
+  var cur = xzHistCur(k);
+  if (cur && !(cur.msgs || []).some(function(m){ return m && m.who === 'me'; })){
+    X.view = 'chat'; X.detail = '';
+    renderXz();
+    return;
+  }
+  var c = xzHistBlank();
+  X.convs[k].unshift(c);
+  X.cur[k] = c.id;
+  X.box[k] = c.msgs;
+  X.view = 'chat'; X.detail = '';
+  xzHistSave();
+  renderXz();
+}
 function xzState(){
   if (!G.xz){
     /* ★2026-10-22：恢复上次的开合状态。G.xz 是内存状态，文档一换就没了；
@@ -2414,8 +2575,11 @@ function xzState(){
        或页面里异步 handler 触发跳转的情况 —— 人不会觉得"小智自己消失了"。 */
     var op = false;
     try { op = sessionStorage.getItem('xz:open') === '1'; } catch (e){}
-    G.xz = { open: op, mode:'admin', box:{admin:[], client:[]} };
+    G.xz = { open: op, mode:'admin', box:{admin:[], client:[]},
+             convs:{admin:[], client:[]}, cur:{admin:'', client:''},
+             view:'chat', detail:'' };
   }
+  xzHistInit(G.xz);
   return G.xz;
 }
 /* 对话按壳分开存：平台侧聊的是授权和配置，客户端聊的是找应用和调参数，
@@ -2423,14 +2587,22 @@ function xzState(){
 function xzMsgs(){
   var X = xzState();
   var k = X.mode === 'client' ? 'client' : 'admin';
-  if (!X.box[k] || !X.box[k].length){
+  var c = xzHistCur(k);
+  if (!c){
+    c = xzHistBlank();
+    X.convs[k].unshift(c);
+    X.cur[k] = c.id;
+  }
+  X.box[k] = c.msgs;
+  if (!c.msgs.length){
     /* 开场白不要在面板里重复副标题那句话 —— 副标题已经说了"我能帮你操作"。 */
-    X.box[k] = [{ who:'xz', icon:1,
+    c.msgs.push({ who:'xz', icon:1,
       text: (k === 'client')
         ? '说一句你想找什么，我来筛。'
-        : '说一句你要做什么，我来点。' }];
+        : '说一句你要做什么，我来点。' });
+    xzHistSaveSoon();
   }
-  return X.box[k];
+  return c.msgs;
 }
 /* 这一页该按哪种角色给推荐问题 / 示例话术。
    抽出来给「换个说法」共用：按钮填进输入框的那句，必须是这一页真做得到的。 */
@@ -2594,6 +2766,48 @@ function xzMsgsHtml(){
       + '<span class="xz-qa" aria-hidden="true">\u2192</span>'
       + '</button>';
   }).join('') + '</div>';
+}
+
+/* ── 历史详情：只读 ─────────────────────────────────────────────────
+   这里刻意不渲染按钮（授权卡、失败出口、推荐问题都不给）：历史是"当时发生了什么"，
+   不是"接着往下聊"。给了按钮，人会以为点它会重跑；那是另一种谎。
+   步骤符号只用 √ / ○（与正文一致，不用 emoji）。 */
+function xzHistThreadHtml(msgs){
+  return (msgs || []).map(function(m){
+    if (m.who === 'me'){
+      return '<p class="xz-say is-me">' + att(m.text) + '</p>';
+    }
+    var stages = (m.stages || []).map(function(s){
+      var steps = (s.steps || []).map(function(x){
+        return '<li class="xz-step' + (x.done ? ' is-done' : '') + '">'
+          + '<span class="xz-dot">' + (x.done ? '√' : '○') + '</span>'
+          + '<span>' + att(x.t) + '</span></li>';
+      }).join('');
+      if (!steps) return '';
+      return '<div class="xz-stage"><p class="xz-stage-h">' + att(s.t) + '</p>'
+        + '<ul class="xz-steps">' + steps + '</ul></div>';
+    }).join('');
+    if (stages) stages = '<div class="xz-stages">' + stages + '</div>';
+    var done = '';
+    if (m.kind){
+      var KM = { done:'做完了', wait:'等你确认', fail:'没做成', stop:'已停止' };
+      var k = KM[m.kind] || KM.done;
+      done = '<div class="xz-done' + (m.kind === 'fail' ? ' is-fail' : (m.kind === 'stop' ? ' is-stop' : '')) + '">'
+        + '<span class="xz-done-ic">' + (m.kind === 'done' ? '√' : (m.kind === 'wait' ? '■' : '!')) + '</span>'
+        + '<span class="xz-done-t">' + k + '</span></div>';
+    }
+    return '<p class="xz-say">' + att(m.text) + '</p>' + stages + done;
+  }).join('');
+}
+function xzHistBodyHtml(){
+  var X = xzState();
+  var k = X.mode === 'client' ? 'client' : 'admin';
+  if (X.view === 'detail'){
+    var c = xzHistById(k, X.detail);
+    if (!c){ X.view = 'list'; X.detail = ''; }
+    else return UIK.hist.detailHtml(c, xzHistThreadHtml(c.msgs));
+  }
+  return UIK.hist.listHtml(xzHistList(k), X.cur[k]);
 }
 
 /* ── 执行计划 / 进度 / 失败出口（2026-10-28，FE-XZ-LOGIC-20261028）──
@@ -2776,13 +2990,14 @@ function xzHtml(mode){
      明明已经聊起来了，它还在那儿介绍自己 —— 结论块被挤到下面，人得滚。
      ⇒ 一旦说过话（消息多于开场白一条），头部收成一行「小智」，副标题整条撤掉。
      首次打开才用两行大字当视觉重心，那是它唯一的用处。 */
-  var talk = msgs.length > 1;
+  var isHist = !!(X.view && X.view !== 'chat');
+  var talk = !isHist && msgs.length > 1;
   /* 标题两行、22px、是整块面板的视觉重心 —— 原来只有 15px 一行，撑不住。
      不经过 att()，因为要保留 <br>。 */
-  var h1 = talk ? '小智' : (X.mode === 'client')
+  var h1 = isHist ? '对话历史' : talk ? '小智' : (X.mode === 'client')
     ? 'Hi，我是小智 ~<br>想找什么应用，跟我说'
     : 'Hi，我是小智 ~<br>随时可以让我帮你操作';
-  var sub = (X.mode === 'client')
+  var sub = isHist ? '点一条，看看当时说了什么' : (X.mode === 'client')
     ? '按你说的条件筛应用，进去之后改配置也可以'
     : '能直接操作这个页面；撤不回来的动作，会先问你';
   /* ★2026-10-22：浮球从 <button> 改成 <div role="button" tabindex="0">。
@@ -2800,26 +3015,28 @@ function xzHtml(mode){
     + '<i></i>' + (X.unread ? '<b class="xz-badge" aria-hidden="true"></b>' : '') + '</div>'
     + (X.open
       ? '<section class="xz-panel" aria-label="小智助手">'
-        + '<div class="xz-head' + (talk ? ' is-talk' : '') + '">'
+        + '<div class="xz-head' + (talk ? ' is-talk' : '') + (isHist ? ' is-hist' : '') + '">'
         + '<div class="xz-top">'
         + '<span class="xz-move" aria-hidden="true" title="按住可拖动小智"><i></i><i></i><i></i><i></i><i></i><i></i></span>'
+        + '<button class="hist-ico" data-act="histToggle" aria-label="对话历史" aria-pressed="' + (isHist ? 'true' : 'false') + '">' + UIK.hist.icon(15) + '</button>'
         + '<button class="xz-x" data-act="xzToggle" aria-label="收起小智">' + sv('close') + '</button>'
         + '</div>'
         /* 进度：面板顶部第一行。role=status 让读屏在「第 N/M 步」变化时轻声播报；
-           空的就 hidden，不占位置。 */
-        + '<p class="xz-sub xz-prog" id="xzProg" role="status" hidden></p>'
-        + '<div class="xz-ava" aria-hidden="true"></div>'
+           空的就 hidden，不占位置。历史视图里不摆进度和头像 —— 那是"这次对话"的，
+           不是"当时那条对话"的，摆上去会让人以为正在跑。 */
+        + (isHist ? '' : '<p class="xz-sub xz-prog" id="xzProg" role="status" hidden></p>'
+          + '<div class="xz-ava" aria-hidden="true"></div>')
         + '<h2 class="xz-h1">' + h1 + '</h2>'
-        + (talk ? '' : '<p class="xz-sub">' + att(sub) + '</p>')
+        + ((isHist || !talk) ? '<p class="xz-sub">' + att(sub) + '</p>' : '')
         + '</div>'
-        + '<div class="xz-task" id="xzTask"' + xzTaskAttrs() + (taskHtml ? '' : ' hidden') + '>' + taskHtml + '</div>'
-        + '<div class="xz-body" id="xzBody">' + xzMsgsHtml() + '</div>'
-        + '<div class="xz-foot"><div class="xz-inputwrap">'
-        + '<input data-act="xzInput" aria-label="问小智" placeholder="跟小智说你要做什么">'
-        + '<button class="xz-mic" data-act="xzMic" aria-label="按下说话" aria-pressed="false" title="按下说话">' + sv('mic') + '</button>'
-        + '<button class="xz-send" data-act="xzSend" aria-label="发送">' + sv('right') + '</button>'
-        + '</div></div>'
-        + '<p class="xz-note">推荐与回答由 AI 生成，请核对 · 小智会直接操作这个页面</p>'
+        + (isHist ? '' : '<div class="xz-task" id="xzTask"' + xzTaskAttrs() + (taskHtml ? '' : ' hidden') + '>' + taskHtml + '</div>')
+        + '<div class="xz-body' + (isHist ? ' is-hist' : '') + '" id="xzBody">' + (isHist ? xzHistBodyHtml() : xzMsgsHtml()) + '</div>'
+        + (isHist ? '' : '<div class="xz-foot"><div class="xz-inputwrap">'
+          + '<input data-act="xzInput" aria-label="问小智" placeholder="跟小智说你要做什么">'
+          + '<button class="xz-mic" data-act="xzMic" aria-label="按下说话" aria-pressed="false" title="按下说话">' + sv('mic') + '</button>'
+          + '<button class="xz-send" data-act="xzSend" aria-label="发送">' + sv('right') + '</button>'
+          + '</div></div>'
+          + '<p class="xz-note">推荐与回答由 AI 生成，请核对 · 小智会直接操作这个页面</p>')
         + '</section>'
       : '');
 }
@@ -2831,6 +3048,13 @@ function xzSpark(){
 function xzPaint(){
   var box = document.getElementById('xzBody');
   if (!box) return;
+  /* 历史视图是被"钉住"的：后台消息、计划 tick、等待秒数都不许把它刷回对话。
+     切回对话由 histToggle / histNew 显式重建。 */
+  var HX = xzState();
+  if (HX.view && HX.view !== 'chat'){
+    box.innerHTML = xzHistBodyHtml();
+    return;
+  }
   /* ★2026-10-24（xz3.png 实测）：头部只在 renderXz() 时重建，而面板是"先打开、
      后说话"——于是说完话头部还挂着「Hi，我是小智 ~ / 随时可以让我帮你操作」那 230px，
      结论被挤到下面。这里在每次重绘时顺手把头部收成一行（幂等：已经收过就不再动）。 */
@@ -3016,6 +3240,7 @@ function xzDeny(){
   }
   G.xzOnce = 0; G.xzGrant = 0; G.xzPendingName = '';
   list.push({ who: 'xz', text: '好，那一步我不动。想继续的时候再说。' });
+  xzHistTouch();
   render();
 }
 
@@ -3035,6 +3260,7 @@ function xzAsk(me, fromVoice){
   if (last && fromVoice){
     if (/^(取消|不用|算了|不要|别做)/.test(me.trim())){ xzDeny(); return; }
     list.push({ who: 'xz', text: '授权请点卡片上的「确认执行」。语音不放行 —— 识别错一个字，撤不回来的动作就放出去了。要取消就说「不用了」，或者点卡片上的按钮。' });
+    xzHistTouch();
     render();
     return;
   }

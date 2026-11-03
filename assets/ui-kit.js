@@ -125,6 +125,77 @@ window.UIK = (function () {
     }
   }
 
+  /* ── 对话历史（小智 / 装配对话框共用，2026-11-02）────────────────
+     两处对话面各有一套消息数据，但"历史"这件事必须长得一样、叫法一样：
+     同一个时钟图标、同样的一条一个名字、同样点进去看只读详情。
+     这里只出**结构**，消息正文由调用方传进来（小智有步骤/授权卡，装配对话框有版本卡）。
+     动作名固定为 histOpen / histBack / histNew / histToggle，
+     由各自的容器代理处理；两边都监听 document 时，靠 closest 限定作用域。 */
+  var hist = {
+    icon: function (size) {
+      var s = size || 15;
+      return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" '
+        + 'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" '
+        + 'aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/>'
+        + '<path d="M12 7v5l3.5 2"/></svg>';
+    },
+    title: function (msgs) {
+      var list = msgs || [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i] && list[i].who === 'me') {
+          var t = String(list[i].text || '').replace(/\s+/g, ' ').trim();
+          if (t) return t.length > 26 ? t.slice(0, 26) + '…' : t;
+        }
+      }
+      return '新对话';
+    },
+    fmtAt: function (ts) {
+      var d = new Date(Number(ts) || 0);
+      if (!isFinite(d.getTime()) || !d.getTime()) return '';
+      var now = new Date();
+      var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+      var hm = pad(d.getHours()) + ':' + pad(d.getMinutes());
+      var sameDay = d.getFullYear() === now.getFullYear()
+        && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+      if (sameDay) return '今天 ' + hm;
+      var y = new Date(now.getTime() - 86400000);
+      if (d.getFullYear() === y.getFullYear() && d.getMonth() === y.getMonth() && d.getDate() === y.getDate()) {
+        return '昨天 ' + hm;
+      }
+      if (d.getFullYear() === now.getFullYear()) return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + hm;
+      return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    },
+    count: function (msgs) {
+      return (msgs || []).filter(function (m) { return m && m.who === 'me'; }).length;
+    },
+    listHtml: function (convs, curId) {
+      var list = convs || [];
+      var rows = list.map(function (c) {
+        var isCur = c.id === curId;
+        var meta = hist.fmtAt(c.at) + (hist.count(c.msgs) ? ' · ' + hist.count(c.msgs) + ' 条' : '') + (isCur ? ' · 当前' : '');
+        return '<button type="button" class="hist-item' + (isCur ? ' is-cur' : '') + '"'
+          + ' data-act="histOpen" data-arg="' + esc(c.id) + '"'
+          + ' aria-label="' + esc(hist.title(c.msgs) + '，' + meta) + '">'
+          + '<span class="hist-name">' + esc(hist.title(c.msgs)) + '</span>'
+          + '<span class="hist-meta">' + esc(meta) + '</span></button>';
+      }).join('');
+      if (!rows) rows = '<p class="hist-empty">还没有对话。说一句要做什么，这里会一条条记下来。</p>';
+      return '<div class="hist-pane" role="region" aria-label="对话历史">'
+        + '<div class="hist-bar"><span class="hist-count">' + list.length + ' 个对话</span>'
+        + '<button type="button" class="hist-new" data-act="histNew">新对话</button></div>'
+        + '<div class="hist-list">' + rows + '</div></div>';
+    },
+    detailHtml: function (conv, threadHtml) {
+      var n = hist.count(conv.msgs);
+      return '<div class="hist-detail" role="region" aria-label="对话详情">'
+        + '<button type="button" class="hist-back" data-act="histBack">'
+        + '<span aria-hidden="true">←</span> 返回</button>'
+        + '<p class="hist-dt">' + esc(hist.title(conv.msgs)) + '</p>'
+        + '<p class="hist-dm">' + esc(hist.fmtAt(conv.at) + (n ? ' · ' + n + ' 条' : '')) + '</p>'
+        + '<div class="hist-thread">' + (threadHtml || '') + '</div></div>';
+    }
+  };
+
   return { toast: toast, pickHtml: pickHtml, copy: copy, esc: esc,
-           cardBadge: cardBadge, badgeLabel: badgeLabel, setDisabled: setDisabled };
+           cardBadge: cardBadge, badgeLabel: badgeLabel, setDisabled: setDisabled, hist: hist };
 })();

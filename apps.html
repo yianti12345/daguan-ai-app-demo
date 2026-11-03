@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="preload" as="image" href="assets/common_card.webp">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=c7a6e96f">
-<link rel="stylesheet" href="assets/xiaozhi.css?v=5808cd0c">
+<link rel="stylesheet" href="assets/sys.css?v=82b108ea">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=798c12a1">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
 .page-hd{margin: 0 0 16px}
@@ -25,7 +26,6 @@
 .dl-menu .k-mi[data-dim]{color:var(--color-text-tertiary);font-size:var(--font-size-caption)}
 </style>
 
-<meta name="robots" content="noindex,nofollow">
 </head>
 <body>
 
@@ -189,7 +189,7 @@
 </div>
 
 <script src="assets/data.js?v=23afa3a7"></script>
-<script src="assets/ui-kit.js?v=b0a55a1a"></script>
+<script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/transfer.js?v=6ef877f1"></script>
 <script src="assets/confirm.js?v=26f0a69f"></script>
 <script src="assets/popover.js?v=7f96155d"></script>
@@ -459,12 +459,19 @@
 
 
   /* ★2026-11-02（按线上现场）：没有手工上传时用产品线的 common_card.png，
-     不再画自己那套几何图 —— 正式环境每张卡就是这个封面。 */
+     不再画自己那套几何图 —— 正式环境每张卡就是这个封面。
+     ★2026-11-03：图下面永远垫一层兜底（品牌浅底 + 应用名前两字）。661 KB 的图
+     请求失败时，卡面不会是一块纯白 —— 用户 08:54 的截图就是那块白。 */
+  function shortOf(name) {
+    var base = String(name || '').split('·')[0].replace(/\s/g, '');
+    return base.slice(0, 2) || '应用';
+  }
   function coverHtml(a) {
+    var fb = '<span class="kc-cover-fb" aria-hidden="true"><b>' + esc(shortOf(a.name)) + '</b></span>';
     if (a.cover) {
-      return '<span class="kc-cover-img" style="background-image:url(' + esc(a.cover) + ')"></span>';
+      return fb + '<span class="kc-cover-img" style="background-image:url(' + esc(a.cover) + ')"></span>';
     }
-    return '<span class="kc-cover-img"></span>';
+    return fb + '<span class="kc-cover-img"></span>';
   }
 
   function render() {
@@ -996,7 +1003,7 @@
 </script>
 <div id="xz-host"></div>
 <script src="assets/shell.js?v=1d57161f"></script>
-<script src="assets/xiaozhi.js?v=32a43fd2"></script>
+<script src="assets/xiaozhi.js?v=4ecf7b2a"></script>
 <script>
 /* ── 下载客户端浮层（2026-11-01）──────────────────────────────────
    用户口径：放在应用管理右上，图标按钮，悬停显示「下载客户端」，点开分 Mac / Windows。

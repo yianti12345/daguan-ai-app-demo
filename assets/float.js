@@ -25,6 +25,7 @@
      去组件库再回来，浮层仍是展开态、盖住 5 行表格。手动展开只算本页内的选择。 */
   var LS_COL = 'ifas90:histCollapsed';
   var MAX_MSG = 60;
+  var MAX_CONV = 30;
 
   function el(tag, cls, attrs) {
     var n = document.createElement(tag);
@@ -147,20 +148,93 @@
            长条贴着输入框，展开时长出来的是上方历史 —— 原来列表在长条下面，
            视觉上就是从长条往下撑，方向和用户预期相反。 */
         hist.appendChild(list); hist.appendChild(hd);
+        /* 时钟入口放在输入条最左侧（2026-11-02，用户要和小智同一个图标、同一个位置语义）。
+           它管「历史列表」，抓手管拖动，两个图标必须能分开：时钟是历史，六点是拖动。 */
+        var histIco = el('button', 'hist-ico', {
+          type: 'button', 'data-act': 'histToggle', 'aria-label': '对话历史', 'aria-pressed': 'false'
+        });
+        histIco.innerHTML = UIK.hist.icon(15);
+        bar.appendChild(histIco);
         bar.appendChild(grip); bar.appendChild(ta); bar.appendChild(send);
         dock.appendChild(hist); dock.appendChild(bar);
         document.body.appendChild(dock);
         mounted.bar = bar;
         mounted.dock = dock;
 
-        /* ── 历史 ── */
+        /* ── 历史（2026-11-02：单条历史升级为多会话）──────────────
+           用户要的和小智一致：时钟图标 → 一条条历史（每条有名字）→ 同一个弹窗里看详情。
+           旧键 histKey（单条数组）继续写一份，别的页面/旧版本还能读；
+           会话正文存 histKey + ':convs'，结构 {v:1,cur,convs:[{id,at,msgs}]}。
+           ★ msgs 必须始终是当前会话的**同一个数组引用**：原来 slice 会换数组，
+             后续 push 就写到一份脱钩的副本里，历史列表永远不动。 */
+        var CONV_KEY = histKey + ':convs';
+        var convs = [], curId = '', histView = 'chat', detailId = '';
+        function uid(){ return 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+        function blankConv(){ return { id:uid(), at:Date.now(), msgs:[] }; }
+        function curConv(){
+          for (var i = 0; i < convs.length; i++) if (convs[i].id === curId) return convs[i];
+          return convs[0] || null;
+        }
+        function loadConvs(){
+          var data = null;
+          try { data = JSON.parse(localStorage.getItem(CONV_KEY) || 'null'); } catch (e) { data = null; }
+          if (data && data.convs && data.convs.length){
+            convs = data.convs.filter(function(c){ return c && Array.isArray(c.msgs); })
+              .slice(0, MAX_CONV).map(function(c){
+                return { id:String(c.id || uid()), at:+c.at || Date.now(), msgs:c.msgs.slice(-MAX_MSG) };
+              });
+            curId = data.cur || '';
+          }
+          if (!convs.length){
+            var old = [];
+            try { old = JSON.parse(localStorage.getItem(histKey) || '[]') || []; } catch (e) { old = []; }
+            if (old.length) convs = [{ id:uid(), at:Date.now(), msgs:old.slice(-MAX_MSG) }];
+          }
+          if (!convs.length) convs = [blankConv()];
+          var c = null;
+          for (var i = 0; i < convs.length; i++) if (convs[i].id === curId) c = convs[i];
+          if (!c) c = convs[0];
+          curId = c.id;
+          msgs = c.msgs;
+        }
         var msgs = [];
-        try { msgs = JSON.parse(localStorage.getItem(histKey) || '[]') || []; } catch (e) { msgs = []; }
+        loadConvs();
 
         function save() {
-          try { localStorage.setItem(histKey, JSON.stringify(msgs.slice(-MAX_MSG))); } catch (e) {}
+          try {
+            var payload = { v:1, cur:curId, convs:convs.slice(0, MAX_CONV).map(function(c){
+              return { id:c.id, at:c.at, msgs:c.msgs.slice(-MAX_MSG) };
+            }) };
+            localStorage.setItem(CONV_KEY, JSON.stringify(payload));
+            localStorage.setItem(histKey, JSON.stringify(msgs.slice(-MAX_MSG)));
+          } catch (e) {}
         }
-        function cardHtml(c) {
+        function touchCur(){
+          var c = curConv();
+          if (!c) return;
+          c.at = Date.now();
+          var i = convs.indexOf(c);
+          if (i > 0){ convs.splice(i, 1); convs.unshift(c); }
+        }
+        function visibleConvs(){
+          return convs.filter(function(c){
+            return (c.msgs || []).some(function(m){ return m && m.who === 'me'; });
+          });
+        }
+        function newConv(){
+          var c = curConv();
+          if (c && !(c.msgs || []).some(function(m){ return m && m.who === 'me'; })){
+            histView = 'chat'; detailId = '';
+            return;
+          }
+          var n = blankConv();
+          convs.unshift(n);
+          curId = n.id;
+          msgs = n.msgs;
+          histView = 'chat'; detailId = '';
+          save();
+        }
+        function cardHtml(c, ro) {
           if (!c) return '';
           var v = c.v ? 'v' + esc(c.v) : '';
           var at = c.at ? '<span class="fk-card-at">' + esc(c.at) + '</span>' : '';
@@ -180,29 +254,75 @@
              这里把完整地址印出来，旁边一颗「复制」；地址与「查看这一版」同一个版本号。 */
           var urlRow = c.url
             ? '<div class="fk-card-url"><code>' + esc(c.url) + '</code>'
-              + '<button class="fk-card-btn" type="button" data-copy="' + esc(c.url) + '">复制</button></div>'
+              + (ro ? '' : '<button class="fk-card-btn" type="button" data-copy="' + esc(c.url) + '">复制</button>')
+              + '</div>'
             : '';
+          /* ro=true 是历史详情：只还原当时那一版的文字与地址，不给任何会改到当前状态的按钮。 */
+          var cardOps = ro ? '' : '<div class="fk-card-ops">'
+            + (href ? '<a class="fk-card-link" href="' + href + '" target="_blank" rel="noopener">查看这一版</a>' : '')
+            + (c.v ? '<button class="fk-card-btn" type="button" data-restore-v="' + esc(c.v) + '">恢复此版</button>' : '')
+            + '</div>';
           return '<div class="fk-card">'
             + '<div class="fk-card-hd"><span class="fk-card-v">' + v + '</span>' + at + '</div>'
             + '<p class="fk-card-sum">' + esc(window.DB && DB.plain ? DB.plain(c.summary) : (c.summary || '')) + '</p>'
             + urlRow
-            + '<div class="fk-card-ops">'
-            + (href ? '<a class="fk-card-link" href="' + href + '" target="_blank" rel="noopener">查看这一版</a>' : '')
-            + (c.v ? '<button class="fk-card-btn" type="button" data-restore-v="' + esc(c.v) + '">恢复此版</button>' : '')
-            + '</div></div>';
+            + cardOps
+            + '</div>';
+        }
+        function msgHtml(m, ro) {
+          var who = m.who === 'me' ? '我' : '小智';
+          var body = m.card ? cardHtml(m.card, ro) : '<span>' + esc(m.text) + '</span>';
+          return '<div class="fk-msg' + (m.who === 'me' ? ' is-me' : '') + (m.card ? ' is-card' : '') + '">' +
+            '<b>' + who + '</b>' + body + '</div>';
+        }
+        function threadHtml(arr) {
+          return (arr || []).map(function (m) { return msgHtml(m, true); }).join('');
+        }
+        function syncHistMode() {
+          var on = histView !== 'chat';
+          dock.classList.toggle('is-hist', on);
+          var tt = histBtn.querySelector('.fk-peek-tt');
+          if (tt) tt.textContent = on ? '历史' : '对话';
+          if (on) {
+            histBtn.setAttribute('aria-label', '对话历史');
+            histBtn.title = '对话历史';
+          }
         }
         function render() {
+          syncHistMode();
+          if (histView === 'list') {
+            list.innerHTML = UIK.hist.listHtml(visibleConvs(), curId);
+            return;
+          }
+          if (histView === 'detail') {
+            var dc = null;
+            for (var i = 0; i < convs.length; i++) if (convs[i].id === detailId) dc = convs[i];
+            if (!dc) { histView = 'list'; return render(); }
+            list.innerHTML = UIK.hist.detailHtml(dc, threadHtml(dc.msgs));
+            return;
+          }
           if (!msgs.length) {
             list.innerHTML = '<p class="fk-hist-empty">还没有对话。说一句要改什么，小智边做边给你看。</p>';
             return;
           }
-          list.innerHTML = msgs.map(function (m) {
-            var who = m.who === 'me' ? '我' : '小智';
-            var body = m.card ? cardHtml(m.card) : '<span>' + esc(m.text) + '</span>';
-            return '<div class="fk-msg' + (m.who === 'me' ? ' is-me' : '') + (m.card ? ' is-card' : '') + '">' +
-              '<b>' + who + '</b>' + body + '</div>';
-          }).join('');
+          list.innerHTML = msgs.map(function (m) { return msgHtml(m, false); }).join('');
           list.scrollTop = list.scrollHeight;
+        }
+        function syncHistIco() {
+          syncHistMode();
+          histIco.setAttribute('aria-pressed', histView === 'chat' ? 'false' : 'true');
+        }
+        function toggleHist() {
+          histView = histView === 'chat' ? 'list' : 'chat';
+          detailId = '';
+          setCollapsed(false);
+          render();
+          syncHistIco();
+          if (histView === 'chat') ta.focus();
+          else setTimeout(function () {
+            var f = list.querySelector('.hist-item');
+            if (f) f.focus();
+          }, 0);
         }
         /* ── 折叠条的内容：末条摘要 + 状态 + 未读点 ───────────────
            状态取**末条**，不取"最后一句话里的情绪"：末条是告知＝成功、是提问＝
@@ -233,6 +353,12 @@
         }
         function renderPeek() {
           var p = peekState();
+          if (histView !== 'chat') {
+            histBtn.setAttribute('data-has', '0');
+            histBtn.setAttribute('data-unread', '0');
+            syncHistMode();
+            return;
+          }
           histBtn.setAttribute('data-has', p ? '1' : '0');
           histBtn.setAttribute('data-unread', unread > 0 ? '1' : '0');
           if (!p) {
@@ -259,6 +385,7 @@
           autoT = setTimeout(function () {
             autoT = null;
             if (!m || msgs[msgs.length - 1] !== m) return;   /* 后面又来了新消息 ⇒ 以新的为准 */
+            if (histView !== 'chat') return;                  /* 用户正在看历史，不许被自动折叠打断 */
             if (dock.getAttribute('data-hist') !== 'open') return;
             setCollapsed(true, 'auto');
           }, 900);
@@ -268,6 +395,11 @@
            告知 → 收起（把画布让出来）；提问／报错 → 展开（要用户动作）；
            进行中 → 不动（正在跑，收起反而看不见进度）；自己说的话 → 展开（先看见自己那句）。 */
         function applyArrival(m, c) {
+          /* 历史列表/详情是只读视图：新消息只记账，不把用户从正在看的那一页拽走。 */
+          if (histView !== 'chat') {
+            if (m.who !== 'me') { unread++; renderPeek(); }
+            return;
+          }
           if (m.who === 'me') { setCollapsed(false); return; }
           var open = dock.getAttribute('data-hist') === 'open';
           if (c.hold || c.kind === 'ask' || c.kind === 'error') {
@@ -303,7 +435,8 @@
           var c = classify(who, text, kind, false);
           var m = { who: who, text: String(text), kind: c.kind, t: Date.now() };
           msgs.push(m);
-          if (msgs.length > MAX_MSG) msgs = msgs.slice(-MAX_MSG);
+          if (msgs.length > MAX_MSG) msgs.splice(0, msgs.length - MAX_MSG);
+          touchCur();
           save(); render();
           applyArrival(m, c);
         }
@@ -315,11 +448,35 @@
           if (!card) return;
           var m = { who: 'xz', text: card.summary || '', card: card, kind: 'notice', t: Date.now() };
           msgs.push(m);
-          if (msgs.length > MAX_MSG) msgs = msgs.slice(-MAX_MSG);
+          if (msgs.length > MAX_MSG) msgs.splice(0, msgs.length - MAX_MSG);
+          touchCur();
           save(); render();
           applyArrival(m, { kind: 'notice', hold: true });
         }
         list.addEventListener('click', function (e) {
+          /* 历史列表/详情里的动作先接住，再轮到普通消息里的复制/恢复。
+             历史详情是只读的，所以这里只可能有 histOpen / histBack / histNew / histToggle。 */
+          var hb = e.target.closest ? e.target.closest('[data-act]') : null;
+          if (hb) {
+            var act = hb.getAttribute('data-act') || '';
+            if (/^hist/.test(act)) {
+              if (act === 'histOpen') {
+                histView = 'detail'; detailId = hb.getAttribute('data-arg') || '';
+                setCollapsed(false); render();
+                var back = list.querySelector('.hist-back');
+                if (back) back.focus();
+              } else if (act === 'histBack') {
+                histView = 'list'; detailId = ''; render();
+                var first = list.querySelector('.hist-item');
+                if (first) first.focus();
+              } else if (act === 'histNew') {
+                newConv(); setCollapsed(false); render(); syncHistIco(); ta.focus();
+              } else if (act === 'histToggle') {
+                toggleHist();
+              }
+              return;
+            }
+          }
           /* 复制客户地址：按钮文字当场变「已复制」——这是这条路径唯一的可见回执
              （组件配置页没有 #toast，不能靠轻提示）。 */
           var cp = e.target.closest ? e.target.closest('[data-copy]') : null;
@@ -355,7 +512,11 @@
           /* ★ 2026-10-28（F5）：这里原来写 localStorage，于是"手动展开"跨页继承。
              现在只在内存里 —— 离开这个页面，这个选择就不带走。
              展开＝这些消息都看过了；收起不清零（未读是"收起期间新到的"） */
-          if (!v) { unread = 0; setTimeout(function () { list.scrollTop = list.scrollHeight; }, 30); }
+          if (!v) {
+            unread = 0;
+            /* 历史列表/详情不许被"展开时滚到底"顶到末尾 —— 用户点开是要看第一条。 */
+            if (histView === 'chat') setTimeout(function () { list.scrollTop = list.scrollHeight; }, 30);
+          }
           renderPeek();
           var more = histBtn.querySelector('.fk-peek-more > span');
           if (more) more.textContent = v ? '展开' : '收起';
@@ -371,6 +532,7 @@
            我第一版写成 `!== 'open'` 正好反了，点一下不动（因为原本就是收起态）。 */
         setCollapsed(dock.getAttribute('data-hist') === 'open');
       });
+      histIco.addEventListener('click', toggleHist);
 
         function sync() { send.setAttribute('data-ready', ta.value.trim() ? 'true' : 'false'); }
         ta.addEventListener('input', sync);
@@ -382,6 +544,8 @@
           var t = ta.value.trim();
           if (!t || send.getAttribute('data-ready') !== 'true') return;
           ta.value = ''; sync();
+          /* 说话一定是回到当前对话说的：历史列表/详情只是"看一眼"，不接管输入。 */
+          histView = 'chat'; detailId = ''; syncHistIco();
           /* ★ 2026-10-24 用户实测：「打完字按回车，画面上什么都没发生」。
              真因：历史默认收起（这是他自己要的"只显示输入框"），于是刚说完的那句
              被写进一个看不见的面板里，画布上又只有一条 2px 的进度条 —— 用户得到
@@ -405,12 +569,16 @@
         window.addEventListener('pageshow', function (e) {
           if (!e || !e.persisted) return;
           scheduleCancel();
+          histView = 'chat'; detailId = ''; syncHistIco();
           setCollapsed(defaultCollapsed(), 'auto');
         });
 
         mounted.addMsg = addMsg;
         mounted.addCard = addCard;
-        mounted.clearMsg = function () { msgs = []; save(); render(); renderPeek(); };
+        mounted.clearMsg = function () {
+          /* 清空的是当前会话；不能 msgs=[] —— 那会让当前会话的数组引用脱钩。 */
+          msgs.splice(0, msgs.length); touchCur(); save(); render(); renderPeek();
+        };
         mounted.setCollapsed = setCollapsed;
         /* 历史里有没有说过**这句原话**（F7 用）：组件页的「未发布」提示跨页重载后
            不能再重复播报一次。只比 who=xz 的整句，不做模糊匹配。 */
@@ -421,7 +589,10 @@
           }
           return false;
         };
-        mounted.focusInput = function () { setCollapsed(false); ta.focus(); };
+        mounted.focusInput = function () {
+          histView = 'chat'; detailId = ''; syncHistIco();
+          render(); setCollapsed(false); ta.focus();
+        };
         /* 把一句话填进输入框（不直接发）。给首屏空态的「起手示例」用：
            点了先看到文字进了输入框，还能改，再按发送 —— 比点了立刻生成更可控。
            必须派发 input 事件，否则发送钮的 data-ready 不会亮（它监听 input）。 */

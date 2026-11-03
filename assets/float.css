@@ -122,6 +122,11 @@
 /* 展开态：接缝那条线由 .fk-hist 的下边框画，输入条不再画上边框 */
 .fk-dock[data-hist="open"] .fk-bar{border:0; box-shadow:none}
 .fk-bar:focus-within{box-shadow:var(--shadow-floating), 0 0 0 3px var(--color-focus-halo)}
+/* 2026-11-02：对话框最左侧也放同一颗时钟（和小智同一个图标、同一个语义）。
+   32 宽与发送钮同档；margin-left 补上 .fk-bar 右侧内边距造成的不对称。 */
+.fk-bar .hist-ico{flex:0 0 var(--size-control-h);margin-left:var(--space-8)}
+/* 历史列表/详情是整块换内容，不是一串普通消息：去掉 .fk-hist-list 的 12 间距，避免和 .hist-pane 叠加。 */
+.fk-hist-list:has(.hist-pane){gap:0}
 /* 展开历史时给画布补下边距：面板高 142 + 输入条 60 + 上下留白 ≈ 240。
    不补的话，页面底部的表格/分页会被面板压住 —— 用户看到的"变形"有一半是这个。
    用 body class 而不是 :has()，因为 .fk-dock 是 fixed 且由 JS 控制状态，class 更可靠。 */
@@ -249,6 +254,11 @@ body.fk-hist-open #canvas{padding-bottom:248px}
 .fk-hist-btn[data-has="0"] .fk-peek-st,
 .fk-hist-btn[data-has="0"] .fk-peek-sum,
 .fk-hist-btn[data-has="0"] .fk-peek-unread{display:none}
+/* 历史列表/详情里不再显示当前对话的进度状态：那一行是「此刻」的读数，
+   不是历史本身的属性；留着会让用户以为历史详情还在跑或刚成功。 */
+.fk-dock.is-hist .fk-peek-st,
+.fk-dock.is-hist .fk-peek-sum,
+.fk-dock.is-hist .fk-peek-unread{display:none}
 
 /* 2026-10-30：以下五条原散在 sys.css 与 component.html（页面/全局层），
    按 components.spec.md §25 收进对话浮条组件层，保证 .fk-dock 只有一个实现处。 */

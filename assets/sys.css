@@ -467,7 +467,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 .kcard > *{position:relative}
 /* 已下架/停用：整卡降饱和，靠"灰"而不是靠"另一种颜色"区分
    （2026-10-25：原来这里是给彩条换灰渐变；彩条已撤，改为整卡描边与文字降一档） */
-.kcard[data-off="1"]{box-shadow:var(--card-shadow), inset 0 0 0 1px var(--color-border-card)}
+.kcard[data-off="1"]{box-shadow:none}
 
 
 
@@ -1995,9 +1995,10 @@ body[data-drawer="on"] .hint{
    ⚠ 这些是**组件尺寸**，不是间距 —— 不要拿 --space-* 顶替：
      间距令牌表达的是"元素之间的呼吸"，卡片高度不是呼吸。 */
 
-/* 常态：1px 收边环。悬停：加深收边环并轻投影。选中：才出真阴影（见 .kcard[data-sel]）。 */
-.kcard:hover{box-shadow:inset 0 0 0 1px var(--color-border-control), 0 6px 18px var(--shadow-color-2)}
-.kcard:focus-within{box-shadow:inset 0 0 0 1px var(--color-brand-ink), var(--card-shadow-selected)}
+/* 常态：1px 收边环。悬停：加深收边环并轻投影。选中：才出真阴影（见 .kcard[data-sel]）。
+   ★2026-11-03：环移到 ::after 后，这里只换 --kc-ring、不再碰 box-shadow 的环。 */
+.kcard:hover{--kc-ring:var(--color-border-control);box-shadow:0 6px 18px var(--shadow-color-2)}
+.kcard:focus-within{--kc-ring:var(--color-brand-ink);box-shadow:var(--card-shadow-selected)}
 
 /* 整块热区：标题、说明、芯片、档案行全部在锚点里 —— 点哪儿都进配置页，没有死区 */
 .kcard .kc-cover-img.kc-hit{
@@ -2152,17 +2153,6 @@ body[data-drawer="on"] .hint{
   flex:1 1 auto;min-height:0;
   text-decoration:none;color:inherit;
 }
-/* 封面区：flex:1 吃掉剩余高度，内层图铺满 */
-.kcard .kc-cover{
-  position:relative;display:block;
-  flex:1 1 auto;min-height:0;
-  padding:var(--space-12) var(--space-12) var(--space-8);
-}
-.kcard .kc-cover-img{
-  display:block;width:100%;height:100%;
-  background:url(common_card.png) center bottom / cover no-repeat;
-  border-radius:var(--radius-xs);
-}
 /* 状态胶囊：压在封面右上，与线上 top 25 / right 26 对齐 */
 .kcard .kc-tag{
   position:absolute;top:calc(var(--space-12) + 13px);right:calc(var(--space-12) + 14px);
@@ -2280,9 +2270,13 @@ body[data-drawer="on"] .hint{
   border-radius:var(--radius-panel);
   background:var(--surface-page);
   /* 2026-11-02（用户 m05570）：卡与页面底几乎同色，'完全融合在一起'。
-     线上是 1px 灰描边；这里按 DESIGN §1.1 不写 border，改用 inset 0 0 0 1px 画
-     同一道界线 —— 不改盒模型（封面宽度/卡高判据不受影响），也不违反'无描边'的材质口径。 */
-  box-shadow:inset 0 0 0 1px var(--color-border-card), 0 1px 2px var(--shadow-color-1);
+     线上是 1px 灰描边；这里按 DESIGN §1.1 不写 border，改用 1px 环画同一道界线 ——
+     不改盒模型（封面宽度/卡高判据不受影响），也不违反'无描边'的材质口径。
+     ★2026-11-03：环从 inset box-shadow 挪到 ::after（见下方）。inset 阴影画在
+     自身背景之上、子元素之下，不透明的 .card-ft 会把左/右/下三边整条盖掉 ——
+     底栏 49px 高那一段卡片没有框。 */
+  box-shadow:0 1px 2px var(--shadow-color-1);
+  --kc-ring:var(--color-border-card);
   font-size:var(--font-size-body);
   --kc-strip-h:24px;
   --kc-desc-h:38px;
@@ -2290,6 +2284,15 @@ body[data-drawer="on"] .hint{
   --kc-pad-x:var(--space-12);
   --kc-min-h:200px;
   --kc-body-h:102px;
+  transition:box-shadow .3s ease;
+}
+/* ★2026-11-03（用户 11-03 08:54 截图：「卡片底部的框呢」）：1px 收边环单独放一层覆盖物。
+   inset box-shadow 与子元素同层，footer 的 --surface-page 底把环盖住；::after 带 z-index
+   叠在 footer 与封面之上，只画 1px、不挡点击、不改几何。颜色走 --kc-ring，悬停/聚焦换色。 */
+.kcard::after{
+  content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  border-radius:inherit;
+  box-shadow:inset 0 0 0 1px var(--kc-ring);
   transition:box-shadow .3s ease;
 }
 @media (max-width:1120px){ body .kcard{--kc-min-h:214px} }
@@ -2304,8 +2307,27 @@ body[data-drawer="on"] .hint{
 }
 .kcard .kc-cover-img{
   display:block;width:100%;height:100%;
-  background:url(common_card.png) center bottom / cover no-repeat;
+  /* ★2026-11-03：661 KB 的 PNG 换成 8.5 KB 的 WebP（640 宽，2.6× 封面像素密度）。
+     用户机器上 661 KB 请求失败/超时，245×158 封面就整块纯白 —— 体积就是可靠性。
+     这里**只引 WebP**：Safari 14+/Chrome 32+ 都支持；更老的浏览器宁可走下面那层
+     兜底（有名字有底色），也不再回退到 661 KB 的 PNG —— 那条路就是这次故障本身。
+     原 PNG 留在 assets/ 作母版，不参与线上加载。 */
+  background:url(common_card.webp) center bottom / cover no-repeat;
   border-radius:var(--radius-xs);
+}
+/* ★2026-11-03：封面兜底层。图不透明，加载成功时这层完全被盖住；
+   请求失败/未解码时露出来的是品牌浅底 + 应用名前两字，不再是一块白。 */
+.kcard .kc-cover-fb{
+  position:absolute;left:var(--space-12);right:var(--space-12);top:var(--space-12);bottom:var(--space-8);
+  z-index:0;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--radius-xs);overflow:hidden;
+  background:linear-gradient(135deg, var(--color-brand-surface) 0%, var(--color-brand-surface-2) 100%);
+}
+.kcard .kc-cover-fb b{
+  /* 字号必须在阶内（J1 扫的是渲染后的 computed 字号，不是源码字面量）：
+     兜底字是"断图时的标识"，不是第六个字号档，所以用 title 档 20px，靠字距与留白撑住。 */
+  font-size:var(--font-size-title);font-weight:600;line-height:1;letter-spacing:.12em;
+  color:var(--color-brand-ink);opacity:.5;user-select:none;
 }
 /* 标题行：不再需要 flex 包一层 —— 徽标已挪到封面角上，标题拿回整行宽度 */
 .kcard .kc-info{display:flex;flex-direction:column;gap:var(--space-4);flex:none;padding:0 var(--space-12)}
@@ -2366,3 +2388,63 @@ body[data-drawer="on"] .hint{
 
 /* 预览表格的空结果：只留表头会像加载失败，给一行明确的话（2026-11-02） */
 .tb .tb-empty{text-align:center;color:var(--color-text-tertiary);height:var(--tb-row-h);padding:var(--space-16) 0}
+
+/* ── 对话历史（小智 / 装配对话框共用，2026-11-02）────────────────────
+   用户要的是"一个圆圈，里面像时钟"的图标，点开一条条历史，点一条看详情。
+   两处对话面共用同一套结构与样式，避免长成两种东西。 */
+.hist-ico{
+  width:var(--size-control-h);height:var(--size-control-h);flex:none;padding:0;
+  display:grid;place-items:center;border:0;border-radius:var(--radius-control);
+  background:none;color:var(--color-text-tertiary);cursor:pointer;
+}
+.hist-ico:hover{background:var(--color-state-hover);color:var(--color-text-body)}
+.hist-ico:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset)}
+.hist-ico[aria-pressed="true"]{background:var(--color-brand-surface);color:var(--color-brand-ink)}
+.hist-pane{display:flex;flex-direction:column;gap:var(--space-8);min-height:0}
+.hist-bar{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);padding:0 0 var(--space-4)}
+.hist-count{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.hist-new{
+  height:var(--size-control-h);padding:0 var(--space-8);border:0;border-radius:var(--radius-sm);
+  background:none;color:var(--color-brand-ink);font-family:inherit;
+  font-size:var(--font-size-caption);cursor:pointer;
+}
+.hist-new:hover{background:var(--color-brand-surface)}
+.hist-new:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset)}
+.hist-list{display:flex;flex-direction:column;gap:var(--space-4);min-height:0}
+.hist-item{
+  display:flex;flex-direction:column;gap:var(--space-4);width:100%;padding:var(--space-12);
+  border:0;border-radius:var(--radius-control);background:none;text-align:left;
+  font-family:inherit;cursor:pointer;
+}
+.hist-item:hover{background:var(--color-state-hover)}
+.hist-item:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset)}
+.hist-item.is-cur{background:var(--color-brand-surface)}
+.hist-name{
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:var(--font-size-body);line-height:var(--leading-body);color:var(--color-text-body);
+}
+.hist-item.is-cur .hist-name{color:var(--color-brand-ink);font-weight:var(--font-weight-semibold)}
+.hist-meta{font-size:var(--font-size-caption);line-height:var(--leading-caption);color:var(--color-text-tertiary)}
+.hist-empty{
+  margin:0;padding:var(--space-8) 0;font-size:var(--font-size-body);
+  line-height:var(--leading-body);color:var(--color-text-tertiary);
+}
+.hist-detail{display:flex;flex-direction:column;gap:var(--space-4);min-height:0}
+/* 历史详情在固定高度的浮层里：标题/元信息/返回都不可被长对话压扁，
+   滚动交给外层 .fk-hist-list；否则标题会被 flex-shrink 压成 0 高（实测高度 0px）。 */
+.hist-detail>*{flex:0 0 auto}
+.hist-back{
+  align-self:flex-start;display:inline-flex;align-items:center;gap:var(--space-4);
+  height:var(--size-control-h);padding:0 var(--space-8) 0 0;border:0;border-radius:var(--radius-sm);
+  background:none;color:var(--color-brand-ink);font-family:inherit;
+  font-size:var(--font-size-caption);cursor:pointer;
+}
+.hist-back:hover{background:var(--color-brand-surface)}
+.hist-back:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset)}
+.hist-dt{
+  margin:0;font-size:var(--font-size-heading);line-height:var(--leading-title);
+  font-weight:var(--font-weight-semibold);color:var(--color-text-body);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.hist-dm{margin:0;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.hist-thread{display:flex;flex-direction:column;gap:var(--space-12);padding:var(--space-8) 0 0}

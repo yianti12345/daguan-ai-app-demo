@@ -13,7 +13,7 @@
       "version": "1.0.0",
       "size": 108994195,
       "sha256": "cb84ee70a694b121956a5b73e3fec5f41b48f504b61021afb9ab4dde751ae549",
-      "href": "https://github.com/yianti12345/daguan-ai-app-demo/releases/download/v1.0.0/daguan-1.0.0-mac-arm64.dmg"
+      "href": "downloads/达观智能审核平台-1.0.0-mac-arm64.dmg"
     },
     {
       "key": "win",
@@ -26,7 +26,7 @@
       "version": "1.0.0",
       "size": 113094961,
       "sha256": "49a6527f126a93a9ed4b9a57ba8820802116cd8d0337111294776b549066ec9d",
-      "href": "https://github.com/yianti12345/daguan-ai-app-demo/releases/download/v1.0.0/daguan-1.0.0-windows-x64.zip"
+      "href": "downloads/达观智能审核平台-1.0.0-windows-x64.zip"
     }
   ]
 }
