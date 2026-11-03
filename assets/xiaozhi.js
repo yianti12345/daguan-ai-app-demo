@@ -407,7 +407,11 @@ document.addEventListener('keydown', function(e){
 
 /* ══ 以下为原逻辑（原样抽出，未改写）═══════════════════════════ */
 var XZ_CFG = {
-  endpoint: '/xz/plan',
+  /* ★2026-11-03（用户 m01931「公网链接小智用不了了」）：GitHub Pages 是纯静态站，
+     没有 /xz/plan。演示机就跑在本机，所以公网页面直连本机转发（浏览器视 127.0.0.1 为可信源），
+     本机转发没起 / 被挡时仍按原有逻辑退回内置规则，不会白屏。 */
+  endpoint: (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? '/xz/plan' : 'http://127.0.0.1:8941/xz/plan',
   temp: 0,
   batch: 6,          /* 一批最多几个动作：一次规划太多，错在第三步后面全错 */
   maxSteps: 40,      /* 整个任务最多几轮（他定的 40） */
@@ -3171,7 +3175,7 @@ function xzMicToggle(){
         var blob = new Blob(XZ_MIC.ch, { type: mr.mimeType || 'audio/webm' });
         XZ_MIC.st = 'busy'; XZ_MIC.mr = null; XZ_MIC.ch = []; xzMicUi();
         if (!blob.size){ XZ_MIC.st = ''; xzMicUi(); xzMicNote('没有录到声音，再点一次'); return; }
-        fetch('/asr', {
+        fetch(XZ_CFG.endpoint.replace('/xz/plan','/asr'), {
           method: 'POST',
           headers: { 'Content-Type': blob.type || 'application/octet-stream',
                      'X-XZ-Hint': encodeURIComponent(xzAsrHint()) },
