@@ -6,7 +6,7 @@
 <title>组件库</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=ce9f8d0a">
+<link rel="stylesheet" href="assets/sys.css?v=696b4f8c">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=798c12a1">
 <!-- 2026-10-29：本页 <style> 已清空（原 3,683 B）。`.nf-*`（2026-10-24）与
      引用数格 `.cc-meta`（2026-10-29）都在 assets/sys.css 的组件层：
@@ -346,27 +346,87 @@
       return;
     }
     if (act === 'refs') {
-      const menu = MENU.open;
-      /* 先用当前卡片定位，再关菜单（关菜单会把 MENU 清空） */
-      const card = document.querySelector('.crow[data-id="' + id + '"]');
       closeMenu(false);
-      if (!card) return;
-      const users = DB.APPS.filter((a) => (a.comps || []).indexOf(id) >= 0);
-      const pop = card.querySelector('.k-pop');
-      pop.innerHTML = '<b>' + (users.length ? users.length + ' 个应用在用' : '还没有应用在用') + '</b>' +
-        (users.length ? '<ul>' + users.map((a) => '<li>' + esc(a.name) + '<span>' + esc(a.status) + '</span></li>').join('') + '</ul>' : '<p>装配到应用后，这里会列出它们。</p>');
-      pop.hidden = false;
-      pop.setAttribute('data-on', 'true');
-      /* ★2026-10-29：浮层原来只有 absolute + top:calc(100%+6)，而卡壳是 overflow:hidden ——
-         浮层被卡底裁掉，DOM 里 236×188 打开着，屏幕上一点都看不见（"点了没反应"的像素级原因）。
-         两页共用的 Popover.place 是既有实现（fixed 定位 + 贴 ⋮ 下沿 + 翻上/避让视口），
-         这里复用它；锚点固定为卡上的 ⋮，所以**菜单进、卡底进，开出来是同一个位置**。 */
-      if (window.Popover) Popover.place(card.querySelector('.k-more'), pop);
-      const meta = card.querySelector('.cc-meta[aria-expanded]');
-      if (meta) meta.setAttribute('aria-expanded', 'true');
-      if (menu) menu.hidden = true;
+      openRefs(id);
       return;
     }
+  }
+
+
+  /* 查看引用（2026-11-03 m02979）：引用可能成百上千，浮层装不下也不能筛。
+     改为大弹窗：搜索 + 状态筛选 + 滚动名单，行可直接打开对应应用。 */
+  function refState(a) {
+    if (a.status === '已下架' || a.status === '内测中') return '内测中';
+    if (a.status === '未发布') return '未上架';
+    return '已上架';
+  }
+  function openRefs(id) {
+    var comp = (DB.COMPS || []).filter(function (c) { return c.id === id; })[0] || { name: id };
+    var users = DB.APPS.filter(function (a) { return (a.comps || []).indexOf(id) >= 0; });
+    var last = document.activeElement;
+    var mask = document.createElement('div');
+    mask.className = 'nf-mask';
+    mask.innerHTML =
+      '<div class="nf nf-refs" role="dialog" aria-modal="true" aria-labelledby="rf-title">' +
+        '<div class="nf-hd"><b id="rf-title">查看引用 · ' + esc(comp.name) + '</b>' +
+          '<button class="rf-x" type="button" data-rf="close" aria-label="关闭">×</button></div>' +
+        '<div class="nf-bd">' +
+          '<p class="rf-count">共 <b>' + users.length + '</b> 个应用在用</p>' +
+          '<div class="rf-tools">' +
+            '<input class="rf-q" type="search" placeholder="搜索应用名称" aria-label="搜索应用名称">' +
+            '<select class="rf-st" aria-label="按状态筛选">' +
+              '<option value="">全部状态</option><option>已上架</option><option>内测中</option><option>未上架</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="rf-list" role="list"></div>' +
+          '<p class="rf-empty" hidden>没有匹配的应用</p>' +
+        '</div>' +
+        '<div class="nf-ft"><span class="rf-hint">点应用名打开</span>' +
+          '<button class="btn quiet" type="button" data-rf="close">关闭</button></div>' +
+      '</div>';
+    document.body.appendChild(mask);
+    var q = mask.querySelector('.rf-q');
+    var st = mask.querySelector('.rf-st');
+    var list = mask.querySelector('.rf-list');
+    var empty = mask.querySelector('.rf-empty');
+    var hint = mask.querySelector('.rf-hint');
+    function draw() {
+      var kw = q.value.trim().toLowerCase();
+      var sv = st.value;
+      var rows = users.filter(function (a) {
+        return (!kw || String(a.name).toLowerCase().indexOf(kw) >= 0) && (!sv || refState(a) === sv);
+      });
+      list.innerHTML = rows.map(function (a) {
+        var state = refState(a);
+        return '<a class="rf-row" role="listitem" href="app.html?id=' + encodeURIComponent(a.id) + '">' +
+          '<span class="rf-name">' + esc(a.name) + '</span>' +
+          '<span class="rf-st" data-s="' + state + '">' + state + '</span>' +
+          '<span class="rf-v">v' + (a.version || 0) + '</span></a>';
+      }).join('');
+      empty.hidden = rows.length > 0;
+      hint.textContent = rows.length === users.length ? '点应用名打开' : '显示 ' + rows.length + ' / ' + users.length;
+    }
+    function close() {
+      document.removeEventListener('keydown', onKey, true);
+      mask.remove();
+      if (last && last.focus) last.focus();
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+    }
+    q.addEventListener('input', draw);
+    st.addEventListener('change', draw);
+    mask.addEventListener('click', function (e) {
+      if (e.target === mask || e.target.closest('[data-rf="close"]')) close();
+    });
+    document.addEventListener('keydown', onKey, true);
+    draw();
+    if (!users.length) {
+      q.hidden = true; st.hidden = true;
+      empty.hidden = false; empty.textContent = '还没有应用在用';
+      hint.textContent = '装配到应用后，这里会列出它们';
+    }
+    if (!q.hidden) q.focus();
   }
 
 
