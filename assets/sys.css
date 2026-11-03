@@ -374,13 +374,15 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      现在它是公共件（与 .tb / .cond 同一处理方式），页面只写结构与行为。
    用途：新增组件、新建应用这种"填三五样就能建"的登记表单。 */
 .nf-mask{position:fixed;inset:0;background:var(--surface-overlay);z-index:60;display:grid;place-items:center}
-.nf{width:min(var(--dialog-max-w),calc(100vw - 32px));background:var(--surface-page);border-radius:var(--dialog-radius);box-shadow:var(--dialog-shadow);overflow:hidden}
+.nf{width:min(var(--dialog-max-w),calc(100vw - 32px));max-height:calc(100vh - 48px);background:var(--surface-page);border-radius:var(--dialog-radius);box-shadow:var(--dialog-shadow);overflow:hidden;display:flex;flex-direction:column}
+/* 2026-11-03：范围两段让表单超过一屏。头/脚固定、中段自己滚 —— 底部「创建」永远在视口里。 */
+.nf-hd,.nf-ft{flex:0 0 auto}
 .nf-hd{height:56px;display:flex;align-items:center;padding:0 var(--space-24)}
 .nf-hd .cf-ico{width:18px;height:18px;flex:0 0 18px;border-radius:50%;background:var(--color-danger);color:var(--color-text-inverse);font-size:var(--font-size-caption);font-weight:700;display:grid;place-items:center;margin-right:8px}
 .nf-hd b{font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
 .nf-hd .nf-x{margin-left:auto;width:28px;height:28px;border-radius:var(--radius-xs);display:grid;place-items:center;color:var(--color-text-tertiary);border:0;background:none;cursor:pointer}
 .nf-hd .nf-x:hover{background:var(--color-state-hover);color:var(--color-text-body)}
-.nf-bd{padding:var(--dialog-pad);display:flex;flex-direction:column;gap:var(--space-16)}/* 2026-10-29 接 L3：--dialog-pad=--space-24，同值零变化 */
+.nf-bd{flex:1 1 auto;min-height:0;overflow:auto;padding:var(--dialog-pad);display:flex;flex-direction:column;gap:var(--space-16)}/* 2026-10-29 接 L3：--dialog-pad=--space-24，同值零变化 */
 .nf-row{display:flex;flex-direction:column;gap:var(--space-8)}
 .nf-row label{font-size:var(--font-size-body);color:var(--color-text-secondary)}/* ★2026-10-24：输入框原来是无框白底 —— 截图上三个字段跟旁边的标签文字长得一样，
    看不出"这里能敲字"。改成 1px 描边 + 聚焦时描边转品牌色。
@@ -2556,3 +2558,29 @@ body[data-sys="on"] .tb-ops .btn.primary:hover{background:var(--color-brand)}
 .rf-empty{margin:var(--space-24) 0;text-align:center;color:var(--ink-3);font-size:var(--font-size-body)}
 .nf-refs .nf-ft{display:flex;align-items:center;justify-content:space-between}
 .rf-hint{font-size:var(--font-size-caption);color:var(--ink-3)}
+
+/* ══ 可见范围 / 可配置范围（2026-11-03 m03263）════════════════════════
+   一处定义，四个弹窗共用：应用新建/编辑、组件新建/编辑。
+   菜单用 fixed 挂 body —— 弹窗 .nf 是 overflow:hidden，内联绝对定位会被裁掉。 */
+.sc{display:grid;gap:var(--space-8);padding-top:var(--space-4)}
+.sc-top{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-12)}
+.sc-title{display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-body);font-weight:600;color:var(--ink-1)}
+.sc-req{color:var(--color-danger);font-weight:600}
+.sc-q{display:inline-grid;place-items:center;width:14px;height:14px;border:1px solid var(--color-border);border-radius:50%;font-size:10px;font-weight:600;color:var(--ink-3);cursor:help}
+.sc-opts{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-16)}
+.sc-opt{display:inline-flex;align-items:center;gap:6px;font-size:var(--font-size-body);color:var(--ink-1);cursor:pointer}
+.sc-opt input{width:14px;height:14px;margin:0;accent-color:var(--color-brand)}
+.sc-body{display:grid;gap:var(--space-8);padding:var(--space-12);background:var(--surface-subtle);border:1px solid var(--color-border-hairline);border-radius:var(--radius-6)}
+.sc-field{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:var(--space-8)}
+.sc-fl{font-size:var(--font-size-body);color:var(--ink-2)}
+.sc-pick{height:34px;width:100%;padding:0 var(--space-8);border:1px solid var(--color-border);border-radius:var(--radius-6);background:var(--surface-page);color:var(--ink-1);font:inherit;font-size:var(--font-size-body);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-pick[data-empty="1"]{color:var(--ink-3)}
+.sc-pick:focus-visible{outline:2px solid var(--color-focus-halo);outline-offset:1px;border-color:var(--color-brand)}
+.sc-hint{grid-column:1/-1;margin:0;font-size:var(--font-size-caption);color:var(--ink-3);line-height:1.6}
+.sc-menu{position:fixed;z-index:90;background:var(--surface-page);border:1px solid var(--color-border);border-radius:var(--radius-6);box-shadow:var(--shadow-menu, 0 8px 24px rgba(0,0,0,.14));overflow:hidden}
+.sc-search{display:block;width:100%;height:34px;padding:0 var(--space-8);border:0;border-bottom:1px solid var(--color-border-hairline);font:inherit;font-size:var(--font-size-body);color:var(--ink-1);outline:none}
+.sc-list{max-height:200px;overflow:auto;padding:var(--space-4)}
+.sc-item{display:flex;align-items:center;gap:var(--space-8);padding:7px var(--space-8);border-radius:var(--radius-6);font-size:var(--font-size-body);color:var(--ink-1);cursor:pointer}
+.sc-item:hover{background:var(--surface-sunken)}
+.sc-item input{width:14px;height:14px;margin:0;accent-color:var(--color-brand)}
+.sc-empty{margin:0;padding:var(--space-12);font-size:var(--font-size-caption);color:var(--ink-3);text-align:center}

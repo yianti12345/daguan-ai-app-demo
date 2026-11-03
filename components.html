@@ -6,7 +6,7 @@
 <title>组件库</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=696b4f8c">
+<link rel="stylesheet" href="assets/sys.css?v=7ee720ba">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=798c12a1">
 <!-- 2026-10-29：本页 <style> 已清空（原 3,683 B）。`.nf-*`（2026-10-24）与
      引用数格 `.cc-meta`（2026-10-29）都在 assets/sys.css 的组件层：
@@ -93,6 +93,9 @@
       </div>
       <!-- 2026-10-28 删除「启用状态」开关：新建即未发布，此时开关不改变任何结果（能否被装只看已上架＋启用），
            却让人以为拨一下就能装。首次发布后，卡上的开关才承担这个判断。 -->
+      <!-- ★2026-11-03（m03263）：组件创建也要定「谁可见 / 谁可改」。 -->
+      <div id="nf-scope-vis"></div>
+      <div id="nf-scope-cfg"></div>
     </div>
     <div class="nf-ft">
       <button class="btn quiet" type="button" id="nf-cancel">取消</button>
@@ -120,6 +123,9 @@
           <input class="nf-in" id="ei-name" type="text" maxlength="40" autocomplete="off">
           <label class="nf-lb" for="ei-desc">说明</label>
           <textarea class="nf-in" id="ei-desc" maxlength="120" rows="3"></textarea>
+          <!-- ★2026-11-03（m03263）：编辑已有组件时同样能改范围。 -->
+          <div id="ei-scope-vis"></div>
+          <div id="ei-scope-cfg"></div>
           <p class="nf-note" id="ei-note" role="status" aria-live="polite"></p>
         </div>
         <div class="nf-ft">
@@ -132,11 +138,12 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=62e13a2b"></script>
+<script src="assets/data.js?v=4d603397"></script>
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/transfer.js?v=6ef877f1"></script>
 <script src="assets/confirm.js?v=26f0a69f"></script>
 <script src="assets/popover.js?v=7f96155d"></script>
+<script src="assets/scope.js?v=f9f8e305"></script>
 <script>
 /* 组件库列表。
    ⚠ 这里**不许**再写一份组件清单：本页曾自带 const COMPS（8 条，字段 n/k/d/on/refs），
@@ -221,7 +228,9 @@
   }
 
   /* 编辑信息弹窗：改真实字段，落 DB，重画 */
-  const EI = { mask: $('#ei-mask'), title: $('#ei-title'), name: $('#ei-name'), desc: $('#ei-desc'), note: $('#ei-note'), id: null, ret: null };
+  const EI = { mask: $('#ei-mask'), title: $('#ei-title'), name: $('#ei-name'), desc: $('#ei-desc'), note: $('#ei-note'), id: null, ret: null,
+               vis: window.Scope ? Scope.render($('#ei-scope-vis'), { kind: 'vis' }) : null,
+               cfg: window.Scope ? Scope.render($('#ei-scope-cfg'), { kind: 'cfg' }) : null };
   function eiOpen(id) {
     const c = DB.compById(id);
     if (!c || !EI.mask) return;
@@ -230,6 +239,8 @@
     if (EI.title) EI.title.textContent = '编辑信息 · ' + c.name;
     EI.name.value = c.name;
     EI.desc.value = c.desc || '';
+    if (EI.vis) EI.vis.set(c.visScope);
+    if (EI.cfg) EI.cfg.set(c.cfgScope);
     /* ★2026-10-26 修（盲审 v11 P1）：原来只写「改完立刻生效」，而一个组件可能被多个应用装着 ——
        改一个名字瞬间改掉 N 个应用里的显示，没有任何影响面提示。用户在弹层里看不到爆炸半径。
        现在把引用数写进同一句：有引用就点名数量，没引用才说「还没被用」。 */
@@ -255,6 +266,8 @@
     const name = EI.name.value.trim(), desc = EI.desc.value.trim();
     if (!name) { EI.note.textContent = '名称不能为空 —— 卡片标题就是它。'; EI.name.focus(); return; }
     c.name = name; c.label = name; c.desc = desc;
+    if (EI.vis) c.visScope = EI.vis.get();
+    if (EI.cfg) c.cfgScope = EI.cfg.get();
     /* 标签存 code，不存中文 —— 字典改了标签名，组件不用跟着改 */
     DB.save();
     eiClose();
@@ -698,7 +711,9 @@
   })();
 
   const NF = { mask: $('#nf-mask'), name: $('#nf-name'), desc: $('#nf-desc'),
-               ok: $('#nf-ok') };
+               ok: $('#nf-ok'),
+               vis: window.Scope ? Scope.render($('#nf-scope-vis'), { kind: 'vis' }) : null,
+               cfg: window.Scope ? Scope.render($('#nf-scope-cfg'), { kind: 'cfg' }) : null };
 
   /* ★2026-10-24 第二次修（判据 check-dialog-focus.mjs 实测）：
      上一版把 Tab 循环挂在 NF.mask 的 keydown 上 —— 一旦焦点跑到弹层外，
@@ -738,6 +753,8 @@
   function nfOpen() {
     lastFocus = document.activeElement;
     NF.name.value = ''; NF.desc.value = '';
+    if (NF.vis) NF.vis.set(null);
+    if (NF.cfg) NF.cfg.set(null);
     nfErr('');
     NF.ok.disabled = true;
     NF.mask.hidden = false;
@@ -798,7 +815,9 @@
     DB.COMPS.unshift({
       id: id, name: name, status: '未发布', ver: 'v1', refs: 0,
       desc: NF.desc.value.trim(), fields: [],
-      enabled: true   /* 新建默认启用；能不能被装由发布态决定 */
+      enabled: true,  /* 新建默认启用；能不能被装由发布态决定 */
+      visScope: NF.vis ? NF.vis.get() : null,
+      cfgScope: NF.cfg ? NF.cfg.get() : null
     });
     DB.save();
     /* 新记录落库：续接指针 + 一次性置顶信号。

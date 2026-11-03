@@ -242,7 +242,10 @@
        真产品里这些值来自「系统设置 › 字典配置」的 comp_tag，改字典不用改代码。 */
     tags: { d: [] },
     enabled: { d: true }, config: { d: {} }, configBy: { d: null }, strip: { d: false },
-    layout: { d: 'full' }, block: { d: null }
+    layout: { d: 'full' }, block: { d: null },
+    /* ★2026-11-03（m03263）：可见 / 可配置范围。白名单漏一个键 = 刷新后静默丢，
+       这个坑今天已经踩过三次，所以组件与应用两边同时登记。 */
+    visScope: { d: null }, cfgScope: { d: null }
   };
   var APP_FIELDS = {
     id: { d: '' }, name: { d: '' }, client: { d: '' }, desc: { d: '' }, status: { d: '' },
@@ -255,6 +258,8 @@
     /* ★2026-11-02 生成封面的样式序号。同一个坑第三次：cover 进了白名单、coverStyle 漏了，
        于是"换个样式"选完能看见，刷新回到按位置算的那一种。 */
     coverStyle: { d: null },
+    /* ★2026-11-03（m03263）：可见 / 可配置范围；{mode:'self'|'public'|'custom', roles:[], depts:[], users:[]} */
+    visScope: { d: null }, cfgScope: { d: null },
     content: { d: {} }, compVer: { d: {} }, updUndo: { d: {} }, comps: { d: [] }
     /* ★2026-11-02（第二次改，m01548 的重做指令）：一个应用可以授权给多个客户，
        应用不再挂 clientId。谁在用哪一版，只存在 AUTH_FIELDS 那张授权表里。
@@ -1176,7 +1181,11 @@
          没有 cover 字段，于是新建完封面又变回默认图（用户选了等于没选）。
          coverStyle：生成封面的样式序号（0..15，4 色系 × 4 图形），null＝按应用在列表里的位置算。 */
       cover: opt.cover || '',
-      coverStyle: (typeof opt.coverStyle === 'number' ? opt.coverStyle : null)
+      coverStyle: (typeof opt.coverStyle === 'number' ? opt.coverStyle : null),
+      /* ★2026-11-03（m03263）：可见 / 可配置范围。没选就落 null，
+         读取方按「仅自己」解释 —— 老记录没有这两个键也走同一条路。 */
+      visScope: opt.visScope || null,
+      cfgScope: opt.cfgScope || null
     };
     DB.APPS.unshift(app);
     DB.APP_COMPS[app.id] = app.comps;
