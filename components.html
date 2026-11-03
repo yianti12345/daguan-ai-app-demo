@@ -62,6 +62,7 @@
       <!-- 组件卡片网格（2026-10-25 晚第三版形态）：不是表格，role 跟着改成 list。
            行表那版的 role="table" 留在卡片上就是错的语义 —— 卡片没有行列可念。 -->
       <div class="clist" id="grid" role="list" aria-label="组件列表"></div>
+      <div class="pager" id="pager" hidden></div>
 
 <!-- 新增组件：两样（名称 / 介绍）。2026-10-28 D1 删掉「启用状态」：新建即未发布，
      那时开关不改变任何结果；check-solid R6 仍按旧口径要 #nf-sw，属判据未跟上，待机制侧改。 -->
@@ -502,6 +503,8 @@
     });
   }
 
+  let page = 1;
+  const PAGE = 24;
   function render() {
     let list = rows();
     const grid = $('#grid');
@@ -513,13 +516,11 @@
     if (hi > 0) list = [list[hi]].concat(list.slice(0, hi), list.slice(hi + 1));
 
     if (!list.length) {
-      /* ★2026-11-01：同应用列表页 —— 没数据只写「暂无数据」，有筛选才给动作 */
-      grid.innerHTML = `
-        <div class="empty" style="grid-column:1/-1">
-          <b>暂无数据</b>
-          ${($('#f-kw').value || $('#f-st').value) ? '<button class="btn ghost js-clear" type="button">清除筛选</button>' : ''}
-        </div>`;
+      grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><b>暂无数据</b>' +
+        (($('#f-kw').value || $('#f-st').value) ? '<button class="btn ghost js-clear" type="button">清除筛选</button>' : '') + '</div>';
       $('#total').textContent = '共 0 个组件';
+      $('#pager').hidden = true;
+      $('#pager').innerHTML = '';
       return;
     }
 
@@ -570,7 +571,11 @@
     const cfgSharedLabel = (n) => '配置共用件 · 影响 ' + n + ' 个应用';
     /* 禁用件的提示必须回答两件事：为什么不能点 + 怎么才能点（DESIGN §8.5）。 */
     const cfgOffLabel = (n) => '组件已禁用：先打开这张卡左边的开关启用，再配置 · 影响 ' + n + ' 个应用';
-    const rowHtml = list.map((c) => {
+    const totalN = list.length;
+    const pages = Math.max(1, Math.ceil(totalN / PAGE));
+    if (page > pages) page = pages;
+    const shown = list.slice((page - 1) * PAGE, page * PAGE);
+    const rowHtml = shown.map((c) => {
       /* 状态只有一个来源：DB.compState（未发布 / 启用 / 禁用）。
          以前这里自己写 `status !== '已下架' && enabled !== false`，同一件事就有了第二份实现。 */
       const st = DB.compState(c);
@@ -650,7 +655,15 @@
 
     /* 原来写「第 1-8 条 / 共 8 条」：8 条就是全部，却有"区间"口吻，
        读者会以为后面还有第 2 页（而翻页控件是 hidden 的）。两页统一成「共 N 个X」。 */
-    $('#total').textContent = `共 ${list.length} 个组件`;
+    $('#total').textContent = '共 ' + totalN + ' 个组件';
+    const pg = $('#pager');
+    if (pages <= 1) { pg.hidden = true; pg.innerHTML = ''; }
+    else {
+      pg.hidden = false;
+      pg.innerHTML = '<span>第 ' + page + ' / ' + pages + ' 页</span><span class="right">' +
+        '<button class="pg" type="button" data-pg="-1"' + (page === 1 ? ' disabled' : '') + '>上一页</button>' +
+        '<button class="pg" type="button" data-pg="1"' + (page === pages ? ' disabled' : '') + '>下一页</button></span>';
+    }
   }
 
   /* 描边 2 秒后收掉。**不删 ifas90:newComp**（删了就等于把配置页的续接指针
@@ -818,9 +831,16 @@
   function resetFilters() {
     $('#f-kw').value = ''; $('#f-st').value = '';
   }
-  $('#f-kw').addEventListener('input', render);
+  $('#f-kw').addEventListener('input', () => { page = 1; render(); });
+  $('#pager').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pg]');
+    if (!b) return;
+    page += parseInt(b.getAttribute('data-pg'), 10);
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
   
-    $('#f-st').addEventListener('change', render);
+    $('#f-st').addEventListener('change', () => { page = 1; render(); });
 
   /* 空态里的出口：一次点击回到全集。用事件委托，空态是每次重渲染出来的。
      2026-10-24 m01293：⋮ 这次放的是卡身放不下的真动作（编辑信息 / 上下架 / 被谁用着）。 */
