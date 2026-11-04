@@ -517,43 +517,6 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      视觉零变化（白叠白），但"谁在画这块底"从此可判。 */
   background:var(--surface-page);
 }
-/* 动作按钮：文字而不是图标 —— 用户明确要"卡上加配置操作"，
-   一个看得见字的按钮比一枚要猜的图标更像"能点"，也才配得上"高频操作"。
-   ★2026-10-28：盒模型全部走令牌（tokens.css 自己的注释就写着"按钮、输入框、图标钮统一 32 高"，
-   而这里一直是 30 —— 裸值是 token 政策漏掉的那一格，顺手归位）。
-   唯一在用的页面是组件卡的「配置」；apps.html 那个 .kbtn 是封面借名，盒模型在
-   `.kcard .kc-cover-img.kbtn` 里逐条还原，不受这条影响。 */
-.kbtn{
-  display:inline-flex;align-items:center;gap:var(--space-8);height:var(--size-control-h);padding:0 var(--space-12);
-  border:0;border-radius:var(--radius-control);background:var(--surface-sunken-2);color:var(--color-text-body);
-  /* 2026-10-25：line-height 1 → 22。按钮是 flex 居中，视觉不动，但 14px 字配 14px 行高
-     在窄屏/放大字号时会互相顶；统一到 14/22 与全站正文同档。
-     ★2026-10-28 tokscale T2：上一版这里写的是 `line-height:var(--h-ctl)`（32）——
-     注释说"22"、代码却是 32，14px 正文配 32 行高被判红 ×8。按注释的意图落回 22；
-     高度仍由 --h-ctl 给（flex 居中，行高不参与按钮高度）。 */
-  font-family:inherit;font-size:var(--font-size-body);line-height:var(--leading-title);text-decoration:none;cursor:pointer;
-}
-.kbtn svg{width:var(--space-16);height:var(--space-16)}
-.kbtn:hover{background:var(--color-state-hover)}
-.kbtn:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset)}
-/* 主操作不做"白字压品牌蓝"（#587FFF 上白字 3.56:1，14px 不够 AA），
-   改用品牌浅底 + 深品牌字（约 7:1），靠底色与字重区分主次。 */
-.kbtn.primary{background:var(--color-brand-surface);color:var(--color-brand-ink);font-weight:600}
-.kbtn.primary:hover{background:var(--color-brand-surface-2)}
-.kbtn.quiet{background:none;box-shadow:inset 0 0 0 var(--size-border-w) var(--color-border-card)}
-.kbtn.quiet:hover{background:var(--color-state-hover)}
-/* 卡片动作（组件卡运行带里的「配置」）：静止时只有品牌色字，hover 才出浅底 —— 不要线。
-   ★2026-10-26 晚：这张卡里只留这一个动作，但**八张卡同屏**——八颗实心蓝会一起抢焦点，
-   所以把权重放在悬停那一瞬（也是键盘 Tab 到它时的样子），静止态让图标块独占饱和。 */
-/* ★2026-10-28 修一条既有缺陷（规范件 §4.4）：原来 hover 走 --brand-btn 底 + --on-brand 白字，
-   实测 3.5625:1 —— 14px 正文不过 4.5。白字方案撤销，改"浅底 + 深字"三态：
-   静止 6.60 / 悬停 --brand-bg 5.90 / 按下 --brand-bg-2 5.13，全部过 AA。 */
-.kbtn.act{
-  background:none;box-shadow:none;color:var(--color-brand-ink);font-weight:500;
-}
-.kbtn.act:hover{background:var(--color-brand-surface);color:var(--color-brand-ink)}
-.kbtn.act:active{background:var(--color-brand-surface-2);color:var(--color-brand-ink)}
-.kbtn.act:focus-visible{background:var(--color-brand-surface);color:var(--color-brand-ink)}
 /* ★2026-10-29（禁用态四违约收口）：这颗「配置」的禁用视觉统一到文件末尾唯一配方
    （--btn-disabled-fg + 无面 + not-allowed），不再单写 opacity:.72 + pointer-events:none。
    pointer-events 必须保持 auto：title 里的「为什么不能点 / 怎么才能点」只能靠命中才弹得出来；
@@ -873,7 +836,6 @@ button.cc-meta:focus-visible{
      动作组不许缩，让左边的引用数去省略（它本来就带省略号与 title）。 */
   flex:none;white-space:nowrap;
 }
-.cc-ft .kbtn{height:var(--size-control-h)}
 /* 结果计数跟在按钮后面时得像"信息"不像按钮的尾巴：拉开 14、压成次级色 */
 .bar-count{margin-left:14px;color:var(--color-text-tertiary);font-size:var(--font-size-caption)}
 /* 禁用/未发布的卡只降名字色，不做整卡蒙灰。
@@ -882,7 +844,6 @@ button.cc-meta:focus-visible{
 .page-components .crow[data-on="0"] .cc-hd .cl-tt{color:var(--color-text-tertiary)}
 /* 键盘焦点：环压在卡的白底上，2px + 外距 2（规范件 §5.1 / WCAG 2.4.7） */
 .page-components .cc-ft .cc-sw:focus-visible,
-.page-components .cc-ft .kbtn:focus-visible,
 .page-components .cc-ft .k-more:focus-visible{
   outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset);
 }
@@ -1056,16 +1017,6 @@ button.cc-meta:focus-visible{
    与 .kc-body 的新高度同步（同一个 --kc-body-h）——否则热区会停在文字区上沿，
    描述最后 15px 又变回点不动的死区。 */
 .kcard .kc-cover-img{position:relative;z-index:1}
-/* 这个锚点身兼两职，`.kbtn` 只是**借名**、不借外观：
-   · C6 判据量 `.kc-cover-img` 当封面图（尺寸必须是 卡宽−24 × ≥150）；
-   · e2e-flow C 与卡片动作契约认 `.kbtn[href]` 当"卡上的配置入口"（必须是带 id 的 <a>）。
-   两件事实是同一件事（这张卡的配置入口 = 这块可点区域），所以挂在同一个元素上；
-   而 .kbtn 的盒模型（高 30 / 内距 12 / 浅底）会把封面压变形，这里逐条还原。 */
-.kcard .kc-cover-img.kbtn{
-  padding:0;height:100%;
-  background-color:var(--color-brand-surface);
-  background-image:var(--gradient-cover);
-}
 
 /* ── 封面＝画布缩略指纹（2026-10-27）─────────────────────────────
    封面不再是一张所有卡共用的插画，而是这个应用装配清单的缩略：真块名、真顺序、
@@ -1367,6 +1318,9 @@ button.cc-meta:focus-visible{
    —— 实测 6 个字段变化（position/top/left/right/bottom/min-width），是跨页泄漏。
    body[data-app] 目前只有 app.html 有，等于"本页专属"的显式前缀。 */
 body[data-app] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gradient-stage),var(--surface-canvas);padding: calc(var(--space-16) + 48px + var(--space-8)) var(--space-24) var(--fk-clear-bottom)}
+/* 2026-11-04（用户 m01223）：组件配置页与应用配置页同一块画布 —— 同一渐变底、同一底距，
+   只把前缀从 data-app 换成 data-comp（两页是两个对象，不共用 app 那个属性）。 */
+body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gradient-stage),var(--surface-canvas);padding: calc(var(--space-16) + 48px + var(--space-8)) var(--space-24) var(--fk-clear-bottom)}
 /* ★ 2026-10-23 底部留白 148 → 172：输入条从 56 长到 60，加上呼吸，148 时卡片底边
    离输入条只剩 6px，滚到底看着像被咬住。2026-10-29 起这个值归对话区自己声明
    （assets/float.css 的 --fk-clear-bottom，例外账放行至 2026-11-15），本行只消费，不再就地写数。 */
@@ -1886,9 +1840,8 @@ body[data-drawer="on"] .hint{
         用户只剩"坏了"一种解释；
      ② 不许 opacity 二次衰减 —— 5.9:1 再乘 .72/.55 只剩 3.2/2.5:1，等于把原因一起变没；
      ③ 不许 aria-disabled 配 tabindex=-1 —— 那是"既说可发现、又从发现路径里拿掉"的自相矛盾。
-   原因与出口写在同一句里（title / aria-label），例：components.html 禁用卡上的「配置」。 */
+   原因与出口写在同一句里（title / aria-label），例：components.html 禁用卡点整卡时的那句 toast。 */
 .btn[disabled], .btn[aria-disabled="true"], .btn.is-disabled,
-.kbtn.act[aria-disabled="true"], .kbtn.act.is-disabled,
 .cv-op[disabled], .cv-op[aria-disabled="true"], .cv-op.is-disabled,
 .cfg-btn[disabled], .cfg-btn[aria-disabled="true"], .cfg-btn.is-disabled,
 .tb-pick-ok:disabled, .tb-pick-ok[aria-disabled="true"], .tb-pick-ok.is-disabled,
@@ -1914,7 +1867,6 @@ body[data-drawer="on"] .hint{
   background:var(--surface-page);
 }
 /* 文字 / 图标类禁用件：不加按钮面，只降字色与光标 —— 同一个状态、同两个字色令牌。 */
-.kbtn.act[aria-disabled="true"], .kbtn.act.is-disabled,
 .cv-op[disabled], .cv-op[aria-disabled="true"], .cv-op.is-disabled,
 .cfg-btn[disabled], .cfg-btn[aria-disabled="true"], .cfg-btn.is-disabled{
   background:none; border-color:transparent;
@@ -2147,8 +2099,8 @@ body[data-drawer="on"] .hint{
 }
 /* 底栏三颗图标同灰：🔌 原来吃 --color-icon-card（偏暖的灰），和旁边两颗对不上 */
 .kcard .kc-ops .k-pub{color:var(--color-text-body)}
-/* 2026-11-01：底栏三颗彻底同档 —— 「配置」不许是蓝字（那会让它读成主按钮，
-   而它和另外两颗一样只是个入口）。三者同灰度、同 32×32、同 hover 底。 */
+/* 2026-11-04（用户 m01135）：组件卡不再有「配置」按钮（整卡就是入口），
+   底栏只剩开关与 ⋮ 两颗；这条注释保留是因为应用卡底栏仍适用同一口径。 */
 
 
 /* 空应用的条：左对齐，和别的卡同一只左手 */
@@ -2159,16 +2111,6 @@ body[data-drawer="on"] .hint{
    原来「启用」是绿胶囊、「配置」是蓝字、⋮ 是深灰 —— 一颗卡上三种颜色，
    谁也读不出哪个是主操作（其实没有主操作，三个都只是入口）。
    状态色只留给状态本身（开关），操作一律中性。 */
-.page-components .cc-ft .kbtn.act{
-  color:var(--color-text-tertiary);
-  background:none;box-shadow:none;border:0;
-  height:28px;padding:0 var(--space-8);border-radius:var(--radius-xs);
-  display:inline-flex;align-items:center;gap:var(--space-4);
-  font-size:var(--font-size-caption);
-}
-.page-components .cc-ft .kbtn.act:hover{
-  color:var(--color-text-primary);background:var(--color-state-hover);
-}
 .page-components .cc-ft .k-more{color:var(--color-text-body)}
 .page-components .cc-ft .k-more:hover{color:var(--color-text-primary)}
 /* 描述固定两行：height 单写会被旧规则的 min-height:44 顶回去（实测 44），两处都要写 */

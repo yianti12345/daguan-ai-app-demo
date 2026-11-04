@@ -800,12 +800,13 @@
           + (owners.length > 1 ? ' 等 ' + owners.length + ' 个应用' : '');
       }
     }
+    paintMeta();
     var chip = $('#comp-status');
     if (chip && COMP && COMP.status) {
       /* 2026-10-30：这一页原来直接印 COMP.status（已上架/已下架），组件库印的是
          DB.compState（启用/禁用/未发布）—— 同一件事两种说法，且「上架」是电商词。
          现在两页同源：词与配色都取 DB 那一份，这里不再写第二套对照表。 */
-      chip.hidden = false;
+      chip.hidden = true;   /* 2026-11-04 m01223：状态只在名称右边那一句里说一次 */
       chip.textContent = DB.compState(COMP);
       chip.setAttribute('data-st', DB.compStateCls(COMP));
     }
@@ -818,47 +819,14 @@
        不画样例页 —— 用户定过"首屏必须是空的，内容靠对话长出来"。
        示例句是"提示"，不是"内容"：画布上没有一个像素是假数据。 */
   function renderEmpty() {
-    var SEEDS = [
-      '一个带筛选和分页的客户列表',
-      '一个左边列表、右边详情的工单页',
-      '一个新建表单，含条件和提交动作'
-    ];
-    /* ★2026-10-25 盲评第五轮 P0，原文「输入轴 y=820–876 贴着屏幕下沿，视觉重量仍是页脚搜索框，
-       而这一页当前可点的只有它 —— 主操作没有落点」：
-       空态时给 body 打上 is-empty，输入条跟着抬到空态卡正下方（float.css 里那条
-       `body.is-empty .fk-dock`）；一旦有内容生成，类被摘掉，输入条回到底部常态位置。
-       只改"空态这一屏的构图"，不改有内容时的布局。 */
-    document.body.classList.add('is-empty');
-    canvasInner.innerHTML = '<div class="empty-wrap"><div class="empty-card">'
-      /* 2026-10-25 用户：「别加多余的标注和描述，让布局自己说话」。
-         删掉两句：
-           · 「说清楚要什么页面就行，小智边做边给你看」—— 解释"这个产品怎么用"，属于说明文字；
-           · 「点一句填进输入框，也可以直接说你的需求」—— 说明书。三条示例摆在那里、
-             有 hover、有箭头，本身就说明了"点它会怎样"。
-         空态现在只剩一句主句 + 三条示例：主句说"现在是空的"，示例说"可以这么说"。 */
-      /* ★2026-10-29：改回「还没有内容，在下面直接说一句」。上一版写的是「请输入内容创建组件」——
-         与上面这条注释（主句说"现在是空的"）和盲审 8 号的 keep 项（「全站最像自家产品的地方」）
-         都相反，且没有一份报告/裁决记录支持这次替换。PX 回归里它是一条无出处的视觉差异。 */
-      + '<p class="empty-lead">还没有内容，在下面直接说一句</p>'
-      + '<div class="empty-seeds" role="group" aria-label="起手示例">'
-      + SEEDS.map(function (t) {
-          /* ★2026-10-25：箭头原来放在文案**前面**，而 `.seed-ar` 又带 `margin-left:auto`，
-             结果 auto 把箭头往右推、文案被挤到箭头右边 —— 整行读起来是"居中"，还是"
-             输入框"的读法。改成文案在前、箭头在后，auto 才把箭头推到行尾。 */
-          return '<button type="button" class="seed" data-seed="' + esc(t) + '">'
-            + '<span class="seed-tx">' + esc(t) + '</span>'
-            + '<span class="seed-ar" aria-hidden="true">›</span></button>';
-        }).join('')
-      + '</div>'
-      + '</div></div>';
-    var seeds = canvasInner.querySelectorAll('.seed');
-    for (var i = 0; i < seeds.length; i++) {
-      seeds[i].addEventListener('click', function () {
-        var t = this.getAttribute('data-seed');
-        if (ui && ui.setInput) ui.setInput(t);
-        else if (ui && ui.focusInput) ui.focusInput();
-      });
-    }
+    /* ★2026-11-04（用户 m01223）：「跟应用配置页面基本类似」——
+       空态不再是一张自造的卡 + 三条示例，改成与应用配置页同一种：两行字，居中。
+       输入条也不再上抬（原来靠 body.is-empty 抬到卡下方），它本来就该在底部常态位。 */
+    document.body.classList.remove('is-empty');
+    canvasInner.innerHTML = '<section class="cv-empty">'
+      + '<b>这个组件还没有内容</b>'
+      + '<p>说清它解决什么问题、谁在用，边问边生成。</p>'
+      + '</section>';
     /* 空态还没有东西可存：保存快照置灰。
        之前它是可点的 —— 点了会真的把版本号 +1，
        用户会发现自己保存了一个空页面。 */
@@ -869,17 +837,32 @@
     ['#act-publish'].forEach(function (sel) {
       var b = document.querySelector(sel);
       if (!b) return;
-      /* 2026-10-29 禁用态唯一入口：.is-disabled + aria-disabled + 原生 disabled 一次落。
-         原因必须"常驻可见"：原生 disabled 的 title 弹不出来，所以原因直接写进按钮文案。 */
-      if (window.UIK && UIK.setDisabled) UIK.setDisabled(b, v, '先做出内容，再保存');
-      b.textContent = v ? '先做出内容' : '保存';
+      /* ★2026-11-04（用户 m01223）：与应用配置页同一套 —— 两颗按钮常驻、可点；
+         没内容时点了由 onPublish/onDraft 说一句"先说要做什么"，不改名字、不变灰。 */
+      b.textContent = '保存并发布版本';
+      if (window.UIK && UIK.setDisabled) UIK.setDisabled(b, false, '');
     });
+  }
+
+  /* 顶栏第二段：更新时间 + 启用状态（用户 m01223：左上角只显示名称、版本号、版本时间、启用状态） */
+  function paintMeta() {
+    var meta = document.getElementById('comp-meta');
+    if (!meta) return;
+    var rec = (window.DB && COMP && COMP.id && DB.compById) ? DB.compById(COMP.id) : null;
+    var when = (COMP && (COMP.updated || COMP.savedAt)) || (rec && rec.updated) || '';
+    var st = (window.DB && DB.compState) ? DB.compState(COMP) : ((COMP && COMP.status) || '');
+    var t = when ? String(when).replace(/^20\d\d-/, '').replace(/-/g, '/') : '';
+    /* 2026-11-04 m01223：名称右边读起来要是一件完整的事 —— 「v2 · 更新于 10/30 10:02:17 · 启用」。
+       分隔符在这里给，不靠两个 span 之间的空白去猜。 */
+    meta.textContent = (t ? '· 更新于 ' + t + ' · ' : ' · ') + st;
   }
 
   function paintInitial() {
     canvasEl.setAttribute('data-busy', 'false');
     canvasEl.setAttribute('data-error', 'false');
-    $('#comp-ver').textContent = COMP.ver + ' · ' + (COMP.status === '已上架' ? '已保存' : '未发布');
+    /* 版本号的格子里只放版本号；「未发布/启用/禁用」由右边那一句说一次（同页不重复播报）。 */
+    $('#comp-ver').textContent = COMP.ver;
+    paintMeta();
     /* ① 有生成结果（spec）→ 照它画。这是"生成的东西真的留下来了"的唯一证据：
        刷新之后还长这样。之前只存 fields，刷新就退回按名字猜的骨架，
        等于每次刷新都把我当时生成的那一页丢掉。
@@ -963,7 +946,8 @@
     canvasEl.setAttribute('data-error', 'true');
     $('#err-txt').textContent = msg || '这次没生成出来';
     $('#err-strip').hidden = false;
-    $('#comp-ver').textContent = COMP.ver + ' · 未发布';
+    $('#comp-ver').textContent = COMP.ver;
+    paintMeta();
   }
   function clearError() {
     canvasEl.setAttribute('data-error', 'false');
@@ -1148,7 +1132,8 @@
       if (COMP.id && DB && DB.compById && DB.compById(COMP.id)) {
         document.title = (COMP.name || '组件') + ' · 组件配置';
       }
-      $('#comp-ver').textContent = COMP.ver + ' · ' + (prev === '已上架' ? '已保存' : '未发布');
+      $('#comp-ver').textContent = COMP.ver + (prev === '已上架' ? '' : ' · 未发布');
+      paintMeta();
       /* ★2026-10-28（断点）：落库之后才谈得上"它现在能不能装"。
          这一句读的是 upsert 之后的 COMP.status（事实），不是生成前的猜测；
          已上架 / 已下架 都不适用，条件写在 tellDraftNotInstallable 里。 */
@@ -1286,7 +1271,8 @@
     upsert('已上架');
     setCompName();
     var n = usersOf();
-    $('#comp-ver').textContent = COMP.ver + ' · 已保存';
+    $('#comp-ver').textContent = COMP.ver;
+    paintMeta();
     showPub('已保存 ' + COMP.ver + ' · 影响到 ' + n + ' 个应用');
   }
 
@@ -1355,14 +1341,28 @@
     });
   })();
 
-  /* 顶栏：历史快照 + 保存快照。没有「保存草稿」——生成/编辑自动保存。 */
+  /* 顶栏两个动作（2026-11-04 用户 m01223：「右上角是保存草稿、保存并发布版本」）。
+     与应用配置页同一套口径：
+       保存草稿        → 内容落库、不铸新版本、不动启用状态；
+       保存并发布版本  → 铸新版本 + 启用（onPublish）。
+     历史版本入口不在顶栏（应用页也不放），从组件库的 ⋮ 进，这里连节点都收起来了。 */
   (function () {
     var bPub = document.getElementById('act-publish');
-    var bVer = document.getElementById('act-versions');
-    if (bPub) { bPub.textContent = '保存'; bPub.addEventListener('click', onPublish); }
-    if (bVer && IS_EDIT) bVer.setAttribute('href', 'versions.html?scope=comp&id=' + encodeURIComponent(COMP.id));
-    else if (bVer) bVer.hidden = true;
+    var bDraft = document.getElementById('act-draft');
+    if (bPub) { bPub.textContent = '保存并发布版本'; bPub.addEventListener('click', onPublish); }
+    if (bDraft) bDraft.addEventListener('click', onDraft);
+    /* 历史版本按钮已随 m01223 下线：顶栏只留「保存草稿 / 保存并发布版本」两颗，
+       入口回到组件库卡片的 ⋮（与应用配置页同一个口径）。 */
   })();
+
+  /* 保存草稿：写内容，不发版。新建态第一次点它才真的落库（那时还没有 id）。 */
+  function onDraft() {
+    if (!cur) { toast('先说要做什么，还没有可以保存的内容'); return; }
+    var st = EXISTS ? (COMP.status || '未发布') : '未发布';
+    upsert(st);
+    setCompName();
+    toast(EXISTS ? '已存草稿：内容保住了，还没生成新版本' : '已存草稿：还没发布，别人装不到它');
+  }
 
   /* 保存 / 发布：写回 DB，并把"影响到谁"说清楚。
      两种入口都走这里，但语义不同：

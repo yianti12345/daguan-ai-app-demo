@@ -282,7 +282,6 @@ body.fk-hist-open #canvas{padding-bottom:248px}
    按 components.spec.md §25 收进对话浮条组件层，保证 .fk-dock 只有一个实现处。 */
 body[data-mode="view"] .fk-dock{display:none !important}
 body[data-drawer="on"] .fk-dock{left:50%}
-body.is-empty .fk-dock{top:calc(50% + 132px); bottom:auto}
 @media (prefers-reduced-motion:reduce){.fk-dock{transition:none}}
 
 /* ★2026-11-04：一键收起时，对话浮条跟着顶栏一起藏。这条属于浮条自己的样式，

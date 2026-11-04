@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>组件库</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=d575e327">
+<link rel="stylesheet" href="assets/sys.css?v=4c306e1b">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=02ac2ac8">
 <!-- 2026-10-29：本页 <style> 已清空（原 3,683 B）。`.nf-*`（2026-10-24）与
      引用数格 `.cc-meta`（2026-10-29）都在 assets/sys.css 的组件层：
@@ -834,7 +834,11 @@
     /* ★2026-11-04（用户 m01135）：「组件管理不需要有配置按钮了，点击卡片直接进入配置页面」。
        配置按钮已删，整张卡是入口；禁用卡（data-st="off"）仍是例外 —— 点它要说清为什么进不去、
        怎么才能进去，而不是无声无息跳走。 */
-    if (e.target.closest('.crow.ccard')) {
+    /* 整卡可点之后**必须**排除卡内控件（⋮ 与菜单、开关、卡名链接、「被 N 个应用使用」入口），
+       否则点 ⋮ 会先整卡跳走、菜单根本打不开（实测如此）。注意是"跳过这一支"、不是 return ——
+       下面的分支还要各自处理这些控件。 */
+    const onCardCtl = !!e.target.closest('a, button, .k-menu, .k-pop, .cc-meta, .ck-badge');
+    if (!onCardCtl && e.target.closest('.crow.ccard')) {
       const card = e.target.closest('.crow.ccard');
       if (card.getAttribute('data-st') === 'off') {
         e.preventDefault();
