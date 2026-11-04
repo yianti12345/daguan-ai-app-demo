@@ -22,20 +22,23 @@
    时间既然要精确到秒，列宽就得按秒存在来给。 */
 
 /* 第 1 列是勾选框：单应用视图要隐藏的是第 4 列「应用」，不是第 3 列租户 ID。 */
-.au-table.is-sub .au-head span:nth-child(4),
-.au-table.is-sub .au-row > :nth-child(4){display:none}
 /* ★2026-11-02 修重叠：授权时间那一列给的是 108，而「2026-10-20 14:32:08」是 19 个字符且
    nowrap，它不换行就压到右边的有效期上（截图里两列数字叠在一起）。列宽按实际字符数给：
    版本 88（"v4" 足够）、时间 150、有效期 108。同一处表头、行、脚注共用一条轨道，改这里一处。 */
-.au-table{--gt-cols:40px 170px 190px minmax(0,1fr) 80px 150px 108px 240px}
 /* 隐藏「应用」列时，轨道收成 6 条：元素 display:none 后不再占轨道，若不收，
    后面每一列都左移一格（授权时间挤进 96、有效期挤进 158）——第一次渲染就叠字了。 */
-.au-table.is-sub{--gt-cols:40px minmax(0,1fr) 220px 80px 150px 108px 240px}
 /* 表头照平台标准：48 高、浅灰通栏、14 号字、中等字重。原来 36 高 + 12 号灰字，
    和线上员工管理页不是一套。 */
-.au-head{height:48px;font-size:var(--font-size-body);font-weight:500;color:var(--color-text-secondary)}
+/* ★2026-11-04：原来这里又写死 height:48 / font-weight:500，把 sys.css 里照真源定的
+   39 / #F2F3F5 / 600 全部盖回去 —— 上一轮改了半天看不出变化，一半原因在这。
+   现在只留字号与颜色，高度和字重交给 .gtable-head 一处定义。 */
+/* 2026-11-04：列组合与列宽不再写在这里 —— 由 assets/list.js 的 spec 声明（唯一一处）。
+   原来这里有 --gt-cols 两条 + 「is-sub 隐藏第 4 列」两条，等于同一件事的第二份定义；
+   而 nth-child 隐藏法在列数改成 7 列后会误伤「授权版本」那一列。 */
+.au-head{font-size:var(--font-size-body);color:var(--color-text-secondary)}
 .au-head span:last-child{text-align:right}
-.au-row{min-height:54px;font-size:var(--font-size-body)}
+/* 行高同理：54 是旧值，真源 69，统一由 --table-row-h 给。 */
+.au-row{font-size:var(--font-size-body)}
 /* ★2026-11-03（m05719）：第一列是选择框；只有「可升级」行给勾选，未授权/已最新行留空。 */
 .au-sel{display:flex;align-items:center;justify-content:center}
 .au-check{width:16px;height:16px;margin:0;accent-color:var(--color-brand);cursor:pointer}
@@ -76,8 +79,7 @@
 /* 应用不存在：工具栏与表头一起收掉 —— 留着两个点了只会报错的按钮，等于骗用户点。
    只留一句说明和回列表的入口。 */
 .au-card.is-missing .au-bar,.au-card.is-missing .au-head,.au-card.is-missing .au-foot{display:none}
-.au-card.is-missing .au-table{--gt-cols:1fr}
-/* 新增授权弹窗：这一页只需要一个窄表单，不用 1120 那个装配抽屉宽度 */
+.au-card.is-missing /* 新增授权弹窗：这一页只需要一个窄表单，不用 1120 那个装配抽屉宽度 */
 #mask .au-dlg{width:min(520px,92vw);max-height:none}
 .au-bd{padding:0 var(--space-16) var(--space-8);overflow:auto}
 .fm{display:flex;flex-direction:column;gap:var(--space-16)}
@@ -113,3 +115,6 @@
 .fm-note b{color:var(--color-text-primary);font-weight:600;font-variant-numeric:tabular-nums}
 /* 已取消：不抢眼，但必须看得见 —— 这一行还在，只是不生效 */
 .au-tag{margin-left:6px;font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-weight:400}
+
+/* 弹窗底栏的次要出口（新建客户）贴左，主操作仍然在右。 */
+.au-ft-left{margin-right:auto}

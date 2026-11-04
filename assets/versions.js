@@ -38,91 +38,6 @@ window.Versions = (function () {
     return S.scope === 'app' ? DB.appById(S.id) : DB.compById(S.id);
   }
 
-  /* 「· N 家客户 · M 家待升级」—— 应用不再有单一授权版本，能说的事实就是家数。
-     没有授权就不写，别在版本页喊"还没有客户"。 */
-  function appAuthLine() {
-    try {
-      var list = DB.authRows(S.id).filter(function (r) { return r.status === '已授权'; });
-      if (!list.length) return '';
-      var behind = list.filter(function (r) { return r.behind; }).length;
-      /* ★2026-11-02：一个应用可以授权给多家，各家停在自己那一版 ——
-         "客户在用 vN" 这个单数说法是假话（华信 v3、中信还停 v2）。
-         能说的事实是分布：v3×2、v2×1。 */
-      var by = {}, keys = [];
-      list.forEach(function (r) {
-        var k = 'v' + r.version;
-        if (!by[k]) { by[k] = 0; keys.push(k); }
-        by[k]++;
-      });
-      keys.sort(function (x, y) { return parseInt(y.slice(1), 10) - parseInt(x.slice(1), 10); });
-      var mix = keys.map(function (k) { return k + '×' + by[k]; }).join('、');
-      return ' · 授权 ' + list.length + ' 家客户（' + mix + '）' + (behind ? ' · ' + behind + ' 家待升级' : '');
-    } catch (e) { return ''; }
-  }
-
-  function statusLine(list) {
-    var act = list.filter(function (r) { return r.kind === 'stable' && r.active; })[0] || null;
-    var stables = list.filter(function (r) { return r.kind === 'stable'; });
-    if (act) {
-      /* ★2026-11-04（m00358：用户原话「v2 是当前可装配的版本 · 还没有应用装它」是狗屎文案）：
-         副句只在这一版真的有人用时才出现，而且是中性事实「N 个应用在用」；
-         没人用就闭嘴 —— 这一页要说的是版本，不是催装配。 */
-      var inUse = '';
-      if (S.scope === 'comp') {
-        var u = DB.APPS.filter(function (a) { return (a.comps || []).indexOf(S.id) >= 0; }).length;
-        inUse = u ? ' · <b>' + u + '</b> 个应用在用' : '';
-      }
-      return { off: false, html: S.scope === 'app'
-        /* ★2026-11-02：原来这里写「最新存档 v3」，而页头「最新 v4」是 latestVer —— 两个"最新"。
-           现在分工写死：页头说**存档**最新（v4）；这里说**画布上编辑的是**哪一版（v3），
-           客户各用哪版由 appAuthLine 给分布。 */
-        ? ('编辑中的版本 <b>v' + act.v + '</b>' + appAuthLine())
-        : ('当前版本 <b>v' + act.v + '</b>' + inUse) };
-    }
-    if (stables.length) {
-      return { off: true, html: S.scope === 'app'
-        ? '当前没有可装配版本 · 最近保存过的是 <b>v' + stables[0].v + '</b>'
-        : '当前没有启用版本 · 最近一版是 <b>v' + stables[0].v + '</b>' };
-    }
-    return { off: true, html: S.scope === 'app'
-      ? '还没保存过版本 · 画布改动已自动保存'
-      : '还没有保存过版本' };
-  }
-
-  function rowOf(r) {
-    /* ★2026-10-28（产品判断第 8 位 E6）：组件 scope 原来没有「查看这一版」，
-       要看旧版只能先恢复——那就变成"为了看一眼而改掉线上"。 */
-    var viewBtn = (S.scope === 'app')
-      ? '<a class="vl-btn is-quiet" href="app.html?id=' + encodeURIComponent(S.id) + '&v=' + r.v + '&mode=view" target="_blank" rel="noopener">查看</a>'
-      : '<a class="vl-btn is-quiet" href="component.html?id=' + encodeURIComponent(S.id) + '&v=' + r.v + '" target="_blank" rel="noopener">查看</a>';
-    /* ★2026-11-04（m06113 需求二）：历史行只给「恢复」，当前线上只留「查看」。
-       恢复不再把指针拨回去，而是把这一版复制成新版本（弹窗里说清来源/新号/旧版仍在）。 */
-    var ops = viewBtn + (r.active ? '' : '<button class="vl-btn is-main" type="button" data-a="act" data-v="' + r.v + '">恢复</button>');
-
-    /* ★2026-11-02：老快照只能定到日，数据层补的是 "--:--:--"。那一串摆在页面上
-       像坏掉的时间，用户第一眼就以为是 bug（"保存于 2026-10-30 --:--:--"）。
-       数据层不改（不补 00:00:00，那等于编一个时刻），只改显示：
-       ★2026-11-04：不再写「（时分未记）」——表格里一格只放一个时刻，
-       没有时分就只给日期，别在格子里加解释。 */
-    var atRaw = String(r.at || '');
-    var atText = atRaw ? atRaw.replace(/ --:--:--$/, '') : '—';
-    /* ★2026-11-04（m00358 拍板 q2b）：一行只装一行的东西。
-       原来「v3 · 最后编辑人 — · —」跨两行铺在行下，读起来像表格坏了。
-       先试过把「改了什么」升成第五列，但演示里种子版本内容本来就是空的，
-       两行全是「—」—— 一列全空比没有这一列更难看（q6 拍板退回四列）。
-       最后编辑人也不进表格：演示里每一行都是 admin，一列「admin」只是噪音。 */
-
-    return '<div class="vl-row gtable-row' + (r.active ? ' is-now' : '') + '" role="listitem" data-kind="stable"' +
-             ' data-ver="' + r.v + '">' +
-        '<span class="vl-v"><b>v' + esc(r.v) + '</b></span>' +
-        '<span>' + (r.active
-          ? '<span class="vl-on">' + (S.scope === 'app' ? '当前线上' : '当前版本') + '</span>'
-          : '<span class="vl-off">历史</span>') + '</span>' +
-        '<span class="vl-at">' + esc(atText) + '</span>' +
-        '<span class="vl-o">' + ops + '</span>' +
-      '</div>';
-  }
-
   /* 未入档的改动：自动保存在背后一直写，用户看不到它写过什么。
      这里只做一件事——把"上次保存快照之后攒下的改动"列出来，每条能退回。
      只对应用有意义（组件页的改动本来就少，不铺这一层）。
@@ -136,13 +51,8 @@ window.Versions = (function () {
     /* ★2026-11-02：流水条数不等于"有未保存内容"。改回原样后内容与最新快照一致，
        这些步骤已经没有可退的意义 —— 收起来，并把净零流水清掉（否则下次真改动会带着旧步数）。 */
     if (!rows.length) { box.hidden = true; return; }
-    if (!DB.hasPending('app', S.id)) {
-      DB.changesClear('app', S.id);
-      box.hidden = true;
-      return;
-    }
     box.hidden = false;
-    if (tip) tip.textContent = '（' + rows.length + ' 步）存成新版本后清零';
+    if (tip) tip.textContent = '（' + rows.length + ' 步）保存后清零';
     list.innerHTML = rows.map(function (r) {
       return '<div class="chg-row" role="listitem">' +
         '<span class="chg-t">' + esc(r.clock || '') + '</span>' +
@@ -178,26 +88,9 @@ window.Versions = (function () {
     var list = DB.versOf(S.scope, S.id);
 
     $('#owner').textContent = o ? o.name : '这一项已经不在了';
-    /* ★2026-11-02：副标题原来是 o.client —— 应用已不挂客户（一应用多家）。
-       改成"存档最新 vN"，这一页真正在说的事。
-       ★2026-11-04：授权分布只在一处说。原来副标题和下一行状态行都拼了 appAuthLine，
-       同屏两句一字不差地重复播报「授权 3 家客户（v3×2、v2×1）· 3 家待升级」。
-       现在副标题只管存档，授权分布归状态行。 */
-    var topV = S.scope === 'app' ? (DB.latestVer(S.id) || 0) : 0;
-    $('#owner-sub').textContent = o
-      ? (S.scope === 'app'
-          ? (topV ? ('存档最新 v' + topV) : '还没存过版本')
-          : (o.desc || ''))
-      : '';
-
-    var st = statusLine(list);
-    $('#now').setAttribute('data-off', st.off ? '1' : '0');
-    $('#now-t').innerHTML = st.html;
-
-    /* ★2026-11-04（m00358 拍板 q1b）：右上那颗跳转按钮整个删掉。
-       组件域原来写「去配置」（点开的是组件画布，动词说的是装配，两件事）；
-       应用域写「回到画布」——这一页是版本管理，回画布的入口是面包屑，不在这儿。
-       页面只做这一件事，就不放第二件事的入口。 */
+    /* ★2026-11-04 二改：副标题（介绍）与「当前版本 vN」状态行已按用户要求删除 ——
+       表格里的高亮行 + 状态列已经在回答"哪一版是当前"。
+       右上跳转按钮（go-config）也删了：这一页只做一件事，不放第二件事的入口。 */
 
     var rows = list.filter(function (r) {
       if (!S.kw) return true;
@@ -205,28 +98,68 @@ window.Versions = (function () {
     });
 
     var box = $('#list');
-    if (!rows.length) {
-      /* ★2026-10-31（第 2 条）：原来让用户去点「保存」，但画布页顶栏那颗按钮
-         应用侧脸上写的是「发布给客户」（app.html:70）、组件侧写的是「保存」（component.html:316）。
-         页面上找不到叫「保存」的按钮，用户只能猜 —— 这里改成那两颗按钮真实的字。 */
-      box.innerHTML = '<div class="vl-empty"><b>' + (S.kw ? '没有符合条件的版本' : '还没有版本') + '</b>' +
-        (S.kw ? '清掉搜索词，或换个版本号再试。'
-              : (S.scope === 'app'
-                  ? '在画布顶栏点「存成新版本」。'
-                  : '在画布顶栏点「保存」，这里会出现第一个版本。')) + '</div>';
-    } else {
-      /* 摘要要跟"更早的那一版"比，所以把整张表（不受搜索影响）一起传下去 */
-      box.innerHTML = rows.map(function (r) {
-        var gi = list.indexOf(r);
-        return rowOf(r);
-      }).join('');
-    }
-    var totalText = S.kw
-      ? '筛出 ' + rows.length + ' 个版本 · 共 ' + list.length + ' 个'
-      : '共 ' + list.length + ' 个版本';
+    /* ★2026-11-04 根治 C 类（_reports/根因分析-20261104.md）：
+       表头 / 列宽 / 行骨架 / 空态交给 List（assets/list.js）一处定义，
+       这一页只声明四列各自取什么、行里有什么动作。 */
+          /* ★2026-11-04 根治 C 类（_reports/根因分析-20261104.md）：
+         表头 / 列宽 / 行骨架 / 空态交给 List（assets/list.js）一处定义，
+         这一页只声明四列各自取什么、行里有什么动作。 */
+      List.render({
+        table: '.vl-table', head: '#head', body: '#list', total: '#total',
+        cols: '96px 120px 200px minmax(0,1fr)',
+        headCols: [
+          { key: 'v', label: '版本', cls: 'vl-v' },
+          { key: 'st', label: '状态' },
+          { key: 'at', label: '保存时间', cls: 'vl-at' },
+          { key: 'ops', label: '操作', cls: 'vl-o' }
+        ],
+        rows: rows,
+      /* 空态文案：让用户去点的按钮必须写页面上的真名（2026-10-31 第 2 条的教训）。 */
+      empty: function () {
+        return '<div class="vl-empty"><b>' + (S.kw ? '没有符合条件的版本' : '还没有版本') + '</b>' +
+          (S.kw ? '清掉搜索词，或换个版本号再试。'
+                : (S.scope === 'app'
+                    ? '在画布顶栏点「保存新版本并发布」。'
+                    : '在画布顶栏点「保存并发布版本」，这里会出现第一个版本。')) + '</div>';
+      },
+        rowClass: 'vl-row gtable-row',
+        rowExtra: function (r) { return r.active ? 'is-now' : ''; },
+        rowAttr: function (r) { return ' data-kind="stable" data-ver="' + r.v + '"'; },
+        cell: function (key, r) {
+          if (key === 'v') return '<b>v' + esc(r.v) + '</b>';
+          if (key === 'st') return r.active
+            ? '<span class="vl-on">当前版本</span>'
+            : '<span class="vl-off">历史版本</span>';
+          if (key === 'at') {
+            var atRaw = String(r.at || '');
+            /* 到分；老快照没有时分就只给日期，不在格子里补解释 */
+            return atRaw ? atRaw.replace(/ --:--:--$/, '').replace(/:\d{2}$/, '') : '—';
+          }
+          if (key === 'ops') {
+            var viewBtn = (S.scope === 'app')
+              ? '<a class="vl-btn is-quiet" href="app.html?id=' + encodeURIComponent(S.id) + '&v=' + r.v + '&mode=view" target="_blank" rel="noopener">查看</a>'
+              : '<a class="vl-btn is-quiet" href="component.html?id=' + encodeURIComponent(S.id) + '&v=' + r.v + '" target="_blank" rel="noopener">查看</a>';
+            /* 用户定口径（2026-11-04）：升级与恢复都只改应用版本，不动客户授权；
+               这个动作的真实行为是"拿旧版内容生成一个新版本"，按钮就叫它干的事。 */
+            return viewBtn + (r.active ? '' :
+              '<button class="vl-btn is-main" type="button" data-a="act" data-v="' + r.v + '">复制为新版本</button>');
+          }
+          return '';
+        },
+        empty: function () { return '<div class="vl-empty"><b>' + (S.kw ? '没有符合条件的版本' : '还没有版本') + '</b></div>'; },
+      });
+
+    /* ★2026-11-04（用户：「狗屎没意义的提示」）：
+       「共 5 个版本」一屏数得出来，删掉。只剩两种真需要说的：筛出几个、有没有到保留上限。 */
+    var msgs = [];
+    if (S.kw) msgs.push('筛出 ' + rows.length + ' 个版本（共 ' + list.length + ' 个）');
     var max = (window.DB && DB.MAX_VERS) || 60;
-    if (list.length >= max) totalText += ' · 最多保留 ' + max + ' 份，更早的已自动清理';
-    $('#total').textContent = totalText;
+    if (list.length >= max) msgs.push('最多保留 ' + max + ' 份，更早的已自动清理');
+    var totalEl = $('#total');
+    if (totalEl) {
+      totalEl.textContent = msgs.join(' · ');
+      if (totalEl.parentNode) totalEl.parentNode.hidden = !msgs.length;
+    }
     paintChg();
   }
 
@@ -242,7 +175,7 @@ window.Versions = (function () {
         : '没生成新版本：这台电脑写不进去，改动只在这次会话里', 'error');
       return;
     }
-    toast('已基于 v' + out.from + ' 生成 v' + out.to + ' 并上线 · v' + was + ' 保留在历史里');
+    toast('已按 v' + out.from + ' 生成 v' + out.to + ' · 客户授权版本未动');
   }
 
   function act(what, v) {
@@ -255,11 +188,16 @@ window.Versions = (function () {
     /* ★2026-11-04（m06113 需求二）：用户要的是"弹窗"，不是行内第二行字。
        文案按需求原样：来源版 / 新版本号 / 旧版仍在历史里；确认后才生成。 */
     Confirm.ask({
-      title: '生成新版本并恢复？',
+      title: '把 v' + want + ' 复制成新版本？',
       /* ★2026-11-04：原文「系统将基于 vN 版本为您生成全新的 vM 版本并发布生效」是公文腔，
          还漏了最要紧的一句 —— 客户那边看到的就是 vM。现在说人话，把「什么时候生效、谁看见」讲清。 */
-      body: '确认后按 v' + want + ' 生成新版本 v' + next + '，马上生效；客户打开应用看到的就是 v' + next + '。v' + latest + ' 留在历史里，随时能切回来。',
-      ok: '生成 v' + next + ' 并恢复',
+      /* ★2026-11-04（用户定口径）：升级与恢复都只改应用的版本存档，不动客户授权的版本。
+         原文「客户打开应用看到的就是 vN」在多客户模型下是假话 —— 每家客户各停一版，
+         一次复制不可能让所有人都变。这句必须删掉，换成"客户那边不受影响"。 */
+      body: '确认后按 v' + want + ' 的内容生成当前版本 v' + next + '。'
+          + '客户授权的版本不受影响 —— 要让客户用上 v' + next + '，到客户授权页升级。'
+          + 'v' + latest + ' 仍留在历史里。',
+      ok: '生成 v' + next,
       onOk: function () { doRestore(want); }
     });
   }

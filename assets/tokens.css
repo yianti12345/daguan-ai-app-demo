@@ -395,6 +395,17 @@
   --row-pad-x:var(--space-inline-lg);
   --row-gap:var(--space-stack-sm);
   --row-hover-bg:var(--color-state-hover);
+  /* ── 列表（2026-11-04 按真源抓取：任务中心 · 审核任务）──────────────
+     来源 http://172.26.26.61:10612/admin/#/Expert/TaskCenter/History，
+     实测：表头高 39、底 rgb(242,243,245)、字重 600；数据行高 69；
+     筛选控件高 30、描边 rgb(193,199,205)、圆角 4。
+     这三组数以前是本仓自己拍的（48 / 54 / 无描边），和真系统差一档 ——
+     用户原话：「真的操作及列表样式呢」，指的就是这个差。 */
+  --table-head-bg:#F2F3F5;
+  --table-head-h:39px;
+  --table-row-h:69px;
+  --field-h:30px;
+  --field-border:var(--color-border-control);
 
   /* ── 2026-10-29 T1：跨文件引用的组件令牌上移（原声明在组件 CSS 里，定义源看不见）──
      病：token-audit 的定义源只认本文件，令牌声明写在组件 CSS 里＝体系里"不存在"，

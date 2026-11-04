@@ -4,21 +4,16 @@
 <meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>历史版本</title>
+<title>版本管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=2be9ca5a">
-<link rel="stylesheet" href="assets/xiaozhi.css?v=7d80cd0e">
+<link rel="stylesheet" href="assets/tokens.css?v=5f9508ab">
+<link rel="stylesheet" href="assets/sys.css?v=f5a82fb2">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=0d6f9cd2">
 <style>
 /* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
 .page-hd{margin:0 0 4px}
 .page-hd h1{margin:0;font-size:var(--font-size-display);font-weight:600;line-height:var(--leading-display);color:var(--color-text-primary)}
 .vl-who{margin:0;font-size:var(--font-size-body);color:var(--color-text-secondary)}
-/* 状态行：这一屏最重要的那句话，单独一行、字号比正文大一档 */
-.vl-now{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:var(--font-size-body);color:var(--color-text-secondary)}
-.vl-now b{color:var(--color-text-primary);font-weight:600}
-.vl-now .dot{width:6px;height:6px;border-radius:50%;background:var(--color-success)}
-.vl-now[data-off="1"] .dot{background:var(--color-text-muted)}
 /* 工具条：页级一行，照平台标准列表（员工管理 / 操作日志）——主操作在左、筛选在右。
    这一页没有"新建"这种主操作，只剩一个搜索框；靠右对齐，不要在左边缘落一个孤零零的小框。 */
 .vl-bar{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:4px 0 12px}
@@ -36,18 +31,21 @@
    页面里再写 display:grid 或 padding-inline 去"修"对齐，就是把同源拆回两份，T2b 会复发。
    ★ 2026-11-04（m00358 拍板 q2b）：去掉卡片外壳与行下第二行摘要，一行只装一行的东西，
    和授权总览是同一套壳。第五列「变更」试过又退回（q6）：种子版本内容为空，整列全是「—」。 */
-.vl-table{--gt-cols:96px 120px 200px minmax(0,1fr)}
-.vl-head{height:48px;font-weight:500;color:var(--color-text-secondary)}
+.vl-head{color:var(--color-text-secondary)}
 .vl-head span:last-child{text-align:right}
-.vl-row{min-height:54px;font-size:var(--font-size-body)}
+.vl-row{font-size:var(--font-size-body)}
 .vl-row.is-now,
 .vl-row.is-now:hover{background:var(--color-brand-surface)}
 .vl-v b{font-weight:500;color:var(--color-text-primary);font-variant-numeric:tabular-nums}
 .vl-v{display:flex;align-items:baseline;gap:8px}
-.vl-on,.vl-off{display:inline-flex;align-items:center;gap:6px}
-.vl-on{color:var(--color-success-ink)}
-.vl-on::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--color-success)}
-.vl-off{color:var(--color-text-tertiary)}
+/* ★2026-11-04 按真源改：状态是"浅底胶囊"，不是"一个点加一句灰字"。
+   真源实测：圆角 4、字号 12、内距 1px 6px、橙底 12% 透明度。
+   我们对应两档：能用=绿、归档=中性灰（真源"暂无结果"那一档）。 */
+.vl-on,.vl-off{display:inline-flex;align-items:center;gap:4px;height:20px;padding:1px 6px;
+  border-radius:var(--radius-xs);font-size:var(--font-size-caption);line-height:1;white-space:nowrap}
+.vl-on{color:var(--color-success-ink);background:color-mix(in srgb,var(--color-success) 12%,transparent)}
+.vl-on::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--color-success);flex:none}
+.vl-off{color:var(--color-text-tertiary);background:color-mix(in srgb,var(--color-text-body) 6%,transparent)}
 .vl-at{color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
 .vl-o{display:flex;flex-wrap:wrap;align-items:center;gap:6px;justify-content:flex-end}
 .vl-btn{
@@ -67,6 +65,8 @@
 /* 行内确认块（.vl-cf）2026-11-04 删除：确认已经改成弹窗（Confirm.ask），行里不再铺第二行。
    留着就是一段没人生成的死样式，deadcss 门禁会红。 */
 .vl-foot{display:flex;align-items:center;gap:12px;font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+/* [hidden] 的浏览器默认样式会被上面这条 display:flex 盖掉 —— 必须显式关一次 */
+.vl-foot[hidden]{display:none}
 .vl-empty{padding:56px 16px;text-align:center;color:var(--color-text-tertiary);font-size:var(--font-size-body)}
 .vl-empty b{display:block;color:var(--color-text-primary);font-size:var(--font-size-heading);font-weight:600;margin-bottom:6px}
 </style>
@@ -84,7 +84,7 @@
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
         <a id="crumb-mid" href="apps.html">应用管理</a>
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
-        <b>历史版本</b>
+        <b>版本管理</b>
       </nav>
       <div class="me"><span>admin</span><u>ad</u></div>
     </header>
@@ -92,9 +92,7 @@
     <main class="main">
       <div class="page-hd">
         <h1 id="owner">—</h1>
-        <p class="vl-who" id="owner-sub"></p>
       </div>
-      <p class="vl-now" id="now"><span class="dot" aria-hidden="true"></span><span id="now-t"></span></p>
 
       <div class="vl-bar">
         <label class="field w180">
@@ -121,10 +119,11 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=dc228b2d"></script>
-<script src="assets/ui-kit.js?v=d6b1c479"></script>
-<script src="assets/confirm.js?v=ad0ffde9"></script>
-<script src="assets/versions.js?v=045d435b"></script>
+<script src="assets/data.js?v=041b71e0"></script>
+<script src="assets/ui-kit.js?v=f2e961b1"></script>
+<script src="assets/confirm.js?v=40dabc1f"></script>
+<script src="assets/list.js?v=090163a5"></script>
+<script src="assets/versions.js?v=2d04d47d"></script>
 <script>
 /* 侧栏当前项跟着 scope 走：从应用进来的，高亮「应用管理」；从组件库进来的，高亮「组件库」。
    壳是 shell.js 生成的，所以要在它之前把 data-active 改好。
@@ -138,10 +137,10 @@
   mid.setAttribute('href', scope === 'comp' ? 'components.html' : 'apps.html');
 })();
 </script>
-<script src="assets/shell.js?v=1d57161f"></script>
+<script src="assets/shell.js?v=f61ac468"></script>
 <div id="xz-host"></div>
-<script src="assets/drag.js?v=cc6ccb06"></script>
-<script src="assets/xiaozhi.js?v=d1a6d604"></script>
+<script src="assets/drag.js?v=6643e0b7"></script>
+<script src="assets/xiaozhi.js?v=b2b2ffef"></script>
 <script>Versions.boot();</script>
 </body>
 </html>

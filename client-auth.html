@@ -6,9 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>授权总览 · AI 应用方案</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=2be9ca5a">
-<link rel="stylesheet" href="assets/client-auth.css?v=c1e6bff1">
+<link rel="stylesheet" href="assets/tokens.css?v=5f9508ab">
+<link rel="stylesheet" href="assets/sys.css?v=f5a82fb2">
+<link rel="stylesheet" href="assets/client-auth.css?v=57823eef">
 </head>
 <body>
 
@@ -46,13 +46,18 @@
         <div class="au-bar">
           <!-- 工具栏照平台标准（员工管理页）：主按钮在左，搜索在右。
                最新版本是这张表的"基准"，跟搜索一起靠右，不单独占一行。 -->
-          <button class="btn primary" type="button" id="act-add">新增授权</button>
-          <button class="btn" type="button" id="act-add-client">新增客户</button>
+          <button class="btn primary" type="button" id="act-add">新增客户授权</button>
           <!-- ★2026-11-03（m05719）：多选后批量升级。没选时是「一键升级（0）」且禁用，
                选 2 个可升级的客户就变「一键升级（2）」。 -->
-          <button class="btn" type="button" id="act-batch" disabled>一键升级（<span id="batch-n">0</span>）</button>
+          <button class="btn" type="button" id="act-batch" hidden>一键升级<span id="batch-n-wrap" hidden>（<span id="batch-n">0</span>）</span></button>
           <div class="right">
             <span class="au-latest" id="au-latest" hidden>最新版本 <b>—</b></span>
+            <label class="field w120">
+              <!-- ★2026-11-04（用户）：按版本筛客户。选项由 client-auth.js 按最新版本现填。 -->
+              <select id="f-ver" aria-label="按授权版本筛选">
+                <option value="">全部版本</option>
+              </select>
+            </label>
             <label class="field w180">
               <input id="kw" placeholder="搜客户或租户 ID" autocomplete="off">
             </label>
@@ -110,7 +115,7 @@
 <div class="mask" id="mask" data-open="false">
   <div class="panel au-dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
     <div class="p-hd">
-      <b id="dlg-title">新增授权</b>
+      <b id="dlg-title">新增客户授权</b>
       <button class="p-x" type="button" id="dlg-x" aria-label="关闭">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
@@ -145,16 +150,20 @@
       </div>
     </div>
     <div class="p-ft au-ft">
+      <!-- 2026-11-04：工具条上原来并排两个"新增"（新增授权 / 新增客户），真源这一页只有一个。
+           新建客户挪到底栏左侧 —— 它是个次要出口，不该和主操作抢位置。 -->
+      <button class="btn ghost au-ft-left" type="button" id="fm-add-client">新建客户</button>
       <button class="btn ghost" type="button" id="dlg-cancel">取消</button>
       <button class="btn primary" type="button" id="dlg-ok">确定授权</button>
     </div>
   </div>
 </div>
 
-<script src="assets/data.js?v=dc228b2d"></script>
-<script src="assets/ui-kit.js?v=d6b1c479"></script>
-<script src="assets/confirm.js?v=ad0ffde9"></script>
-<script src="assets/shell.js?v=1d57161f"></script>
-<script src="assets/client-auth.js?v=2543c0be"></script>
+<script src="assets/data.js?v=041b71e0"></script>
+<script src="assets/ui-kit.js?v=f2e961b1"></script>
+<script src="assets/confirm.js?v=40dabc1f"></script>
+<script src="assets/list.js?v=090163a5"></script>
+<script src="assets/shell.js?v=f61ac468"></script>
+<script src="assets/client-auth.js?v=9249ba81"></script>
 </body>
 </html>

@@ -157,8 +157,12 @@ a:hover{color:var(--color-brand-hover)}
 .bar-main .right{flex:1 1 auto;margin-left:0}
 .bar-main .dl-btn{margin-left:auto}
 .field{
-  height:var(--input-height);display:flex;align-items:center;gap:var(--space-8);padding:0 var(--input-pad-x);
-  border:0;border-radius:var(--input-radius);background:var(--surface-sunken-2);font-size:var(--font-size-body);color:var(--color-text-secondary);
+  /* ★2026-11-04 按真源改（任务中心筛选控件实测）：白底 + 1px 描边 rgb(193,199,205) +
+     圆角 4 + 高 30。原来是"无边框 + 浅灰底"的胶囊感 —— 两套输入框放在同一个产品里，
+     一眼就看出不是一个系统。描边色走 --field-border，不在页面里写死。 */
+  height:var(--field-h);display:flex;align-items:center;gap:var(--space-8);padding:0 var(--input-pad-x);
+  border:1px solid var(--field-border);border-radius:var(--radius-xs);background:var(--surface-page);
+  font-size:var(--font-size-body);color:var(--color-text-body);
 }
 .field:focus-within{border-color:var(--color-brand);box-shadow:0 0 0 2px var(--color-focus-halo)}
 .field input{border:0;outline:0;background:transparent;width:100%;font:inherit;
@@ -171,7 +175,15 @@ a:hover{color:var(--color-brand-hover)}
    颜色必须一致。上一版输入框 .9、下拉 .65，两个控件挨着，深浅能看出来。 */
 .field select{color:var(--color-text-body)}
 .field input::placeholder{color:var(--color-text-muted)}
-.field.w180{width:180px}
+.field.w120{width:120px}
+.w180{width:180px}
+/* ★2026-11-04（用户：「组件要统一，token 令牌，映射」）：
+   下拉的样式原来写在每页的 style="" 里（apps.html 两处、授权页没有），
+   一个控件三份写法。统一收到这里：页面只写 <label class="field"><select>。 */
+.field select{
+  flex:1;min-width:0;border:0;background:transparent;outline:0;font:inherit;
+  color:var(--color-text-body);cursor:pointer;padding:0;
+}
 
 .field.w220{width:260px}
 .icon-btn{width:var(--size-control-h);height:var(--size-control-h);border:0;background:var(--surface-sunken-2);border-radius:var(--radius-control);display:grid;place-items:center;color:var(--color-text-secondary);transition:background .16s,border-color .16s,color .16s}
@@ -353,11 +365,18 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 }
 .gtable-head{
   position: sticky; top: 0; z-index: 2;
+  /* ★2026-11-04 按真源改：表头高 39、底 #F2F3F5、字重 600（原来是 48 + 一层几乎看不出
+     的浅底 + 500）。真源里表头是"一条明显的灰带"，我们原来那条带压白只有 5 级差，
+     扫一屏分不出哪行是表头。 */
+  min-height: var(--table-head-h);
+  padding-block: 10px;
+  line-height: 19px;              /* 10+19+10 = 39，与真源表头等高 */
   border-bottom: 1px solid var(--color-border-hairline);
-  background: var(--surface-subtle);
+  background: var(--table-head-bg);
+  font-weight: 600;
 }
 .gtable-body{border-bottom: 1px solid var(--color-border-hairline)}
-.gtable-row{border-bottom: 1px solid var(--color-border-hairline)}
+.gtable-row{min-height: var(--table-row-h); border-bottom: 1px solid var(--color-border-hairline)}
 .gtable-row:last-child{border-bottom: 0}
 .gtable-row:hover{background: var(--color-state-hover)}
 .gtable-foot{padding: 14px var(--gt-pad-x)}

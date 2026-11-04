@@ -23,6 +23,8 @@
     return d.getFullYear() + '-' + (m.length < 2 ? '0' + m : m) + '-' + (day.length < 2 ? '0' + day : day);
   }
   function today() { return iso(new Date()); }
+  /* 授权时间到分就够（真源列表里也是分）——秒是数据库字段，摆给人看只会让列变宽。 */
+  function fmtAt(v) { return v ? String(v).replace(/:\d{2}$/, '') : '—'; }
 
   var tTimer = null;
   function toast(msg, kind) {
@@ -39,6 +41,10 @@
   var qs = new URLSearchParams(location.search);
   var APP_ID = qs.get('id') || qs.get('app') || '';
   var KW = '';
+/* ★2026-11-04（用户：「客户授权页面可以有个下拉筛选版本，筛选哪个客户有哪些版本」）：
+   版本筛选是这一页的事，不往版本管理页塞客户名单。'' = 全部。 */
+var VER = '';
+function byVer(r) { return !VER || String(r.version) === VER; }
   /* 批量升级的选中态：按 authId 记，重画不丢；筛选/升级后自动剔除失效项。 */
   var sel = {};
 
@@ -56,10 +62,11 @@
           canceled: (x.status || '已授权') !== '已授权', version: x.version || 0,
           latest: x.latest, behind: !!x.behind, authAt: x.authAt, expireAt: x.expireAt
         };
-      });
-      return KW ? all.filter(function (r) {
+      }).filter(function (x) { return (x.status || '已授权') === '已授权'; });   /* 同上：列表只列已授权 */
+      var vb = all.filter(byVer);
+      return KW ? vb.filter(function (r) {
         return (r.clientName + ' ' + r.appName + ' ' + r.tenantId).toLowerCase().indexOf(KW.toLowerCase()) >= 0;
-      }) : all;
+      }) : vb;
     }
     var top = DB.latestVer(APP_ID);
     var out = (DB.clients() || []).map(function (c) {
@@ -75,10 +82,17 @@
         latest: top, behind: !!rec && rec.status === '已授权' && (rec.version || 0) < top,
         authAt: rec ? rec.authAt : '', expireAt: rec ? rec.expireAt : ''
       };
+    }).filter(function (r) {
+      /* ★2026-11-04（用户：「刚开始都是空的，需要新增授权啊，列表里边都是已经配置好授权的客户」）：
+         原来这里是拿「客户池」当「授权表」铺 —— 11 家客户全占一行，没授权的显示「未授权」+「授权」按钮。
+         列表只回答"谁被授权了"；"还有谁没授权"由「新增客户授权」弹窗回答。
+         已取消的授权也不在这里出现 —— 取消即从此表消失，回到弹窗的可选池。 */
+      return r.rec && r.status === '已授权';
     });
-    if (!KW) return out;
+    var vb = out.filter(byVer);
+    if (!KW) return vb;
     var k = KW.toLowerCase();
-    return out.filter(function (r) {
+    return vb.filter(function (r) {
       return (r.clientName + ' ' + r.tenantId + ' ' + (r.version ? 'v' + r.version : '未授权')).toLowerCase().indexOf(k) >= 0;
     });
   }
@@ -106,7 +120,24 @@
     toast(clEditing ? '已保存「' + r.client.name + '」' : '已新增客户「' + r.client.name + '」');
   }
 
+  /* ★2026-11-04：版本下拉的选项按"最新版本"现填，不写死在 HTML 里 ——
+     版本涨到 v9 时这里自动跟着变；当前选中项在重绘后保留。 */
+  function paintVerOptions() {
+    var el = $('#f-ver');
+    if (!el) return;
+    var top = DB.latestVer(APP_ID) || 0;
+    var want = [''].concat(top ? Array.apply(null, { length: top }).map(function (_, i) { return String(top - i); }) : []);
+    var now = el.value;
+    if (el.dataset.fill === want.join(',') ) { el.value = now; return; }
+    el.innerHTML = want.map(function (v) {
+      return '<option value="' + v + '">' + (v ? 'v' + v : '全部版本') + '</option>';
+    }).join('');
+    el.dataset.fill = want.join(',');
+    el.value = want.indexOf(now) >= 0 ? now : '';
+  }
+
   function paint() {
+    paintVerOptions();
     var pgTitle = $('#pg-title'), latestBox = $('#au-latest');
     var crumbApp = $('#crumb-app'), crumbPage = $('#crumb-page'), crumbSep2 = $('#crumb-sep2');
     var addBtn = $('#act-add'), addC = $('#act-add-client'), kwEl = $('#kw');
@@ -139,7 +170,7 @@
       }
       if (crumbSep2) crumbSep2.hidden = false;
       if (crumbPage) crumbPage.textContent = '客户授权';
-      if (addBtn) addBtn.textContent = '批量授权';
+      if (addBtn) addBtn.textContent = '新增客户授权';
       if (addC) addC.hidden = false;
       if (kwEl) kwEl.placeholder = '搜客户或租户 ID';
       var topV = app ? DB.latestVer(APP_ID) : 0;
@@ -172,25 +203,18 @@
       return;
     }
 
-    if (!list.length) {
-      var emptyMsg = APP_ID
-        ? (KW ? '没有匹配「' + esc(KW) + '」的客户' : '还没有客户，先「新增客户」')
-        : (KW ? '没有匹配「' + esc(KW) + '」的授权' : '还没有任何授权');
-      box.innerHTML = '<p class="au-empty">' + emptyMsg + '</p>';
-      if (total) total.textContent = '';
-      var pg0 = $('#pager'); if (pg0) pg0.innerHTML = '';
-      syncBatch();
-      return;
-    }
+    /* 空态也走 List.render —— 列宽由 spec 设置；绕过它的话表头没有列定义，会塌成一列。
+       （2026-11-04 17:55 用户截图抓到的就是这个：CSS 里的 --gt-cols 已删，空态时 spec 没跑。） */
+    var emptyHtml = !list.length ? (KW
+      ? '<p class="au-empty">没有匹配「' + esc(KW) + '」的客户</p>'
+      : (APP_ID ? '<p class="au-empty">还没有客户授权</p>' : '<p class="au-empty">还没有任何授权</p>')) : '';
 
     function clientOps(r) {
-      if (!r.rec) return '<button class="au-btn is-main" type="button" data-act="grant" data-cid="' + esc(r.clientId) + '">授权</button>';
-      if (r.canceled) return '<button class="au-btn is-main" type="button" data-act="restore" data-id="' + esc(r.authId) + '">恢复授权</button>' +
-        '<button class="au-btn is-danger" type="button" data-act="remove" data-id="' + esc(r.authId) + '">删除记录</button>';
-      /* ★2026-11-02：删除只出现在**已取消**的行上（对齐真实系统：已授权时"删除"是隐藏的）。
-         要先取消，才谈删除。 */
+      /* ★2026-11-04（用户：「取消授权，如果客户不是最新版本，还有个升级版本操作」）：
+         列表只出已授权行，所以这里就两个动作 —— 落后最新版的给「升级版本」，任何时候都能「取消授权」。
+         「授权」「恢复」「删除记录」三个按钮随「未授权行」一起退场：未授权的客户不在这一页出现。 */
       return (r.behind ? '<button class="au-btn is-main" type="button" data-act="upgrade" data-id="' + esc(r.authId) + '"' +
-          ' title="「' + esc(r.clientName) + '」会从 v' + r.version + ' 换成 v' + r.latest + '，立刻生效">升级到 v' + r.latest + '</button>' : '') +
+          ' title="升到 v' + r.latest + '（现在是 v' + r.version + '），立刻生效">升级版本</button>' : '') +
         '<button class="au-btn" type="button" data-act="revoke" data-id="' + esc(r.authId) + '">取消授权</button>';
     }
 
@@ -199,34 +223,64 @@
     list.forEach(function (r) { if (r.behind) live[r.authId] = 1; });
     Object.keys(sel).forEach(function (id) { if (!live[id]) delete sel[id]; });
 
-    box.innerHTML = list.map(function (r) {
-      var expired = r.expireAt && r.expireAt < today();
-      var pick = r.behind
-        ? '<span class="au-sel"><input type="checkbox" class="au-check" data-pick="' + esc(r.authId) + '"' +
-            (sel[r.authId] ? ' checked' : '') +
-            ' aria-label="选择 ' + esc(r.clientName) + '，从 v' + r.version + ' 升级到 v' + r.latest + '"></span>'
-        : '<span class="au-sel"></span>';
-      return '<div class="au-row gtable-row' + (r.behind && sel[r.authId] ? ' is-selected' : '') + '" data-cid="' + esc(r.clientId) + '"' +
-          (r.authId ? ' data-auth="' + esc(r.authId) + '"' : '') + ' data-status="' + esc(r.status) + '">' +
-        pick +
-        '<span class="au-c"><b title="' + esc(r.clientName) + '">' + esc(r.clientName) + '</b>' +
-          (r.canceled ? '<span class="au-tag">已取消</span>' : '') + '</span>' +
-        '<span class="au-id">' + esc(r.tenantId || '—') + '</span>' +
-        '<span class="au-app" title="' + esc(r.appName) + '">' + esc(r.appName) + '</span>' +
-        '<span class="au-ver">' + (r.rec ? '<b>v' + r.version + '</b>' : '<span class="au-muted">未授权</span>') + '</span>' +
-        '<span class="au-at">' + esc(r.authAt || '—') + '</span>' +
-        '<span class="au-exp"' + (expired ? ' data-expired="1"' : '') + '>' + esc(r.expireAt || '—') + '</span>' +
-        '<span class="au-o">' + clientOps(r) +
-          '<button class="au-btn" type="button" data-act="edit-client" data-cid="' + esc(r.clientId) + '">编辑客户</button>' +
-        '</span>' +
-      '</div>';
-    }).join('');
-    syncBatch();
+    /* ★2026-11-04 根治 C 类（_reports/根因分析-20261104.md）：
+       表头、列宽、行骨架、空态不再在这一页拼 —— 交给 List（assets/list.js）一处定义。
+       这一页只声明"有哪些列、每列取什么、行里有什么动作"。
+       client-auth.css 里的 --gt-cols 和 is-sub 隐藏第 4 列的规则已一并删除，
+       否则会与这里声明的列组合打架（那条 nth-child(4) 会误伤 7 列版的「授权版本」）。 */
+    var SUB = !!APP_ID;
+    var headCols = [
+      { key: 'pick', cls: 'au-sel' },
+      { key: 'client', label: '客户', cls: 'au-c' },
+      { key: 'tenant', label: '租户 ID', cls: 'au-id' }
+    ].concat(SUB ? [] : [{ key: 'app', label: '应用', cls: 'au-app' }]).concat([
+      { key: 'ver', label: '授权版本', cls: 'au-ver' },
+      { key: 'at', label: '授权时间', cls: 'au-at' },
+      { key: 'exp', label: '有效期', cls: 'au-exp' },
+      { key: 'ops', label: '操作', cls: 'au-o' }
+    ]);
 
-    /* 表尾照平台标准：左边「第 1-N 条/共 N 条」，右边当前页 + 每页条数。 */
-    if (total) total.textContent = '第 1-' + list.length + ' 条/共 ' + list.length + ' 条';
-    var pager = $('#pager');
-    if (pager) pager.innerHTML = '<span class="pg-cur">1</span><span class="pg-size">10 条/页</span>';
+    List.render({
+      table: '.au-table', head: '#head', body: '#list', total: '#total',
+      cols: SUB
+        ? '40px minmax(0,1fr) 220px 80px 150px 108px 240px'
+        : '40px 170px 190px minmax(0,1fr) 80px 150px 108px 240px',
+      headCols: headCols,
+      rows: list,
+      empty: function () { return emptyHtml || '<p class="au-empty">还没有客户授权</p>'; },
+      rowClass: 'au-row gtable-row',
+      rowExtra: function (r) { return (r.behind && sel[r.authId]) ? 'is-selected' : ''; },
+      rowAttr: function (r) {
+        return ' data-cid="' + esc(r.clientId) + '"' +
+          (r.authId ? ' data-auth="' + esc(r.authId) + '"' : '') +
+          ' data-status="' + esc(r.status) + '"';
+      },
+      cellAttr: function (key, r) {
+        return (key === 'exp' && r.expireAt && r.expireAt < today()) ? ' data-expired="1"' : '';
+      },
+      cell: function (key, r) {
+        if (key === 'pick') return r.behind
+          ? '<input type="checkbox" class="au-check" data-pick="' + esc(r.authId) + '"' +
+            (sel[r.authId] ? ' checked' : '') +
+            ' aria-label="选择 ' + esc(r.clientName) + '，从 v' + r.version + ' 升级到 v' + r.latest + '">'
+          : '';
+        if (key === 'client') return '<b title="' + esc(r.clientName) + '">' + esc(r.clientName) + '</b>';
+        if (key === 'tenant') return esc(r.tenantId || '—');
+        if (key === 'app') return esc(r.appName);
+        if (key === 'ver') return '<b>v' + r.version + '</b>';
+        if (key === 'at') return esc(fmtAt(r.authAt));
+        if (key === 'exp') return esc(r.expireAt || '—');
+        if (key === 'ops') return clientOps(r) +
+          '<button class="au-btn" type="button" data-act="edit-client" data-cid="' + esc(r.clientId) + '">编辑客户</button>';
+        return '';
+      },
+      foot: function (rs) { return '第 1-' + rs.length + ' 条/共 ' + rs.length + ' 条'; },
+      after: function () {
+        syncBatch();
+        var pg = $('#pager');
+        if (pg) pg.innerHTML = '<span class="pg-cur">1</span><span class="pg-size">10 条/页</span>';
+      }
+    });
   }
 
   /* ── 批量选择 ────────────────────────────────────────────────
@@ -240,8 +294,14 @@
     var can = rows().filter(function (r) { return r.behind; });
     var picked = pickedRows();
     if (nEl) nEl.textContent = String(picked.length);
-    if (btn) btn.disabled = !picked.length;
+    /* ★2026-11-04（用户：「狗屎没意义的提示」）：0 家可升级时这颗按钮整颗不出现，
+       原来常驻一个禁用的「一键升级（0）」，等于在页面上摆一个永远点不动的东西。 */
+    if (btn) { btn.disabled = !picked.length; btn.hidden = !can.length; }
+    var nWrap = $('#batch-n-wrap');
+    if (nWrap) nWrap.hidden = !picked.length;
     if (all) {
+      /* 没有可升级的行时，表头那颗全选框没有任何作用 —— 藏掉，不要让一列空勾选框占着 40px。 */
+      if (all.parentNode) all.parentNode.hidden = !can.length;
       all.disabled = !can.length;
       all.checked = !!can.length && picked.length === can.length;
       all.indeterminate = picked.length > 0 && picked.length < can.length;
@@ -358,6 +418,10 @@
        要跨应用授权，走「授权总览」。 */
     selApp.disabled = !!APP_ID;
     selApp.classList.toggle('is-locked', !!APP_ID);
+    /* 2026-11-04：在这个应用的授权页里，弹窗再列一次"应用"是重复 —— 面包屑和标题已经说了对象。
+       只在「授权总览」跨应用授权时才需要选应用。 */
+    var appRow = selApp.closest ? selApp.closest('.fm-row') : null;
+    if (appRow) appRow.hidden = !!APP_ID;
     paintClientPick();
     /* 行内「授权」：把这家的勾先打上，弹窗仍可改主意（有效期、要不要多选几家）。 */
     if (presetCid) {
@@ -376,22 +440,33 @@
     if (!box) return;
     var latest = DB.latestVer(appId);
     var note = $('#fm-ver-note');
+    /* 2026-11-04：原来是「本次授权记 v5（当前最新版本）—— 版本不在这里选，升级也默认取最新」，
+       半句都是解释。改成只报那个值：授权记的是哪一版。没有版本时才说要先存一版。 */
     if (note) note.innerHTML = latest
-      ? '本次授权记 <b>v' + latest + '</b>（当前最新版本）—— 版本不在这里选，升级也默认取最新'
-      : '这个应用还没有版本，先去画布「存成新版本」';
-    var clients = DB.clients() || [];
+      ? '<b>v' + latest + '</b>'
+      : '这个应用还没有版本，先去画布存一版';
+    /* ★2026-11-04（用户：「列表里边都是已经配置好授权的客户」）：
+       已经授权的客户在这一页的列表里，不该在弹窗里再出现一次（原来会出现、只是置灰勾不上）——
+       弹窗只回答"还能授给谁"。一家都没有可选时，直接说清楚。 */
+    var clients = (DB.clients() || []).filter(function (c) {
+      var rec = DB.authOf(appId, c.id);
+      return !(rec && rec.status === '已授权');
+    });
+    if (!(DB.clients() || []).length) {
+      box.innerHTML = '<p class="fm-hint">还没有客户，先在列表上方「编辑客户」里新增。</p>';
+      return;
+    }
     if (!clients.length) {
-      box.innerHTML = '<p class="fm-hint">还没有客户，先在上面新增客户。</p>';
+      box.innerHTML = '<p class="fm-hint">这个应用的客户都已授权，没有可新增的了。</p>';
       return;
     }
     box.innerHTML = clients.map(function (c) {
       var rec = DB.authOf(appId, c.id);
-      var on = rec && rec.status === '已授权';
-      return '<label class="fm-client' + (on ? ' is-on' : '') + '">' +
-        '<input type="checkbox" name="fm-client" value="' + esc(c.id) + '"' + (on ? ' disabled' : '') + '>' +
+      return '<label class="fm-client">' +
+        '<input type="checkbox" name="fm-client" value="' + esc(c.id) + '">' +
         '<span class="fm-client-name">' + esc(c.name) + '</span>' +
         '<span class="fm-client-id">' + esc(c.tenantId || '—') + '</span>' +
-        '<span class="fm-client-state">' + (on ? '已授权' : (rec ? '已取消' : '')) + '</span>' +
+        '<span class="fm-client-state">' + (rec ? '已取消，再授即恢复' : '') + '</span>' +
       '</label>';
     }).join('');
   }
@@ -441,6 +516,8 @@
 
     var kw = $('#kw');
     if (kw) kw.addEventListener('input', function () { KW = kw.value.trim(); paint(); });
+var verEl = $('#f-ver');
+if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; paint(); });
 
     var batch = $('#act-batch');
     if (batch) batch.addEventListener('click', batchUpgrade);
@@ -465,6 +542,9 @@
       }
       add.addEventListener('click', openDlg);
     }
+    /* 弹窗底栏的「新建客户」：关掉授权弹窗，打开客户弹窗；存完重新 paint 会带回这里的数据。 */
+    var nc = $('#fm-add-client');
+    if (nc) nc.addEventListener('click', function () { closeDlg(); openClient(''); });
     var x = $('#dlg-x'), c = $('#dlg-cancel'), ok = $('#dlg-ok');
     if (x) x.addEventListener('click', closeDlg);
     if (c) c.addEventListener('click', closeDlg);
