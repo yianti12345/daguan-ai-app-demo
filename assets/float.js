@@ -120,19 +120,8 @@
         var ta = el('textarea', 'fk-ta', { id: 'fk-input', rows: '1', placeholder: dlg.placeholder || '说要改什么' });
         var send = el('button', 'fk-send', { id: 'fk-send', type: 'button', 'aria-label': '发送', 'data-ready': 'false' });
         send.innerHTML = ICON.send;
-        /* ★2026-11-04（m06113 需求三）：语音双模式。
-           语音确认＝转成文字后停住，等人点发送；免确认＝静默判停后直接发。
-           ★2026-11-04 再改（用户）：「实在不行可以就是显示当前状态的名称，
-             然后增加一个切换的图标也行的，这样省一半的空间了是不是」——
-           收成一枚窄胶囊：左边当前模式名，右边换向图标；点整颗切换，悬浮给完整解释。 */
-        var vmode = el('button', 'fk-vmode', {
-          id: 'fk-vmode', type: 'button', 'data-mode': 'confirm', 'aria-pressed': 'false',
-          'aria-label': '语音发送方式：当前转文字，点一下切到直接发'
-        });
-        vmode.innerHTML = '<span class="fk-vmode-tx">转文字</span>'
-          + '<svg class="fk-vmode-ic" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24"'
-          + ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-          + '<path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>';
+        /* 2026-11-04 用户判定语音模式切换不好用，整颗按钮撤掉：
+           语音只保留「说完转成文字 → 人确认点发送」这一种行为。 */
         var mic = el('button', 'fk-mic', {
           id: 'fk-mic', type: 'button', 'data-st': '', 'aria-label': '按下说话', 'aria-pressed': 'false', title: '按下说话'
         });
@@ -172,13 +161,13 @@
         hist.appendChild(list); hist.appendChild(hd);
         /* ★2026-11-03（m05651）：历史入口从输入条左侧的时钟图标移到上方
            「历史对话」文字，和「展开」并排；输入条左侧不再放第二个历史入口。 */
-        bar.appendChild(grip); bar.appendChild(ta); bar.appendChild(vmode); bar.appendChild(mic); bar.appendChild(send);
+        bar.appendChild(grip); bar.appendChild(ta); bar.appendChild(mic); bar.appendChild(send);
         /* ★2026-11-04 附件：回形针占输入条里一个 28px 的横向槽位，不增高（这条 bar 净增高 0 是硬约束）。
            芯片区放在输入条上方，没选文件时 display:none，不占任何高度。 */
         var attBar = document.createElement('div');
         attBar.className = 'uik-att-bar';
         var att = UIK.Attach.create(attBar);
-        bar.insertBefore(att.button, vmode);
+        bar.insertBefore(att.button, mic);
         att.onChange(sync);
         dock.appendChild(hist); dock.appendChild(attBar); dock.appendChild(bar);
         document.body.appendChild(dock);
@@ -567,31 +556,10 @@
       /* 「历史对话」是历史列表入口；「展开/收起」才是面板开合。两件事不再挤在一个按钮里。 */
       histBtn.addEventListener('click', toggleHist);
 
-        /* ── 语音（2026-11-04 m06113 需求三）────────────────────────
-           两种模式共用一条录音/识别链路，区别只在识别出文字之后：
-           confirm 停住等发送；auto 直接 fire()。录音本身也有静默判停，
-           免确认模式才真的"说完就发"，而不是还要再点一下麦克风。 */
-        var VOICE_KEY = 'ifas90:voiceMode';
+        /* ── 语音（2026-11-04 统一成一种行为）────────────────────────
+           识别结果只做一件事：转成文字落进输入框，等人确认再点发送。
+           模式切换与自动发送已按用户要求撤掉，不再写 localStorage。 */
         function say(msg) { try { if (typeof window.hint === 'function') window.hint(msg, { ms: 5000 }); } catch (e) {} }
-        function vmodeGet() {
-          try { return localStorage.getItem(VOICE_KEY) === 'auto' ? 'auto' : 'confirm'; } catch (e) { return 'confirm'; }
-        }
-        function vmodePaint() {
-          var m = vmodeGet(), tx = vmode.querySelector('.fk-vmode-tx');
-          vmode.setAttribute('data-mode', m);
-          vmode.setAttribute('aria-pressed', m === 'auto' ? 'true' : 'false');
-          if (tx) tx.textContent = m === 'auto' ? '直接发' : '转文字';
-          vmode.setAttribute('aria-label', m === 'auto'
-            ? '语音发送方式：当前直接发，点一下切到转文字'
-            : '语音发送方式：当前转文字，点一下切到直接发');
-          vmode.setAttribute('data-tip', m === 'auto'
-            ? '当前：直接发 —— 说完停顿一下就直接发出去。点一下改成「转文字」：转成文字后等你点发送。'
-            : '当前：转文字 —— 说完先转成文字，等你点发送再发。点一下改成「直接发」：说完停顿一下就发出去。');
-        }
-        vmode.addEventListener('click', function () {
-          try { localStorage.setItem(VOICE_KEY, vmodeGet() === 'auto' ? 'confirm' : 'auto'); } catch (e2) {}
-          vmodePaint();
-        });
         var MIC = { st: '', mr: null, ch: [], stream: null, timer: 0, tick: 0, ctx: null };
         function micEndCleanup() {
           if (MIC.timer) { clearTimeout(MIC.timer); MIC.timer = 0; }
@@ -616,14 +584,10 @@
         function micDeliver(text) {
           var t = String(text || '').trim();
           if (!t) return;
-          if (vmodeGet() === 'auto') {
-            ta.value = t; sync(); fire();
-          } else {
-            var cur = ta.value.replace(/\s+$/, '');
-            ta.value = (cur ? cur + ' ' : '') + t;
-            sync(); ta.focus();
-            try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {}
-          }
+          var cur = ta.value.replace(/\s+$/, '');
+          ta.value = (cur ? cur + ' ' : '') + t;
+          sync(); ta.focus();
+          try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {}
         }
         function micStop() {
           if (MIC.st !== 'rec') return;
@@ -703,7 +667,6 @@
             });
         }
         mic.addEventListener('click', micStart);
-        vmodePaint();
 
         function sync() { send.setAttribute('data-ready', (ta.value.trim() || att.count()) ? 'true' : 'false'); }
         ta.addEventListener('input', sync);
@@ -772,7 +735,7 @@
           histView = 'chat'; detailId = ''; syncHistIco();
           render(); setCollapsed(false); ta.focus();
         };
-        /* 把一句话填进输入框（不直接发）。给首屏空态的「起手示例」用：
+        /* 把一句话填进输入框（只填文字，不发送）。给首屏空态的「起手示例」用：
            点了先看到文字进了输入框，还能改，再按发送 —— 比点了立刻生成更可控。
            必须派发 input 事件，否则发送钮的 data-ready 不会亮（它监听 input）。 */
         mounted.setInput = function (t) {

@@ -87,7 +87,10 @@
 .fk-msg.is-me .fk-say{background:var(--surface-subtle)}
 .fk-msg.is-me .uik-atts{justify-content:flex-end}
 /* 空态：一句话都没有时连白卡都不该出现（用户截图：一张 96 高的白卡里飘着一行灰字） */
-.fk-dock.is-empty .fk-hist{display:none}
+/* ★2026-11-04（用户：「为什么这个看不到？非要说话才能看到这两个操作？」）：
+   原来空态把整条历史工具层藏了，于是新页面第一屏看不到「历史对话」和「展开」。
+   入口与内容分开：工具条永远在场，只有空的列表不铺白块。 */
+.fk-dock.is-empty .fk-hist-list{display:none}
 
 /* ── 发布后的改动卡（2026-10-27）──────────────────────────
    版本号 + 一句人话 + 内容指纹 + 查看/恢复。
@@ -184,37 +187,6 @@ body.fk-hist-open #canvas{padding-bottom:248px}
 }
 .fk-send[data-ready="true"]{background:var(--color-brand); color:var(--color-text-inverse); cursor:pointer}
 .fk-send[data-ready="true"]:hover{background:var(--color-brand-active)}
-/* ★2026-11-04（用户）：「现在这个样式，以为是选中呢，根本不是切换，也不好看，
-   可以文字后有个提示的图标，光标悬浮显示这个操作代表什么意思」。
-   ★2026-11-04 三改（用户：「显示当前状态的名称，然后增加一个切换的图标也行，省一半空间」）：
-   收成一枚窄胶囊：当前模式名 + 换向箭头，点整颗切换；解释放在按钮自己的 hover 提示里。
-   形态参考 iOS 分段控件与 M3 segmented button 的"单一控件 + 明确可切"读法，但只占一半宽度。
-   按 iOS 分段控件（Apple HIG segmented control）的经典形态重画 ——
-   浅灰胶囊轨道（--surface-sunken-2），选中段是一枚白色小胶囊 + 1px 发丝边 + 轻投影，
-   切换时白胶囊在轨道里换位；术语换成人话「先确认 / 直接发」；ⓘ 缩到 13px。
-   依据：Apple HIG Segmented controls（developer.apple.com/design/human-interface-guidelines/segmented-controls）
-   与 M3 segmented button（容器内选中段自带容器色与描边）。 */
-.fk-vmode{
-  position:relative; display:inline-flex; align-items:center; gap:4px; height:24px; flex:0 0 auto;
-  padding:0 8px; border:1px solid var(--color-border-control); border-radius:var(--radius-pill);
-  background:transparent; color:var(--color-text-tertiary);
-  font:inherit; font-size:11px; line-height:1; white-space:nowrap; cursor:pointer;
-  transition:border-color .16s ease, color .16s ease, background .16s ease;
-}
-.fk-vmode:hover{border-color:var(--color-brand); color:var(--color-brand-ink); background:var(--surface-subtle)}
-.fk-vmode:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring); outline-offset:2px}
-.fk-vmode-ic{flex:none; opacity:.75}
-.fk-vmode[data-mode="auto"]{color:var(--color-brand-ink); border-color:var(--color-brand)}
-/* 解释放在按钮自己身上（不再另摆 ⓘ）：当前模式 + 两种模式各是什么意思，一句话说完 */
-.fk-vmode::after{
-  content:attr(data-tip); position:absolute; bottom:calc(100% + 8px); right:0; z-index:60;
-  width:max-content; max-width:260px; padding:8px 10px; border-radius:var(--radius-xs);
-  background:var(--color-text-primary); color:var(--surface-page);
-  font-size:12px; font-weight:400; line-height:18px; text-align:left;
-  opacity:0; visibility:hidden; transform:translateY(2px);
-  transition:opacity .12s ease, transform .12s ease; box-shadow:var(--shadow-card);
-}
-.fk-vmode:hover::after,.fk-vmode:focus-visible::after{opacity:1; visibility:visible; transform:none}
 .fk-mic{
   width:32px; height:32px; flex:0 0 32px; border-radius:var(--radius-control);
   border:0; background:transparent; color:var(--color-text-tertiary);

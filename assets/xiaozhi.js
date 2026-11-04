@@ -206,7 +206,6 @@ function renderXz(){
   if (xzState().open) xzScrollToResult();
   /* 面板是整棵重建的：录音/识别状态必须重画回去，否则一重绘按钮就"忘"了自己在录 */
   xzMicUi();
-  xzVoicePaint();
 }
 document.addEventListener('click', function(e){
   var b = e.target.closest ? e.target.closest('[data-act]') : null;
@@ -288,7 +287,6 @@ document.addEventListener('click', function(e){
   }
   if (act === 'xzStop'){ e.stopPropagation(); e.preventDefault(); xzStop(); return; }
   if (act === 'xzMic'){ e.stopPropagation(); e.preventDefault(); xzMicToggle(); return; }
-  if (act === 'xzVoiceMode'){ e.stopPropagation(); e.preventDefault(); xzVoiceToggle(e); return; }
   if (act === 'xzGrant'){ e.stopPropagation(); e.preventDefault(); xzGrant(); return; }
   if (act === 'xzDeny'){ e.stopPropagation(); e.preventDefault(); xzDeny(); return; }
   /* 计划条折叠：就地改 hidden / aria-expanded，不重建整块 —— 焦点留在按钮上，
@@ -3068,10 +3066,6 @@ function xzHtml(mode){
           /* 三个控件收进自己的一行：和正文同一行时，430 宽的面板里文字只剩 ~240px，
              两行下来每行不到 15 个字，等于"能输但没法用"。 */
           + '<div class="xz-iact">'
-          + '<button type="button" class="xz-vmode" data-act="xzVoiceMode" data-mode="confirm" aria-pressed="false" aria-label="语音发送方式：当前转文字，点一下切到直接发">'
-          + '<span class="xz-vmode-tx">转文字</span>'
-          + '<svg class="xz-vmode-ic" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>'
-          + '</button>'
           + '<button class="xz-mic" data-act="xzMic" aria-label="按下说话" aria-pressed="false" title="按下说话">' + sv('mic') + '</button>'
           + '<button class="xz-send" data-act="xzSend" aria-label="发送">' + sv('right') + '</button>'
           + '</div></div></div>'
@@ -3136,33 +3130,9 @@ function xzPaint(){
      不触发重绘循环（没有 MutationObserver 参与）。 */
   xzPlacePanel();
 }
-/* ── 语音输入（2026-11-04 m06113 需求三：双模式）────────────────────
-   语音确认：识别结果落进输入框，由人改、人按发送（旧行为，默认）。
-   免确认：识别完直接 xzAsk(t, true)，不再等一次发送。
-   安全边界仍在：fromVoice=true 的"确认"不会当作授权，不可逆动作照样停。
+/* ── 语音输入（2026-11-04 统一成一种行为）────────────────────
+   识别结果只落进输入框，由人确认再点发送；模式切换与自动发送已撤。
    识别在本机做（xz-server 的 /asr → whisper.cpp），不走外网。 */
-var XZ_VOICE_KEY = 'ifas90:voiceMode';
-function xzVoiceMode(){
-  try { return localStorage.getItem(XZ_VOICE_KEY) === 'auto' ? 'auto' : 'confirm'; } catch(e){ return 'confirm'; }
-}
-function xzVoicePaint(){
-  var b = document.querySelector('.xz-vmode');
-  if (!b) return;
-  var m = xzVoiceMode(), tx = b.querySelector('.xz-vmode-tx');
-  b.setAttribute('data-mode', m);
-  b.setAttribute('aria-pressed', m === 'auto' ? 'true' : 'false');
-  if (tx) tx.textContent = m === 'auto' ? '直接发' : '转文字';
-  b.setAttribute('aria-label', m === 'auto'
-    ? '语音发送方式：当前直接发，点一下切到转文字'
-    : '语音发送方式：当前转文字，点一下切到直接发');
-  b.setAttribute('data-tip', m === 'auto'
-    ? '当前：直接发 —— 说完停顿一下就直接发出去。点一下改成「转文字」。'
-    : '当前：转文字 —— 说完先转成文字，等你点发送再发。点一下改成「直接发」。');
-}
-function xzVoiceToggle(){
-  try { localStorage.setItem(XZ_VOICE_KEY, xzVoiceMode() === 'auto' ? 'confirm' : 'auto'); } catch(e){}
-  xzVoicePaint();
-}
 var XZ_MIC = { st:'', mr:null, ch:[], stream:null, timer:0, tick:0, ctx:null };
 var XZ_MIC_PH = '直接说你要做什么';
 
@@ -3252,8 +3222,6 @@ function xzMicToggle(){
             XZ_MIC.st = ''; xzMicUi();
             var t = res.ok ? String(res.j.text || '').trim() : '';
             if (!t){ xzMicNote(res.ok ? '没听清，再说一次' : '语音识别不可用，请用键盘输入'); return; }
-            /* 免确认：直接走发送（fromVoice 仍为 true，授权边界不松） */
-            if (xzVoiceMode() === 'auto'){ xzAsk(t, true); return; }
             var inp = document.querySelector('[data-act="xzInput"]');
             if (!inp) return;
             /* 追加，不覆盖：用户可能先打了半句，又说半句 */

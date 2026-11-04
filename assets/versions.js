@@ -146,14 +146,17 @@ window.Versions = (function () {
 
     /* ★2026-11-04（用户：「狗屎没意义的提示」）：
        「共 5 个版本」一屏数得出来，删掉。只剩两种真需要说的：筛出几个、有没有到保留上限。 */
-    var msgs = [];
-    if (S.kw) msgs.push('筛出 ' + rows.length + ' 个版本（共 ' + list.length + ' 个）');
+    /* 2026-11-04 按真源改：表尾常驻「第 1-N 条/共 M 条」，右侧「10 条/页」。
+       之前把「共 N 个版本」删掉是对的（一屏数得出来），但把整条表尾也 hidden 掉了，
+       于是只有 1 行时页面下方是 600px 空白、列表没有收口 —— 真源不这样。
+       分页统计不是冗余提示，它是列表的骨架；搜索时 N 变 M 不变，筛选结果自己说清。 */
+    var msgs = ['第 1-' + rows.length + ' 条/共 ' + list.length + ' 条'];
     var max = (window.DB && DB.MAX_VERS) || 60;
     if (list.length >= max) msgs.push('最多保留 ' + max + ' 份，更早的已自动清理');
     var totalEl = $('#total');
     if (totalEl) {
       totalEl.textContent = msgs.join(' · ');
-      if (totalEl.parentNode) totalEl.parentNode.hidden = !msgs.length;
+      if (totalEl.parentNode) totalEl.parentNode.hidden = false;
     }
     paintChg();
   }
