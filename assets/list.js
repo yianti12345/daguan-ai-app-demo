@@ -44,6 +44,13 @@
      不这么干的话，「表头 8 列、行 7 格」这种错会安静地渲染出来，
      而且看起来只是"最后一列没对齐"。 */
   function assertSpec(spec) {
+    /* ★ 根治 A：三问卡的拦截点。不是提醒、不是台账 —— 缺一个字段，这一页就渲染不出来。
+       object：主对象是谁；states：有哪几种状态；source：真源/基线表对应哪一屏。 */
+    ['object', 'states', 'source'].forEach(function (k) {
+      if (!spec[k] || (Array.isArray(spec[k]) && !spec[k].length)) {
+        throw new Error('[List] 规格缺「' + k + '」：动手前没答完三问，不许出界面');
+      }
+    });
     var cols = spec.headCols || [];
     if (!cols.length) throw new Error('[List] headCols 为空');
     if (spec.cols) {
@@ -61,10 +68,21 @@
     if (typeof spec.cell !== 'function') throw new Error('[List] 缺 cell()');
   }
 
-  function render(spec) {
-    assertSpec(spec);
+  /* 两种调用：
+       List.render(spec, overrides) —— 规格来自 assets/spec.js（唯一真源），页面只给数据/渲染函数
+       List.render(merged)          —— 老调用；若它没带三问字段，assertSpec 会把它挡下来 */
+  function render(a, b) {
+    var spec = b ? Object.assign({}, a, b) : a;
     var q = function (sel) { return sel ? document.querySelector(sel) : null; };
-    var table = q(spec.table), head = q(spec.head), body = q(spec.body), total = q(spec.total);
+    var body0 = q(spec.body);
+    try {
+      assertSpec(spec);
+    } catch (e) {
+      /* 拦截要看得见：不是白屏让人猜，而是把"缺哪一问"写在界面上 */
+      if (body0) body0.innerHTML = '<p class="lst-blocked">规格没答完：' + esc(e.message) + '</p>';
+      throw e;
+    }
+    var table = q(spec.table), head = q(spec.head), body = body0, total = q(spec.total);
     if (!body) return;
 
     /* ① 列宽：唯一的声明处。页面 CSS 里不许再写 --gt-cols。 */

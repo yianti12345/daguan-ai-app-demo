@@ -228,24 +228,14 @@ function byVer(r) { return !VER || String(r.version) === VER; }
        这一页只声明"有哪些列、每列取什么、行里有什么动作"。
        client-auth.css 里的 --gt-cols 和 is-sub 隐藏第 4 列的规则已一并删除，
        否则会与这里声明的列组合打架（那条 nth-child(4) 会误伤 7 列版的「授权版本」）。 */
+    /* ★ 根治 C：主对象 / 状态机 / 真源 / 列组合全部来自 assets/spec.js。
+       SUB（进到某个应用）只是选一份列变体，页面不再自己拼列。 */
     var SUB = !!APP_ID;
-    var headCols = [
-      { key: 'pick', cls: 'au-sel' },
-      { key: 'client', label: '客户', cls: 'au-c' },
-      { key: 'tenant', label: '租户 ID', cls: 'au-id' }
-    ].concat(SUB ? [] : [{ key: 'app', label: '应用', cls: 'au-app' }]).concat([
-      { key: 'ver', label: '授权版本', cls: 'au-ver' },
-      { key: 'at', label: '授权时间', cls: 'au-at' },
-      { key: 'exp', label: '有效期', cls: 'au-exp' },
-      { key: 'ops', label: '操作', cls: 'au-o' }
-    ]);
+    var baseSpec = SPEC['client-auth.html'];
+    var viewSpec = Object.assign({}, baseSpec, SUB ? baseSpec.variants.sub : baseSpec.variants.global);
 
-    List.render({
+    List.render(viewSpec, {
       table: '.au-table', head: '#head', body: '#list', total: '#total',
-      cols: SUB
-        ? '40px minmax(0,1fr) 220px 80px 150px 108px 240px'
-        : '40px 170px 190px minmax(0,1fr) 80px 150px 108px 240px',
-      headCols: headCols,
       rows: list,
       empty: function () { return emptyHtml || '<p class="au-empty">还没有客户授权</p>'; },
       rowClass: 'au-row gtable-row',

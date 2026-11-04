@@ -104,15 +104,10 @@ window.Versions = (function () {
           /* ★2026-11-04 根治 C 类（_reports/根因分析-20261104.md）：
          表头 / 列宽 / 行骨架 / 空态交给 List（assets/list.js）一处定义，
          这一页只声明四列各自取什么、行里有什么动作。 */
-      List.render({
+      /* ★ 根治 C：列、列宽、主对象、状态机、真源全部来自 assets/spec.js 一处，
+         本页只给「这一屏的数据」和「每格怎么画」。改规格先改 spec.js，页面自动跟。 */
+      List.render(SPEC['versions.html'], {
         table: '.vl-table', head: '#head', body: '#list', total: '#total',
-        cols: '96px 120px 200px minmax(0,1fr)',
-        headCols: [
-          { key: 'v', label: '版本', cls: 'vl-v' },
-          { key: 'st', label: '状态' },
-          { key: 'at', label: '保存时间', cls: 'vl-at' },
-          { key: 'ops', label: '操作', cls: 'vl-o' }
-        ],
         rows: rows,
       /* 空态文案：让用户去点的按钮必须写页面上的真名（2026-10-31 第 2 条的教训）。 */
       empty: function () {
