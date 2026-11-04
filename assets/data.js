@@ -57,7 +57,7 @@
      这种内部话术）；②演示的装配清单全部留空（从零演示）。bump 之外还要把台账/改动流水的键
      也带上种子版本 —— 原来只重置 db，台账 'ifas90:vers:*' 留在 localStorage 里，
      于是画布空了、版本页还写着「装配 3 块」，同一屏两个事实互相打脸。 */
-  var SEED_VER = '25';
+  var SEED_VER = '26';
   var SEED_KEY = 'ifas90:seed' + NS;
 
   /* ── 种子：APP 与 COMPS 的现有内容 ── */
@@ -254,10 +254,6 @@
        真产品里这些值来自「系统设置 › 字典配置」的 comp_tag，改字典不用改代码。 */
     tags: { d: [] },
     enabled: { d: true }, config: { d: {} }, configBy: { d: null }, strip: { d: false },
-    /* ★2026-11-04 真 bug（content-contract 抓到的）：编辑弹窗与「新增组件」表单都在写
-       c.visScope / c.cfgScope（components.html:246/264/785/786），但 COMP_FIELDS 没这两个键，
-       pickSchema 一存就丢 —— 正是上面 249 行注释说的那个坑。补进模型，两个作用域才真的存得住。 */
-    visScope: { d: null }, cfgScope: { d: null },
     layout: { d: 'full' }, block: { d: null },
     /* ★2026-11-03（m03263）：可见 / 可配置范围。白名单漏一个键 = 刷新后静默丢，
        这个坑今天已经踩过三次，所以组件与应用两边同时登记。 */
@@ -269,6 +265,9 @@
     /* ★2026-11-01 授权四件：不写进白名单就等于没存 —— pickSchema 只存这里声明的键，
        新页面写进去的字段刷新后会被静默丢掉（这个坑今天就是它让授权列表变空的）。 */
     tenantId: { d: '' }, authAt: { d: null }, expireAt: { d: null }, prevVer: { d: 0 },
+    /* ★2026-11-04 真 bug（content-contract 抓到的）：三态动作「发布内测版」写 a.trialAt（apps.html:315），
+       但 APP_FIELDS 没有这个键 ⇒ pickSchema 存的时候丢掉，刷新后内测起始时间消失。补进白名单。 */
+    trialAt: { d: null },
     /* ★2026-11-01 封面：卡片封面的 dataURL。不写进白名单 = 刷新就丢（这个坑今天踩过两次） */
     cover: { d: '' },
     /* ★2026-11-02 生成封面的样式序号。同一个坑第三次：cover 进了白名单、coverStyle 漏了，
@@ -1590,6 +1589,11 @@
             var fullFields = ((DB.compById(tgtId) || {}).fields || []);
             tgt.fieldSrc = tgt.fields.map(function (f) { return fullFields.indexOf(f); });
           }
+          /* ★2026-11-04：画布与这一版必须是同一份内容，否则一进配置页就判「未保存」
+             （进页面不再整包灌内容层之后，应用内容层为空、画布按装配版本重算，
+             与这版快照的 5 列对不上）。把这一版的内容落进应用内容层，
+             进页面看到的就是 v4 的样子，版本号也只印 v4。 */
+          if (tgt) a.content = JSON.parse(JSON.stringify(demoContent));
           arr.push({ v: pv, kind: 'stable', active: false, at: at,
             snap: { comps: (a.comps || []).slice(), name: a.name, desc: a.desc, client: a.client,
                     content: demoContent, contentHash: DB.hash(demoContent),
