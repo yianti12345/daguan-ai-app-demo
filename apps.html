@@ -2,12 +2,13 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=ed96d004">
+<link rel="stylesheet" href="assets/sys.css?v=fdf06a7f">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=02ac2ac8">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -160,7 +161,7 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=97d6546b"></script>
+<script src="assets/data.js?v=dc228b2d"></script>
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/transfer.js?v=6ef877f1"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
@@ -584,7 +585,7 @@
          没更新时 href 与以前逐字相同（不带空参数）。 */
       var upd = DB.updateCount(a.id);
       var href = 'app.html?id=' + encodeURIComponent(a.id)
-               + (upd ? '&panel=installed&updates=1' : '');
+               + '';   /* ★2026-11-04：不再带 panel/updates 参数 —— 带参进配置页不再自动开面板，链接也就不该承诺这件事 */
       /* 可读名后缀（规格 §2.4）：徽标自己 aria-hidden，这条状态靠锚点名字播报。
          文案只在 ui-kit 里出现一次（UIK.badgeLabel），页面不另写一份。 */
       var label = '配置 ' + a.name + (upd ? '，' + UIK.badgeLabel(upd) : '');

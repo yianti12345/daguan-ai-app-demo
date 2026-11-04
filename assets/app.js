@@ -291,15 +291,8 @@
        禁用掉的那几个在抽屉里用一行说明，不藏。 */
     var usable = DB.COMPS.filter(function (c) { return DB.canInstall(c) || isOn(c.id); }).length;
     if (cnt) cnt.textContent = '已装 ' + (VIEW_SNAP && Array.isArray(VIEW_SNAP.comps) ? VIEW_SNAP.comps.length : app.comps.length) + ' / ' + usable;
-    /* ★2026-11-04（用户）：「装配组件操作旁边有个标签，显示 X 个组件可升级」。
-       只报数，不承接点击；数字与卡片徽标、面板筛选行同一个算法（DB.updateCount → DB.updatesOf）。 */
-    var chip = $('#upd-chip'), chipN = $('#upd-chip-n');
-    if (chip) {
-      var nUpd = 0;
-      try { nUpd = DB.updateCount(app.id); } catch (e) {}
-      chip.hidden = !nUpd;
-      if (chipN) chipN.textContent = nUpd;
-    }
+    /* ★2026-11-04（用户）：「只需要在已装配旁边显示 X 个可升级的标签」——
+       可升级数只留在装配面板「已装配」页签的角标上；顶栏不再重复一遍同一个数。 */
     /* 「保存」做的事是把当前内容冻成一版给客户看；这行说的是"现在离那一版差多远"。
        文案口径见 paintSaveState —— 这里不再写「已自动保存」（P0-2 语义冲突）。 */
     paintSaveState();
@@ -1674,7 +1667,6 @@
   /* ── 更新视图的状态（《设计-组件更新提示-20261028》§3–§6）──────────
      这里只放"界面此刻在干什么"，不放"谁落后了"：
      后者只有一处算法 DB.updatesOf / DB.updateCount（§11.2 单一数字公式）。
-       updFilter  只看有更新（从应用卡带参进来的那个视图）
        updNow     每次重画现算：compId -> {id,name,from,to}
        confirmId  行内确认态的那一行（同一时刻只允许一行）
        updBusy    更新中的那一行（同一时刻只允许一行）
@@ -1720,24 +1712,6 @@
       + '<span class="ver-from">' + esc(u.from) + '</span>'
       + '<span class="ver-arrow" aria-hidden="true">→</span>'
       + '<span class="ver-to">' + esc(u.to) + '</span></span>';
-  }
-
-  /* 只看有更新这一行（§5.2）：页签计数管"装了几个"，这一行管"几个要更新"，
-     两处**不共用**一个数（同源才会漂移，不同义才要分开说）。 */
-  function paintFilter() {
-    var bar = $('#p-filter'), lab = $('#p-filter-n');
-    if (!bar) return;
-    var show = tab === 'on' && updFilter;
-    bar.hidden = !show;
-    if (!show) return;
-    /* ★2026-10-28（盲审 F3）：两个数要分开说，不能用一个数字糊两种含义。
-       「待更新」对得上卡片徽标；「已更新」是刚做完、还留着「退回」的那几行。
-       只报"行数"会和卡片打架，只报"待更新"又会让人以为列表多出来的是 bug。 */
-    var pending = Object.keys(updNow).length;
-    var doneN = Object.keys(justUpd).length;
-    if (lab) lab.textContent = doneN
-      ? ('待更新 ' + pending + ' · 已更新 ' + doneN)
-      : ('只看有更新 · ' + pending + ' 个');
   }
 
   /* 一个过滤函数，切段计数与列表共用 —— 各算一套就会出现"写 5 实际 3"。
@@ -1796,7 +1770,7 @@
       .map(function (c) { return c.getAttribute('data-pick'); });
   }
   function syncBatch(show) {
-    var bar = $('#p-batch'), nEl = $('#p-batch-n'), btn = $('#p-batch-do');
+    var bar = $('#p-batch'), btn = $('#p-batch-do');
     var allNow = $('#p-upgrade-allnow'), selall = $('#p-selall');
     var boxes = batchBoxes();
     var n = boxes.filter(function (c) { return c.checked; }).length;
@@ -2077,21 +2051,14 @@
       var hay = (c.name + c.id + (c.desc || '') + ' ' + (KEYWORDS[c.id] || '')).toLowerCase();
       return !kw || hay.indexOf(kw) >= 0;
     });
-    if (wantOn && updFilter) rows = rows.filter(function (c) { return inUpdView(c.id); });
     /* 选择表跟着当前列表收缩：切页签、搜索、升级完成后不留幽灵选中项。 */
     var liveSel = {};
     rows.forEach(function (c) { if (canBatch(c)) liveSel[c.id] = 1; });
     Object.keys(batchSel).forEach(function (id) { if (!liveSel[id]) delete batchSel[id]; });
-    paintFilter();
     paintUpdBar();
     if (!rows.length) {
       /* 筛选空态（§5.3）：只留一句事实。清除筛选的入口是上面那行「显示全部」，
          同一屏同一动作不开第二个入口 —— 所以这里**不放按钮**。 */
-      if (wantOn && updFilter && !kw) {
-        list.innerHTML = '<div class="p-empty">没有需要更新的组件</div>';
-        syncBatch(false);
-        return;
-      }
       list.innerHTML = '<div class="p-empty">'
         + (kw ? '没有匹配的组件' : (wantOn ? '还没装配任何组件' : '全部装上了，没有可装配的'))
         + (kw ? '<br><button type="button" class="btn-ghost-s" id="p-clear">清除搜索</button>' : '')
@@ -2131,7 +2098,6 @@
         if (rr) back = keep.act ? $('[data-do="' + keep.act + '"]', rr) : rr;
       }
       if (!back) back = $('.btn-update', list);
-      if (!back) { var fb = $('#p-filter'); if (fb && !fb.hidden) back = $('#p-showall'); }
       if (!back) back = $('#dlg-close');
       if (back) back.focus();
     }
@@ -2268,10 +2234,6 @@
     rows.forEach(function (r, k) { if (r.getAttribute('data-comp') === id) i = k; });
     var nxt = null;
     for (var k = i + 1; k < rows.length && !nxt; k++) nxt = $('.btn-update', rows[k]);
-    if (!nxt) {
-      var bar = $('#p-filter');
-      if (bar && !bar.hidden) nxt = $('#p-showall');
-    }
     if (!nxt) nxt = $('#dlg-close');
     if (nxt) nxt.focus();
   }
@@ -2344,14 +2306,6 @@
     }, 450);
   }
 
-  /* 「显示全部」（§5.2）：解除筛选，焦点落到页签「已装配」（按钮自己消失了） */
-  function showAll() {
-    updFilter = false;
-    stripEntryParams();                          /* 地址里不许再留着"带更新进来" */
-    renderList();
-    var t = $('#tab-on');
-    if (t) t.focus();
-  }
 
   /* 参数消费后从地址里摘掉（§11.4 收敛）：关掉抽屉、刷新，不许又自动弹开。
      只删 panel / updates 两个键，id / ns / fail / mode 这些一概不动。 */
@@ -2461,7 +2415,6 @@
   });
   on('#tab-avail', 'click', function () { setTab('avail'); });
   on('#tab-on', 'click', function () { setTab('on'); });
-  on('#p-showall', 'click', showAll);
   on('#dlg-search', 'input', renderList);
 
   /* 行内三态：点按钮走按钮，点行体走 toggle；键盘 Space/Enter 同一条路。

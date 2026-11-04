@@ -1060,22 +1060,17 @@
     }).map(function (a) {
       var have = DB.installedVer(a.id, compId);
       var behind = DB.canInstall(c) && DB.verNum(latest) > DB.verNum(have);
-      return {
-        app: a, id: a.id, name: a.name,
-        have: have, latest: latest, behind: behind,
-        overlay: !!(a.content && a.content[compId])
-      };
+      /* ★2026-11-04（用户：「没有所谓的需手动和已自定义」）：overlay 概念退役。
+         引用关系只报事实：这家装的是哪一版、落后没有。 */
+      return { app: a, id: a.id, name: a.name, have: have, latest: latest, behind: behind };
     }).sort(function (x, y) {
       if (x.behind !== y.behind) return x.behind ? -1 : 1;
-      if (x.overlay !== y.overlay) return x.overlay ? 1 : -1;
       return String(x.name).localeCompare(String(y.name), 'zh-Hans-CN');
     });
   };
   DB.compUpgradeStats = function (compId) {
     var refs = DB.compRefs(compId);
-    var behind = refs.filter(function (r) { return r.behind; });
-    var auto = behind.filter(function (r) { return !r.overlay; });
-    return { total: refs.length, behind: behind.length, auto: auto.length, manual: behind.length - auto.length };
+    return { total: refs.length, behind: refs.filter(function (r) { return r.behind; }).length };
   };
 
   /* 一次升级某个组件在多个应用里的装配版本。只改 a.compVer[compId]，不碰应用内容、

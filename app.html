@@ -7,7 +7,7 @@
 <title>应用配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=bbb8b845">
+<link rel="stylesheet" href="assets/sys.css?v=fdf06a7f">
 <link rel="stylesheet" href="assets/float.css?v=d761721c">
 <link rel="stylesheet" href="assets/viewmode.css?v=a8e1d20e">
 <link rel="stylesheet" href="assets/generated.css?v=f89c421a">
@@ -67,7 +67,6 @@
          装配组件回到顶栏常驻，右边挂一枚「N 个组件可升级」的标；顶栏不再有独立的「一键升级」——
          升级是装配面板里的一件操作（看谁落后、勾谁、升谁、卸谁、装新的都在那一处）。 -->
     <button type="button" class="btn ghost" id="act-assemble">装配组件 <span class="count-badge" id="act-count">已装 0 / 8</span></button>
-    <span class="upd-chip" id="upd-chip" hidden><b id="upd-chip-n">0</b> 个组件可升级</span>
     <button type="button" class="btn ghost" id="act-draft">保存草稿</button>
     <!-- ★2026-11-03（用户 m01612）：配置页右上不再放「历史版本」——应用管理卡片的
          ⋮ 菜单已经有这个入口，同一个入口两处没有意义。
@@ -98,10 +97,6 @@
     <!-- 只看有更新：一行筛选说明，不是第三个页签（规格 §5.2）。
          页签计数 = 已装总数；这一行的数 = 可更新数；两者不同源也不同义。
          只在带参进来时出现；「显示全部」是唯一的退出入口（空态里不再放第二颗按钮）。 -->
-    <div class="p-filter" id="p-filter" hidden>
-      <span class="p-filter-n" id="p-filter-n"></span>
-      <button type="button" class="btn-text" id="p-showall">显示全部</button>
-    </div>
     <!-- ★2026-11-04（用户）：「只需要在已装配旁边显示 X 个可升级的标签」；
        「升级跟组件引用管理那边类似，一个一个多选操作的，批量升级，然后一个是全部升级」。
        所以：可升级数只挂在「已装配」页签上（见 .p-tabs）；操作全在这一行 ——
@@ -120,11 +115,11 @@
 
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/gen.js?v=ac80bd3b"></script>
-<script src="assets/data.js?v=97d6546b"></script>
+<script src="assets/data.js?v=dc228b2d"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
 <script src="assets/float.js?v=5bf0ecaf"></script>
-<script src="assets/app.js?v=a0dfddbe"></script>
+<script src="assets/app.js?v=7d35a9ff"></script>
 <script src="assets/configurators/app-standard.js?v=a478d9a2"></script>
 <script src="assets/configurator.js?v=4558be01"></script>
 <div id="xz-host"></div>
