@@ -838,22 +838,9 @@
      改前这一屏只有两块没有边界、没有序号、没有卸下入口的白卡，页头却写着「装配组件 3」；
      第三块（应用头）长得和页面标题一模一样，用户看不出这个应用由哪几块组成、按什么顺序。
      默认态**不显示**操作组：一直是编辑器的样子，就不像"这个应用长什么样"的预览了。 */
-  /* 这个组件被几个应用装着 —— 「改共用件」入口上要印的那句话里的 N。
-     只读统计，不缓存：APPS 变化后下一次重画就对。 */
-  function sharedUsers(id) {
-    return DB.APPS.filter(function (a) {
-      var list = (DB.APP_COMPS && DB.APP_COMPS[a.id]) || a.comps || [];
-      return list.indexOf(id) >= 0;
-    }).length;
-  }
 
   function frameBlock(c, inner, idx, total, isHead) {
     var num = ('0' + (idx + 1)).slice(-2);
-    /* 两个入口改的不是同一份东西（E44）：
-       「改这一块」只改本应用 content（data.js 的应用覆盖层），不碰组件库；
-       「改共用件…」进组件配置页，改的是 DB.COMPS 本体，装它的每个应用一起变。
-       两处同词同形时用户分不清，所以把作用域写进文案与 title，并在组件页顶栏再报一次影响面。 */
-    var sharedN = sharedUsers(c.id);
     return '<section class="cv-blk' + (isHead ? ' cv-blk--head' : '') + '" data-comp="' + esc(c.id) + '" data-t="' + ((c.layout || 'full') === 'split' ? 'r' : 'f') + '">'
       + '<i class="cv-blk-bar" aria-hidden="true"></i>'
       + '<div class="cv-blk-hd">'
@@ -866,19 +853,8 @@
       +     '<button type="button" class="cv-op" data-move="down" data-id="' + esc(c.id) + '"' + (idx === total - 1 ? ' disabled' : '') + '>下移</button>'
       +     '<button type="button" class="cv-op cv-op--off" data-remove="' + esc(c.id) + '">↓卸下</button>'
       +   '</span>'
-      /* ★2026-10-28 P1-A（体验盲审）：「改这一块」原来收在上面那条 hover 才出的操作带里，
-         于是「改一块」的路径变成"先找无文字的 ⋯、展开、再点" —— 加一列要 8 步，其中 2 步是纯找入口。
-         它是**这一块的主操作**，不是低频动作，所以搬到块头上常驻（文字按钮，不用图标）。
-         仍在 .cv-blk-hd 里、仍走同一个 data-local 入口 ⇒ 「⋯」保留但只剩上移/下移/卸下这类低频动作。
-         ★2026-10-27 独立盲审 F5 的口径不变：它改的是本应用 content，不碰组件库共用件。 */
-      +   '<button type="button" class="cv-op cv-blk-edit" data-local="' + esc(c.id) + '"'
-      +     ' title="只改「' + esc(app.name) + '」这一家，不动共用件"'
-      +     ' aria-label="改这一块：只改「' + esc(app.name) + '」这一家">改这一块</button>'
-      /* 共用件入口：和「改这一块」并排，但指向另一个对象 —— 组件库本体。
-         title 里先把影响面说清（N 现算），进页后顶栏再报一次同样的句子。 */
-      +   '<a class="cv-op cv-blk-shared" href="component.html?id=' + encodeURIComponent(c.id) + '"'
-      +     ' title="改共用件 · 改了会影响 ' + sharedN + ' 个应用"'
-      +     ' aria-label="改共用件：改了会影响 ' + sharedN + ' 个应用">改共用件 · 影响 ' + sharedN + ' 家</a>'
+      /* ★2026-11-04（用户：「一并去掉啊」）：块头常驻的「改这一块」「改共用件 · 影响 N 家」
+         两颗入口整组删除 —— 产品里没有"定制"这回事，块头只留 序号·组件名、上移/下移/卸下、⋯。 */
       /* 常驻的 ⋯（2026-10-26，盲审 P1）：操作带只在 hover 出，静态图/触屏上等于没有 ——
          没有它，「这一块能拆」只能靠猜去开装配面板。它不新造一套操作，只是把同一条
          操作带钉住不收起（data-open）。aria-expanded 说清当前是展开还是收起。
@@ -1111,15 +1087,6 @@
     });
 
     cv.addEventListener('click', function (e) {
-      var local = e.target.closest ? e.target.closest('[data-local]') : null;
-      if (local) {
-        var c = DB.contentOf(appId, local.getAttribute('data-local'));
-        if (c && ui) {
-          ui.focusInput();
-          ui.setInput('把「' + c.name + '」改成');
-        }
-        return;
-      }
       var b = e.target.closest ? e.target.closest('[data-move],[data-remove]') : null;
       if (!b || b.disabled) return;
       if (b.hasAttribute('data-remove')) { removeComp(b.getAttribute('data-remove')); return; }

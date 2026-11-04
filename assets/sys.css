@@ -1467,11 +1467,6 @@ body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gr
 /* 2026-10-29：禁用态收口到文件末尾唯一配方（删本地 --tertiary + 手写反悬停两份）。 */
 .cv-op--off{color:var(--color-danger)}
 .cv-op--off:hover{background:var(--color-danger-surface);color:var(--color-danger)}
-/* ★2026-10-28 P1-A（体验盲审）：「改这一块」是本块的主操作，从现在这条 hover 才出的
-   操作带里搬到块头常驻。盒子沿用 .cv-op（同一类动作在两种位置不许长成两个样），
-   这里只补它作为常驻件要的两条：不被长组件名挤掉（flex:0 0 auto）、收起时也看得见
-   （它不在 .cv-blk-ops 里，所以不受那条 visibility/opacity 规则管）。 */
-.cv-blk-edit{flex:0 0 auto}
 
 /* ★2026-10-27 客户视图（?mode=view）────────────────────────────────
    走查 P0-3：客户能打开的那一页原来不存在，「复制链接」复制出的是管理列表地址。
@@ -1485,10 +1480,6 @@ body[data-mode="view"] .topbar .tb-ops,
 body[data-mode="view"] .topbar .app-edit,
 body[data-mode="view"] .cv-blk-more,
 body[data-mode="view"] .cv-blk-ops,
-/* 2026-10-28 P1-A：块头常驻的「改这一块」也是管理侧控件，客户视图里不许出现；
-   同一条规则管住并排的「改共用件…」——两者都只在编辑态存在。 */
-body[data-mode="view"] .cv-blk-edit,
-body[data-mode="view"] .cv-blk-shared,
 body[data-mode="view"] .tb-ck,
 body[data-mode="view"] .tb-batch,
 body[data-mode="view"] .page-act,
@@ -2496,12 +2487,12 @@ body[data-drawer="on"] .hint{
 .ru-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 24px 12px}
 .ru-hd-t{min-width:0}
 .ru-hd h2{margin:0;font-size:17px;line-height:24px;font-weight:600;color:var(--color-text-primary)}
-.ru-sub{margin:4px 0 0;font-size:12px;line-height:18px;color:var(--color-text-tertiary)}
-.ru-x{width:28px;height:28px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--color-text-tertiary);font-size:20px;line-height:1;cursor:pointer}
+.ru-sub{margin:4px 0 0;font-size:var(--font-size-caption);line-height:18px;color:var(--color-text-tertiary)}
+.ru-x{width:28px;height:28px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--color-text-tertiary);font-size:var(--font-size-title);line-height:1;cursor:pointer}
 .ru-x:hover{background:var(--surface-subtle);color:var(--color-text-primary)}
 .ru-stats{display:flex;gap:8px;padding:0 24px 12px;flex-wrap:wrap}
-.ru-stat{display:inline-flex;align-items:baseline;gap:4px;height:26px;padding:0 10px;border-radius:var(--radius-pill);background:var(--surface-subtle);font-size:12px;color:var(--color-text-secondary)}
-.ru-stat b{font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-text-primary)}
+.ru-stat{display:inline-flex;align-items:baseline;gap:4px;height:26px;padding:0 10px;border-radius:var(--radius-pill);background:var(--surface-subtle);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+.ru-stat b{font-size:var(--font-size-body);font-variant-numeric:tabular-nums;color:var(--color-text-primary)}
 .ru-stat.warn{background:var(--color-warning-surface);color:var(--color-warning)}
 .ru-stat.warn b{color:var(--color-warning)}
 .ru-prog{margin:0 24px 12px;padding:12px 14px;border:1px solid var(--color-border-card);border-radius:var(--radius-control);background:var(--surface-subtle)}
@@ -2515,11 +2506,11 @@ body[data-drawer="on"] .hint{
 .ru-prog-s{margin:6px 0 0;font-size:11px;line-height:16px;color:var(--color-text-tertiary)}
 .ru-tools{display:flex;align-items:center;gap:8px;padding:0 24px 12px;flex-wrap:wrap}
 .ru-tabs{display:inline-flex;padding:2px;border-radius:var(--radius-control);background:var(--surface-subtle)}
-.ru-tab{height:28px;padding:0 10px;border:0;border-radius:var(--radius-sm);background:transparent;font-size:12px;color:var(--color-text-secondary);cursor:pointer}
+.ru-tab{height:28px;padding:0 10px;border:0;border-radius:var(--radius-sm);background:transparent;font-size:var(--font-size-caption);color:var(--color-text-secondary);cursor:pointer}
 .ru-tab.on{background:var(--surface-page);color:var(--color-text-primary);box-shadow:var(--shadow-flat)}
-.ru-search{width:150px;height:32px;padding:0 10px;border:1px solid var(--color-border-control);border-radius:var(--radius-control);font-size:12px;color:var(--color-text-body);background:var(--surface-page)}
+.ru-search{width:150px;height:32px;padding:0 10px;border:1px solid var(--color-border-control);border-radius:var(--radius-control);font-size:var(--font-size-caption);color:var(--color-text-body);background:var(--surface-page)}
 .ru-search:focus{outline:2px solid var(--color-focus-halo);outline-offset:1px;border-color:var(--color-focus-ring)}
-.ru-tools .btn{height:32px;padding:0 12px;font-size:12px}
+.ru-tools .btn{height:32px;padding:0 12px;font-size:var(--font-size-caption)}
 .ru-tools .ru-all{margin-left:auto}
 .ru-tools .btn[disabled]{opacity:.45;cursor:not-allowed}
 .ru-batch{border:1px solid var(--color-border-control);background:var(--surface-page);color:var(--color-text-body)}
