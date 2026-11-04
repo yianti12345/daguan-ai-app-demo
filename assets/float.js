@@ -122,18 +122,17 @@
         send.innerHTML = ICON.send;
         /* ★2026-11-04（m06113 需求三）：语音双模式。
            语音确认＝转成文字后停住，等人点发送；免确认＝静默判停后直接发。
-           ★2026-11-04（用户）：「现在这个样式，以为是选中呢，根本不是切换，也不好看，
-             可以文字后有个提示的图标，光标悬浮显示这个操作代表什么意思」——
-           单颗按钮切成"两段切换 + ⓘ"：两个模式都摆在盘面上（不再靠换标签猜当前是什么），
-           选中态只作强调；后面那枚 ⓘ 悬浮/聚焦解释这两个词的意思。 */
-        var vmode = el('div', 'fk-vmode', {
-          id: 'fk-vmode', role: 'group', 'aria-label': '语音发送方式', 'data-mode': 'confirm'
+           ★2026-11-04 再改（用户）：「实在不行可以就是显示当前状态的名称，
+             然后增加一个切换的图标也行的，这样省一半的空间了是不是」——
+           收成一枚窄胶囊：左边当前模式名，右边换向图标；点整颗切换，悬浮给完整解释。 */
+        var vmode = el('button', 'fk-vmode', {
+          id: 'fk-vmode', type: 'button', 'data-mode': 'confirm', 'aria-pressed': 'false',
+          'aria-label': '语音发送方式：当前先确认，点一下切到直接发'
         });
-        vmode.innerHTML = '<button type="button" class="fk-vmode-b" data-v="confirm" aria-pressed="true">语音确认</button>'
-          + '<button type="button" class="fk-vmode-b" data-v="auto" aria-pressed="false">免确认</button>'
-          + '<span class="fk-vmode-tip" tabindex="0" role="note"'
-          + ' aria-label="语音确认：说完先转成文字，等你点发送再发。免确认：说完停顿一下就直接发出去。"'
-          + ' data-tip="语音确认：说完先转成文字，等你点发送再发。免确认：说完停顿一下就直接发出去。">i</span>';
+        vmode.innerHTML = '<span class="fk-vmode-tx">先确认</span>'
+          + '<svg class="fk-vmode-ic" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24"'
+          + ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+          + '<path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>';
         var mic = el('button', 'fk-mic', {
           id: 'fk-mic', type: 'button', 'data-st': '', 'aria-label': '按下说话', 'aria-pressed': 'false', title: '按下说话'
         });
@@ -554,16 +553,19 @@
           try { return localStorage.getItem(VOICE_KEY) === 'auto' ? 'auto' : 'confirm'; } catch (e) { return 'confirm'; }
         }
         function vmodePaint() {
-          var m = vmodeGet();
+          var m = vmodeGet(), tx = vmode.querySelector('.fk-vmode-tx');
           vmode.setAttribute('data-mode', m);
-          Array.prototype.forEach.call(vmode.querySelectorAll('.fk-vmode-b'), function (b) {
-            b.setAttribute('aria-pressed', b.getAttribute('data-v') === m ? 'true' : 'false');
-          });
+          vmode.setAttribute('aria-pressed', m === 'auto' ? 'true' : 'false');
+          if (tx) tx.textContent = m === 'auto' ? '直接发' : '先确认';
+          vmode.setAttribute('aria-label', m === 'auto'
+            ? '语音发送方式：当前直接发，点一下切到先确认'
+            : '语音发送方式：当前先确认，点一下切到直接发');
+          vmode.setAttribute('data-tip', m === 'auto'
+            ? '当前：直接发 —— 说完停顿一下就直接发出去。点一下改成「先确认」：转成文字后等你点发送。'
+            : '当前：先确认 —— 说完先转成文字，等你点发送再发。点一下改成「直接发」：说完停顿一下就发出去。');
         }
-        vmode.addEventListener('click', function (e) {
-          var b = e.target.closest && e.target.closest('.fk-vmode-b');
-          if (!b) return;
-          try { localStorage.setItem(VOICE_KEY, b.getAttribute('data-v')); } catch (e2) {}
+        vmode.addEventListener('click', function () {
+          try { localStorage.setItem(VOICE_KEY, vmodeGet() === 'auto' ? 'confirm' : 'auto'); } catch (e2) {}
           vmodePaint();
         });
         var MIC = { st: '', mr: null, ch: [], stream: null, timer: 0, tick: 0, ctx: null };

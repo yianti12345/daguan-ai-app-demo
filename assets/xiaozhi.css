@@ -256,40 +256,21 @@
 
 /* ★2026-11-04（用户）：语音发送方式改成两段切换 + ⓘ 提示，
    与浮条里的 .fk-vmode 和顶栏「预览/代码」同一套外形（1px 描边 + 选中段浅底）。 */
-.xz-vmode{display:inline-flex;align-items:center;flex:none;height:26px;
-  border:1px solid var(--color-border-control);border-radius:var(--radius-xs);background:transparent}
-.xz-vmode-b{height:24px;padding:0 7px;border:0;border-radius:0;background:none;
-  color:var(--color-text-tertiary);font:inherit;font-size:var(--font-size-caption);line-height:1;
-  white-space:nowrap;cursor:pointer;transition:background .16s ease,color .16s ease}
-.xz-vmode-b + .xz-vmode-b{box-shadow:inset 1px 0 0 var(--color-border-control)}
-.xz-vmode-b:hover{color:var(--color-text-body);background:var(--surface-subtle)}
-.xz-vmode-b[aria-pressed="true"]{background:var(--surface-subtle);color:var(--color-text-body);font-weight:600}
-.xz-vmode-b:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:-2px}
-.xz-vmode-tip{position:relative;display:inline-flex;align-items:center;justify-content:center;
-  width:15px;height:15px;margin:0 4px 0 3px;border-radius:50%;border:1px solid var(--color-border-control);
-  color:var(--color-text-tertiary);font-size:10px;font-style:normal;font-weight:600;line-height:1;cursor:help}
-.xz-vmode-tip:hover,.xz-vmode-tip:focus-visible{color:var(--color-text-body);border-color:var(--color-text-secondary);outline:none}
-.xz-vmode-tip::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);right:-6px;z-index:60;
-  width:max-content;max-width:280px;padding:8px 10px;border-radius:var(--radius-xs);
+.xz-vmode{position:relative;display:inline-flex;align-items:center;gap:3px;flex:none;height:22px;
+  padding:0 7px;border:1px solid var(--color-border-control);border-radius:var(--radius-pill);
+  background:transparent;color:var(--color-text-tertiary);font:inherit;font-size:11px;line-height:1;
+  white-space:nowrap;cursor:pointer;transition:border-color .16s ease,color .16s ease,background .16s ease}
+.xz-vmode:hover{border-color:var(--color-brand);color:var(--color-brand-ink);background:var(--surface-subtle)}
+.xz-vmode:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:2px}
+.xz-vmode-ic{flex:none;opacity:.75}
+.xz-vmode[data-mode="auto"]{color:var(--color-brand-ink);border-color:var(--color-brand)}
+.xz-vmode::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);right:0;z-index:60;
+  width:max-content;max-width:240px;padding:8px 10px;border-radius:var(--radius-xs);
   background:var(--color-text-primary);color:var(--surface-page);
-  font-size:var(--font-size-caption);font-weight:400;line-height:18px;text-align:left;
-  opacity:0;visibility:hidden;transform:translateY(2px);transition:opacity .12s ease,transform .12s ease;
-  box-shadow:var(--shadow-card)}
-.xz-vmode-tip:hover::after,.xz-vmode-tip:focus-visible::after{opacity:1;visibility:visible;transform:none}
-
-.xz-send{flex:none;width:38px;height:38px;padding:0;border:0;border-radius:var(--radius-pill);cursor:pointer;
-  background:color-mix(in srgb,var(--color-border-hairline) 42%,var(--surface-sunken));color:var(--color-text-tertiary);
-  display:flex;align-items:center;justify-content:center;
-  transition:background .16s,color .16s,transform .16s}
-
-.xz-send:hover{background:var(--color-brand);color:var(--color-text-inverse);transform:translateY(-1px)}
-
-.xz-send:active{transform:scale(.95)}
-
-.xz-send svg{width:16px;height:16px;display:block}
-
-/* ── 麦克风（2026-10-28）──────────────────────────────────────────
-   和发送键同尺寸同基底；录制中换成 --err 底 + 呼吸环，一眼能看出"正在听"。 */
+  font-size:12px;font-weight:400;line-height:18px;text-align:left;
+  opacity:0;visibility:hidden;transform:translateY(2px);
+  transition:opacity .12s ease,transform .12s ease;box-shadow:var(--shadow-card)}
+.xz-vmode:hover::after,.xz-vmode:focus-visible::after{opacity:1;visibility:visible;transform:none}
 .xz-mic{flex:none;width:38px;height:38px;padding:0;border:0;border-radius:var(--radius-pill);cursor:pointer;
   background:color-mix(in srgb,var(--color-border-hairline) 42%,var(--surface-sunken));color:var(--color-text-tertiary);
   display:flex;align-items:center;justify-content:center;
