@@ -7,8 +7,8 @@
 <title>应用配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=4c306e1b">
-<link rel="stylesheet" href="assets/float.css?v=bdcfc7e1">
+<link rel="stylesheet" href="assets/sys.css?v=ed96d004">
+<link rel="stylesheet" href="assets/float.css?v=d761721c">
 <link rel="stylesheet" href="assets/viewmode.css?v=a8e1d20e">
 <link rel="stylesheet" href="assets/generated.css?v=f89c421a">
 <link rel="stylesheet" href="assets/configurator.css?v=59b1113c">
@@ -63,8 +63,11 @@
     <!-- ★2026-11-03（用户 m05120）：「右上角有2个操作，保存草稿和保存新版本并发布。」
          顶栏只留这两颗；装配/升级仍留在 DOM 里（hidden），给会话与脚本保留入口，
          不再占顶栏的视觉位置。 -->
-    <button type="button" class="btn ghost" id="act-assemble" hidden>装配组件 <span class="count-badge" id="act-count">已装 0 / 8</span></button>
-    <button type="button" class="btn ghost" id="act-upgrade-all" hidden>一键升级 <span class="count-badge" id="upg-count">0</span></button>
+    <!-- ★2026-11-04（用户：「我应该点击装配组件去看，有哪些可以升级…然后装配组件操作旁边有个标签，显示 X 个组件可升级」）：
+         装配组件回到顶栏常驻，右边挂一枚「N 个组件可升级」的标；顶栏不再有独立的「一键升级」——
+         升级是装配面板里的一件操作（看谁落后、勾谁、升谁、卸谁、装新的都在那一处）。 -->
+    <button type="button" class="btn ghost" id="act-assemble">装配组件 <span class="count-badge" id="act-count">已装 0 / 8</span></button>
+    <span class="upd-chip" id="upd-chip" hidden><b id="upd-chip-n">0</b> 个组件可升级</span>
     <button type="button" class="btn ghost" id="act-draft">保存草稿</button>
     <!-- ★2026-11-03（用户 m01612）：配置页右上不再放「历史版本」——应用管理卡片的
          ⋮ 菜单已经有这个入口，同一个入口两处没有意义。
@@ -115,11 +118,11 @@
 
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/gen.js?v=ac80bd3b"></script>
-<script src="assets/data.js?v=98d540b3"></script>
+<script src="assets/data.js?v=97d6546b"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
 <script src="assets/float.js?v=5bf0ecaf"></script>
-<script src="assets/app.js?v=40af376c"></script>
+<script src="assets/app.js?v=5a0e1dba"></script>
 <script src="assets/configurators/app-standard.js?v=a478d9a2"></script>
 <script src="assets/configurator.js?v=4558be01"></script>
 <div id="xz-host"></div>

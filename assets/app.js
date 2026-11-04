@@ -291,15 +291,14 @@
        禁用掉的那几个在抽屉里用一行说明，不藏。 */
     var usable = DB.COMPS.filter(function (c) { return DB.canInstall(c) || isOn(c.id); }).length;
     if (cnt) cnt.textContent = '已装 ' + (VIEW_SNAP && Array.isArray(VIEW_SNAP.comps) ? VIEW_SNAP.comps.length : app.comps.length) + ' / ' + usable;
-    /* ★2026-11-01 一键升级：只在这个应用真有落后组件时出现。
-       数字与卡片徽标、装配面板筛选行**同一个算法**（DB.updateCount → DB.updatesOf），
-       自己再 filter 一遍就是三个数各说各话（那条教训在 data.js:630 写着）。 */
-    var upgBtn = $('#act-upgrade-all'), upgN = $('#upg-count');
-    if (upgBtn) {
+    /* ★2026-11-04（用户）：「装配组件操作旁边有个标签，显示 X 个组件可升级」。
+       只报数，不承接点击；数字与卡片徽标、面板筛选行同一个算法（DB.updateCount → DB.updatesOf）。 */
+    var chip = $('#upd-chip'), chipN = $('#upd-chip-n');
+    if (chip) {
       var nUpd = 0;
       try { nUpd = DB.updateCount(app.id); } catch (e) {}
-      upgBtn.hidden = !nUpd;
-      if (upgN) upgN.textContent = nUpd;
+      chip.hidden = !nUpd;
+      if (chipN) chipN.textContent = nUpd;
     }
     /* 「保存」做的事是把当前内容冻成一版给客户看；这行说的是"现在离那一版差多远"。
        文案口径见 paintSaveState —— 这里不再写「已自动保存」（P0-2 语义冲突）。 */
@@ -1621,33 +1620,15 @@
         }
       });
     });
-    on('#act-assemble', 'click', function () { openDlg('avail', $('#act-assemble')); });
+    /* ★2026-11-04（用户）：「我应该点击装配组件去看，有哪些可以升级」——
+       有落后组件时直接开「已装配」页签（每行自带 有更新 / 更新 按钮），
+       没有更新才开「可装配」页签去装新的。卸下、装新的都在同一面板里切页签。 */
+    on('#act-assemble', 'click', function () {
+      var nUpd = 0;
+      try { nUpd = DB.updateCount(app.id); } catch (e) {}
+      openDlg(nUpd ? 'on' : 'avail', $('#act-assemble'));
+    });
 
-    /* ★2026-11-01（用户原话）：「装配了 100 个插件，我一个个点升级吗？是不是应该有一个一键升级，
-       括号里有 76 个」。
-       三条设计取舍：
-         ① **升之前把清单摊开**（哪几个 from→to）。100 个组件的应用按下去，用户得知道这 76 个是谁；
-            超过 5 个折成「…等 N 个」，不在确认框里堆 76 行；
-         ② 只改装配版本，**不碰客户可见版本** —— 要客户看到还得去「客户授权」页升级；
-         ③ 升完不算存版：还要点「存成新版本」才进历史。toast 里把这句话说出来。 */
-    function upgradeAllAsk() {
-      var ups = DB.updatesOf(app.id);
-      if (!ups.length) { hint('没有要升级的组件', { ms: 4000 }); return; }
-      var names = ups.slice(0, 5).map(function (u) { return u.name + ' ' + u.from + '→' + u.to; }).join('、');
-      Confirm.ask({
-        title: '把 ' + ups.length + ' 个组件升到最新版？',
-        body: (ups.length > 5 ? names + ' 等 ' + ups.length + ' 个' : names) +
-              '<br>只改装配版本；客户那边不会立刻变，要生效还得去「客户授权」页升级。',
-        ok: '全部升级',
-        onOk: function () {
-          var r = DB.upgradeAll(app.id);
-          if (!r || !r.n) { hint('没升成功：这台电脑写不进去', { kind: 'err', ms: 9000 }); return; }
-          renderList(); paintCounts(); paintApp(); renderCanvas();
-          hint('已升级 ' + r.n + ' 个组件到最新版 · 记得「保存新版本并发布」', { ms: 9000 });
-        }
-      });
-    }
-    on('#act-upgrade-all', 'click', upgradeAllAsk);
     /* ★2026-11-03（m05719）：「全选」只勾上当前列表里可升级的行，真正升级由下方批量键触发。 */
     on('#p-upgrade-all', 'click', batchSelectAll);
     on('#p-batch-do', 'click', batchDo);

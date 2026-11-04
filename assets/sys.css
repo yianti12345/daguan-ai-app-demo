@@ -1359,6 +1359,16 @@ body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gr
   min-width:18px;height:18px;padding: 0 var(--space-4);border-radius:var(--radius-pill);
   background:var(--surface-sunken-2);color:var(--color-text-secondary);font-size:var(--font-size-caption);line-height:var(--leading-caption);text-align:center;
 }
+/* ★2026-11-04（用户）：「装配组件操作旁边有个标签，显示 X 个组件可升级」。
+   它只报事实、不承接点击 —— 升级动作在装配面板里（看谁落后、勾谁、升谁）。
+   形态沿用状态胶囊：告警底色 + 告警字色，不抢两颗主按钮。 */
+.upd-chip{
+  display:inline-flex;align-items:center;gap:var(--space-4);
+  height:22px;padding:0 var(--space-8);border-radius:var(--radius-pill);
+  background:var(--color-warning-surface);color:var(--color-warning);
+  font-size:var(--font-size-caption);line-height:var(--leading-caption);white-space:nowrap;
+}
+.upd-chip b{font-weight:600}
 .back{
   width:32px;height:32px;flex:0 0 32px;border-radius:var(--radius-control);
   display:grid;place-items:center;background:var(--surface-subtle);color:var(--color-text-secondary);
