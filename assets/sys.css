@@ -2526,10 +2526,18 @@ body[data-drawer="on"] .hint{
 .ru-bar{height:4px;margin-top:8px;border-radius:var(--radius-pill);background:var(--color-border-hairline);overflow:hidden}
 .ru-bar i{display:block;height:100%;width:0;background:var(--color-brand);transition:width .2s var(--p-ease-out)}
 .ru-prog-s{margin:6px 0 0;font-size:var(--font-size-caption);line-height:16px;color:var(--color-text-tertiary)}
-.ru-tools{display:flex;align-items:center;gap:8px;padding:0 24px 12px;flex-wrap:wrap}
-.ru-tabs{display:inline-flex;padding:2px;border-radius:var(--radius-control);background:var(--surface-subtle)}
-.ru-tab{height:28px;padding:0 10px;border:0;border-radius:var(--radius-sm);background:transparent;font-size:var(--font-size-caption);color:var(--color-text-secondary);cursor:pointer}
-.ru-tab.on{background:var(--surface-page);color:var(--color-text-primary);box-shadow:var(--shadow-flat)}
+.ru-tools{display:flex;align-items:center;gap:8px;padding:0 24px 12px;flex-wrap:wrap;row-gap:var(--space-8)}
+/* ★2026-11-04（用户）：「还有没有类似之前说的…tab 切换的类似的布局、组件，都要检查一遍」。
+   引用管理的页签原来又是另一套（28 高灰底小胶囊 + 选中垫白底投影），
+   与装配面板刚统一的「44 高 / 16 号字 / 2px 品牌色下划线」不一致 —— 现在两处用同一套形态。
+   页签独占一行（.ru-tools 换行），下面一行才放搜索与两颗动作键。 */
+.ru-tabs{display:flex;gap:var(--space-24);width:100%;border-bottom:1px solid var(--line-2)}
+.ru-tab{position:relative;height:44px;padding:0;border:0;border-radius:0;background:none;
+  font-family:inherit;font-size:var(--font-size-heading);font-weight:500;color:var(--color-text-tertiary);cursor:pointer}
+.ru-tab:hover{color:var(--color-text-body)}
+.ru-tab.on{background:none;color:var(--color-text-body);font-weight:600;box-shadow:none}
+.ru-tab.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:2px;background:var(--color-brand)}
+.ru-tab:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:2px;border-radius:var(--radius-xs)}
 .ru-search{width:150px;height:32px;padding:0 10px;border:1px solid var(--color-border-control);border-radius:var(--radius-control);font-size:var(--font-size-caption);color:var(--color-text-body);background:var(--surface-page)}
 .ru-search:focus{outline:2px solid var(--color-focus-halo);outline-offset:1px;border-color:var(--color-focus-ring)}
 .ru-tools .btn{height:32px;padding:0 12px;font-size:var(--font-size-caption)}

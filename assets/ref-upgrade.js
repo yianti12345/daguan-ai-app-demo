@@ -65,6 +65,18 @@
     });
     dlg.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+      /* ★2026-11-04：引用管理的页签也按 APG Tabs 走方向键（与装配面板同一套操作）。 */
+      var cur = e.target.closest && e.target.closest('.ru-tab');
+      if (cur && /ArrowLeft|ArrowRight|Home|End/.test(e.key)) {
+        var tabs = Array.prototype.slice.call(dlg.querySelectorAll('.ru-tab'));
+        var i = tabs.indexOf(cur);
+        var n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1
+          : e.key === 'Home' ? 0 : tabs.length - 1;
+        e.preventDefault();
+        var to = tabs[(n + tabs.length) % tabs.length];
+        to.focus(); to.click();
+        return;
+      }
       if (e.key !== 'Tab') return;
       var f = dlg.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]');
       if (!f.length) return;

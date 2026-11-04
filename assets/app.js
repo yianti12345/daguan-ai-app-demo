@@ -2415,6 +2415,22 @@
   });
   on('#tab-avail', 'click', function () { setTab('avail'); });
   on('#tab-on', 'click', function () { setTab('on'); });
+  /* ★2026-11-04：页签是 role=tab，键盘不能只靠 Tab 键一个个过 —— APG 的 Tabs 模式要求
+     左右方向键在同一组页签间移动、Home/End 跳首尾。两处页签（装配面板 / 引用管理）同一行为了。 */
+  function arrowTabs(list, sel, activate) {
+    list.forEach(function (t, i) {
+      t.addEventListener('keydown', function (e) {
+        var n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1
+          : e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : null;
+        if (n === null) return;
+        e.preventDefault();
+        var to = list[(n + list.length) % list.length];
+        to.focus();
+        activate(to);
+      });
+    });
+  }
+  arrowTabs($$('.p-tabs [role="tab"]'), null, function (t) { setTab(t.getAttribute('data-tab')); });
   on('#dlg-search', 'input', renderList);
 
   /* 行内三态：点按钮走按钮，点行体走 toggle；键盘 Space/Enter 同一条路。
