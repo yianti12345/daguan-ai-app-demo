@@ -1277,11 +1277,13 @@ button.cc-meta:focus-visible{
 .on-tag{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 /* 「已下架」是次级标记：装了但后来下架，卸载仍在 */
 .off-tag{padding:0 var(--space-8);border-radius:var(--radius-xs);background:var(--surface-sunken-2);font-size:var(--font-size-caption);line-height:var(--leading-body);color:var(--color-text-tertiary)}
-.btn-uninstall{display:none;height:30px;padding:0 var(--space-8);border-radius:var(--radius-xs);font-size:var(--font-size-caption);color:var(--color-danger)}
+.btn-uninstall{display:inline-block;height:30px;padding:0 var(--space-8);border-radius:var(--radius-xs);font-size:var(--font-size-caption);color:var(--color-danger)}
 .btn-uninstall:hover{background:var(--surface-sunken-2)}
 /* 悬浮/聚焦才把「已装配」换成「卸载」——原地换，不加宽 */
 .row:hover .on-tag,.row:focus-within .on-tag{display:none}
-.row:hover .btn-uninstall,.row:focus-within .btn-uninstall{display:inline-block}
+/* ★2026-11-04（用户）：「装了后一但该组件升级了，只有更新操作是吧？我还必须更新了，都不能卸载吗？」
+   卸载原来是 hover 才出现的隐藏件 —— 有更新的行上等于没有。现在常驻，
+   谁都能看见"不用了可以卸"，不靠鼠标扫过去才发现。 */
 
 /* 已装配行的「有更新」视图（《设计-组件更新提示-20261028》§3 / §4）。
    状态矩阵（spec §8）：new 行底沿用 --surface-sunken-2；hover 换 --color-state-selected；

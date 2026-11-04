@@ -1939,14 +1939,20 @@
       /* 失败（§4.6）：「有更新」标签保留 —— 失败不等于已更新；动作换「重试」 */
       return updTagHtml()
         + '<button type="button" class="btn-plain" data-do="retry"'
-        + ' aria-label="重试更新 ' + esc(c.name) + ' 到 ' + esc(to) + '">重试</button>';
+        + ' aria-label="重试更新 ' + esc(c.name) + ' 到 ' + esc(to) + '">重试</button>'
+        + '<button type="button" class="btn-uninstall" data-off="' + esc(c.id) + '"'
+        + ' aria-label="卸载 ' + esc(c.name) + '">卸载</button>';
     }
     if (state === 'new') {
-      /* 同一时刻只允许一行在更新：其余行的「更新」瞬态禁用（§3.6） */
+      /* 同一时刻只允许一行在更新：其余行的「更新」瞬态禁用（§3.6）
+         ★2026-11-04（用户）：「有更新了，我万一不用了，不能卸载吗？」——
+         有更新 ≠ 必须更新。这一行也必须带「卸载」，而且不是 hover 才冒出来。 */
       return updTagHtml()
         + '<button type="button" class="btn-update" data-do="update"'
         + (updBusy ? ' disabled' : '')
-        + ' aria-label="更新 ' + esc(c.name) + ' 到 ' + esc(to) + '">更新</button>';
+        + ' aria-label="更新 ' + esc(c.name) + ' 到 ' + esc(to) + '">更新</button>'
+        + '<button type="button" class="btn-uninstall" data-off="' + esc(c.id) + '"'
+        + ' aria-label="卸载 ' + esc(c.name) + '">卸载</button>';
     }
     /* ★2026-10-28 改：不再"更新完不留按钮"。
        8 秒一过就无路可退是体验官实测的阻断项；这里给一颗「退回 vN」，
@@ -1955,7 +1961,9 @@
       var dn = justUpd[c.id];
       if (!dn) return '';
       return '<button type="button" class="btn-plain" data-do="undo"'
-        + ' aria-label="退回 ' + esc(c.name) + ' 到 ' + esc(dn.from) + '">退回 ' + esc(dn.from) + '</button>';
+        + ' aria-label="退回 ' + esc(c.name) + ' 到 ' + esc(dn.from) + '">退回 ' + esc(dn.from) + '</button>'
+        + '<button type="button" class="btn-uninstall" data-off="' + esc(c.id) + '"'
+        + ' aria-label="卸载 ' + esc(c.name) + '">卸载</button>';
     }
     return actHtml(c);
   }
