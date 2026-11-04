@@ -139,9 +139,8 @@
               <label for="ap-desc">应用介绍</label>
               <textarea id="ap-desc" placeholder="这个应用替客户做完哪件事" maxlength="120"></textarea>
             </div>
-            <!-- ★2026-11-03（m03263）：创建与编辑都要能定「谁看见 / 谁可改」。
-                 两处由 assets/scope.js 同一件渲染；这里只留挂载点。 -->
-            <div id="ap-scope-vis"></div>
+            <!-- ★2026-11-04（用户：「应用管理，编辑和创建应用时，没有可用范围这个选项，只要可配置范围」）：
+                 表单里只留「可配置范围」。可用范围不再问 —— 表单越短越好，看得见看不见不该在建应用时拦一道。 -->
             <div id="ap-scope-cfg"></div>
           </div>
           <div class="nf-ft">
@@ -891,7 +890,8 @@
             err: $('#ap-err'), ok: $('#ap-ok'), ret: null, editing: null };
   /* ★2026-11-03（m03263）：可见 / 可配置范围，两件都由 assets/scope.js 渲染。
      没加载到就退化成 null，表单照常可用 —— 不因为一个增强件把主流程打挂。 */
-  var VIS = window.Scope ? Scope.render($('#ap-scope-vis'), { kind: 'vis' }) : null;
+  /* 2026-11-04：可用范围这一件已从表单撤掉（只留可配置范围）；数据层字段保留，
+     老数据里的 visScope 原样留着不删 —— 撤的是入口，不是历史值。 */
   var CFG = window.Scope ? Scope.render($('#ap-scope-cfg'), { kind: 'cfg' }) : null;
   /* ★2026-11-02：客户那份 UI 从本页整个撤掉了 —— 客户不再是应用表单的字段，
      而是「应用 × 客户」授权记录（多对多）。新建只问名字/说明/封面。 */
@@ -992,7 +992,6 @@
     D.desc.value = a ? (a.desc || '').replace(/^还没有填写说明$/, '') : '';
     COVER = a && a.cover ? a.cover : null;
     paintCover();
-    if (VIS) VIS.set(a ? a.visScope : null);
     if (CFG) CFG.set(a ? a.cfgScope : null);
     showErr('');
     syncOk();
@@ -1022,7 +1021,6 @@
         cur.name = nm;
         cur.desc = String(D.desc.value || '').trim() || '还没有填写说明';
         cur.cover = COVER || '';
-        if (VIS) cur.visScope = VIS.get();
         if (CFG) cur.cfgScope = CFG.get();
         DB.save();
       }
@@ -1036,7 +1034,6 @@
       desc: String(D.desc.value || '').trim() || '还没有填写说明',
       cover: COVER || '',
       status: '未发布',
-      visScope: VIS ? VIS.get() : null,
       cfgScope: CFG ? CFG.get() : null
     });
     location.href = 'app.html?id=' + encodeURIComponent(app.id);
