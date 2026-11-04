@@ -765,6 +765,18 @@
        用户第一眼以为走错页（m03024「配置页面设计不合理」）。
        "装在哪"与"在配什么"是两条信息，一个占标题、一个占面包屑，不再互相顶掉。 */
     n.textContent = (COMP && COMP.name) ? COMP.name : (EXISTS ? '组件' : '新建组件');
+    /* ★2026-11-04（用户：「配置详情左上角再加一行介绍，太长也要能点开看全部」）：
+       介绍写进顶栏第二行，超长单行省略；截断时才挂点击（未截断点它没反应更糟）。 */
+    var hdDesc = $('#comp-desc');
+    if (hdDesc) {
+      var dTxt = (COMP && COMP.desc) ? COMP.desc : '';
+      if (hdDesc.textContent !== dTxt) {
+        hdDesc.textContent = dTxt;
+        delete hdDesc.dataset.fullBound;
+        hdDesc.classList.remove('is-clip');
+      }
+      if (window.UIK && UIK.Full) UIK.Full.bindLine(hdDesc, n.textContent, dTxt);
+    }
     /* ★2026-10-26 P1「归属说不清」（图04）：
        这一行原来**无条件**写 targetApp().name，而 targetApp() 会回落到 lastApp / APPS[0] ——
        于是「新建组件」页上也挂着「华信证券 · 债承审核」，用户会以为自己在那个应用里新建、

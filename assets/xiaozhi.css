@@ -143,8 +143,24 @@
 /* ★2026-10-24：聊起来之后头部收成一行。
    实测（xz3.png）：开场白两行大字 + 副标题占 230px，结论块被挤到面板下半部，
    而这时它早就不需要自我介绍了。收成 28px 一行标题，头像同步缩小。 */
-.xz-head.is-talk .xz-ava{width:28px;height:28px;margin:0 0 0 22px}
-.xz-head.is-talk .xz-h1{margin:0 0 10px;font-size:var(--font-size-heading);line-height:1.3;letter-spacing:0}
+/* ★2026-11-04（用户：「图标和小智非要挤在一起吗？不能左右吗？不浪费对话内容的空间吗？」）
+   改前：聊起来之后头像 28 独占一行、「小智」再占一行，两行 ~62px，而这一行右边整片是空的。
+   头像又被压到 28 去显示那张方标，细节全糊 —— 又小又费地方，两件都亏。
+   现在合成一行：头像 32 在左、「小智」与之同基线在右，头部从 62 压到 40，
+   省下来的 22px 全给对话正文。头像反而比原来大 4px，不再被压变形。 */
+.xz-head.is-talk{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
+  column-gap:var(--space-8);padding:0 0 var(--space-8)}
+/* 工具栏（抓手/历史/关闭）仍是独立一整行 —— 它是 .xz-head 的第一个子节点，
+   用 grid-column 1/-1 横跨，不然会被挤成头像左边的一小坨。 */
+.xz-head.is-talk .xz-top{grid-column:1/-1}
+/* 进度行是 hidden，但 .xz-prog 自己的 display 盖过了 [hidden] 的默认值 ——
+   网格里它照样占一列一格，把「小智」挤到右边 100 多像素外，还多顶出一行 27px 的空白。
+   这里显式关掉；它真要显示时（有进度）由下面的规则放行。 */
+.xz-head.is-talk .xz-prog[hidden]{display:none}
+.xz-head.is-talk .xz-prog{grid-column:1/-1}
+.xz-head.is-talk .xz-ava{grid-column:1;width:36px;height:36px;margin:0 0 0 22px}
+.xz-head.is-talk .xz-h1{grid-column:2;margin:0;padding:0 22px 0 0;font-size:var(--font-size-heading);
+  line-height:1.2;letter-spacing:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .xz-sub{margin:0 0 18px;padding:0 22px;font-size:var(--font-size-body);line-height:1.55;
   color:var(--color-text-tertiary);font-weight:400}
@@ -231,7 +247,10 @@
 
 /* ★2026-10-28（用户当面指出）：原来只有一层 20% 线的淡底，在白/淡紫面板上等于没有边界，
    用户看不出"在哪儿打字"。改成白底 + 明确边框 + 一层浅影，聚焦时边框转品牌色。 */
-.xz-inputwrap{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:56px;padding:0 8px 0 16px;
+/* ★2026-11-04（用户：「支持 2~3 行，不然都挤在一起」）：
+   原来固定 56 高、单行 input 垂直居中，输入区只够一行，右边还挤着回形针/转文字/麦克风/发送。
+   现在起手 76（两行），随内容长到 100（三行）为止，按钮改贴底对齐 —— 多行时它们守在最后一行旁边。 */
+.xz-inputwrap{flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:4px;height:auto;padding:10px 8px 8px 16px;
   /* 边框 75% 不是随手取的：32% 时与面板底只有 1.54:1，盲审按 WCAG 非文本 3:1 判踩线，
      差显示器上仍看不出边界；75% 落在 ≈3:1。 */
   border:1.5px solid color-mix(in srgb,var(--color-text-tertiary) 75%,transparent);
@@ -249,10 +268,19 @@
   box-shadow:0 0 0 3px color-mix(in srgb,var(--color-brand) 15%,transparent),
              0 1px 3px color-mix(in srgb,var(--color-text-body) 7%,transparent)}
 
-.xz-inputwrap input{flex:1;min-width:0;height:100%;border:0;background:none;outline:none;
-  font-size:var(--font-size-body);color:var(--color-text-body)}
+.xz-inputwrap input,
+.xz-inputwrap textarea{flex:1;min-width:0;height:100%;border:0;background:none;outline:none;
+  font-size:var(--font-size-body);color:var(--color-text-body);font-family:inherit}
+/* 两行 = 2×21（行高）+ 0；三行封顶 63。高度由 JS 按 scrollHeight 现算，
+   这里只给上下界与行高，避免自己写死一个和字号脱钩的像素。 */
+.xz-inputwrap textarea{display:block;padding:0;resize:none;overflow-y:auto;height:auto;
+  line-height:21px;min-height:42px;max-height:63px;width:100%}
+/* 控件行：贴右下，只占自己那一行高（麦克风/发送 38），不再和正文抢横向宽度 */
+.xz-iact{display:flex;align-items:center;gap:8px;justify-content:flex-end;min-width:0}
+.xz-iact .uik-att-btn{width:28px;height:28px}
 
-.xz-inputwrap input::placeholder{color:var(--color-text-tertiary)}
+.xz-inputwrap input::placeholder,
+.xz-inputwrap textarea::placeholder{color:var(--color-text-tertiary)}
 
 /* ★2026-11-04（用户）：语音发送方式改成两段切换 + ⓘ 提示，
    与浮条里的 .fk-vmode 和顶栏「预览/代码」同一套外形（1px 描边 + 选中段浅底）。 */

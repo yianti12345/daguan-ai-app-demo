@@ -193,6 +193,10 @@ function renderXz(){
      再按浮球的真实位置摆面板。 */
   xzMountFab(host);
   xzMountPanel(host);
+  /* ★2026-11-04：首绘不跑 xzPaint，附件入口就永远挂不上 —— 面板 HTML 里有 #xzAttBar，
+     回形针却一直停在「输入框里 0 个按钮」（实测 .xz-inputwrap .uik-att-btn = 0）。
+     打开即挂一次，之后的每次重绘由 xzPaint 自己再挂。 */
+  xzAttachSync();
   xzPlacePanel(host);
   /* ★2026-10-22：任何一次重建之后，只要面板是开着的，就把"这一轮的结论"保持在
      可视区内。**这一步不能只放在 toggle 里** —— 面板状态是持久化的（sessionStorage
@@ -317,7 +321,8 @@ document.addEventListener('click', function(e){
     var xv = xi ? String(xi.value || '').trim() : '';
     var fromVoice = !!(xi && xi.getAttribute('data-voice') === '1');
     if (xi) xi.removeAttribute('data-voice');
-    if (xv){ xi.value = ''; xzAsk(xv, fromVoice); }
+    var atts = xzAttTake();
+    if (xv || atts.length){ xi.value = ''; xzInputFit(xi); xzAsk(xv, fromVoice, atts); }
     return;
   }
 }, true);
@@ -336,7 +341,21 @@ document.addEventListener('keydown', function(e){
   var ev = String(t.value || '').trim();
   var fromVoice = t.getAttribute('data-voice') === '1';
   t.removeAttribute('data-voice');
-  if (ev){ t.value = ''; xzAsk(ev, fromVoice); }
+  var atts2 = xzAttTake();
+  if (ev || atts2.length){ t.value = ''; xzInputFit(t); xzAsk(ev, fromVoice, atts2); }
+}, true);
+
+/* ── 输入框随内容长高（2026-11-04）───────────────────────────────
+   两行起、三行封顶，超出就滚动。高度按 scrollHeight 现算，不写死像素 ——
+   字号一改（判据 tokscale 会动），这里不用跟着改。 */
+function xzInputFit(el){
+  if (!el || el.tagName !== 'TEXTAREA') return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 63) + 'px';
+}
+document.addEventListener('input', function(e){
+  var t = e.target;
+  if (t && t.getAttribute && t.getAttribute('data-act') === 'xzInput') xzInputFit(t);
 }, true);
 
 /* ── 第二道闸：小智操作期间，不许任何点击把文档换掉 ──────────────────
@@ -2629,7 +2648,7 @@ function xzMsgsHtml(){
   var role = xzPageRole();
   var qs = XZ_Q[role] || XZ_Q.admin;
   var body = xzMsgs().map(function(m, mi){
-    if (m.who === 'me') return '<p class="xz-say is-me">' + att(m.text) + '</p>';
+    if (m.who === 'me') return '<p class="xz-say is-me">' + att(m.text) + '</p>' + (m.atts ? UIK.Attach.msgHtml(m.atts) : '');
     /* ★2026-10-24（xz3.log 实测）：成功的那一轮里模型照样塞一段「做到这里 ■
        后面几轮没有新东西可动，我停在这里，不往下乱点」——同一条消息上面已经写着
        「✓ 做完了 用了 5.9 秒 · 动了 3 下」，下面再挂一块"停在这里"就是自相矛盾。
@@ -3023,7 +3042,9 @@ function xzHtml(mode){
       ? '<section class="xz-panel" aria-label="小智助手">'
         + '<div class="xz-head' + (talk ? ' is-talk' : '') + (isHist ? ' is-hist' : '') + '">'
         + '<div class="xz-top">'
-        + '<span class="xz-move" aria-hidden="true" title="按住可拖动小智"><i></i><i></i><i></i><i></i><i></i><i></i></span>'
+        /* ★2026-11-04（用户：「那个拖拽的图标完全没用，谁会把对话框拖来拖去」）：
+           六点抓手删掉。拖拽本身仍在（Draggable 的 handle 是 .xz-head，不认这个点），
+           只是不再画一个"看得出能拖、但没人会拖"的记号。 */
         + '<button class="hist-ico" data-act="histToggle" aria-label="对话历史" aria-pressed="' + (isHist ? 'true' : 'false') + '">' + UIK.hist.icon(15) + '</button>'
         + '<button class="xz-x" data-act="xzToggle" aria-label="收起小智">' + sv('close') + '</button>'
         + '</div>'
@@ -3037,15 +3058,23 @@ function xzHtml(mode){
         + '</div>'
         + (isHist ? '' : '<div class="xz-task" id="xzTask"' + xzTaskAttrs() + (taskHtml ? '' : ' hidden') + '>' + taskHtml + '</div>')
         + '<div class="xz-body' + (isHist ? ' is-hist' : '') + '" id="xzBody">' + (isHist ? xzHistBodyHtml() : xzMsgsHtml()) + '</div>'
+        + (isHist ? '' : '<div class="uik-att-bar" id="xzAttBar"></div>')
         + (isHist ? '' : '<div class="xz-foot"><div class="xz-inputwrap">'
-          + '<input data-act="xzInput" aria-label="说需求" placeholder="直接说你要做什么">'
+          /* ★2026-11-04（用户：「高度可以高一些，支持 2~3 行，不然都挤在一起，完全没有
+             文字输入的空间」）：单行 input 换成 textarea，起手两行、最多三行。
+             Enter 仍发送、Shift+Enter 换行 —— 原 keydown 分支本来就只拦非 Shift 的 Enter，
+             换成 textarea 之后换行自然生效，不用改判定。 */
+          + '<textarea data-act="xzInput" rows="2" aria-label="说需求" placeholder="直接说你要做什么"></textarea>'
+          /* 三个控件收进自己的一行：和正文同一行时，430 宽的面板里文字只剩 ~240px，
+             两行下来每行不到 15 个字，等于"能输但没法用"。 */
+          + '<div class="xz-iact">'
           + '<button type="button" class="xz-vmode" data-act="xzVoiceMode" data-mode="confirm" aria-pressed="false" aria-label="语音发送方式：当前转文字，点一下切到直接发">'
           + '<span class="xz-vmode-tx">转文字</span>'
           + '<svg class="xz-vmode-ic" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>'
           + '</button>'
           + '<button class="xz-mic" data-act="xzMic" aria-label="按下说话" aria-pressed="false" title="按下说话">' + sv('mic') + '</button>'
           + '<button class="xz-send" data-act="xzSend" aria-label="发送">' + sv('right') + '</button>'
-          + '</div></div>'
+          + '</div></div></div>'
           + '<p class="xz-note">推荐与回答由 AI 生成，请核对 · 小智会直接操作这个页面</p>')
         + '</section>'
       : '');
@@ -3079,6 +3108,7 @@ function xzPaint(){
     if (subEl) subEl.remove();
   }
   box.innerHTML = xzMsgsHtml();
+  xzAttachSync();
   /* 计划条与顶部进度。HTML 没变就不重建 —— 否则每次 tick 都会把计划的滚动位置
      和折叠按钮的焦点冲掉。计划步骤是阶段里同一批对象，markTurn 打勾后这里自然跟着变。 */
   var task = document.getElementById('xzTask');
@@ -3311,8 +3341,38 @@ function xzDeny(){
 /* 一次问答：多轮直到做完或该停。
    如果上一轮停在"等确认"，而用户这次说的是"确认/继续"，就放行一次。
    语音转出来的"确认"一律不认 —— 授权只能点卡片。 */
-function xzAsk(me, fromVoice){
-  if (!me) return;
+/* ★2026-11-04 附件：面板每次 render 都整块 innerHTML 重画，控制器必须重建，
+   附件列表靠 xzAttCache 跨重画带回来 —— 用户选完文件点一下别处，附件不该凭空消失。 */
+var xzAttCtl = null, xzAttCache = [];
+function xzAttachSync(){
+  var bar = document.getElementById('xzAttBar');
+  var wrap = document.querySelector('.xz-inputwrap');
+  if (!bar || !wrap || !window.UIK || !UIK.Attach) return;
+  xzAttCtl = UIK.Attach.create(bar).seed(xzAttCache);
+  /* 回形针住进控件行（.xz-iact），不再是正文旁边的一个图标 ——
+     正文那一行要还给文字。控件行不存在时退回输入区，别让按钮凭空消失。 */
+  var row = wrap.querySelector('.xz-iact');
+  if (row) row.insertBefore(xzAttCtl.button, row.firstChild); else wrap.appendChild(xzAttCtl.button);
+  xzAttCtl.bindDrop(wrap);
+  xzAttCtl.onChange(function(n){
+    if (xzAttCtl) xzAttCache = xzAttCtl.all();
+    var inp = document.querySelector('[data-act="xzInput"]');
+    var snd = document.querySelector('[data-act="xzSend"]');
+    if (snd) snd.setAttribute('data-ready', ((inp && inp.value.trim()) || n) ? 'true' : 'false');
+  });
+}
+function xzAttTake(){ if (!xzAttCtl) return []; var out = xzAttCtl.take(); xzAttCache = []; return out; }
+
+function xzAsk(me, fromVoice, atts){
+  atts = atts || [];
+  if (!me && !atts.length) return;
+  if (atts.length){
+    var al = xzMsgs();
+    al.push({ who:'me', text:me || '', atts:atts });
+    var got = UIK.Attach.reply(atts);
+    if (got) al.push({ who:'xz', text:got });
+    xzHistTouch(); render(); return;
+  }
   var list = xzMsgs();
   var last = null;
   for (var i = list.length - 1; i >= 0; i--){

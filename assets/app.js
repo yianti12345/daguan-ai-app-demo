@@ -275,6 +275,17 @@
   function paintApp() {
     var shownName = (VIEW_SNAP && VIEW_SNAP.name) ? VIEW_SNAP.name : app.name;
     $$('[data-bind="app-name"]').forEach(function (n) { n.textContent = shownName; });
+    /* ★2026-11-04（用户：「应用配置详情左上角也加一行介绍，太长能点开看全部」）。 */
+    var hdDesc = $('#app-desc');
+    if (hdDesc) {
+      var dTxt = (VIEW_SNAP && VIEW_SNAP.desc) ? VIEW_SNAP.desc : (app.desc || '');
+      if (hdDesc.textContent !== dTxt) {
+        hdDesc.textContent = dTxt;
+        delete hdDesc.dataset.fullBound;
+        hdDesc.classList.remove('is-clip');
+      }
+      if (window.UIK && UIK.Full) UIK.Full.bindLine(hdDesc, shownName, dTxt);
+    }
     /* ★2026-11-03：顶栏第二行（客户 · 发布态）已删（用户 m00984：只留应用名 + 版本号）。
        删的是**显示**，不是数据：客户在客户授权页、发布态在应用卡与客户授权页，
        各自都有动作可做；顶栏里它们既不能点、也回答不了"我现在能干什么"。

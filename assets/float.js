@@ -173,8 +173,16 @@
         /* ★2026-11-03（m05651）：历史入口从输入条左侧的时钟图标移到上方
            「历史对话」文字，和「展开」并排；输入条左侧不再放第二个历史入口。 */
         bar.appendChild(grip); bar.appendChild(ta); bar.appendChild(vmode); bar.appendChild(mic); bar.appendChild(send);
-        dock.appendChild(hist); dock.appendChild(bar);
+        /* ★2026-11-04 附件：回形针占输入条里一个 28px 的横向槽位，不增高（这条 bar 净增高 0 是硬约束）。
+           芯片区放在输入条上方，没选文件时 display:none，不占任何高度。 */
+        var attBar = document.createElement('div');
+        attBar.className = 'uik-att-bar';
+        var att = UIK.Attach.create(attBar);
+        bar.insertBefore(att.button, vmode);
+        att.onChange(sync);
+        dock.appendChild(hist); dock.appendChild(attBar); dock.appendChild(bar);
         document.body.appendChild(dock);
+        att.bindDrop(dock);
         mounted.bar = bar;
         mounted.dock = dock;
 
@@ -288,7 +296,12 @@
         }
         function msgHtml(m, ro) {
           var who = m.who === 'me' ? '我' : '小智';
-          var body = m.card ? cardHtml(m.card, ro) : '<span>' + esc(m.text) + '</span>';
+          /* ★2026-11-04：只丢了一个附件、没打字的这一轮，原来照样输出一个空的 <span>，
+             屏幕上就是一个空气泡（用户截图里「我」下面那块空白）。没正文就不出气泡。 */
+          var say = (m.text || '').trim();
+          var body = m.card ? cardHtml(m.card, ro)
+            : (say ? '<span class="fk-say">' + esc(say) + '</span>' : '')
+              + (m.atts ? UIK.Attach.msgHtml(m.atts) : '');
           return '<div class="fk-msg' + (m.who === 'me' ? ' is-me' : '') + (m.card ? ' is-card' : '') + '">' +
             '<b>' + who + '</b>' + body + '</div>';
         }
@@ -303,6 +316,8 @@
         }
         function render() {
           syncHistMode();
+          /* 空态只管聊天态；看历史列表时面板必须出现，否则点「历史对话」什么都不会发生。 */
+          dock.classList.toggle('is-empty', histView === 'chat' && !msgs.length);
           if (histView === 'list') {
             list.innerHTML = UIK.hist.listHtml(visibleConvs(), curId);
             return;
@@ -314,10 +329,12 @@
             list.innerHTML = UIK.hist.detailHtml(dc, threadHtml(dc.msgs));
             return;
           }
-          if (!msgs.length) {
-            list.innerHTML = '<p class="fk-hist-empty">还没有对话。说一句要改什么，小智边做边给你看。</p>';
-            return;
-          }
+          /* ★2026-11-04（用户：「提示文案也不对」）：原来空态会渲染一整块白卡，
+             里面只有一句「还没有对话。说一句要改什么，小智边做边给你看。」
+             —— 这是解释句，且把"这页的对话是干什么的"印在了对话区里。
+             没话说的时候不该有面板：这块地方直接不出现，输入框的占位符已经说明了一切。 */
+          dock.classList.toggle('is-empty', histView === 'chat' && !msgs.length);
+          if (!msgs.length) { list.innerHTML = ''; return; }
           list.innerHTML = msgs.map(function (m) { return msgHtml(m, false); }).join('');
           list.scrollTop = list.scrollHeight;
         }
@@ -395,6 +412,12 @@
         }
         function scheduleCollapse(m) {
           scheduleCancel();
+          /* ★2026-11-04（用户：「交互很诡异」）：原来任何一条回复都在 0.9 秒后自动收起。
+             你刚打完一句话、自己那句还在面板里，回音一来面板就自己缩回去 —— 人还没读完，
+             也来不及看见自己说了什么。现在只对「不是你问的」那种主动告知收起；
+             你说过话的这一轮，面板留到你手动点收起或点「历史对话」为止。 */
+          var prev = msgs[msgs.length - 2];
+          if (prev && prev.who === 'me') return;
           autoT = setTimeout(function () {
             autoT = null;
             if (!m || msgs[msgs.length - 1] !== m) return;   /* 后面又来了新消息 ⇒ 以新的为准 */
@@ -443,10 +466,11 @@
           return true;
         }
 
-        function addMsg(who, text, kind) {
-          if (!text) return;
-          var c = classify(who, text, kind, false);
-          var m = { who: who, text: String(text), kind: c.kind, t: Date.now() };
+        function addMsg(who, text, kind, atts) {
+          if (!text && !(atts && atts.length)) return;
+          var c = classify(who, text || '', kind, false);
+          var m = { who: who, text: String(text || ''), kind: c.kind, t: Date.now() };
+          if (atts && atts.length) m.atts = atts;
           msgs.push(m);
           if (msgs.length > MAX_MSG) msgs.splice(0, msgs.length - MAX_MSG);
           touchCur();
@@ -681,7 +705,7 @@
         mic.addEventListener('click', micStart);
         vmodePaint();
 
-        function sync() { send.setAttribute('data-ready', ta.value.trim() ? 'true' : 'false'); }
+        function sync() { send.setAttribute('data-ready', (ta.value.trim() || att.count()) ? 'true' : 'false'); }
         ta.addEventListener('input', sync);
         ta.addEventListener('keydown', function (e) {
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); fire(); }
@@ -689,7 +713,10 @@
         send.addEventListener('click', fire);
         function fire() {
           var t = ta.value.trim();
-          if (!t || send.getAttribute('data-ready') !== 'true') return;
+          /* ★2026-11-04：必须在 take() **之前**判 ready。take() 会清空附件并回调 sync()，
+             sync() 立刻把 data-ready 置回 false —— 先取再判就是自己把自己的发送拦掉（实测踩过）。 */
+          if ((!t && !att.count()) || send.getAttribute('data-ready') !== 'true') return;
+          var atts = att.take();                 /* 附件本身也构成一条消息 */
           ta.value = ''; sync();
           /* 说话一定是回到当前对话说的：历史列表/详情只是"看一眼"，不接管输入。 */
           histView = 'chat'; detailId = ''; syncHistIco();
@@ -699,8 +726,13 @@
              的反馈是零。**说话之后必须先看见自己说的那句**，所以发送即展开，
              收起的默认只作用于"还没开始说话"的状态。 */
           setCollapsed(false);
-          addMsg('me', t);
-          if (dlg.onSend) dlg.onSend(t);
+          addMsg('me', t, undefined, atts);
+          /* 带附件的这一轮由附件逻辑接管，不再把（可能为空的）指令丢给主循环 ——
+             实测：空指令进主循环会回一句「这一句没做成」，跟刚读到的附件并排出现，是脏数据。 */
+          if (!atts.length && dlg.onSend) dlg.onSend(t, atts);
+          /* 有附件时小智回一句「读到了什么」，引用的是真实文件名/包内清单，不是万能的「已读取」。 */
+          var got = UIK.Attach.reply(atts);
+          if (got) addMsg('xz', got);
         }
         sync();
         /* ★ 默认态由**末条消息**决定（F5）：空历史／告知／进行中 → 收起；

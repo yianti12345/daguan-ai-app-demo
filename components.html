@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>组件库</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=fdf06a7f">
-<link rel="stylesheet" href="assets/xiaozhi.css?v=02ac2ac8">
+<link rel="stylesheet" href="assets/sys.css?v=2be9ca5a">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=7d80cd0e">
 <!-- 2026-10-29：本页 <style> 已清空（原 3,683 B）。`.nf-*`（2026-10-24）与
      引用数格 `.cc-meta`（2026-10-29）都在 assets/sys.css 的组件层：
      前者两页共用，后者是组件卡的一个部件而不是页面胶水。
@@ -146,7 +146,7 @@
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/transfer.js?v=6ef877f1"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
-<script src="assets/ref-upgrade.js?v=32070aa0"></script>
+<script src="assets/ref-upgrade.js?v=96cbf832"></script>
 <script src="assets/popover.js?v=7f96155d"></script>
 <script src="assets/scope.js?v=69520925"></script>
 <script>
@@ -541,6 +541,7 @@
          依据是零上下文盲审「选组件最该看第几版」。但 tools/content-contract.json 记着
          用户原话「版本不在卡上」，ver 在 forbidden 里 —— 盲审不知道这条已被否决。
          版本只走版本管理页；卡上只留引用数（影响面）。 */
+      const updText = String(c.updated || '—').replace(/:(\d{2})$/, '');
       const refs = DB.APPS.filter((a) => (a.comps || []).indexOf(c.id) >= 0).length;
       /* ★2026-11-04（m06113 需求一）：动态角标。数口径与引用管理共用 DB.compUpgradeStats，
          不在卡面另做一次 filter —— 否则卡上说 5、弹窗里 4，用户只会信那个更吓人的。 */
@@ -563,6 +564,9 @@
          一屏 8 张卡右下全是同一句否定句，读起来像每张卡都坏了；
          而"没人用"本来就是新组件的默认状态，不值得占一行。有人用了才报数。 */
       const metaText = refs ? refs + ' 个应用在用' : '';
+      /* ★2026-11-04（用户：「组件的卡片样式好丑」）：版本时间原来精确到秒
+         （2026-11-03 14:20:00），在一张 374 宽的卡上等于把一个数据库字段直接印出来。
+         秒对读卡的人没有任何决策价值 —— 只留到分钟。 */
       /* ★2026-10-29（用户：「点击了没反应也是合理的对吗」）：同一句话在 ⋮ 菜单里能点开、
          在卡底点不动 —— 底栏那行原来只是 <span>。有引用时改成真控件，点击走 menuAct('refs')，
          与菜单项共用同一个浮层节点（不复制逻辑）；0 引用仍是纯文字（没有名单可看，不做假入口）。
@@ -594,7 +598,6 @@
                     aria-label="${esc((on ? '禁用' : '启用') + c.name)}">
               <span class="cc-sw-dot" aria-hidden="true"></span>${st}
             </button>
-            ${refBadge}
             <div class="cl-ops">
             <button class="k-more" type="button" data-id="${esc(c.id)}"
                     aria-haspopup="menu" aria-expanded="false"
@@ -612,7 +615,8 @@
           </div>
           <div class="cc-spec">
             <span class="cc-ver" title="当前版本">${esc(c.ver || 'v1')}</span>
-            <span class="cc-upd" title="版本更新时间 ${esc(c.updated || '未记录')}">${esc(c.updated || '—')}</span>
+            <span class="cc-upd" title="版本更新时间 ${esc(c.updated || '未记录')}">${esc(updText)}</span>
+            ${refBadge}
             ${metaHtml}
           </div>
         </div>
@@ -621,6 +625,16 @@
     /* 卡片是网格，没有表头：每张卡自带名称/状态/动作，列的语义由卡内位置表达。
        8 张 → 3 + 3 + 2，末行 2 张不拉伸（grid-auto-rows 由等高的固定卡高给，不靠内容撑）。 */
     grid.innerHTML = rowHtml;
+    /* ★2026-11-04（用户：「一点击卡片直接进入配置了，看不到介绍全部内容」）：
+       说明被两行截断时挂「全文」角标 + 小弹窗。卡本身是链接，说明上的点击必须
+       preventDefault + stopPropagation，不然会直接跳进配置页。 */
+    if (window.UIK && UIK.Full) {
+      grid.querySelectorAll('.ccard').forEach((card) => {
+        const nm = card.querySelector('.cl-nm');
+        const ds = card.querySelector('.cl-desc');
+        if (ds) UIK.Full.bindDesc(ds, nm ? nm.textContent : '', ds.textContent);
+      });
+    }
 
     /* 原来写「第 1-8 条 / 共 8 条」：8 条就是全部，却有"区间"口吻，
        读者会以为后面还有第 2 页（而翻页控件是 hidden 的）。两页统一成「共 N 个X」。 */
@@ -996,6 +1010,6 @@
 </script>
 <div id="xz-host"></div>
 <script src="assets/shell.js?v=1d57161f"></script>
-<script src="assets/xiaozhi.js?v=6e40f72d"></script>
+<script src="assets/xiaozhi.js?v=d1a6d604"></script>
 </body>
 </html>

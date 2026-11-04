@@ -306,6 +306,8 @@
 
   /* 组件卡 ComponentCard（5） */
   --ccard-radius:var(--radius-panel);
+  /* 2026-11-04：卡顶状态条的高度。3px 是下限 —— 1px 看不出色相、4px 开始像标题栏。 */
+  --ccard-accent-h:3px;
   /* 2026-11-01：与 --card-shadow 同一条口径 —— 组件卡也不许默认浮着（用户：「阴影很诡异」）。
      两页材质同源，改一起改。 */
   --ccard-shadow:var(--card-shadow);

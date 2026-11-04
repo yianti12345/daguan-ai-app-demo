@@ -60,7 +60,10 @@
 .fk-hist-col:hover{color:var(--color-text-body)}
 .fk-hist-col:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring); outline-offset:1px}
 .fk-hist-list{
-  padding:var(--space-12); overflow:auto; flex:0 1 auto; min-height:96px; max-height:300px;
+  /* ★2026-11-04（用户：对话「样式及交互很诡异」）：原来 overflow:auto 会横向滚动 ——
+     附件卡一宽，整条对话被推着左右走，消息首字被裁掉（实测「这个页面怎么用」显示成
+     「个页面怎么用」）。对话区只许竖向滚动，横向一律不出界。 */
+  padding:var(--space-12); overflow-y:auto; overflow-x:hidden; flex:0 1 auto; min-height:96px; max-height:300px;
   display:flex; flex-direction:column; gap:var(--space-12);
   background:var(--surface-page); border-radius:var(--radius-panel);
   box-shadow:var(--shadow-floating);
@@ -69,10 +72,22 @@
 .fk-hist-empty{color:var(--color-text-tertiary); font-size:var(--font-size-body); margin:0; padding:var(--space-4) 0; line-height:var(--leading-body)}
 /* 空历史时不占 96 的固定高度：一片白比一句提示更难看 */
 .fk-hist-list:has(.fk-hist-empty){min-height:0}
-.fk-msg{display:flex; flex-direction:column; gap:var(--space-4); font-size:var(--font-size-body); line-height:var(--leading-body); color:var(--color-text-body)}
+/* ★2026-11-04（用户：「配置页面的对话样式及交互很诡异」）：
+   改前两边长得一模一样 —— 都只有一个 12px 灰标签 + 一段通栏正文，读的人分不清
+   哪句是自己说的、哪句是系统回的，一屏看下去像两条并排的注释。改后按方向分：
+   我说的靠右（浅底气泡），系统回的靠左（不铺底，留在面板底色上）。
+   气泡宽度上限 78%，长句自己折行，不再把整条对话撑宽。 */
+.fk-msg{display:flex; flex-direction:column; gap:var(--space-4); min-width:0; max-width:100%;
+  font-size:var(--font-size-body); line-height:var(--leading-body); color:var(--color-text-body)}
 .fk-msg b{font-weight:400; font-size:var(--font-size-caption); line-height:var(--leading-caption); color:var(--color-text-tertiary)}
-.fk-msg.is-me{color:var(--color-text-secondary)}
-.fk-msg.is-me span{background:var(--surface-subtle); border-radius:var(--radius-sm); padding:var(--space-8) var(--space-12); align-self:flex-start}
+.fk-msg .fk-say{display:block; max-width:78%; padding:var(--space-8) var(--space-12); border-radius:var(--radius-panel);
+  white-space:pre-wrap; overflow-wrap:anywhere}
+.fk-msg .uik-atts{max-width:100%}
+.fk-msg.is-me{align-items:flex-end; color:var(--color-text-primary)}
+.fk-msg.is-me .fk-say{background:var(--surface-subtle)}
+.fk-msg.is-me .uik-atts{justify-content:flex-end}
+/* 空态：一句话都没有时连白卡都不该出现（用户截图：一张 96 高的白卡里飘着一行灰字） */
+.fk-dock.is-empty .fk-hist{display:none}
 
 /* ── 发布后的改动卡（2026-10-27）──────────────────────────
    版本号 + 一句人话 + 内容指纹 + 查看/恢复。

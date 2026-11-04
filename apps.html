@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=fdf06a7f">
-<link rel="stylesheet" href="assets/xiaozhi.css?v=02ac2ac8">
+<link rel="stylesheet" href="assets/sys.css?v=2be9ca5a">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=7d80cd0e">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
 .page-hd{margin: 0 0 16px}
@@ -733,6 +733,15 @@
         '</footer>' +
       '</article>';
     }).join('');
+    /* ★2026-11-04：说明被截断时挂「全文」+ 小弹窗。这里的说明包在 <a class="kc-hit"> 里，
+       点它必须拦掉跳转，否则点"全文"会直接进应用配置页。 */
+    if (window.UIK && UIK.Full) {
+      grid.querySelectorAll('.kcard').forEach(function (card) {
+        var t = card.querySelector('.kc-title');
+        var d = card.querySelector('.kc-desc');
+        if (d) UIK.Full.bindDesc(d, t ? t.textContent : '', d.textContent);
+      });
+    }
 
   }
 
@@ -1132,7 +1141,7 @@
 </script>
 <div id="xz-host"></div>
 <script src="assets/shell.js?v=1d57161f"></script>
-<script src="assets/xiaozhi.js?v=6e40f72d"></script>
+<script src="assets/xiaozhi.js?v=d1a6d604"></script>
 <script>
 /* ── 下载客户端浮层（2026-11-01）──────────────────────────────────
    用户口径：放在应用管理右上，图标按钮，悬停显示「下载客户端」，点开分 Mac / Windows。

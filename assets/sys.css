@@ -628,7 +628,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
   padding:0;border:0;border-radius:var(--ccard-radius);
   background:var(--surface-page);
   /* 同应用卡 m05570：4% 贴地投影在白底上等于没有边界，补一道 inset 收边环。 */
-  box-shadow:inset 0 0 0 1px var(--color-border-card), 0 1px 2px var(--shadow-color-1);
+  box-shadow:inset 0 0 0 1px var(--color-border-card), 0 1px 2px var(--shadow-color-1), 0 10px 22px -18px var(--shadow-color-2);
   overflow:hidden;
   /* ★2026-11-02 材质再统一（NB 判据）：2026-11-01 曾把两页统一成 1px 描边，那不是统一材质，
      是把两边一起做成 DESIGN.md §1.1 明令禁止的样子。现在两页都走「底色差 + 阴影」：
@@ -638,7 +638,36 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      内容不够时卡必须自己收，不能靠一个下限撑出一条空带。 */
   transition:box-shadow .16s ease;
 }
+/* ── 说明被截断时的「全文」入口（2026-11-04）────────────────────
+   用户：「介绍太长了显示不全，一点击卡片直接进入配置了，看不到全部内容」。
+   被截断才出现（JS 量 scrollHeight 决定），不截断就一个像素都不显示；
+   角标用绝对定位压在第二行末尾，不占行高 —— 卡是等高网格，多一行会把整行顶高。 */
+.is-clip{position:relative;padding-right:3.2em}
+.is-clip::after{
+  content:"全文";position:absolute;right:0;bottom:0;padding-left:16px;
+  font-size:var(--font-size-caption);line-height:21px;font-weight:400;
+  color:var(--color-brand-ink);text-decoration:underline;text-underline-offset:2px;
+  background:linear-gradient(90deg,transparent,var(--surface-page) 45%);
+}
+.is-clip:hover::after{color:var(--color-brand-hover)}
+.is-clip:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:2px;border-radius:var(--radius-xs)}
+
 .page-components .crow.ccard{cursor:pointer}
+/* ── 卡顶状态条（2026-11-04）─────────────────────────────────────
+   用户：「增加颜色，比如卡片顶部增加一个蓝色的条」。
+   参照 Linear / SalesSheet 的做法（3px accent bar）：一条细色条负责"一眼扫出这是哪一类状态"，
+   不占版面、不需要额外的色块或图标砖。它和运行带里的胶囊互为冗余 ——
+   颜色不是唯一通道，色弱的人从「启用/禁用/未发布」三个字照样读得到。
+   颜色按状态取值：能用的绿、没发出去的黄、关掉的灰。
+   ⚠ 反例别踩回：不整卡染色、不加顶部渐变、不按类型乱配八种颜色（那是彩虹条，扫一屏只会更乱）。 */
+.page-components .crow.ccard::before{
+  content:"";position:absolute;inset:0 0 auto 0;height:var(--ccard-accent-h);
+  background:var(--ccard-accent,var(--color-border-control));
+}
+/* 能用 = 品牌蓝（与 v1 徽标、页面主色同一支），关掉 = 灰，没发出去 = 黄。
+   不按类型配八种色：组件现在没有分类字段，硬造一套只会扫出一屏彩虹。 */
+.page-components .crow[data-on="1"]{--ccard-accent:var(--color-brand)}
+.page-components .crow[data-st="draft"]{--ccard-accent:var(--color-warning)}
 .page-components .crow.ccard:hover{box-shadow:inset 0 0 0 1px var(--color-border-control), 0 6px 18px var(--shadow-color-2)}
 /* ── 身份区：类型点 + 名称（"这是什么零件"只由这一行回答）──────────────
    类型色在这张卡上**只出现一次**（那个 6px 点），不整卡染色、不加侧边条、不印类型文字：
@@ -721,6 +750,15 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
    第二行"只剩三四个字"的参差跟着消失。
    右缘仍受 .cc-body 的 16 内距约束，不会出卡（check-card-uniform ⑨ 量的是这条）。 */
 .cc-body{flex:none;padding:var(--space-16) var(--space-16) 0;min-height:0}
+/* ── 预览区（2026-11-04）───────────────────────────────────────
+   Material 的卡片 anatomy 第一条是：卡片上半部要有一个视觉锚（media / thumbnail），
+   观众先被形状抓住，再读名字。本页原来没有锚，名称直接从卡顶开始、下面接说明，
+   一屏 8 张全是同一种"文字铺到底"的方块 —— 这才是"一点样式也没有"的真正来源。
+   画的是组件的形态线框（表格/双栏/列表/整页），不是内容截图：它只说"这是表格还是表单"。
+   ⚠ 这是全卡唯一允许的第二层底色：媒体区在 Material/Figma 的卡片里本来就是独立一层，
+   与"卡身单一底色"不冲突 —— 卡身（说明 + 运行带 + 规格条）仍然只有一层白。 */
+/* 2026-11-04 撤：卡上不再显示「被哪些应用引用」——用户原话「有 100 个呢？毫无意义」。
+   引用数仍在规格条（一个数字 + 点开看名单），卡面不再铺应用名。 */
 .page-components .cl-desc{
   flex:none;display:block;margin:var(--space-8) 0 0;
   /* ★2026-11-04 T2：14px 正文行高必须 1.5（21–22px）。原来跟 --leading-body=20px（1.43），
@@ -747,7 +785,11 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 /* 运行带：开关 + 影响面角标 + 动作，一条基线。 */
 .cc-run{
   display:flex;align-items:center;gap:var(--space-8);
-  min-height:56px;padding:var(--space-12) var(--space-16);
+  /* ★2026-11-04（用户：「组件的卡片样式好丑，一点样式也没有」）：
+     这条带子宽 342，里面只有左端一个 66 的开关和右端一个 32 的 ⋮，
+     中间 244px 全是空的，却撑着 56 的高度 —— 一屏 8 张卡，等于 8 条空白横带。
+     收到 48（24 内容 + 上下 12），卡高 192→184，空白感明显下降。 */
+  min-height:48px;padding:var(--space-8) var(--space-16);
 }
 .cc-run .cl-ops{margin-left:auto}
 /* 规格条：vN · 版本更新时间 · 引用数。发丝线把"操作区"和"元数据"分成两层，
@@ -1362,6 +1404,21 @@ body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gr
   background:transparent;border:0;box-shadow:none;border-radius:0;
 }
 .float-hd .app-name{flex:0 1 auto}
+/* ── 顶栏第二行：这一页东西的介绍（2026-11-04）─────────────────────
+   用户：「组件和应用的配置详情，左上角的信息，再加上一行介绍，太长显示不全，
+   也要有个操作点开看全部」。顶栏高度 56 是刚性约束（画布几何/px 基线都按它写的），
+   所以不是加高，而是把名称那行压进 .hd-main 的两行里：标题 20 + 介绍 16 = 36 < 56。 */
+.hd-main{display:flex;flex-direction:column;justify-content:center;min-width:0;flex:1 1 auto}
+.hd-top{display:flex;align-items:center;gap:var(--space-8);min-width:0}
+.hd-desc{
+  margin:2px 0 0;min-width:0;max-width:100%;
+  font-size:var(--font-size-caption);line-height:16px;color:var(--color-text-tertiary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.hd-desc:empty{display:none}
+.hd-desc.is-clip{cursor:pointer}
+.hd-desc.is-clip:hover{color:var(--color-brand-ink);text-decoration:underline;text-underline-offset:2px}
+.hd-desc.is-clip:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:2px;border-radius:var(--radius-xs)}
 .count-badge{
   min-width:18px;height:18px;padding: 0 var(--space-4);border-radius:var(--radius-pill);
   background:var(--surface-sunken-2);color:var(--color-text-secondary);font-size:var(--font-size-caption);line-height:var(--leading-caption);text-align:center;

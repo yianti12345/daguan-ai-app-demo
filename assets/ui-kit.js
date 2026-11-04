@@ -196,6 +196,256 @@ window.UIK = (function () {
     }
   };
 
+  /* ── 附件：一处定义，浮条与小智面板共用（2026-11-04）────────────────────
+   * demo 没有上传接口也没有模型后端，所以「让 AI 读」在浏览器里真读：
+   *   压缩包 → 只读 central directory 列出内部文件名（不解压）；图片 → 缩略图；
+   *   文本/代码 → 开头一段；其它文档 → 只记名字、类型、大小。
+   * 这套是唯一实现，两处输入框都调它，不各写一份。 */
+  var Attach = (function () {
+    var MAX_FILES = 10, MAX_SIZE = 20 * 1024 * 1024, cssDone = false;
+    var CLIP = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.05 12.3 20.2a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.9 1.9 0 0 1-2.7-2.7l8.5-8.5"/></svg>';
+
+    function css() {
+      if (cssDone) return; cssDone = true;
+      var s = document.createElement('style');
+      s.textContent = [
+        '.uik-att-bar{display:none;flex-wrap:wrap;gap:6px;padding:6px 4px 2px}',
+        '.uik-att-bar.has{display:flex}',
+        '.uik-atts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}',
+        '.uik-att{display:inline-flex;align-items:center;gap:6px;max-width:280px;padding:4px 8px;border:1px solid var(--line-2,#e5e7eb);border-radius:8px;background:#fff;font-size:12px;color:#333}',
+        '.uik-att-thumb{width:22px;height:22px;object-fit:cover;border-radius:4px;flex:none}',
+        '.uik-att-ic{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;background:#f1f2f6;color:#6b7280;font-size:10px;flex:none}',
+        '.uik-att-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}',
+        '.uik-att-mt{color:#8a909a;flex:none}',
+        '.uik-att-x{border:0;background:none;cursor:pointer;color:#8a909a;padding:0 2px;font-size:15px;line-height:1}',
+        '.uik-att-btn{width:28px;height:28px;border:0;background:none;color:#6b7280;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;padding:0}',
+        '.uik-att-btn:hover{color:#111}',
+        '.uik-att-drop{outline:2px dashed #4c8bf5;outline-offset:2px}'
+      ].join('\n');
+      document.head.appendChild(s);
+    }
+    function size(n) { return n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB'; }
+    function kind(f) {
+      if (/\.(zip|rar|7z|tar|gz)$/i.test(f.name)) return 'zip';
+      if (/^image\//.test(f.type)) return 'img';
+      if (/^text\//.test(f.type) || /\.(txt|md|json|js|jsx|ts|tsx|css|html?|vue|py|xml|csv|ya?ml|sql|log)$/i.test(f.name)) return 'text';
+      return 'doc';
+    }
+    /* ZIP 的目录在文件尾：找 EOCD(0x06054b50) → 读 central directory 条数/偏移 → 逐条取文件名。
+       不解压任何内容，因此 20MB 的包也不会卡住页面。 */
+    function zipNames(buf) {
+      var dv = new DataView(buf), e = -1;
+      for (var i = dv.byteLength - 22; i >= Math.max(0, dv.byteLength - 65558); i--) {
+        if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+      }
+      if (e < 0) return [];
+      var n = dv.getUint16(e + 10, true), off = dv.getUint32(e + 16, true), names = [];
+      for (var k = 0; k < n && off + 46 <= dv.byteLength; k++) {
+        if (dv.getUint32(off, true) !== 0x02014b50) break;
+        var nl = dv.getUint16(off + 28, true), el = dv.getUint16(off + 30, true), cl = dv.getUint16(off + 32, true);
+        try { names.push(new TextDecoder('utf-8').decode(new Uint8Array(buf, off + 46, nl))); } catch (err) { /* 非 UTF-8 名字跳过 */ }
+        off += 46 + nl + el + cl;
+      }
+      return names;
+    }
+    function parse(a, f, done) {
+      var finish = function () { done(); };
+      if (a.kind === 'img') {
+        var r = new FileReader();
+        r.onload = function () { a.thumb = r.result; finish(); }; r.onerror = finish;
+        r.readAsDataURL(f); return;
+      }
+      if (a.kind === 'zip') {
+        var z = new FileReader();
+        z.onload = function () {
+          try { a.files = zipNames(z.result); } catch (err) { a.files = []; }
+          finish();
+        }; z.onerror = finish;
+        z.readAsArrayBuffer(f); return;
+      }
+      if (a.kind === 'text') {
+        var t = new FileReader();
+        t.onload = function () { a.head = String(t.result || '').slice(0, 240); finish(); }; t.onerror = finish;
+        t.readAsText(f.slice(0, 64 * 1024)); return;
+      }
+      finish();
+    }
+    function meta(a) {
+      var m = a.kind === 'zip' ? (a.files && a.files.length ? a.files.length + ' 个文件' : '压缩包')
+        : a.kind === 'img' ? '图片' : a.kind === 'text' ? '文本' : '文档';
+      return m + ' · ' + size(a.size);
+    }
+    function thumb(a) {
+      if (a.thumb) return '<img class="uik-att-thumb" src="' + a.thumb + '" alt="">';
+      var t = a.kind === 'zip' ? 'ZIP' : a.kind === 'img' ? '图' : a.kind === 'text' ? 'TXT' : 'DOC';
+      return '<span class="uik-att-ic">' + t + '</span>';
+    }
+    function card(a, removable, i) {
+      return '<div class="uik-att"><span title="' + esc(a.name) + '">' + thumb(a) + '</span>'
+        + '<span class="uik-att-nm">' + esc(a.name) + '</span>'
+        + '<span class="uik-att-mt">' + meta(a) + '</span>'
+        + (removable ? '<button type="button" class="uik-att-x" data-i="' + i + '" aria-label="移除">×</button>' : '')
+        + '</div>';
+    }
+    /* 消息里的附件：只读，不带删除钮 */
+    function msgHtml(atts) {
+      if (!atts || !atts.length) return '';
+      return '<div class="uik-atts">' + atts.map(function (a) { return card(a, false, 0); }).join('') + '</div>';
+    }
+    /* 小智的回应只陈述「读到了什么」，不写解释句、不假装已经改完。
+       ★2026-11-04（用户：「提示文案也不对」）：原来每条都是「读了 xx 的开头」这种半句，
+       几份附件拼成「读了 A 的开头；看了 B」—— 主语含糊、动词被截断，读起来像内部日志。
+       现在一句一条：名字在前，读到的东西在后，有片段就摆片段。 */
+    function reply(atts) {
+      var lines = (atts || []).map(function (a) {
+        if (a.kind === 'zip' && a.files && a.files.length) {
+          return a.name + '：包内 ' + a.files.length + ' 个文件 —— '
+            + a.files.slice(0, 3).join('、') + (a.files.length > 3 ? ' 等' : '');
+        }
+        if (a.kind === 'text' && a.head) {
+          var snip = String(a.head).replace(/\s+/g, ' ').slice(0, 40);
+          return a.name + '：' + meta(a) + '，开头是「' + snip + '」';
+        }
+        return a.name + '：' + meta(a);
+      });
+      return lines.join('\n');
+    }
+    /* 一处控制器：按钮给调用方 append 到自己的输入区；chip 区由调用方给容器 */
+    function create(barHost) {
+      css();
+      var list = [], onChange = null;
+      var input = document.createElement('input');
+      input.type = 'file'; input.multiple = true; input.style.display = 'none';
+      input.accept = '.zip,.rar,.7z,.tar,.gz,.png,.jpg,.jpeg,.gif,.webp,.txt,.md,.json,.js,.jsx,.ts,.tsx,.css,.html,.vue,.py,.xml,.csv,.yaml,.yml,.sql,.log,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx';
+      (barHost.parentNode || document.body).appendChild(input);
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'uik-att-btn';
+      btn.setAttribute('aria-label', '添加附件'); btn.title = '添加附件';
+      btn.innerHTML = CLIP;
+      btn.addEventListener('click', function () { input.click(); });
+      input.addEventListener('change', function () { add(input.files); input.value = ''; });
+      function render() {
+        barHost.className = 'uik-att-bar' + (list.length ? ' has' : '');
+        barHost.innerHTML = list.length
+          ? '<div class="uik-atts">' + list.map(function (a, i) { return card(a, true, i); }).join('') + '</div>' : '';
+        var xs = barHost.querySelectorAll('.uik-att-x');
+        for (var j = 0; j < xs.length; j++) xs[j].addEventListener('click', function (e) {
+          list.splice(+e.currentTarget.getAttribute('data-i'), 1); render();
+        });
+        if (onChange) onChange(list.length);
+      }
+      function add(fs) {
+        var arr = Array.prototype.slice.call(fs || []);
+        for (var i = 0; i < arr.length && list.length < MAX_FILES; i++) {
+          var f = arr[i];
+          if (!f || f.size > MAX_SIZE) continue;
+          var a = { name: f.name, size: f.size, kind: kind(f) };
+          list.push(a); render(); parse(a, f, render);
+        }
+      }
+      return {
+        button: btn,
+        count: function () { return list.length; },
+        all: function () { return list.slice(); },
+        /* 小智面板每次 render 都重建 DOM，控制器要重建；附件列表靠 seed 跨重建带回来。 */
+        seed: function (arr) { list = (arr || []).slice(); render(); return this; },
+        take: function () { var out = list.slice(); list = []; render(); return out; },
+        onChange: function (fn) { onChange = fn; return this; },
+        bindDrop: function (el) {
+          el.addEventListener('dragover', function (e) { e.preventDefault(); el.classList.add('uik-att-drop'); });
+          el.addEventListener('dragleave', function () { el.classList.remove('uik-att-drop'); });
+          el.addEventListener('drop', function (e) {
+            e.preventDefault(); el.classList.remove('uik-att-drop');
+            if (e.dataTransfer && e.dataTransfer.files) add(e.dataTransfer.files);
+          });
+        }
+      };
+    }
+    return { create: create, msgHtml: msgHtml, reply: reply };
+  })();
+
+  /* ── 全文查看（2026-11-04）─────────────────────────────────────
+     用户：「介绍太长了显示不全，然后一点击卡片直接进入配置了，看不到介绍全部内容」。
+     一个轻量小弹窗，四页共用（组件库 / 应用管理 / 组件配置 / 应用配置）：
+     标题 + 全文 + 关闭，点遮罩或 Esc 也关。*
+     为什么不做成横条展开：卡是等高网格，展开会把整行撑高、下面的卡全跳位。 */
+  var Full = (function () {
+    var root = null, styled = false;
+    function style() {
+      if (styled) return; styled = true;
+      var st = document.createElement('style');
+      st.textContent = [
+        '.uik-full{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center}',
+        '.uik-full.is-on{display:flex}',
+        '.uik-full-mask{position:absolute;inset:0;background:color-mix(in srgb,#0b1220 28%,transparent)}',
+        '.uik-full-box{position:relative;width:min(520px,calc(100vw - 96px));max-height:min(60vh,420px);',
+        '  display:flex;flex-direction:column;background:var(--surface-page,#fff);border-radius:12px;',
+        '  box-shadow:0 24px 60px -20px rgba(16,24,40,.35),0 0 0 1px rgba(16,24,40,.06);padding:18px 20px 16px}',
+        '.uik-full-hd{display:flex;align-items:flex-start;gap:12px;margin-bottom:8px}',
+        '.uik-full-hd b{flex:1;min-width:0;font-size:15px;font-weight:600;line-height:22px;color:rgba(0,0,0,.88)}',
+        '.uik-full-x{flex:none;width:26px;height:26px;border:0;background:none;cursor:pointer;',
+        '  border-radius:6px;color:rgba(0,0,0,.45);font-size:18px;line-height:1}',
+        '.uik-full-x:hover{background:rgba(0,0,0,.05);color:rgba(0,0,0,.75)}',
+        '.uik-full-bd{margin:0;overflow:auto;font-size:14px;line-height:22px;color:rgba(0,0,0,.65);white-space:pre-wrap}'
+      ].join('\n');
+      document.head.appendChild(st);
+    }
+    function open(title, body) {
+      style();
+      if (!root) {
+        root = document.createElement('div');
+        root.className = 'uik-full';
+        root.innerHTML = '<div class="uik-full-mask"></div>'
+          + '<div class="uik-full-box" role="dialog" aria-modal="true" aria-label="完整介绍">'
+          + '<div class="uik-full-hd"><b></b><button type="button" class="uik-full-x" aria-label="关闭">\u00d7</button></div>'
+          + '<p class="uik-full-bd"></p></div>';
+        document.body.appendChild(root);
+        root.addEventListener('click', function (e) {
+          if (e.target.classList.contains('uik-full-mask') || e.target.classList.contains('uik-full-x')) close();
+        });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+      }
+      root.querySelector('.uik-full-hd b').textContent = title || '';
+      root.querySelector('.uik-full-bd').textContent = body || '';
+      root.classList.add('is-on');
+      root.querySelector('.uik-full-x').focus();
+    }
+    function close() { if (root) root.classList.remove('is-on'); }
+    /* 说明被截断时挂一个「全文」角标 + 点击弹层。truncated 才挂，不截断就不出现 ——
+       一个"点了没反应"的入口比没有入口更糟。 */
+    function bindDesc(el, title, text) {
+      if (!el || !text || el.dataset.fullBound) return;
+      if (el.scrollHeight - el.clientHeight <= 1) return;
+      el.dataset.fullBound = '1';
+      el.classList.add('is-clip');
+      el.style.cursor = 'pointer';
+      el.setAttribute('role', 'button');
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('aria-label', '查看完整介绍');
+      function go(e) { e.preventDefault(); e.stopPropagation(); open(title, text); }
+      el.addEventListener('click', go);
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); open(title, text); }
+      });
+    }
+    /* 单行省略（详情页顶栏那一行介绍）：横向溢出才算截断，判据是 scrollWidth。 */
+    function bindLine(el, title, text) {
+      if (!el || !text || el.dataset.fullBound) return;
+      if (el.scrollWidth - el.clientWidth <= 1) return;
+      el.dataset.fullBound = '1';
+      el.classList.add('is-clip');
+      el.setAttribute('role', 'button');
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('aria-label', '查看完整介绍');
+      el.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); open(title || text, text); });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(title || text, text); }
+      });
+    }
+    return { open: open, close: close, bindDesc: bindDesc, bindLine: bindLine };
+  })();
+
   return { toast: toast, pickHtml: pickHtml, copy: copy, esc: esc,
-           cardBadge: cardBadge, badgeLabel: badgeLabel, setDisabled: setDisabled, hist: hist };
+           cardBadge: cardBadge, badgeLabel: badgeLabel, setDisabled: setDisabled, hist: hist,
+           Attach: Attach, Full: Full };
 })();
