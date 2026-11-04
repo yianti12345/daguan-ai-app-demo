@@ -104,7 +104,11 @@
     </div>
     <div class="p-upd" id="p-upd" hidden>
       <span class="p-upd-n" id="p-upd-n"></span>
+      <!-- ★2026-11-04（用户）：「升级操作跟组件引用管理那边类似，一个一个多选操作的，批量升级，
+           然后一个是全部升级」——首行报数 + 全选；「全部升级」只管升级全部落后件，
+           「批量升级」只管当前勾中的行，两者各说各的，不共用一个动作。 -->
       <button type="button" class="btn-text" id="p-upgrade-all">全选</button>
+      <button type="button" class="btn-text" id="p-upgrade-allnow">全部升级（0）</button>
     </div>
     <!-- ★2026-11-03（m05719）：多选批量动作。可装配页签是「装配（N）」，
          已装配页签是「一键升级（N）」；没选时 0 且禁用。 -->
@@ -122,7 +126,7 @@
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
 <script src="assets/float.js?v=5bf0ecaf"></script>
-<script src="assets/app.js?v=5a0e1dba"></script>
+<script src="assets/app.js?v=2cbf6c5e"></script>
 <script src="assets/configurators/app-standard.js?v=a478d9a2"></script>
 <script src="assets/configurator.js?v=4558be01"></script>
 <div id="xz-host"></div>

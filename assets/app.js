@@ -1631,6 +1631,7 @@
 
     /* ★2026-11-03（m05719）：「全选」只勾上当前列表里可升级的行，真正升级由下方批量键触发。 */
     on('#p-upgrade-all', 'click', batchSelectAll);
+    on('#p-upgrade-allnow', 'click', upgradeAllNow);
     on('#p-batch-do', 'click', batchDo);
 
     /* 存一次通知一次：谁在存、存成没成，界面不该靠轮询猜 */
@@ -1754,6 +1755,32 @@
     var n = Object.keys(updNow || {}).length;
     bar.hidden = !n;
     if (n && lab) lab.textContent = n + ' 个组件有新版本';
+    var allNow = $('#p-upgrade-allnow');
+    if (allNow) {
+      allNow.textContent = '全部升级（' + n + '）';
+      allNow.disabled = !n || !!updBusy;
+    }
+  }
+
+  /* ★2026-11-04（用户）：「一个是批量升级，然后一个是全部升级」。
+     口径与组件引用管理一致：批量只认勾选，全部不看勾选、直接升完所有落后件。 */
+  function upgradeAllNow() {
+    var ups = DB.updatesOf(app.id);
+    if (!ups.length) { hint('没有要升级的组件', { ms: 4000 }); return; }
+    var names = ups.slice(0, 5).map(function (u) { return u.name + ' ' + u.from + '→' + u.to; }).join('、');
+    Confirm.ask({
+      title: '把 ' + ups.length + ' 个组件升到最新版？',
+      body: (ups.length > 5 ? names + ' 等 ' + ups.length + ' 个' : names) +
+            '<br>只改装配版本；客户那边不会立刻变，要生效还得去「客户授权」页升级。',
+      ok: '全部升级',
+      onOk: function () {
+        var r = DB.upgradeAll(app.id);
+        if (!r || !r.n) { hint('没升成功：这台电脑写不进去', { kind: 'err', ms: 9000 }); return; }
+        batchSel = {};
+        renderList(); paintCounts(); paintApp(); renderCanvas();
+        hint('已升级 ' + r.n + ' 个组件到最新版 · 记得「保存新版本并发布」', { ms: 9000 });
+      }
+    });
   }
 
   /* ── 多选批量动作（★2026-11-03 m05719）────────────────────────
@@ -1773,7 +1800,7 @@
     if (nEl) nEl.textContent = '已选 ' + n;
     if (btn) {
       btn.disabled = !n;
-      btn.textContent = (tab === 'on' ? '一键升级（' : '装配（') + n + '）';
+      btn.textContent = (tab === 'on' ? '批量升级（' : '装配（') + n + '）';
     }
   }
   function batchSelectAll() {
@@ -1821,7 +1848,7 @@
       title: '把 ' + ups.length + ' 个组件升到最新版？',
       body: (ups.length > 5 ? names + ' 等 ' + ups.length + ' 个' : names) +
             '<br>只改装配版本；客户那边不会立刻变，要生效还得去「客户授权」页升级。',
-      ok: '一键升级',
+      ok: '批量升级',
       onOk: function () {
         var r = DB.upgradeSome(app.id, ups.map(function (u) { return u.id; }));
         if (!r || !r.n) { hint('没升成功：这台电脑写不进去', { kind: 'err', ms: 9000 }); return; }
