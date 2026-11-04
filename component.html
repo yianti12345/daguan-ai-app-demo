@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>新建组件</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=67465879">
-<link rel="stylesheet" href="assets/float.css?v=0bfb75b3">
+<link rel="stylesheet" href="assets/sys.css?v=d575e327">
+<link rel="stylesheet" href="assets/float.css?v=b14d270f">
 <link rel="stylesheet" href="assets/viewmode.css?v=a8e1d20e">
 <link rel="stylesheet" href="assets/generated.css?v=f89c421a">
 <link rel="stylesheet" href="assets/configurator.css?v=59b1113c">
-<link rel="stylesheet" href="assets/xiaozhi.css?v=798c12a1">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=02ac2ac8">
 <style>
 
 /* ─────────────────────────────────────────────────────────────
@@ -24,10 +25,11 @@
 
 /* ── 左上角浮层：返回 + 组件名 ─────────────────────────────── */
 #topbar{
-  position:fixed; top:16px; right:24px; z-index:35;
-  /* 2026-10-25：撤掉侧栏后回到 24px —— 这一页没有平台导航（C6），顶栏从内容区左缘起 */
-  left: 24px;
-  display:flex; align-items:center; gap: 10px;
+  /* ★2026-11-03（用户 m05120）：「顶部都改成一长条贯穿的吧，不然现在太奇怪了。」 */
+  position:fixed; top:0; left:0; right:0; z-index:35;
+  height:56px; padding:0 16px;
+  background:var(--surface-page); border-bottom:1px solid var(--color-border-card);
+  display:flex; align-items:center; gap:10px;
 }
 #topbar .back-btn{
   width:28px; height:28px; flex:0 0 28px;
@@ -340,18 +342,18 @@ mark{background:var(--color-brand-surface-2); color:var(--color-text-body); padd
 <div id="xz-host"></div>
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/gen.js?v=ac80bd3b"></script>
-<script src="assets/data.js?v=2f0f7af5"></script>
-<script src="assets/confirm.js?v=26f0a69f"></script>
+<script src="assets/data.js?v=ebe14f81"></script>
+<script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
-<script src="assets/float.js?v=da48fbd8"></script>
-<script src="assets/component.js?v=79ed8c93"></script>
+<script src="assets/float.js?v=5bf0ecaf"></script>
+<script src="assets/component.js?v=6284a871"></script>
 <!-- 配置器：三个内置包先登记，宿主最后接管（CONFIGURATOR.md）。
      顺序有意义 —— 登记表按 script 顺序排，内置配置器在列表里就是按这个顺序出现。 -->
 <script src="assets/configurators/comp-form.js?v=002be4e9"></script>
 <script src="assets/configurators/comp-dialog.js?v=e67646d4"></script>
 <script src="assets/configurators/app-standard.js?v=a478d9a2"></script>
 <script src="assets/configurator.js?v=4558be01"></script>
-<script src="assets/xiaozhi.js?v=fcba3cbc"></script>
-<script src="assets/viewmode.js?v=fe643a47"></script>
+<script src="assets/xiaozhi.js?v=6e40f72d"></script>
+<script src="assets/viewmode.js?v=76a8e406"></script>
 </body>
 </html>

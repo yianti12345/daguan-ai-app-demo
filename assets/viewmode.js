@@ -7,6 +7,9 @@
 (function () {
   var ops = document.querySelector('.tb-ops');
   if (!ops) return;
+  /* ★2026-11-03（m05120）：应用/组件配置页右上角只要两个保存操作，
+     预览/代码切换不再出现在这两页。 */
+  if (document.querySelector('#act-publish')) return;
 
   var seg = document.createElement('div');
   seg.className = 'seg-view';

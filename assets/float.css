@@ -25,9 +25,10 @@
 .fk-dock{
   position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
   width:min(820px, calc(100vw - 144px));
-  display:flex; flex-direction:column; gap: 0; z-index:45;
-  /* 2026-10-30：长条常驻后，阴影与圆角归整块 dock，条与输入区不再各画一份 */
-  border-radius:var(--radius-panel); box-shadow:var(--shadow-floating);
+  display:flex; flex-direction:column; gap:0; z-index:45;
+  /* ★2026-11-03（m05651）：dock 只负责定位，不再是一整块白卡。
+     工具栏和输入条各自决定要不要背景，历史列表才是独立的白卡。 */
+  background:transparent; border-radius:0; box-shadow:none;
   transition:left .18s ease;
 }
 /* 历史面板与输入条是**一个整体**（上下拼起来的一张卡），不是两块浮卡：
@@ -37,35 +38,33 @@
    输入条上的，位置比面板的边沿内侧 1px，看起来就是**两块被硬拼在一起**。
    现在线画在面板底部、输入条不再画上边框，接缝只有一条。 */
 .fk-hist{
-  background:var(--surface-page);
-  /* 2026-10-25 补回接缝线（体检 C15）：两块都是白底，阴影是 0 -2px（向上投），
-     所以接缝处什么分隔都没有 —— 面板和输入条糊成一整块，看不出是两段。
-     §1.1 允许的三种线之一就是"两块之间的分隔"，不是容器描边。 */
-  border:0; border-bottom:1px solid var(--color-border-hairline);
-  box-shadow:none;
-  border-radius:var(--radius-panel) var(--radius-panel) 0 0;
-  display:flex; flex-direction:column;
-  max-height:300px; min-height:0; overflow:hidden;
+  /* 透明工具层：只有列表展开时才出现一块白卡；工具栏本身没有底色。 */
+  background:transparent; border:0; box-shadow:none; border-radius:0;
+  display:flex; flex-direction:column; gap:var(--space-8);
+  max-height:none; min-height:0; overflow:visible;
 }
 /* 2026-10-30：收起只收列表，长条留在输入框上面（用户要的"有一根长条"） */
 .fk-dock[data-hist="closed"] .fk-hist-list{display:none}
 .fk-hist-hd{
-  display:flex; align-items:center; gap:var(--space-4);
-  height:var(--hist-bar-h); padding:0 var(--space-8) 0 var(--space-12); flex:0 0 auto;
+  /* 一排轻操作：历史对话 / 展开，无背景、无分隔线，高度只占 24。 */
+  display:flex; align-items:center; justify-content:flex-end; gap:var(--space-12);
+  height:24px; padding:0 var(--space-4); flex:0 0 auto;
+  background:transparent;
 }
 .fk-hist-tt{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
 .fk-hist-col{
-  height:28px; padding:0 var(--space-8); border:0; background:none; border-radius:var(--radius-sm);
+  height:24px; padding:0 var(--space-2); border:0; background:none; border-radius:var(--radius-sm);
   color:var(--color-text-secondary); display:inline-flex; align-items:center; gap:var(--space-4);
   font-family:inherit; font-size:var(--font-size-caption); cursor:pointer; flex:0 0 auto;
 }
-.fk-hist-col:hover{background:var(--color-state-hover); color:var(--color-text-body)}
+.fk-hist-col:hover{color:var(--color-text-body)}
 .fk-hist-col:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring); outline-offset:1px}
 .fk-hist-list{
-  padding: var(--space-12) var(--space-12) var(--space-12); overflow:auto; flex:1; min-height:96px;
-  display:flex; flex-direction:column; gap: var(--space-12);
-  /* 2026-10-30：列表现在在长条上面，分隔线画在它的下沿 */
-  border-bottom:1px solid var(--color-border-hairline);
+  padding:var(--space-12); overflow:auto; flex:0 1 auto; min-height:96px; max-height:300px;
+  display:flex; flex-direction:column; gap:var(--space-12);
+  background:var(--surface-page); border-radius:var(--radius-panel);
+  box-shadow:var(--shadow-floating);
+  /* 列表是独立白卡，不再和输入条拼成一块。 */
 }
 .fk-hist-empty{color:var(--color-text-tertiary); font-size:var(--font-size-body); margin:0; padding:var(--space-4) 0; line-height:var(--leading-body)}
 /* 空历史时不占 96 的固定高度：一片白比一句提示更难看 */
@@ -111,10 +110,10 @@
 
 /* 输入条：dock 内的一行，不再自己定位 */
 .fk-bar{
-  display:flex; align-items:center; gap: 8px; flex:0 0 auto;
+  display:flex; align-items:center; gap:8px; flex:0 0 auto;
   background:var(--surface-page); border:0;
-  border-radius:0 0 var(--radius-panel) var(--radius-panel);
-  box-shadow:none; padding: 0 12px 0 0;
+  border-radius:var(--radius-panel);
+  box-shadow:var(--shadow-floating); padding:0 12px 0 0;
   height:60px;
 }
 /* 历史收起时输入条才是独立的一张卡（四角都是圆的） */
@@ -124,7 +123,6 @@
 .fk-bar:focus-within{box-shadow:var(--shadow-floating), 0 0 0 3px var(--color-focus-halo)}
 /* 2026-11-02：对话框最左侧也放同一颗时钟（和小智同一个图标、同一个语义）。
    32 宽与发送钮同档；margin-left 补上 .fk-bar 右侧内边距造成的不对称。 */
-.fk-bar .hist-ico{flex:0 0 var(--size-control-h);margin-left:var(--space-8)}
 /* 历史列表/详情是整块换内容，不是一串普通消息：去掉 .fk-hist-list 的 12 间距，避免和 .hist-pane 叠加。 */
 .fk-hist-list:has(.hist-pane){gap:0}
 /* 展开历史时给画布补下边距：面板高 142 + 输入条 60 + 上下留白 ≈ 240。
@@ -171,6 +169,24 @@ body.fk-hist-open #canvas{padding-bottom:248px}
 }
 .fk-send[data-ready="true"]{background:var(--color-brand); color:var(--color-text-inverse); cursor:pointer}
 .fk-send[data-ready="true"]:hover{background:var(--color-brand-active)}
+/* ★2026-11-04（m06113 需求三）：语音双模式开关 + 麦克风 */
+.fk-vmode{
+  height:28px; flex:0 0 auto; padding:0 9px; border-radius:var(--radius-pill);
+  border:1px solid var(--color-border-control); background:var(--surface-page);
+  color:var(--color-text-tertiary); font:inherit; font-size:var(--font-size-caption);
+  line-height:1; white-space:nowrap; cursor:pointer;
+}
+.fk-vmode:hover{border-color:var(--color-brand); color:var(--color-brand-ink)}
+.fk-vmode[data-mode="auto"]{background:var(--color-brand-surface); border-color:var(--color-brand); color:var(--color-brand-ink); font-weight:600}
+.fk-mic{
+  width:32px; height:32px; flex:0 0 32px; border-radius:var(--radius-control);
+  border:0; background:transparent; color:var(--color-text-tertiary);
+  display:grid; place-items:center; cursor:pointer;
+}
+.fk-mic:hover{background:var(--color-state-hover); color:var(--color-brand-ink)}
+.fk-mic[data-st="rec"]{background:var(--color-danger); color:var(--color-text-inverse)}
+.fk-mic[data-st="busy"]{background:var(--color-warning-surface); color:var(--color-warning); cursor:wait}
+.fk-bar[data-rec="1"]{box-shadow:var(--shadow-floating), 0 0 0 3px var(--color-warning-surface)}
 
 /* ── 操作组 ─────────────────────────────────────────────── */
 /* 右下浮动版：只给还没迁到顶栏的页面（app.html）用 */
@@ -213,15 +229,17 @@ body.fk-hist-open #canvas{padding-bottom:248px}
    宽度上限 340：再宽就把输入框挤到 400 以下，"边看边改"的主路径先受损。 */
 /* 2026-10-30：长条 = 整条摘要区，不再是输入框里的胶囊按钮 */
 .fk-hist-btn{
-  flex:1 1 auto; min-width:0; max-width:none; height:var(--hist-bar-h); margin:0;
-  padding:0; border:0; border-radius:var(--radius-sm);
+  flex:0 0 auto; min-width:0; max-width:none; height:24px; margin:0;
+  padding:0 var(--space-2); border:0; border-radius:var(--radius-sm);
   background:none; color:var(--color-text-secondary);
-  display:flex; align-items:center; gap:8px;
+  display:flex; align-items:center; gap:var(--space-4);
   font-family:inherit; font-size:var(--font-size-caption); line-height:1;
-  text-align:left; cursor:pointer;
-  transition:background .16s, color .16s;
+  text-align:left; cursor:pointer; transition:color .16s;
 }
-.fk-hist-btn:hover{background:var(--color-state-hover); color:var(--color-text-body)}
+.fk-hist-btn:hover{color:var(--color-text-body)}
+/* 工具栏只留「历史对话」四个字和未读点；末条摘要/状态文本不进视觉。 */
+.fk-hist-hd .fk-peek-st,
+.fk-hist-hd .fk-peek-sum{display:none}
 /* 展开态长条继续在场 —— 它就是收起入口，不再让位 */
 
 .fk-peek-tt{flex:0 0 auto; color:var(--color-text-tertiary)}
@@ -266,3 +284,8 @@ body[data-mode="view"] .fk-dock{display:none !important}
 body[data-drawer="on"] .fk-dock{left:50%}
 body.is-empty .fk-dock{top:calc(50% + 132px); bottom:auto}
 @media (prefers-reduced-motion:reduce){.fk-dock{transition:none}}
+
+/* ★2026-11-04：一键收起时，对话浮条跟着顶栏一起藏。这条属于浮条自己的样式，
+   放在 float.css；sys.css 只管页面顶栏（COMPFIRST 要求 .fk-dock 只有一个实现处）。 */
+body[data-ops="off"] .fk-dock,
+body[data-ops="off"] #fk-dock{display:none!important}

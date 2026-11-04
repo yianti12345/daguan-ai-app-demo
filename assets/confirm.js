@@ -64,7 +64,11 @@ window.Confirm = (function () {
       '<div class="nf nf-confirm" role="alertdialog" aria-modal="true" ' +
              'aria-labelledby="cf-title" aria-describedby="cf-body">' +
         '<div class="nf-hd"><span class="cf-ico" id="cf-ico" hidden aria-hidden="true">!</span><b id="cf-title"></b></div>' +
-        '<div class="nf-bd"><p class="cf-body" id="cf-body"></p></div>' +
+        '<div class="nf-bd"><p class="cf-body" id="cf-body"></p>' +
+          '<label class="cf-field" id="cf-field" hidden><span class="cf-label" id="cf-label"></span>' +
+            '<input class="cf-input" id="cf-input" type="text" autocomplete="off" spellcheck="false">' +
+            '<span class="cf-err" id="cf-err" role="alert"></span></label>' +
+        '</div>' +
         '<div class="nf-ft">' +
           '<button class="btn quiet" type="button" data-cf="no"></button>' +
           '<button class="btn" type="button" data-cf="ok"></button>' +
@@ -117,12 +121,46 @@ window.Confirm = (function () {
     okBtn.className = 'btn primary';
     q('[data-cf="no"]').textContent = cfg.cancel || '取消';
 
+    /* 名称输入（复制/导入）：同一个骨架里多一格，不再造第二套弹层。
+       空名 / 重名都当场挡在按钮上，并把原因写在输入框下面 ——
+       不要等点了确定再 toast，用户还得重新打开一次。 */
+    var field = q('#cf-field'), input = q('#cf-input'), err = q('#cf-err');
+    if (cfg.input) {
+      field.hidden = false;
+      q('#cf-label').textContent = cfg.label || '名称';
+      input.value = cfg.value == null ? '' : String(cfg.value);
+      input.placeholder = cfg.placeholder || '输入新名称';
+      input.setAttribute('aria-invalid', 'false');
+      err.textContent = '';
+      var check = function () {
+        var v = input.value.trim();
+        var msg = '';
+        if (!v) msg = '名称不能为空';
+        else if (typeof cfg.validate === 'function') msg = cfg.validate(v) || '';
+        err.textContent = msg;
+        input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+        okBtn.disabled = !!msg;
+      };
+      input.oninput = check;
+      input.onkeydown = function (e) {
+        if (e.key === 'Enter' && !okBtn.disabled) { e.preventDefault(); close(true, true); }
+      };
+      check();
+    } else {
+      field.hidden = true;
+      input.value = '';
+      input.oninput = null;
+      input.onkeydown = null;
+      /* 上一次若是重名提示，确定键会是 disabled；普通确认不能再继承这个状态。 */
+      okBtn.disabled = false;
+    }
+
     mask.hidden = false;
     inertBg(mask, true);
     /* 破坏性动作把焦点放在「取消」上：手一快敲回车不会把应用停掉。
        用 rAF 而不是定时器 —— 定时器在慢帧下会晚于用户的第一次 Tab，
        那一次 Tab 会从 body 起步，陷阱就白设了。 */
-    var target = cfg.danger ? q('[data-cf="no"]') : okBtn;
+    var target = cfg.input ? input : (cfg.danger ? q('[data-cf="no"]') : okBtn);
     target.focus();
     if (document.activeElement !== target) {
       requestAnimationFrame(function () { if (mask && !mask.hidden) target.focus(); });
@@ -141,7 +179,9 @@ window.Confirm = (function () {
       try { ret.focus({ preventScroll: true }); } catch (e) { try { ret.focus(); } catch (e2) {} }
     }
     ret = null;
-    if (ok && c && typeof c.onOk === 'function') c.onOk();
+    if (ok && c && typeof c.onOk === 'function') {
+      c.onOk(c.input ? q('#cf-input').value.trim() : undefined);
+    }
     else if (!ok && viaBtn && c && typeof c.onCancel === 'function') c.onCancel();
   }
 

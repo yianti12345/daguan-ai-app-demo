@@ -254,6 +254,15 @@
 
 .xz-inputwrap input::placeholder{color:var(--color-text-tertiary)}
 
+/* ★2026-11-04（m06113 需求三）：语音确认 / 免确认。放在输入条里、麦克风左边，
+   不另起一行；两种模式用底色和文字同时表达。 */
+.xz-vmode{flex:none;height:26px;padding:0 8px;border:1px solid var(--color-border-control);
+  border-radius:var(--radius-pill);background:transparent;color:var(--color-text-tertiary);
+  font:inherit;font-size:var(--font-size-caption);line-height:1;white-space:nowrap;cursor:pointer}
+.xz-vmode:hover{border-color:var(--color-brand);color:var(--color-brand-ink)}
+.xz-vmode[data-mode="auto"]{background:var(--color-brand-surface);border-color:var(--color-brand);
+  color:var(--color-brand-ink);font-weight:600}
+
 .xz-send{flex:none;width:38px;height:38px;padding:0;border:0;border-radius:var(--radius-pill);cursor:pointer;
   background:color-mix(in srgb,var(--color-border-hairline) 42%,var(--surface-sunken));color:var(--color-text-tertiary);
   display:flex;align-items:center;justify-content:center;

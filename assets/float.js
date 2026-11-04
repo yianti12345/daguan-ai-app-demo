@@ -51,7 +51,9 @@
        小智是全局的操作代理，靠右下角那颗球进场；底部这条是「这一页的意图输入」，
        两者是完全不同的概念，视觉上必须能分开。
        六点网格（⠿）是拖动把手的标准符号，不会被看成 AI，也不会被看成菜单。 */
-    grip: '<span class="fk-grip-ico"><i></i><i></i><i></i><i></i><i></i><i></i></span>'
+    grip: '<span class="fk-grip-ico"><i></i><i></i><i></i><i></i><i></i><i></i></span>',
+    /* ★2026-11-04（m06113 需求三）：原生对话框也要能说，不只小智悬浮球。 */
+    mic: sv('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>', 15)
   };
 
   /* ── 消息类型：决定"说完这句要不要收起"（2026-10-28 设计判定）──────
@@ -96,7 +98,7 @@
            展开时长条下面接列表，收起时整块只剩这条。 */
         var hd = el('div', 'fk-hist-hd');
         var col = el('button', 'fk-hist-col', { type: 'button', 'aria-label': '展开对话历史', title: '展开历史' });
-        col.innerHTML = '<span class="fk-hist-col-tx">展开</span>' + ICON.up;
+        col.innerHTML = '<span class="js-fk-hist-col-tx">展开</span>' + ICON.up;
         hist.appendChild(hd);
 
         var list = el('div', 'fk-hist-list', { id: 'fk-hist-list', role: 'log', 'aria-live': 'polite' });
@@ -118,6 +120,17 @@
         var ta = el('textarea', 'fk-ta', { id: 'fk-input', rows: '1', placeholder: dlg.placeholder || '说要改什么' });
         var send = el('button', 'fk-send', { id: 'fk-send', type: 'button', 'aria-label': '发送', 'data-ready': 'false' });
         send.innerHTML = ICON.send;
+        /* ★2026-11-04（m06113 需求三）：语音双模式。
+           语音确认＝转成文字后停住，等人点发送；免确认＝静默判停后直接发。
+           开关放在输入条里、麦克风左边，说得清当前落在哪种模式。 */
+        var vmode = el('button', 'fk-vmode', {
+          id: 'fk-vmode', type: 'button', 'data-mode': 'confirm',
+          'aria-label': '语音发送方式', title: '语音发送方式：转成文字后等你点发送'
+        });
+        var mic = el('button', 'fk-mic', {
+          id: 'fk-mic', type: 'button', 'data-st': '', 'aria-label': '按下说话', 'aria-pressed': 'false', title: '按下说话'
+        });
+        mic.innerHTML = ICON.mic;
 
         /* ★ 2026-10-23：收起按钮在历史面板头部，而历史一收起整块就 display:none ——
            按钮跟着消失，于是"收起"之后再也打不开。用户原话：「对话历史的收起展开呢」。
@@ -129,16 +142,19 @@
              折叠条长在输入条里、净增高 0 —— 收起态的全部意义是让表格能读，
              另起一行会再压住表格末几行（量过：多 32px 就落回行带上）。 */
         var histBtn = el('button', 'fk-hist-btn', {
-          type: 'button', id: 'fk-hist-btn', 'aria-label': '展开对话历史', title: '对话',
+          type: 'button', id: 'fk-hist-btn', 'aria-label': '对话历史', title: '对话历史',
           'aria-expanded': 'false', 'data-has': '0', 'data-st': 'ok', 'data-unread': '0'
         });
-        histBtn.innerHTML = '<span class="fk-peek-tt">对话</span>'
-          + '<span class="fk-peek-st"><i class="fk-peek-dot" aria-hidden="true"></i><span class="fk-peek-stx"></span></span>'
+        /* ★2026-11-03（m05651）：这一行不再当“末条摘要 + 状态”的长条。
+           用户要的是「历史对话」和「展开」并排的轻操作，不是一块占高度的描述条。
+           状态/摘要保留在 DOM 里给读屏和旧逻辑用，视觉上隐藏。 */
+        histBtn.innerHTML = '<span class="fk-peek-tt">历史对话</span>'
+          + '<span class="fk-peek-st"><i class="fk-peek-dot" aria-hidden="true"></i><span class="js-fk-peek-stx"></span></span>'
           + '<span class="fk-peek-sum"></span>'
           + '<i class="fk-peek-unread" aria-hidden="true"></i>';
         /* 2026-10-30：这里原来还有一颗「⌃ 展开」，加上右端收起钮＝两个图标。
            用户要求（转述）：「为什么2个收起展开的图标」。现在整条只留右端那一个控件。 */
-        var peekSt = histBtn.querySelector('.fk-peek-stx');
+        var peekSt = histBtn.querySelector('.js-fk-peek-stx');
         var peekSum = histBtn.querySelector('.fk-peek-sum');
         var unread = 0;      /* 收起期间新到的条数；展开即清零 */
         var autoT = null;    /* 自动折叠的延迟句柄：中间有新消息/手动操作就作废 */
@@ -148,14 +164,9 @@
            长条贴着输入框，展开时长出来的是上方历史 —— 原来列表在长条下面，
            视觉上就是从长条往下撑，方向和用户预期相反。 */
         hist.appendChild(list); hist.appendChild(hd);
-        /* 时钟入口放在输入条最左侧（2026-11-02，用户要和小智同一个图标、同一个位置语义）。
-           它管「历史列表」，抓手管拖动，两个图标必须能分开：时钟是历史，六点是拖动。 */
-        var histIco = el('button', 'hist-ico', {
-          type: 'button', 'data-act': 'histToggle', 'aria-label': '对话历史', 'aria-pressed': 'false'
-        });
-        histIco.innerHTML = UIK.hist.icon(15);
-        bar.appendChild(histIco);
-        bar.appendChild(grip); bar.appendChild(ta); bar.appendChild(send);
+        /* ★2026-11-03（m05651）：历史入口从输入条左侧的时钟图标移到上方
+           「历史对话」文字，和「展开」并排；输入条左侧不再放第二个历史入口。 */
+        bar.appendChild(grip); bar.appendChild(ta); bar.appendChild(vmode); bar.appendChild(mic); bar.appendChild(send);
         dock.appendChild(hist); dock.appendChild(bar);
         document.body.appendChild(dock);
         mounted.bar = bar;
@@ -281,12 +292,8 @@
         function syncHistMode() {
           var on = histView !== 'chat';
           dock.classList.toggle('is-hist', on);
-          var tt = histBtn.querySelector('.fk-peek-tt');
-          if (tt) tt.textContent = on ? '历史' : '对话';
-          if (on) {
-            histBtn.setAttribute('aria-label', '对话历史');
-            histBtn.title = '对话历史';
-          }
+          histBtn.setAttribute('aria-label', '对话历史');
+          histBtn.title = '对话历史';
         }
         function render() {
           syncHistMode();
@@ -310,7 +317,7 @@
         }
         function syncHistIco() {
           syncHistMode();
-          histIco.setAttribute('aria-pressed', histView === 'chat' ? 'false' : 'true');
+          histBtn.setAttribute('aria-pressed', histView === 'chat' ? 'false' : 'true');
         }
         function toggleHist() {
           histView = histView === 'chat' ? 'list' : 'chat';
@@ -506,7 +513,7 @@
     document.body.classList.toggle('fk-hist-open', !v);
           histBtn.setAttribute('aria-expanded', String(!v));
           col.setAttribute('aria-expanded', String(!v));
-          col.innerHTML = '<span class="fk-hist-col-tx">' + (v ? '展开' : '收起') + '</span>' + (v ? ICON.up : ICON.down);
+          col.innerHTML = '<span class="js-fk-hist-col-tx">' + (v ? '展开' : '收起') + '</span>' + (v ? ICON.up : ICON.down);
           col.title = v ? '展开对话历史' : '收起历史';
           col.setAttribute('aria-label', v ? '展开对话历史' : '收起对话历史');
           /* ★ 2026-10-28（F5）：这里原来写 localStorage，于是"手动展开"跨页继承。
@@ -527,12 +534,144 @@
         /* 同一个按钮管开和关。原来只写 setCollapsed(false) —— 实测点开之后
          再怎么点都不收，用户得去面板头部找那个很小的折叠箭头。
          一个按钮只管一个方向，是"我知道从哪下手吗"这道题最常见的失分点。 */
-      histBtn.addEventListener('click', function () {
-        /* setCollapsed(true) 是收起、false 是展开 —— 记住这个方向，
-           我第一版写成 `!== 'open'` 正好反了，点一下不动（因为原本就是收起态）。 */
-        setCollapsed(dock.getAttribute('data-hist') === 'open');
-      });
-      histIco.addEventListener('click', toggleHist);
+      /* 「历史对话」是历史列表入口；「展开/收起」才是面板开合。两件事不再挤在一个按钮里。 */
+      histBtn.addEventListener('click', toggleHist);
+
+        /* ── 语音（2026-11-04 m06113 需求三）────────────────────────
+           两种模式共用一条录音/识别链路，区别只在识别出文字之后：
+           confirm 停住等发送；auto 直接 fire()。录音本身也有静默判停，
+           免确认模式才真的"说完就发"，而不是还要再点一下麦克风。 */
+        var VOICE_KEY = 'ifas90:voiceMode';
+        function say(msg) { try { if (typeof window.hint === 'function') window.hint(msg, { ms: 5000 }); } catch (e) {} }
+        function vmodeGet() {
+          try { return localStorage.getItem(VOICE_KEY) === 'auto' ? 'auto' : 'confirm'; } catch (e) { return 'confirm'; }
+        }
+        function vmodePaint() {
+          var m = vmodeGet();
+          vmode.setAttribute('data-mode', m);
+          vmode.setAttribute('aria-pressed', m === 'auto' ? 'true' : 'false');
+          vmode.textContent = m === 'auto' ? '免确认' : '语音确认';
+          vmode.title = m === 'auto'
+            ? '语音发送方式：说完静默判停，直接发送'
+            : '语音发送方式：转成文字后等你点发送';
+        }
+        vmode.addEventListener('click', function () {
+          var next = vmodeGet() === 'auto' ? 'confirm' : 'auto';
+          try { localStorage.setItem(VOICE_KEY, next); } catch (e) {}
+          vmodePaint();
+        });
+        var MIC = { st: '', mr: null, ch: [], stream: null, timer: 0, tick: 0, ctx: null };
+        function micEndCleanup() {
+          if (MIC.timer) { clearTimeout(MIC.timer); MIC.timer = 0; }
+          if (MIC.tick) { clearInterval(MIC.tick); MIC.tick = 0; }
+          if (MIC.ctx) { try { MIC.ctx.close(); } catch (e) {} MIC.ctx = null; }
+          if (MIC.stream) { try { MIC.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} MIC.stream = null; }
+        }
+        function micUi() {
+          mic.setAttribute('data-st', MIC.st);
+          mic.setAttribute('aria-pressed', MIC.st === 'rec' ? 'true' : 'false');
+          mic.setAttribute('aria-label', MIC.st === 'rec' ? '结束录音' : MIC.st === 'busy' ? '正在识别' : '按下说话');
+          mic.title = MIC.st === 'rec' ? '正在听，说完停一下' : MIC.st === 'busy' ? '正在转成文字' : '按下说话';
+          bar.setAttribute('data-rec', MIC.st === 'rec' ? '1' : '0');
+        }
+        function asrUrl() {
+          var ep = window.XZ_CFG && window.XZ_CFG.endpoint;
+          if (ep && /^https?:/.test(ep)) return ep.replace('/xz/plan', '/asr');
+          var h = location.hostname;
+          return (h === 'localhost' || h === '127.0.0.1' || location.protocol === 'file:')
+            ? '/asr' : 'http://127.0.0.1:8941/asr';
+        }
+        function micDeliver(text) {
+          var t = String(text || '').trim();
+          if (!t) return;
+          if (vmodeGet() === 'auto') {
+            ta.value = t; sync(); fire();
+          } else {
+            var cur = ta.value.replace(/\s+$/, '');
+            ta.value = (cur ? cur + ' ' : '') + t;
+            sync(); ta.focus();
+            try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {}
+          }
+        }
+        function micStop() {
+          if (MIC.st !== 'rec') return;
+          if (MIC.timer) { clearTimeout(MIC.timer); MIC.timer = 0; }
+          if (MIC.mr && MIC.mr.state !== 'inactive') { MIC.mr.stop(); return; }
+          micEndCleanup(); MIC.st = ''; micUi();
+        }
+        function micStart() {
+          if (MIC.st === 'rec') { micStop(); return; }
+          if (MIC.st === 'busy') return;
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+            say('这个浏览器不能录音，请用键盘输入', { ms: 5000 }); return;
+          }
+          /* ★2026-11-04：原来要等 getUserMedia 回来才亮"在听"——授权弹窗/取流那一下
+             是一秒甚至几秒，这期间按钮毫无变化，用户以为点了没反应（穷举走查就是这么判的：
+             点完 420ms DOM 一点没动）。先把状态亮起来，取流失败再退回去。 */
+          MIC.st = 'rec'; micUi();
+          navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
+            .then(function (stream) {
+              /* 取流期间用户又点了一下（点了停止）—— 流回来也别偷偷开录 */
+              if (MIC.st !== 'rec') { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} return; }
+              var mr = new MediaRecorder(stream);
+              MIC.stream = stream; MIC.mr = mr; MIC.ch = [];
+              mr.ondataavailable = function (e) { if (e.data && e.data.size) MIC.ch.push(e.data); };
+              mr.onstop = function () {
+                var blob = new Blob(MIC.ch, { type: mr.mimeType || 'audio/webm' });
+                micEndCleanup(); MIC.mr = null; MIC.ch = [];
+                if (!blob.size) { MIC.st = ''; micUi(); say('没有录到声音，再点一次', { ms: 5000 }); return; }
+                MIC.st = 'busy'; micUi();
+                fetch(asrUrl(), {
+                  method: 'POST',
+                  headers: { 'Content-Type': blob.type || 'application/octet-stream' },
+                  body: blob
+                })
+                  .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j || {} }; }); })
+                  .then(function (res) {
+                    MIC.st = ''; micUi();
+                    var t = res.ok ? String(res.j.text || '').trim() : '';
+                    if (!t) { say(res.ok ? '没听清，再说一次' : '语音识别不可用，请用键盘输入', { ms: 5000 }); return; }
+                    micDeliver(t);
+                  })
+                  .catch(function () { MIC.st = ''; micUi(); say('连不上识别服务，请用键盘输入', { ms: 5000 }); });
+              };
+              mr.start();
+              MIC.st = 'rec'; micUi();
+              /* 静默判停：检测到有人说过话之后，连续 1.2s 没声音就收。
+                 60s 是硬上限，避免开着麦克风忘记点。 */
+              var AC = window.AudioContext || window.webkitAudioContext;
+              if (AC) {
+                try {
+                  MIC.ctx = new AC();
+                  var src = MIC.ctx.createMediaStreamSource(stream);
+                  var an = MIC.ctx.createAnalyser(); an.fftSize = 1024;
+                  src.connect(an);
+                  var buf = new Uint8Array(an.fftSize);
+                  var spoke = false, lastLoud = 0, started = Date.now();
+                  MIC.tick = setInterval(function () {
+                    an.getByteTimeDomainData(buf);
+                    var sum = 0;
+                    for (var i = 0; i < buf.length; i++) { var d = (buf[i] - 128) / 128; sum += d * d; }
+                    var rms = Math.sqrt(sum / buf.length);
+                    var now = Date.now();
+                    if (rms > 0.02) { spoke = true; lastLoud = now; }
+                    if (spoke && now - lastLoud > 1200) micStop();
+                    else if (!spoke && now - started > 10000) micStop();
+                  }, 100);
+                } catch (e) { MIC.ctx = null; }
+              }
+              MIC.timer = setTimeout(micStop, 60000);
+            })
+            .catch(function (err) {
+              MIC.st = ''; micUi();
+              var n = String((err && err.name) || '');
+              say(n === 'NotAllowedError' ? '麦克风没被授权：点地址栏左侧的图标允许麦克风'
+                : n === 'NotFoundError' ? '这台机器上没找到麦克风'
+                : '打不开麦克风，请用键盘输入', { ms: 6000 });
+            });
+        }
+        mic.addEventListener('click', micStart);
+        vmodePaint();
 
         function sync() { send.setAttribute('data-ready', ta.value.trim() ? 'true' : 'false'); }
         ta.addEventListener('input', sync);

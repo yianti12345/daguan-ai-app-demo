@@ -1334,6 +1334,27 @@
   /* 浮层在场时画布让出一条底边（见 component.html body[data-float]） */
   document.body.setAttribute('data-float', 'on');
 
+  /* ★2026-11-03（m05120）：与应用配置页同一枚**对话框旁**的开关。
+     收起后顶栏和整条对话框一起消失，开关留在原位，不再另放「显示操作」按钮。 */
+  (function () {
+    var sw = document.createElement('button');
+    sw.type = 'button'; sw.id = 'ops-switch'; sw.className = 'ops-switch';
+    sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', 'false');
+    sw.innerHTML = '<span class="ops-switch-label">隐藏操作</span>' +
+      '<span class="ops-switch-track" aria-hidden="true"><span class="ops-switch-knob"></span></span>';
+    document.body.appendChild(sw);
+    var label = sw.querySelector('.ops-switch-label');
+    function setOps(off) {
+      if (off) document.body.setAttribute('data-ops', 'off');
+      else document.body.removeAttribute('data-ops');
+      sw.setAttribute('aria-checked', off ? 'true' : 'false');
+      label.textContent = off ? '显示操作' : '隐藏操作';
+    }
+    sw.addEventListener('click', function () {
+      setOps(document.body.getAttribute('data-ops') !== 'off');
+    });
+  })();
+
   /* 顶栏：历史快照 + 保存快照。没有「保存草稿」——生成/编辑自动保存。 */
   (function () {
     var bPub = document.getElementById('act-publish');

@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>组件库</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=67465879">
-<link rel="stylesheet" href="assets/xiaozhi.css?v=798c12a1">
+<link rel="stylesheet" href="assets/sys.css?v=d575e327">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=02ac2ac8">
 <!-- 2026-10-29：本页 <style> 已清空（原 3,683 B）。`.nf-*`（2026-10-24）与
      引用数格 `.cc-meta`（2026-10-29）都在 assets/sys.css 的组件层：
      前者两页共用，后者是组件卡的一个部件而不是页面胶水。
@@ -61,7 +62,7 @@
 
       <!-- 组件卡片网格（2026-10-25 晚第三版形态）：不是表格，role 跟着改成 list。
            行表那版的 role="table" 留在卡片上就是错的语义 —— 卡片没有行列可念。 -->
-      <div class="clist" id="grid" role="list" aria-label="组件列表"></div>
+      <div id="grid" role="list" aria-label="组件列表"></div>
       <div class="pager" id="pager" hidden></div>
 
 <!-- 新增组件：两样（名称 / 介绍）。2026-10-28 D1 删掉「启用状态」：新建即未发布，
@@ -89,7 +90,7 @@
       </div>
       <div class="nf-row">
         <label for="nf-desc">组件介绍</label>
-        <textarea id="nf-desc" placeholder="一句话说清它是干什么的，装配时别人靠这句话认它" maxlength="120"></textarea>
+        <textarea id="nf-desc" placeholder="说清它解决什么问题、谁在用，比如：把审批流程和原文并排摆，逐条给结论" maxlength="120"></textarea>
       </div>
       <!-- 2026-10-28 删除「启用状态」开关：新建即未发布，此时开关不改变任何结果（能否被装只看已上架＋启用），
            却让人以为拨一下就能装。首次发布后，卡上的开关才承担这个判断。 -->
@@ -141,10 +142,11 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=2f0f7af5"></script>
+<script src="assets/data.js?v=ebe14f81"></script>
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/transfer.js?v=6ef877f1"></script>
-<script src="assets/confirm.js?v=26f0a69f"></script>
+<script src="assets/confirm.js?v=ad0ffde9"></script>
+<script src="assets/ref-upgrade.js?v=34335e66"></script>
 <script src="assets/popover.js?v=7f96155d"></script>
 <script src="assets/scope.js?v=69520925"></script>
 <script>
@@ -294,10 +296,22 @@
     if (act === 'vers') { cvOpen(id); return; }
     /* 2026-10-30：复制 / 导出（口径见 data.js 那段：副本是未发布草稿，导出是整包） */
     if (act === 'dup') {
-      const cp = DB.cloneComp(id);
-      if (!cp) { toast('这个组件已经不在了', 'error'); return; }
-      render();
-      toast('已复制为「' + cp.name + '」· 未发布，装配面板里还看不到');
+      /* ★2026-11-04（m07271）：复制不是"自动加副本"，是让用户给新组件起名。
+         名称唯一性在输入时就挡：重名/空名时确定键不可用。 */
+      Confirm.ask({
+        title: '复制组件',
+        input: true, label: '新组件名称', value: c.name + '（副本）', ok: '复制',
+        validate: function (v) {
+          return DB.COMPS.some(function (x) { return x.name === v; })
+            ? '已经有同名组件「' + v + '」，换个名字' : '';
+        },
+        onOk: function (name) {
+          const cp = DB.cloneComp(id, name);
+          if (!cp) { toast('这个名称已经被占用了，换一个再试', 'error'); return; }
+          render();
+          toast('已复制为「' + cp.name + '」· 未发布，装配面板里还看不到');
+        }
+      });
       return;
     }
     if (act === 'export') {
@@ -361,80 +375,11 @@
   }
 
 
-  /* 查看引用（2026-11-03 m02979）：引用可能成百上千，浮层装不下也不能筛。
-     改为大弹窗：搜索 + 状态筛选 + 滚动名单，行可直接打开对应应用。 */
-  function refState(a) {
-    if (a.status === '已下架' || a.status === '内测中') return '内测中';
-    if (a.status === '未发布') return '未上架';
-    return '已上架';
-  }
+  /* 查看引用（2026-11-03 m02979；2026-11-04 m06113 改为可升级的引用管理）。
+     名单、分页、勾选、全部/批量升级与异步报告都在 assets/ref-upgrade.js，
+     这里只留一个入口，避免页面里再长出一份升级逻辑。 */
   function openRefs(id) {
-    var comp = (DB.COMPS || []).filter(function (c) { return c.id === id; })[0] || { name: id };
-    var users = DB.APPS.filter(function (a) { return (a.comps || []).indexOf(id) >= 0; });
-    var last = document.activeElement;
-    var mask = document.createElement('div');
-    mask.className = 'nf-mask';
-    mask.innerHTML =
-      '<div class="nf nf-refs" role="dialog" aria-modal="true" aria-labelledby="rf-title">' +
-        '<div class="nf-hd"><b id="rf-title">查看引用 · ' + esc(comp.name) + '</b>' +
-          '<button class="rf-x" type="button" data-rf="close" aria-label="关闭">×</button></div>' +
-        '<div class="nf-bd">' +
-          '<p class="rf-count">共 <b>' + users.length + '</b> 个应用在用</p>' +
-          '<div class="rf-tools">' +
-            '<input class="rf-q" type="search" placeholder="搜索应用名称" aria-label="搜索应用名称">' +
-            '<select class="rf-st" aria-label="按状态筛选">' +
-              '<option value="">全部状态</option><option>已上架</option><option>内测中</option><option>未上架</option>' +
-            '</select>' +
-          '</div>' +
-          '<div class="rf-list" role="list"></div>' +
-          '<p class="rf-empty" hidden>没有匹配的应用</p>' +
-        '</div>' +
-        '<div class="nf-ft"><span class="rf-hint">点应用名打开</span>' +
-          '<button class="btn quiet" type="button" data-rf="close">关闭</button></div>' +
-      '</div>';
-    document.body.appendChild(mask);
-    var q = mask.querySelector('.rf-q');
-    var st = mask.querySelector('.rf-st');
-    var list = mask.querySelector('.rf-list');
-    var empty = mask.querySelector('.rf-empty');
-    var hint = mask.querySelector('.rf-hint');
-    function draw() {
-      var kw = q.value.trim().toLowerCase();
-      var sv = st.value;
-      var rows = users.filter(function (a) {
-        return (!kw || String(a.name).toLowerCase().indexOf(kw) >= 0) && (!sv || refState(a) === sv);
-      });
-      list.innerHTML = rows.map(function (a) {
-        var state = refState(a);
-        return '<a class="rf-row" role="listitem" href="app.html?id=' + encodeURIComponent(a.id) + '">' +
-          '<span class="rf-name">' + esc(a.name) + '</span>' +
-          '<span class="rf-st" data-s="' + state + '">' + state + '</span>' +
-          '<span class="rf-v">v' + (a.version || 0) + '</span></a>';
-      }).join('');
-      empty.hidden = rows.length > 0;
-      hint.textContent = rows.length === users.length ? '点应用名打开' : '显示 ' + rows.length + ' / ' + users.length;
-    }
-    function close() {
-      document.removeEventListener('keydown', onKey, true);
-      mask.remove();
-      if (last && last.focus) last.focus();
-    }
-    function onKey(e) {
-      if (e.key === 'Escape') { e.preventDefault(); close(); }
-    }
-    q.addEventListener('input', draw);
-    st.addEventListener('change', draw);
-    mask.addEventListener('click', function (e) {
-      if (e.target === mask || e.target.closest('[data-rf="close"]')) close();
-    });
-    document.addEventListener('keydown', onKey, true);
-    draw();
-    if (!users.length) {
-      q.hidden = true; st.hidden = true;
-      empty.hidden = false; empty.textContent = '还没有应用在用';
-      hint.textContent = '装配到应用后，这里会列出它们';
-    }
-    if (!q.hidden) q.focus();
+    if (window.RefUpgrade) window.RefUpgrade.open(id);
   }
 
 
@@ -597,6 +542,13 @@
          用户原话「版本不在卡上」，ver 在 forbidden 里 —— 盲审不知道这条已被否决。
          版本只走版本管理页；卡上只留引用数（影响面）。 */
       const refs = DB.APPS.filter((a) => (a.comps || []).indexOf(c.id) >= 0).length;
+      /* ★2026-11-04（m06113 需求一）：动态角标。数口径与引用管理共用 DB.compUpgradeStats，
+         不在卡面另做一次 filter —— 否则卡上说 5、弹窗里 4，用户只会信那个更吓人的。 */
+      const refUp = DB.compUpgradeStats(c.id);
+      const refBadge = refUp.behind
+        ? '<button class="ck-badge" type="button" data-act="refs" data-id="' + esc(c.id) + '"' +
+          ' aria-label="共 ' + refUp.total + ' 个应用在用，' + refUp.behind + ' 个待升级，点开引用管理" title="共 ' + refUp.total + ' 个应用在用，' + refUp.behind + ' 个待升级，点开引用管理">' + refUp.behind + ' 个应用待升级</button>'
+        : '';
       /* 2026-10-30：去被动、去「引用」黑话。同一句话三处（卡面/浮层/装配抽屉）只留这一种写法：
          N 个应用在用 / 还没有应用在用 —— 主动语态，说清主语是谁。 */
       /* 标签只做两件事：让人一眼分清这是哪类零件、让上面那个筛选有落点。
@@ -607,39 +559,43 @@
          判定：这套分类是我们自己造的 —— 客户和一线实施都不这么叫。
          组件之间的差异（「审核任务列表」vs「规则结论」）光看名字就分得开，
          标签既不影响判断、也不影响操作，只是给每张卡加一行不认识的字。 */
-      const refsText = refs ? refs + ' 个应用在用' : '还没有应用在用';
-      const metaText = refsText;
+      /* ★2026-11-04（q5 拍板）：零引用不再印「还没有应用在用」。
+         一屏 8 张卡右下全是同一句否定句，读起来像每张卡都坏了；
+         而"没人用"本来就是新组件的默认状态，不值得占一行。有人用了才报数。 */
+      const metaText = refs ? refs + ' 个应用在用' : '';
       /* ★2026-10-29（用户：「点击了没反应也是合理的对吗」）：同一句话在 ⋮ 菜单里能点开、
          在卡底点不动 —— 底栏那行原来只是 <span>。有引用时改成真控件，点击走 menuAct('refs')，
          与菜单项共用同一个浮层节点（不复制逻辑）；0 引用仍是纯文字（没有名单可看，不做假入口）。
          视觉是"可点的次要信息"：常显细下划线、hover 变品牌色，不用按钮底/描边（不是主操作）。 */
+      /* ★2026-11-04（m07271）：版本号与版本更新时间一起下放到卡底规格条，
+         标题行只留名称 —— 名称再长也不用和右侧时间抢宽度。
+         引用数也跟到规格条右侧；运行带只放"能不能用 / 影响面 / 去哪操作"。 */
       const metaHtml = refs
         ? `<button class="cc-meta" type="button" data-act="refs" data-id="${esc(c.id)}" aria-expanded="false" aria-controls="refpop-${esc(c.id)}" title="${esc(metaText)}">${esc(metaText)}</button>`
-        : `<span class="cc-meta" title="${esc(metaText)}">${esc(metaText)}</span>`;
+        : '';
       return `
       <!-- ★2026-10-28 三列 · 两区（《组件卡样式规范-20261028》§4）：
            上区 = 身份（类型点 + 名称），下区 = 运行带（开关 + 引用数 + 配置 + ⋮）。
            四件事同一条基线，所以开关不再在标题行右端；类型点从引用数格挪到名称左侧，
            那一格只回答"这是什么零件"。卡本体不是链接（无整卡热区），入口只在运行带右端。 -->
-      <div class="crow ccard" data-id="${esc(c.id)}" data-on="${on ? '1' : '0'}" data-st="${esc(stCls)}">
+      <div class="crow ccard" tabindex="0" role="link" data-id="${esc(c.id)}" data-on="${on ? '1' : '0'}" data-st="${esc(stCls)}">
         <div class="cc-body">
           <div class="cc-hd">
             <b class="cl-tt" title="${esc(c.name)}">${stCls === 'off'
               ? '<span class="cl-nm">' + esc(c.name) + '</span>'
               : '<a class="cl-nm" href="component.html?id=' + encodeURIComponent(c.id) + '">' + esc(c.name) + '</a>'}</b>
-            ${c.updated ? `<span class="cc-upd" title="最近更新 ${esc(c.updated)}">${esc(c.updated)}</span>` : ''}
           </div>
           <p class="cl-desc" title="${esc(descText)}">${esc(descText)}</p>
         </div>
         <div class="cc-ft">
-          <button class="cc-sw" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}"
-                  data-act="toggle" data-id="${esc(c.id)}"
-                  aria-label="${esc((on ? '禁用' : '启用') + c.name)}">
-            <span class="cc-sw-dot" aria-hidden="true"></span>${st}
-          </button>
-          ${metaHtml}
-          <div class="cl-ops">
-            <a class="kbtn act${stCls === 'off' ? ' is-disabled' : ''}" href="component.html?id=${encodeURIComponent(c.id)}" title="${esc(stCls === 'off' ? cfgOffLabel(refs) : cfgSharedLabel(refs))}" aria-label="${esc(stCls === 'off' ? cfgOffLabel(refs) : cfgSharedLabel(refs))}"${stCls === 'off' ? ' aria-disabled="true"' : ''}>${ICON.cfg}配置</a>
+          <div class="cc-run">
+            <button class="cc-sw" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}"
+                    data-act="toggle" data-id="${esc(c.id)}"
+                    aria-label="${esc((on ? '禁用' : '启用') + c.name)}">
+              <span class="cc-sw-dot" aria-hidden="true"></span>${st}
+            </button>
+            ${refBadge}
+            <div class="cl-ops">
             <button class="k-more" type="button" data-id="${esc(c.id)}"
                     aria-haspopup="menu" aria-expanded="false"
                     aria-label="更多操作：${esc(c.name)}">${ICON.more}</button>
@@ -651,7 +607,13 @@
               <button class="k-mi" type="button" role="menuitem" data-act="dup" data-id="${esc(c.id)}">${ICON.copy}复制组件</button>
               <button class="k-mi" type="button" role="menuitem" data-act="export" data-id="${esc(c.id)}">${ICON.down}导出组件</button>
             </div>
-            <div class="k-pop" id="refpop-${esc(c.id)}" hidden></div>
+              <div class="k-pop" id="refpop-${esc(c.id)}" hidden></div>
+            </div>
+          </div>
+          <div class="cc-spec">
+            <span class="cc-ver" title="当前版本">${esc(c.ver || 'v1')}</span>
+            <span class="cc-upd" title="版本更新时间 ${esc(c.updated || '未记录')}">${esc(c.updated || '—')}</span>
+            ${metaHtml}
           </div>
         </div>
       </div>`;
@@ -773,10 +735,21 @@
     bi.addEventListener('click', function () {
       Transfer.pick(function (obj) {
         if (obj.kind === 'daguan-app') { toast('这是应用文件，请到「应用管理」导入', 'error'); return; }
-        const r = DB.importPayload(obj);
-        if (!r.ok) { toast(r.msg, 'error'); return; }
-        render();
-        toast('已导入「' + r.name + '」· 未发布');
+        var suggest = obj && obj.comp && obj.comp.name ? obj.comp.name : '';
+        Confirm.ask({
+          title: '导入组件',
+          input: true, label: '组件名称', value: suggest, ok: '导入',
+          validate: function (v) {
+            return DB.COMPS.some(function (x) { return x.name === v; })
+              ? '已经有同名组件「' + v + '」，换个名字' : '';
+          },
+          onOk: function (name) {
+            const r = DB.importPayload(obj, name);
+            if (!r.ok) { toast(r.msg, 'error'); return; }
+            render();
+            toast('已导入「' + r.name + '」· 未发布');
+          }
+        });
       }, function (msg) { toast(msg, 'error'); });
     });
   })();
@@ -858,20 +831,24 @@
   /* 空态里的出口：一次点击回到全集。用事件委托，空态是每次重渲染出来的。
      2026-10-24 m01293：⋮ 这次放的是卡身放不下的真动作（编辑信息 / 上下架 / 被谁用着）。 */
   $('#grid').addEventListener('click', function (e) {
-    /* ★2026-10-28（E10）/ 2026-10-29 改：禁用卡上的「配置」不可执行，但必须可问原因。
-       tabindex 与 pointer-events 都不再动它（删 -1 / 删 none）：命中、悬停提示都保留；
-       点击由这条守卫拦住，并当场说明"为什么不能点 + 怎么才能点"（toast 常驻可见 2.5 秒）。
-       认 aria-disabled（与卡面 data-st="off" 同源），不认文案。 */
-    if (e.target.closest('.kbtn.act[aria-disabled="true"]')) {
-      e.preventDefault();
-      toast('组件已禁用：先打开这张卡左边的开关启用，再配置');
+    /* ★2026-11-04（用户 m01135）：「组件管理不需要有配置按钮了，点击卡片直接进入配置页面」。
+       配置按钮已删，整张卡是入口；禁用卡（data-st="off"）仍是例外 —— 点它要说清为什么进不去、
+       怎么才能进去，而不是无声无息跳走。 */
+    if (e.target.closest('.crow.ccard')) {
+      const card = e.target.closest('.crow.ccard');
+      if (card.getAttribute('data-st') === 'off') {
+        e.preventDefault();
+        toast('组件已禁用：先打开这张卡左边的开关启用，再配置');
+        return;
+      }
+      location.href = 'component.html?id=' + encodeURIComponent(card.getAttribute('data-id'));
       return;
     }
     if (e.target.closest('.js-clear')) { resetFilters(); render(); return; }
     /* ★2026-10-29：卡底「被 N 个应用使用」= 次要信息入口，与 ⋮ 的「查看引用」**同一个浮层**。
        这里只认入口、把 id 交给 menuAct 的 refs 分支（内容构造只有那一份），不复制一份列表。
        再点一次收起：disclosure 的常规行为，用户不用去点空白处。 */
-    const mt = e.target.closest('.cc-meta[data-act="refs"]');
+    const mt = e.target.closest('.cc-meta[data-act="refs"], .ck-badge[data-act="refs"]');
     if (mt) {
       e.preventDefault();
       const card = mt.closest('.crow');
@@ -908,6 +885,14 @@
     }
   });
   $('#grid').addEventListener('keydown', function (e) {
+    /* 卡本体是入口：Enter / 空格与点击同一条路 */
+    const cardK = e.target.closest('.crow.ccard');
+    if (cardK && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      if (cardK.getAttribute('data-st') === 'off') { toast('组件已禁用：先打开这张卡左边的开关启用，再配置'); return; }
+      location.href = 'component.html?id=' + encodeURIComponent(cardK.getAttribute('data-id'));
+      return;
+    }
     const mb = e.target.closest('.k-more');
     if (mb) {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); openMenu(mb); }
@@ -994,11 +979,19 @@
     }, 450);
   });
 
+  /* 引用管理里的升级是异步的，完成时列表页可能还开着。
+     升级只改装配版本，卡片上的「N 个应用待升级」必须当场归零 ——
+     不能等用户手动刷新才相信它生效了。 */
+  window.onCompRefsUpgraded = function () {
+    try { DB.load(); } catch (e) { console.warn('[components] 升级后重读存储失败', e); }
+    render();
+  };
+
   render();
 })();
 </script>
 <div id="xz-host"></div>
 <script src="assets/shell.js?v=1d57161f"></script>
-<script src="assets/xiaozhi.js?v=fcba3cbc"></script>
+<script src="assets/xiaozhi.js?v=6e40f72d"></script>
 </body>
 </html>

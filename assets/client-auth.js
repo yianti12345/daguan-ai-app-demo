@@ -12,6 +12,7 @@
   'use strict';
 
   var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -38,6 +39,8 @@
   var qs = new URLSearchParams(location.search);
   var APP_ID = qs.get('id') || qs.get('app') || '';
   var KW = '';
+  /* 批量升级的选中态：按 authId 记，重画不丢；筛选/升级后自动剔除失效项。 */
+  var sel = {};
 
   /* 2026-11-02 第二次整改：进了某个应用之后，一行＝一家客户（不再按授权记录出行）——
      没授权的客户也要出现，否则「还有谁没给」这件事在页面上根本看不到。
@@ -176,6 +179,7 @@
       box.innerHTML = '<p class="au-empty">' + emptyMsg + '</p>';
       if (total) total.textContent = '';
       var pg0 = $('#pager'); if (pg0) pg0.innerHTML = '';
+      syncBatch();
       return;
     }
 
@@ -190,10 +194,21 @@
         '<button class="au-btn" type="button" data-act="revoke" data-id="' + esc(r.authId) + '">取消授权</button>';
     }
 
+    /* 只保留当前可见、且仍可升级的选中项，避免筛选后计数与批量动作对不上。 */
+    var live = {};
+    list.forEach(function (r) { if (r.behind) live[r.authId] = 1; });
+    Object.keys(sel).forEach(function (id) { if (!live[id]) delete sel[id]; });
+
     box.innerHTML = list.map(function (r) {
       var expired = r.expireAt && r.expireAt < today();
-      return '<div class="au-row gtable-row" data-cid="' + esc(r.clientId) + '"' +
+      var pick = r.behind
+        ? '<span class="au-sel"><input type="checkbox" class="au-check" data-pick="' + esc(r.authId) + '"' +
+            (sel[r.authId] ? ' checked' : '') +
+            ' aria-label="选择 ' + esc(r.clientName) + '，从 v' + r.version + ' 升级到 v' + r.latest + '"></span>'
+        : '<span class="au-sel"></span>';
+      return '<div class="au-row gtable-row' + (r.behind && sel[r.authId] ? ' is-selected' : '') + '" data-cid="' + esc(r.clientId) + '"' +
           (r.authId ? ' data-auth="' + esc(r.authId) + '"' : '') + ' data-status="' + esc(r.status) + '">' +
+        pick +
         '<span class="au-c"><b title="' + esc(r.clientName) + '">' + esc(r.clientName) + '</b>' +
           (r.canceled ? '<span class="au-tag">已取消</span>' : '') + '</span>' +
         '<span class="au-id">' + esc(r.tenantId || '—') + '</span>' +
@@ -206,11 +221,50 @@
         '</span>' +
       '</div>';
     }).join('');
+    syncBatch();
 
     /* 表尾照平台标准：左边「第 1-N 条/共 N 条」，右边当前页 + 每页条数。 */
     if (total) total.textContent = '第 1-' + list.length + ' 条/共 ' + list.length + ' 条';
     var pager = $('#pager');
     if (pager) pager.innerHTML = '<span class="pg-cur">1</span><span class="pg-size">10 条/页</span>';
+  }
+
+  /* ── 批量选择 ────────────────────────────────────────────────
+     只有「授权中且落后最新版」的行有勾选框：当前唯一的批量动作是升级，
+     让不可升级的行也能勾，只会制造「选了 3 个却只升 1 个」的误解。 */
+  function pickedRows() {
+    return rows().filter(function (r) { return r.behind && sel[r.authId]; });
+  }
+  function syncBatch() {
+    var btn = $('#act-batch'), nEl = $('#batch-n'), all = $('#au-all');
+    var can = rows().filter(function (r) { return r.behind; });
+    var picked = pickedRows();
+    if (nEl) nEl.textContent = String(picked.length);
+    if (btn) btn.disabled = !picked.length;
+    if (all) {
+      all.disabled = !can.length;
+      all.checked = !!can.length && picked.length === can.length;
+      all.indeterminate = picked.length > 0 && picked.length < can.length;
+    }
+  }
+  function batchUpgrade() {
+    var picked = pickedRows();
+    if (!picked.length) return;
+    Confirm.ask({
+      title: '批量升级',
+      body: '将选中的 ' + picked.length + ' 家客户升级到各自应用的最新版本？升级后立刻生效。',
+      ok: '确定升级',
+      onOk: function () {
+        var ok = 0, fail = 0;
+        picked.forEach(function (r) {
+          var x = DB.authUpgrade(r.authId);
+          if (x && x.ok) ok++; else fail++;
+        });
+        sel = {};
+        paint();
+        toast(fail ? '已升级 ' + ok + ' 家，' + fail + ' 家失败' : '已升级 ' + ok + ' 家客户');
+      }
+    });
   }
 
   /* ── 升级 / 取消 / 恢复 / 删除 ─────────────────────────────── */
@@ -246,7 +300,10 @@
     if (!rec) return;
     Confirm.ask({
       title: '操作确认',
-      body: '取消授权后，客户将无法使用该应用，是否确认取消授权？',
+      /* ★2026-11-04：原文句尾「是否确认取消授权？」把按钮语义又念一遍。
+         改成点名：谁、失去什么、能不能反悔。 */
+      body: (function () { var a = DB.appById(rec.appId);
+        return '取消后，' + clientNameOf(rec) + '就打不开「' + (a ? a.name : '这个应用') + '」了。之后还能再授权。'; })(),
       ok: '确定',
       cancel: '取消',
       danger: true,
@@ -360,6 +417,15 @@
     paint();
 
     var list = $('#list');
+    if (list) list.addEventListener('change', function (e) {
+      var c = e.target.closest && e.target.closest('[data-pick]');
+      if (!c) return;
+      var id = c.getAttribute('data-pick');
+      if (c.checked) sel[id] = 1; else delete sel[id];
+      var row = c.closest('.au-row');
+      if (row) row.classList.toggle('is-selected', !!c.checked);
+      syncBatch();
+    });
     if (list) list.addEventListener('click', function (e) {
       var b = e.target.closest && e.target.closest('[data-act]');
       if (!b || b.disabled) return;
@@ -376,6 +442,21 @@
     var kw = $('#kw');
     if (kw) kw.addEventListener('input', function () { KW = kw.value.trim(); paint(); });
 
+    var batch = $('#act-batch');
+    if (batch) batch.addEventListener('click', batchUpgrade);
+    var all = $('#au-all');
+    if (all) all.addEventListener('change', function () {
+      var on = all.checked;
+      $$('#list [data-pick]').forEach(function (c) {
+        var id = c.getAttribute('data-pick');
+        c.checked = on;
+        if (on) sel[id] = 1; else delete sel[id];
+        var row = c.closest('.au-row');
+        if (row) row.classList.toggle('is-selected', on);
+      });
+      syncBatch();
+    });
+
     var add = $('#act-add');
     if (add) {
       if (APP_ID && !DB.appById(APP_ID)) {
@@ -388,8 +469,9 @@
     if (x) x.addEventListener('click', closeDlg);
     if (c) c.addEventListener('click', closeDlg);
     if (ok) ok.addEventListener('click', submitDlg);
-    var sel = $('#fm-app');
-    if (sel) sel.addEventListener('change', paintClientPick);
+    /* 不要叫 sel：外层 sel 是批量选中的 authId 表，同名 var 提升会把勾选写进这里。 */
+    var appSel = $('#fm-app');
+    if (appSel) appSel.addEventListener('change', paintClientPick);
 
     var addC = $('#act-add-client');
     if (addC) addC.addEventListener('click', function () { openClient(''); });

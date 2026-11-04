@@ -202,6 +202,7 @@ function renderXz(){
   if (xzState().open) xzScrollToResult();
   /* 面板是整棵重建的：录音/识别状态必须重画回去，否则一重绘按钮就"忘"了自己在录 */
   xzMicUi();
+  xzVoicePaint();
 }
 document.addEventListener('click', function(e){
   var b = e.target.closest ? e.target.closest('[data-act]') : null;
@@ -283,6 +284,7 @@ document.addEventListener('click', function(e){
   }
   if (act === 'xzStop'){ e.stopPropagation(); e.preventDefault(); xzStop(); return; }
   if (act === 'xzMic'){ e.stopPropagation(); e.preventDefault(); xzMicToggle(); return; }
+  if (act === 'xzVoiceMode'){ e.stopPropagation(); e.preventDefault(); xzVoiceToggle(); return; }
   if (act === 'xzGrant'){ e.stopPropagation(); e.preventDefault(); xzGrant(); return; }
   if (act === 'xzDeny'){ e.stopPropagation(); e.preventDefault(); xzDeny(); return; }
   /* 计划条折叠：就地改 hidden / aria-expanded，不重建整块 —— 焦点留在按钮上，
@@ -3037,6 +3039,7 @@ function xzHtml(mode){
         + '<div class="xz-body' + (isHist ? ' is-hist' : '') + '" id="xzBody">' + (isHist ? xzHistBodyHtml() : xzMsgsHtml()) + '</div>'
         + (isHist ? '' : '<div class="xz-foot"><div class="xz-inputwrap">'
           + '<input data-act="xzInput" aria-label="说需求" placeholder="直接说你要做什么">'
+          + '<button class="xz-vmode" data-act="xzVoiceMode" data-mode="confirm" aria-label="语音发送方式" aria-pressed="false" title="语音发送方式：转成文字后等你点发送">语音确认</button>'
           + '<button class="xz-mic" data-act="xzMic" aria-label="按下说话" aria-pressed="false" title="按下说话">' + sv('mic') + '</button>'
           + '<button class="xz-send" data-act="xzSend" aria-label="发送">' + sv('right') + '</button>'
           + '</div></div>'
@@ -3100,11 +3103,29 @@ function xzPaint(){
      不触发重绘循环（没有 MutationObserver 参与）。 */
   xzPlacePanel();
 }
-/* ── 语音输入（2026-10-28）──────────────────────────────────────────
-   点一下开始录、再点一下结束；识别结果**落进输入框**，由人改、人按发送。
-   不做说完自动发送：转错一个字就发出去，取消重说比多按一下贵得多。
+/* ── 语音输入（2026-11-04 m06113 需求三：双模式）────────────────────
+   语音确认：识别结果落进输入框，由人改、人按发送（旧行为，默认）。
+   免确认：识别完直接 xzAsk(t, true)，不再等一次发送。
+   安全边界仍在：fromVoice=true 的"确认"不会当作授权，不可逆动作照样停。
    识别在本机做（xz-server 的 /asr → whisper.cpp），不走外网。 */
-var XZ_MIC = { st:'', mr:null, ch:[], stream:null, timer:0 };
+var XZ_VOICE_KEY = 'ifas90:voiceMode';
+function xzVoiceMode(){
+  try { return localStorage.getItem(XZ_VOICE_KEY) === 'auto' ? 'auto' : 'confirm'; } catch(e){ return 'confirm'; }
+}
+function xzVoicePaint(){
+  var b = document.querySelector('[data-act="xzVoiceMode"]');
+  if (!b) return;
+  var m = xzVoiceMode();
+  b.setAttribute('data-mode', m);
+  b.setAttribute('aria-pressed', m === 'auto' ? 'true' : 'false');
+  b.textContent = m === 'auto' ? '免确认' : '语音确认';
+  b.title = m === 'auto' ? '语音发送方式：说完静默判停，直接发送' : '语音发送方式：转成文字后等你点发送';
+}
+function xzVoiceToggle(){
+  try { localStorage.setItem(XZ_VOICE_KEY, xzVoiceMode() === 'auto' ? 'confirm' : 'auto'); } catch(e){}
+  xzVoicePaint();
+}
+var XZ_MIC = { st:'', mr:null, ch:[], stream:null, timer:0, tick:0, ctx:null };
 var XZ_MIC_PH = '直接说你要做什么';
 
 function xzMicUi(){
@@ -3131,9 +3152,16 @@ function xzMicNote(msg){
   setTimeout(function(){ if (!XZ_MIC.st) xzMicUi(); }, 4500);
 }
 
+function xzMicCleanup(){
+  clearTimeout(XZ_MIC.timer); XZ_MIC.timer = 0;
+  if (XZ_MIC.tick){ clearInterval(XZ_MIC.tick); XZ_MIC.tick = 0; }
+  if (XZ_MIC.ctx){ try { XZ_MIC.ctx.close(); } catch(e){} XZ_MIC.ctx = null; }
+  if (XZ_MIC.stream){ try { XZ_MIC.stream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){} XZ_MIC.stream = null; }
+}
 function xzMicStop(){
   clearTimeout(XZ_MIC.timer);
   if (XZ_MIC.mr && XZ_MIC.mr.state !== 'inactive') XZ_MIC.mr.stop();
+  else xzMicCleanup();
 }
 
 /* 把当前页面上的业务词喂给识别器当偏置：客户名、应用名、表头这些词，
@@ -3171,7 +3199,7 @@ function xzMicToggle(){
       XZ_MIC.stream = stream; XZ_MIC.mr = mr; XZ_MIC.ch = [];
       mr.ondataavailable = function(e){ if (e.data && e.data.size) XZ_MIC.ch.push(e.data); };
       mr.onstop = function(){
-        try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch (err) {}
+        xzMicCleanup();
         var blob = new Blob(XZ_MIC.ch, { type: mr.mimeType || 'audio/webm' });
         XZ_MIC.st = 'busy'; XZ_MIC.mr = null; XZ_MIC.ch = []; xzMicUi();
         if (!blob.size){ XZ_MIC.st = ''; xzMicUi(); xzMicNote('没有录到声音，再点一次'); return; }
@@ -3186,6 +3214,8 @@ function xzMicToggle(){
             XZ_MIC.st = ''; xzMicUi();
             var t = res.ok ? String(res.j.text || '').trim() : '';
             if (!t){ xzMicNote(res.ok ? '没听清，再说一次' : '语音识别不可用，请用键盘输入'); return; }
+            /* 免确认：直接走发送（fromVoice 仍为 true，授权边界不松） */
+            if (xzVoiceMode() === 'auto'){ xzAsk(t, true); return; }
             var inp = document.querySelector('[data-act="xzInput"]');
             if (!inp) return;
             /* 追加，不覆盖：用户可能先打了半句，又说半句 */
@@ -3200,7 +3230,29 @@ function xzMicToggle(){
       };
       mr.start();
       XZ_MIC.st = 'rec'; xzMicUi();
-      xzAnnounce('正在录音，说完再点一下麦克风');
+      xzAnnounce('正在录音，说完停一下，或再点一下麦克风');
+      /* 静默判停：说过话之后连续 1.2s 没声音就收；10s 一直没开口也收。
+         确认模式只是"发不发"的区别，收录音本身一样自动。 */
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC){
+        try {
+          XZ_MIC.ctx = new AC();
+          var src = XZ_MIC.ctx.createMediaStreamSource(stream);
+          var an = XZ_MIC.ctx.createAnalyser(); an.fftSize = 1024;
+          src.connect(an);
+          var buf = new Uint8Array(an.fftSize);
+          var spoke = false, lastLoud = 0, started = Date.now();
+          XZ_MIC.tick = setInterval(function(){
+            an.getByteTimeDomainData(buf);
+            var sum = 0;
+            for (var i = 0; i < buf.length; i++){ var d = (buf[i] - 128) / 128; sum += d * d; }
+            var rms = Math.sqrt(sum / buf.length), now = Date.now();
+            if (rms > 0.02){ spoke = true; lastLoud = now; }
+            if (spoke && now - lastLoud > 1200) xzMicStop();
+            else if (!spoke && now - started > 10000) xzMicStop();
+          }, 100);
+        } catch(e){ XZ_MIC.ctx = null; }
+      }
       /* 60 秒上限：一整段塞进一次识别，等的人也难受 */
       XZ_MIC.timer = setTimeout(xzMicStop, 60000);
     })

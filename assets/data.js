@@ -53,7 +53,11 @@
   /* ★2026-11-02 bump 15 → 16：授权模型从「应用挂一个客户 + 一个授权版本」改成
      「应用 × 客户授权表」。不 bump，浏览器里那份旧存档会按旧模型读回来，
      新页面看到的是 0 条授权 —— 看起来像没做。 */
-  var SEED_VER = '17';
+  /* ★2026-11-04 bump 17 → 18：①六个组件介绍改成客观属性描述（原来全是「装上后，…等你填内容」
+     这种内部话术）；②演示的装配清单全部留空（从零演示）。bump 之外还要把台账/改动流水的键
+     也带上种子版本 —— 原来只重置 db，台账 'ifas90:vers:*' 留在 localStorage 里，
+     于是画布空了、版本页还写着「装配 3 块」，同一屏两个事实互相打脸。 */
+  var SEED_VER = '21';
   var SEED_KEY = 'ifas90:seed' + NS;
 
   /* ── 种子：APP 与 COMPS 的现有内容 ── */
@@ -131,31 +135,31 @@
           fields: [] },
         { id: 'task-list', tags: ['task_flow'],    name: '审核任务列表', label: '待办任务',       layout: 'full', status: '已上架', ver: 'v3', refs: 0, config: {}, strip: true, block: { kind: 'table', src: 'tasks' },
           updated: '2026-10-29 17:03:41',
-          desc: '装上后，任务按状态列在一张表里，可勾选多条批量指派处理人。',
+          desc: '审核任务的总览表：一行一个任务，列出任务编号、业务类型、金额、状态与处理人；按状态分组，可多选批量指派处理人。',
           fields: ['任务编号', '业务类型', '金额', '状态', '处理人'],
           /* ★2026-10-28：组件按装配版本渲染。v2 只有三列，v3 才加「业务类型」「处理人」。
              没有这份表，更新组件版本就只是改一笔账，画布一个像素都不会动（需求官判的 P0）。 */
           fieldsByVer: { 'v2': ['任务编号', '金额', '状态'] } },
         { id: 'task-detail', tags: ['task_flow'],  name: '任务详情', label: '任务详情',          layout: 'right', status: '已上架', ver: 'v2', refs: 0, config: {}, block: { kind: 'detail' },
           updated: '2026-10-27 11:48:09',
-          desc: '装上后，审批流与原文对照并排，规则结论带依据可追溯。',
+          desc: '审批流程与原文并排的详情视图：左边走审批环节，右边对照原文，规则结论给出可追溯的依据。',
           fields: ['原件', '抽取结果', '规则结论'],
           fieldsByVer: { 'v1': ['原件', '抽取结果'] } },
         { id: 'rule-panel', tags: ['rule_judge', 'result_view'],   name: '规则结论', label: '规则结论',          layout: 'right', status: '已上架', ver: 'v1', refs: 0, config: {}, block: { kind: 'table', src: 'rules', limit: 3 },
           updated: '2026-10-24 15:26:33',
-          desc: '装上后，逐条规则给出结论与依据引用，引用精确到页。',
+          desc: '逐条规则给结论：一条规则一行，结论与依据引用并列，引用精确到原文页码。',
           fields: ['规则名', '结论', '依据引用'] },
         { id: 'doc-extract', tags: ['mtrl_extract'],  name: '文档抽取', label: '文档抽取',          layout: 'right', status: '已上架', ver: 'v2', refs: 0, config: {}, block: { kind: 'chips' },
           updated: '2026-10-30 10:02:17',
-          desc: '装上后，这块只摆字段名、抽取值、置信度三样，等你填内容。',
+          desc: '文档抽取结果表：字段名、抽取值、置信度三列；抽取范围与必填项在组件配置里设定。',
           fields: ['字段名', '抽取值', '置信度'] },
         { id: 'verify-queue', tags: ['task_flow', 'result_view'], name: '复核队列', label: '复核队列',          layout: 'left', status: '已上架', ver: 'v1', refs: 0, config: {}, block: { kind: 'bars' },
           updated: '2026-10-21 14:39:55',
-          desc: '装上后，复核任务逐条列出复核人与复核意见，便于集中查阅。',
+          desc: '复核任务清单：一行一条复核任务，记录复核人与复核意见，可集中查阅。',
           fields: ['任务', '复核人', '复核意见'] },
         { id: 'ruleset-cfg', tags: ['rule_judge'],  name: '规则配置', label: '规则配置',          layout: 'full', status: '已下架', ver: 'v5', refs: 0, config: {},
           updated: '2026-10-19 16:57:04',
-          desc: '装上后，规则组按排序编号列出，逐条标注启用与禁用状态。',
+          desc: '规则组配置：规则按排序编号列出，逐条标注启用状态与适用口径。',
           fields: ['规则组', '排序', '启用状态'] },
         { id: 'ruleset-med', tags: ['rule_judge'],  name: '规则配置（医药口径）', label: '规则修订', layout: 'full', status: '已下架', ver: 'v2', refs: 0, config: {},
           updated: '2026-10-16 08:44:28',
@@ -645,7 +649,7 @@
      于是静默退掉了最新一步，最旧那步留在原地。**身份不能用可重复的量**。
      uid 在写入时生成；老存档没有 uid，读的时候按"同一个 at 出现的前后次序"补齐并**回写一次**，
      补齐即固化 —— 之后新增记录不会改变已有 uid（不像下标，会随 unshift 漂）。 */
-  var CHG_KEY = function (scope, id) { return 'ifas90:chg:' + scope + ':' + id + NS; };
+  var CHG_KEY = function (scope, id) { return 'ifas90:chg:' + scope + ':' + id + NS + ':' + SEED_VER; };
   var MAX_CHG = 40;
   var CHG_SEQ = 0;
 
@@ -1015,6 +1019,88 @@
     return { n: ups.length, list: ups };
   };
 
+  /* ★2026-11-03（m05719）：多选批量升级。与 upgradeAll 同语义，只是范围收窄到 ids；
+     供装配面板「一键升级（N）」用。 */
+  DB.upgradeSome = function (appId, ids) {
+    var a = DB.appById(appId);
+    if (!a) return null;
+    var want = {};
+    (ids || []).forEach(function (id) { want[id] = 1; });
+    var ups = DB.updatesOf(appId).filter(function (u) { return want[u.id]; });
+    if (!ups.length) return { n: 0, list: [] };
+    syncCompVer(a);
+    ups.forEach(function (u) { a.compVer[u.id] = u.to; });
+    a.updated = DB.now();
+    if (DB.save() === false) return null;
+    return { n: ups.length, list: ups };
+  };
+
+  /* ── 组件反向升级：从组件看"谁落后了"（2026-11-04）──────────────
+     应用侧只看得到自己装了哪几件；组件侧要一次回答"这个组件被哪些应用装着、
+     谁落后、谁自定义过这一块"。口径与 DB.updatesOf 完全相同（canInstall + 版本比较），
+     不许在页面里另写一份 filter —— 否则卡片角标与引用名单会各说各的数。
+     overlay：应用自己改过这一块（app.content[compId] 存在），自动升级会覆盖私有改动。 */
+  DB.compRefs = function (compId) {
+    var c = DB.compById(compId);
+    if (!c) return [];
+    var latest = c.ver;
+    return DB.APPS.filter(function (a) {
+      return (a.comps || []).indexOf(compId) >= 0;
+    }).map(function (a) {
+      var have = DB.installedVer(a.id, compId);
+      var behind = DB.canInstall(c) && DB.verNum(latest) > DB.verNum(have);
+      return {
+        app: a, id: a.id, name: a.name,
+        have: have, latest: latest, behind: behind,
+        overlay: !!(a.content && a.content[compId])
+      };
+    }).sort(function (x, y) {
+      if (x.behind !== y.behind) return x.behind ? -1 : 1;
+      if (x.overlay !== y.overlay) return x.overlay ? 1 : -1;
+      return String(x.name).localeCompare(String(y.name), 'zh-Hans-CN');
+    });
+  };
+  DB.compUpgradeStats = function (compId) {
+    var refs = DB.compRefs(compId);
+    var behind = refs.filter(function (r) { return r.behind; });
+    var auto = behind.filter(function (r) { return !r.overlay; });
+    return { total: refs.length, behind: behind.length, auto: auto.length, manual: behind.length - auto.length };
+  };
+
+  /* 一次升级某个组件在多个应用里的装配版本。只改 a.compVer[compId]，不碰应用内容、
+     不动客户授权版本 —— 与 upgradeAll/upgradeSome 的语义完全一致。
+     ids 省略 = 全部引用（"全部升级"无视分页，就靠这一条）。
+     有 overlay 的一律 skipped，绝不自动覆盖；写盘失败才进 failed。
+     逐条 save 是为了失败时只回滚那一条，不把已经成功的也一起退掉。 */
+  DB.upgradeCompRefs = function (compId, ids) {
+    var c = DB.compById(compId);
+    var out = { ok: [], skipped: [], failed: [] };
+    if (!c) return out;
+    var want = null;
+    if (ids) { want = {}; ids.forEach(function (id) { want[id] = 1; }); }
+    DB.compRefs(compId).forEach(function (r) {
+      if (!r.behind) return;
+      if (want && !want[r.id]) return;
+      if (r.overlay) {
+        out.skipped.push({ id: r.id, name: r.name, reason: '应用自定义过这一块，自动升级会覆盖它的改动' });
+        return;
+      }
+      var a = DB.appById(r.id);
+      if (!a) return;
+      var old = (a.compVer && a.compVer[compId]) || null;
+      syncCompVer(a);
+      a.compVer[compId] = c.ver;
+      a.updated = DB.now();
+      if (DB.save() === false) {
+        if (old) a.compVer[compId] = old; else delete a.compVer[compId];
+        out.failed.push({ id: r.id, name: r.name, reason: '这台电脑写不进去，这一条没有升级' });
+        return;
+      }
+      out.ok.push({ id: r.id, name: r.name, from: r.have, to: c.ver });
+    });
+    return out;
+  };
+
   /* 组件类型（页面类 / 能力类）已退役：用户两次否决这个分类，COMP 里不再有 type。
      apps.html 的封面还按这一格取色（DB.typeClass(c.type)），所以函数保留，
      但只回一种中性色 —— 分类没了，就没有第二种颜色可讲。 */
@@ -1241,12 +1327,20 @@
   function appRecord(a) { var o = pickSchema(a, APP_FIELDS); o.comps = a.comps.slice(); return o; }
   function compRecord(c) { return pickSchema(c, COMP_FIELDS); }
 
-  DB.cloneApp = function (id) {
+  DB.cloneApp = function (id, wantName) {
     var a = DB.appById(id);
     if (!a) return null;
     var copy = JSON.parse(JSON.stringify(appRecord(a)));
     copy.id = freshId('app-', DB.APPS);
-    copy.name = uniqueName(DB.APPS, a.name + '（副本）');
+    /* ★2026-11-04（m07271）：复制时名称由用户输，唯一性在数据层再挡一道。
+       页面已经校验过；这里仍是唯一入口，防别的调用方绕过 UI 造出重名。 */
+    if (wantName != null) {
+      var wn = String(wantName).trim();
+      if (!wn || DB.APPS.some(function (x) { return x.name === wn; })) return null;
+      copy.name = wn;
+    } else {
+      copy.name = uniqueName(DB.APPS, a.name + '（副本）');
+    }
     copy.status = '未发布';
     copy.version = 0;
     copy.updated = todayStr();
@@ -1257,12 +1351,18 @@
     return copy;
   };
 
-  DB.cloneComp = function (id) {
+  DB.cloneComp = function (id, wantName) {
     var c = DB.compById(id);
     if (!c) return null;
     var copy = JSON.parse(JSON.stringify(compRecord(c)));
     copy.id = freshId('comp-', DB.COMPS);
-    copy.name = uniqueName(DB.COMPS, c.name + '（副本）');
+    if (wantName != null) {
+      var wn = String(wantName).trim();
+      if (!wn || DB.COMPS.some(function (x) { return x.name === wn; })) return null;
+      copy.name = wn;
+    } else {
+      copy.name = uniqueName(DB.COMPS, c.name + '（副本）');
+    }
     copy.label = copy.name;
     copy.status = '未发布';
     copy.ver = 'v1';
@@ -1293,14 +1393,18 @@
   };
 
   /* 返回 { ok, msg, name } —— 页面只负责把 msg 说出来，不再各自判断一堆条件 */
-  DB.importPayload = function (obj) {
+  DB.importPayload = function (obj, wantName) {
     if (!obj || typeof obj !== 'object') return { ok: false, msg: '这个文件不是本系统导出的 JSON' };
+    var want = wantName == null ? '' : String(wantName).trim();
 
     if (obj.kind === 'daguan-comp') {
       if (!obj.comp || !obj.comp.name) return { ok: false, msg: '组件文件里没有内容' };
+      if (want && DB.COMPS.some(function (x) { return x.name === want; })) {
+        return { ok: false, msg: '已经有同名组件「' + want + '」' };
+      }
       var nc = pickSchema(obj.comp, COMP_FIELDS);
       if (DB.compById(nc.id)) nc.id = freshId('comp-', DB.COMPS);
-      nc.name = uniqueName(DB.COMPS, nc.name);
+      nc.name = want || uniqueName(DB.COMPS, nc.name);
       nc.label = nc.name;
       nc.status = '未发布';
       nc.ver = 'v1';
@@ -1314,6 +1418,10 @@
 
     if (obj.kind === 'daguan-app') {
       if (!obj.app || !obj.app.name) return { ok: false, msg: '应用文件里没有内容' };
+      /* 重名先挡：下面会往组件库补件，先挡在这里才不会留下半次导入 */
+      if (want && DB.APPS.some(function (x) { return x.name === want; })) {
+        return { ok: false, msg: '已经有同名应用「' + want + '」' };
+      }
       /* 先补组件：已存在同 id 的一律复用，不覆盖别人的共用件 */
       var added = 0;
       (obj.comps || []).forEach(function (raw) {
@@ -1326,7 +1434,7 @@
       });
       var na = pickSchema(obj.app, APP_FIELDS);
       na.id = freshId('app-', DB.APPS);
-      na.name = uniqueName(DB.APPS, na.name);
+      na.name = want || uniqueName(DB.APPS, na.name);
       na.status = '未发布';
       na.version = 0;
       na.updated = todayStr();
@@ -1355,14 +1463,26 @@
 
      snap 是整包快照：应用＝comps + content（每块 spec/fields/config）+ name/desc/client + contentHash；
      组件＝spec/fields/desc。恢复时内容与装配一起还原，不再只切版本号。 */
-  var LEDGER_KEY = function (scope, id) { return 'ifas90:vers:' + scope + ':' + id + NS; };
+  /* 台账键带上种子版本：种子一改，旧台账就再也读不到，重新按当前种子种一份。
+     不带的话，改了种子只重置 db，台账原样读回 —— 页面显示的是上一版种子的事实。 */
+  var LEDGER_KEY = function (scope, id) { return 'ifas90:vers:' + scope + ':' + id + NS + ':' + SEED_VER; };
   var LEGACY_APP = function (id) { return 'ifas90:app:vers:' + id; };
   var LEGACY_COMP = function (id) { return 'ifas90:comp:vers:' + id; };
   var MAX_VERS = 60;
   /* 版本页要能说清"更早的被清理了"：上限不是暗规则 */
   DB.MAX_VERS = MAX_VERS;
 
-  function todayISO() { return stamp(); }   /* 2026-11-01：与 DB.now() 同源，不再单独算 */
+  function todayISO() { return stamp(); }
+  /* ★2026-11-04：种子补历史版本要用到"往前 N 天"，只在种子期调用。 */
+  function dayBefore(iso, n, hh, mm) {
+    var d = new Date(String(iso).replace(' ', 'T'));
+    if (isNaN(d.getTime())) return iso;
+    d.setDate(d.getDate() - n);
+    if (typeof hh === 'number') { d.setHours(hh); d.setMinutes(typeof mm === 'number' ? mm : 0); }
+    var p2 = function (x) { return (x < 10 ? '0' : '') + x; };
+    return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate())
+      + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds());
+  }   /* 2026-11-01：与 DB.now() 同源，不再单独算 */
 
   /* 归一化 = 四条死命令在数据层的落点。所有写入都必须经过它。
      ★2026-10-27 单一工作区模型：版本只存"保存过的快照"，不再有草稿行。
@@ -1413,7 +1533,6 @@
   /* 种子：老数据只有 {v,at} 或只有记录上的 version 字段。
      ★2026-10-27 单一工作区模型：只种"保存过的快照"，不再生成草稿行。
        当前状态永远在 DB.APPS 里自动保存，不占版本号。 */
-  function content0Count(a) { return (a.comps || []).length; }
   function seedLedger(scope, id) {
     var at = todayISO(), arr = [];
     if (scope === 'app') {
@@ -1422,6 +1541,17 @@
       var v = parseInt(a.version, 10) || 0;
       if (v > 0) {
         var content = DB.resolveContent(id);
+        /* ★2026-11-04：只有"当前这一版"时，卡上写 v5、版本页写「共 1 个版本」——
+           版本管理页里连一条历史都没有。按版本号补 v1..vN-1（快照同当前版，
+           只把时间按版本号错开），让历史与"恢复"在演示里是真的。 */
+        var baseSnap = { comps: (a.comps || []).slice(), name: a.name, desc: a.desc, client: a.client,
+                         content: content, contentHash: DB.hash(content), summary: '第一版',
+                         at: a.updated || at, editor: (DB.editor ? DB.editor() : 'admin') };
+        for (var hv = 1; hv < v; hv++) {
+          var oldSnap = {}; for (var k in baseSnap) oldSnap[k] = baseSnap[k];
+          oldSnap.at = dayBefore(a.updated || at, (v - hv) * 4, 10 + ((hv * 3) % 7), (hv * 13) % 60);
+          arr.push({ v: hv, kind: 'stable', active: false, at: oldSnap.at, snap: oldSnap });
+        }
         arr.push({ v: v, kind: 'stable', active: a.status === '已上架', at: a.updated || at,
           snap: { comps: (a.comps || []).slice(), name: a.name, desc: a.desc, client: a.client,
                   content: content, contentHash: DB.hash(content), summary: '第一版', at: a.updated || at,
@@ -1445,7 +1575,9 @@
           arr.push({ v: pv, kind: 'stable', active: false, at: at,
             snap: { comps: (a.comps || []).slice(), name: a.name, desc: a.desc, client: a.client,
                     content: demoContent, contentHash: DB.hash(demoContent),
-                    summary: '加 2 列（触发规则、责任人）· 共 ' + content0Count(a) + ' 块', at: at,
+                    /* ★2026-11-04：没有装配清单就没有「加 2 列」这回事 —— 画布是空的。
+                       摘要留空（表格里显示「—」），不许拿「共 0 块」凑一句。 */
+                    summary: tgt ? '加 2 列（触发规则、责任人）' : '', at: at,
                     editor: (DB.editor ? DB.editor() : 'admin') } });
         }
       }
@@ -1458,8 +1590,18 @@
     var cv = parseInt(String(c.ver || '').replace(/\D/g, ''), 10) || 0;
     /* 只有真正发过的（status ≠ 草稿）才种正式版；没发过就是"零快照"，
        不再用一个草稿行假装它有一版。 */
-    if (cv > 0 && c.status !== '未发布' && c.status !== '草稿') arr.push({ v: cv, kind: 'stable', active: c.status !== '已下架', at: todayISO(),
-      snap: { spec: c.spec || null, fields: (c.fields || []).slice(), desc: c.desc } });
+    /* ★2026-11-04：组件原来只种"当前这一版"，于是卡上写 v3、版本页写「共 1 个版本」——
+       版本管理页连一条历史都没有，「恢复」永远点不出来。按当前版本号补齐 v1..vN-1：
+       快照内容与当前版相同（演示里没造"每版差一点"），只把时间往前排，排出一个真实的历史。 */
+    if (cv > 0 && c.status !== '未发布' && c.status !== '草稿') {
+      var snapOf = function () { return { spec: c.spec || null, fields: (c.fields || []).slice(), desc: c.desc }; };
+      for (var hv = 1; hv < cv; hv++) {
+        /* 时间不许每版都印同一个「09:55:18」—— 那是明显的假数据。按版本号错开日期与时刻。 */
+        arr.push({ v: hv, kind: 'stable', active: false,
+          at: dayBefore(todayISO(), (cv - hv) * 3, 9 + ((hv * 5) % 8), (hv * 17) % 60), snap: snapOf() });
+      }
+      arr.push({ v: cv, kind: 'stable', active: c.status !== '已下架', at: todayISO(), snap: snapOf() });
+    }
     return arr;
   }
 
@@ -1640,6 +1782,73 @@
     }
     if (keepActive) return rec;
     return DB.versActivate(scope, id, want);
+  };
+
+  /* 下一个正式版号（只读）。版本页要在确认框里说"将生成 V4"，
+     必须与 versPublish 用同一条发号规则，不能在页面里另算一次。 */
+  DB.versNext = function (scope, id) {
+    var st = DB.versOf(scope, id).filter(function (r) { return r.kind === 'stable'; });
+    return (st.length ? Math.max.apply(null, st.map(function (r) { return r.v; })) : 0) + 1;
+  };
+
+  /* ── 前向恢复：恢复旧版 = 生成新版本，不倒退指针（2026-11-04）────────
+     用户口径：V3 出故障时点 V2 的「恢复」，不是把 active 拨回 V2，
+     而是把 V2 的全量快照复制成 V4 并上线；V3 原样留在历史里。
+     这样客户看到的版本号、审计时间线永远向前，也不会出现"V2 又变成当前版"
+     让授权页的 v2/v3 记录全部对不上。
+
+     ★2026-11-04：客户授权版本不动（用户已拍板）。应用侧只把 active 指到 V4；
+     客户仍 pin 在自己的授权版本，要客户看到 V4 还得去授权页升级。
+     组件侧同理：只把组件最新版推到 V4，已装配应用在引用管理里升级。 */
+  DB.versRestoreForward = function (scope, id, v) {
+    var want = parseInt(v, 10);
+    var rec = DB.versOf(scope, id).filter(function (r) {
+      return r.kind === 'stable' && r.v === want;
+    })[0] || null;
+    if (!rec) return { error: 'gone' };
+    if (!rec.snap) return { error: 'no-snap' };
+    var snap = JSON.parse(JSON.stringify(rec.snap));
+    var at = todayISO();
+    snap.restoredFrom = want;
+    snap.summary = '基于 v' + want + ' 恢复生成';
+    snap.at = at;
+    snap.editor = DB.editor();
+    var to = DB.versPublish(scope, id, snap, at);
+    if (!to) return { error: 'write' };
+
+    /* 版本台账已经指向新号，当前对象也必须换成这一版的快照内容。
+       顺序不能反：先发新号再落内容，写盘失败时至少不会出现"内容变了、版本没变"。 */
+    if (scope === 'app') {
+      var a = DB.appById(id);
+      if (!a) return { error: 'gone', to: to };
+      if (Array.isArray(snap.comps)) {
+        var ids = snap.comps.filter(function (x) { return !!DB.compById(x); });
+        a.comps.length = 0;
+        ids.forEach(function (x) { a.comps.push(x); });
+        syncCompVer(a);
+        recomputeRefs();
+      }
+      if (snap.name != null) a.name = snap.name;
+      if (snap.desc != null) a.desc = snap.desc;
+      if (snap.client != null) a.client = snap.client;
+      if (snap.content && typeof snap.content === 'object') {
+        a.content = JSON.parse(JSON.stringify(snap.content));
+      }
+      a.updated = DB.now();
+    } else {
+      var c = DB.compById(id);
+      if (!c) return { error: 'gone', to: to };
+      if (snap.name != null) c.name = snap.name;
+      if (snap.spec !== undefined) c.spec = snap.spec;
+      if (Array.isArray(snap.fields)) c.fields = snap.fields.slice();
+      if (snap.desc != null) c.desc = snap.desc;
+      c.status = '已上架';
+      c.enabled = true;
+      c.ver = 'v' + to;
+      c.updated = DB.now();
+    }
+    if (DB.save() === false) return { error: 'write', to: to };
+    return { from: want, to: to };
   };
 
 

@@ -21,20 +21,25 @@
    原来那 108 装不下，时分秒被折到第二行，整行高度跟着变。同一件事的另一个口径：
    时间既然要精确到秒，列宽就得按秒存在来给。 */
 
-.au-table.is-sub .au-head span:nth-child(3),
-.au-table.is-sub .au-row > :nth-child(3){display:none}
+/* 第 1 列是勾选框：单应用视图要隐藏的是第 4 列「应用」，不是第 3 列租户 ID。 */
+.au-table.is-sub .au-head span:nth-child(4),
+.au-table.is-sub .au-row > :nth-child(4){display:none}
 /* ★2026-11-02 修重叠：授权时间那一列给的是 108，而「2026-10-20 14:32:08」是 19 个字符且
    nowrap，它不换行就压到右边的有效期上（截图里两列数字叠在一起）。列宽按实际字符数给：
    版本 88（"v4" 足够）、时间 150、有效期 108。同一处表头、行、脚注共用一条轨道，改这里一处。 */
-.au-table{--gt-cols:170px 190px minmax(0,1fr) 80px 150px 108px 240px}
+.au-table{--gt-cols:40px 170px 190px minmax(0,1fr) 80px 150px 108px 240px}
 /* 隐藏「应用」列时，轨道收成 6 条：元素 display:none 后不再占轨道，若不收，
    后面每一列都左移一格（授权时间挤进 96、有效期挤进 158）——第一次渲染就叠字了。 */
-.au-table.is-sub{--gt-cols:minmax(0,1fr) 220px 80px 150px 108px 240px}
+.au-table.is-sub{--gt-cols:40px minmax(0,1fr) 220px 80px 150px 108px 240px}
 /* 表头照平台标准：48 高、浅灰通栏、14 号字、中等字重。原来 36 高 + 12 号灰字，
    和线上员工管理页不是一套。 */
 .au-head{height:48px;font-size:var(--font-size-body);font-weight:500;color:var(--color-text-secondary)}
 .au-head span:last-child{text-align:right}
 .au-row{min-height:54px;font-size:var(--font-size-body)}
+/* ★2026-11-03（m05719）：第一列是选择框；只有「可升级」行给勾选，未授权/已最新行留空。 */
+.au-sel{display:flex;align-items:center;justify-content:center}
+.au-check{width:16px;height:16px;margin:0;accent-color:var(--color-brand);cursor:pointer}
+.au-row.is-selected{background:var(--color-brand-surface)}
 .au-c{display:flex;flex-direction:column;gap:2px;min-width:0}
 .au-c b{font-weight:400;color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .au-id{font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums;font-family:inherit}

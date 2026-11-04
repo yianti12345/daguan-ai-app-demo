@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>授权总览 · AI 应用方案</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=67465879">
-<link rel="stylesheet" href="assets/client-auth.css?v=eb93aad2">
+<link rel="stylesheet" href="assets/sys.css?v=d575e327">
+<link rel="stylesheet" href="assets/client-auth.css?v=c1e6bff1">
 </head>
 <body>
 
@@ -47,6 +48,9 @@
                最新版本是这张表的"基准"，跟搜索一起靠右，不单独占一行。 -->
           <button class="btn primary" type="button" id="act-add">新增授权</button>
           <button class="btn" type="button" id="act-add-client">新增客户</button>
+          <!-- ★2026-11-03（m05719）：多选后批量升级。没选时是「一键升级（0）」且禁用，
+               选 2 个可升级的客户就变「一键升级（2）」。 -->
+          <button class="btn" type="button" id="act-batch" disabled>一键升级（<span id="batch-n">0</span>）</button>
           <div class="right">
             <span class="au-latest" id="au-latest" hidden>最新版本 <b>—</b></span>
             <label class="field w180">
@@ -55,7 +59,8 @@
           </div>
         </div>
         <div class="au-table gtable">
-          <div class="au-head gtable-head" id="head" aria-hidden="true">
+          <div class="au-head gtable-head" id="head">
+            <span class="au-sel"><input type="checkbox" id="au-all" aria-label="全选可升级客户"></span>
             <span>客户</span><span>租户 ID</span><span>应用</span><span>授权版本</span><span>授权时间</span><span>有效期</span><span>操作</span>
           </div>
           <div class="au-body gtable-body" id="list" role="list" aria-label="客户授权列表"></div>
@@ -146,10 +151,10 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=2f0f7af5"></script>
+<script src="assets/data.js?v=ebe14f81"></script>
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
-<script src="assets/confirm.js?v=26f0a69f"></script>
+<script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/shell.js?v=1d57161f"></script>
-<script src="assets/client-auth.js?v=3a0c9439"></script>
+<script src="assets/client-auth.js?v=2543c0be"></script>
 </body>
 </html>

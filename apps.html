@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=67465879">
-<link rel="stylesheet" href="assets/xiaozhi.css?v=798c12a1">
+<link rel="stylesheet" href="assets/sys.css?v=d575e327">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=02ac2ac8">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
 .page-hd{margin: 0 0 16px}
@@ -161,10 +162,10 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=2f0f7af5"></script>
+<script src="assets/data.js?v=ebe14f81"></script>
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/transfer.js?v=6ef877f1"></script>
-<script src="assets/confirm.js?v=26f0a69f"></script>
+<script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/popover.js?v=7f96155d"></script>
 <script src="assets/scope.js?v=69520925"></script>
 <script>
@@ -240,7 +241,7 @@
        改成往上找最近的卡片：不管 ⋮ 以后被挪到哪一格，只要还在卡里就找得到。 */
     var host = btn.closest('.kcard') || btn.parentNode;
     var isStatus = btn.classList.contains('k-pub');
-    var menu = host.querySelector(isStatus ? '.k-menu--status' : '.k-menu:not(.k-menu--status)');
+    var menu = host.querySelector(isStatus ? '.js-k-menu-status' : '.k-menu:not(.js-k-menu-status)');
     if (!menu) return;
     closeMenu(false);
     menu.hidden = false;
@@ -270,10 +271,21 @@
     if (act === 'vers') { openVers(id); return; }
     /* 2026-10-30：复制 / 导出。复制不改原件，导出连组件定义一起带走（见 data.js 那段口径） */
     if (act === 'dup') {
-      var cp = DB.cloneApp(id);
-      if (!cp) { toast('这个应用已经不在了', 'error'); return; }
-      render();
-      toast('已复制为「' + cp.name + '」· 未发布，客户看不到');
+      /* ★2026-11-04（m07271）：与应用同名不允许；复制时先让用户给新应用起名。 */
+      Confirm.ask({
+        title: '复制应用',
+        input: true, label: '新应用名称', value: a.name + '（副本）', ok: '复制',
+        validate: function (v) {
+          return DB.APPS.some(function (x) { return x.name === v; })
+            ? '已经有同名应用「' + v + '」，换个名字' : '';
+        },
+        onOk: function (name) {
+          var cp = DB.cloneApp(id, name);
+          if (!cp) { toast('这个名称已经被占用了，换一个再试', 'error'); return; }
+          render();
+          toast('已复制为「' + cp.name + '」· 未发布，客户看不到');
+        }
+      });
       return;
     }
     if (act === 'export') {
@@ -284,6 +296,7 @@
       return;
     }
     if (act === 'del') { delApp(a); return; }
+    if (act === 'ver') { openVers(id); return; }
     if (act === 'auth') { location.href = 'client-auth.html?id=' + encodeURIComponent(id); return; }
     if (act === 'edit') { openNew(id); return; }
     /* ★2026-11-01 删除 upgrade / rollback 两个分支。
@@ -353,7 +366,6 @@
       });
       return;
     }
-    if (act === 'view') { location.href = 'app.html?id=' + encodeURIComponent(id) + '&mode=view'; return; }
     if (act === 'toggle') {
       /* ★2026-10-25 修 C-03，外加一个更严重的逻辑错：
          ① 停用原来点一下就直接生效 —— 客户当场打不开应用，一句"你确定"都没有；
@@ -576,8 +588,9 @@
       /* 可读名后缀（规格 §2.4）：徽标自己 aria-hidden，这条状态靠锚点名字播报。
          文案只在 ui-kit 里出现一次（UIK.badgeLabel），页面不另写一份。 */
       var label = '配置 ' + a.name + (upd ? '，' + UIK.badgeLabel(upd) : '');
-      var up = a.status === '已上架';
-      var ps = pubState(a);
+      /* ★2026-11-03（对象级判据抓到）：up/ps 原来算在 DB.latestVer() 之前。
+         latestVer() 会经 versOf()→syncOwner() 把底层「已下架」派生出来；
+         ps 先算就拿到旧值，卡面把已下架画成内测中。状态必须在所有台账读取之后再投影。 */
       /* 2026-10-31（信息缺口）：这个变量以前算完没人用（占了"必含 version"那一格却不上屏）。
          现在它进卡面的事实行 —— 有版本管理入口、有「N 个组件有更新」提示，
          却不写"现在是第几版、上次什么时候动的"，用户只能点进去才知道要不要处理。 */
@@ -630,6 +643,8 @@
         authCnt = _ar.length;
         behindCnt = _ar.filter(function (r) { return r.behind; }).length;
       } catch (e) { cardVer = a.version || 0; }
+      var up = a.status === '已上架';
+      var ps = pubState(a);
       /* 卡底电源钮的 title 与上面菜单项**同一句话**（不新编文案）；
          写在这里而不是模板里，是因为 cardcopy 判据按区域扫模板中的写死中文。 */
       var pubTitle = up
@@ -673,11 +688,18 @@
            两条菜单分开，不再把「上架/下架」混进 ⋮ —— 这是真系统的逻辑，不是猜的。 */
         '<div class="k-menu" role="menu" hidden>' +
           '<button class="k-mi" type="button" role="menuitem" data-act="auth" data-id="' + esc(a.id) + '">' + ICON.link + '客户配置</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="edit" data-id="' + esc(a.id) + '">' + ICON.cfg + '编辑</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="view" data-id="' + esc(a.id) + '">' + ICON.ver + '查看</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="export" data-id="' + esc(a.id) + '">' + ICON.down + '导出</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="edit" data-id="' + esc(a.id) + '">' + ICON.cfg + '编辑信息</button>' +
+          /* ★2026-11-04（m07271）：应用也要能复制，且复制时先让用户起唯一新名。 */
+          '<button class="k-mi" type="button" role="menuitem" data-act="dup" data-id="' + esc(a.id) + '">' + ICON.copy + '复制应用</button>' +
+          /* ★2026-11-03（用户 m05073）：⋮ 里不能只剩真系统的四项通用动作；
+             版本管理是应用级操作，必须回来。删除同在应用级，放最后。 */
+          '<button class="k-mi" type="button" role="menuitem" data-act="ver" data-id="' + esc(a.id) + '">' + ICON.ver + '版本管理</button>' +
+          '<button class="k-mi" type="button" role="menuitem" data-act="export" data-id="' + esc(a.id) + '">' + ICON.down + '导出应用</button>' +
+          (ps === '未上架'
+            ? '<button class="k-mi is-danger" type="button" role="menuitem" data-act="del" data-id="' + esc(a.id) + '">' + ICON.del + '删除应用</button>'
+            : '') +
         '</div>' +
-        '<div class="k-menu k-menu--status" role="menu" hidden>' +
+        '<div class="k-menu js-k-menu-status" role="menu" hidden>' +
           (ps === '未上架'
             ? '<button class="k-mi" type="button" role="menuitem" data-act="trial" data-id="' + esc(a.id) + '">' + ICON.on + '发布内测版</button>' +
               '<button class="k-mi" type="button" role="menuitem" data-act="live" data-id="' + esc(a.id) + '">' + ICON.pow + '上架正式版</button>'
@@ -1070,10 +1092,21 @@
     bi.addEventListener('click', function () {
       Transfer.pick(function (obj) {
         if (obj.kind === 'daguan-comp') { toast('这是组件文件，请到「组件库」导入', 'error'); return; }
-        var r = DB.importPayload(obj);
-        if (!r.ok) { toast(r.msg, 'error'); return; }
-        render();
-        toast('已导入「' + r.name + '」' + (r.comps ? ' · 顺带补齐 ' + r.comps + ' 个组件' : ''));
+        var suggest = obj && obj.app && obj.app.name ? obj.app.name : '';
+        Confirm.ask({
+          title: '导入应用',
+          input: true, label: '应用名称', value: suggest, ok: '导入',
+          validate: function (v) {
+            return DB.APPS.some(function (x) { return x.name === v; })
+              ? '已经有同名应用「' + v + '」，换个名字' : '';
+          },
+          onOk: function (name) {
+            const r = DB.importPayload(obj, name);
+            if (!r.ok) { toast(r.msg, 'error'); return; }
+            render();
+            toast('已导入「' + r.name + '」' + (r.comps ? ' · 顺带补齐 ' + r.comps + ' 个组件' : ''));
+          }
+        });
       }, function (msg) { toast(msg, 'error'); });
     });
   })();
@@ -1100,7 +1133,7 @@
 </script>
 <div id="xz-host"></div>
 <script src="assets/shell.js?v=1d57161f"></script>
-<script src="assets/xiaozhi.js?v=fcba3cbc"></script>
+<script src="assets/xiaozhi.js?v=6e40f72d"></script>
 <script>
 /* ── 下载客户端浮层（2026-11-01）──────────────────────────────────
    用户口径：放在应用管理右上，图标按钮，悬停显示「下载客户端」，点开分 Mac / Windows。

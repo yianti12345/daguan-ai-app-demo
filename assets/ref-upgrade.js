@@ -1,0 +1,319 @@
+/* ★2026-11-04（m06113 需求一）：组件库 → 引用管理。
+   一个组件被哪些应用装着、谁落后、谁自定义过这一块，都在这里一次看清。
+   两个升级入口：全部升级（无视当前筛选/分页）与批量升级（N）（只认勾选）。
+   升级只改应用的装配版本 a.compVer[compId]，不碰应用内容、不动客户授权版本；
+   Overlay（应用私有改过这一块）自动跳过并进报告。
+
+   异步口径：前端按 500ms/条分批执行，关掉弹窗也继续跑；完成 toast + 报告。
+   刷新会丢任务 —— 与用户拍板一致，不假装后端队列。 */
+(function () {
+  'use strict';
+  var PAGE = 10;
+  var st = null;
+  var dlg = null;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+  function fmt(v) {
+    if (v == null || v === '') return '—';
+    var s = String(v);
+    return /^v\d+$/.test(s) ? s : 'v' + s;
+  }
+  function stateName(a) {
+    var s = a && a.status;
+    if (s === '未发布' || s === '已下架') return '未上架';
+    if (s === '内测中') return '内测中';
+    return '已上架';
+  }
+  function compName() { return st.comp ? st.comp.name : ''; }
+  function behindAll() { return st.refs.filter(function (r) { return r.behind; }); }
+  function selectable() { return st.refs.filter(function (r) { return r.behind && !r.overlay; }); }
+  function picked() { return selectable().filter(function (r) { return st.picks[r.id]; }); }
+
+  function build() {
+    if (dlg) return;
+    document.body.insertAdjacentHTML('beforeend',
+      '<div class="ru-veil" id="ru-veil" hidden>' +
+      ' <div class="ru-dlg" role="dialog" aria-modal="true" aria-labelledby="ru-title">' +
+      '  <header class="ru-hd"><div class="ru-hd-t"><h2 id="ru-title">引用管理</h2>' +
+      '   <p class="ru-sub" id="ru-sub"></p></div>' +
+      '   <button type="button" class="ru-x" data-ru="close" aria-label="关闭">×</button></header>' +
+      '  <div class="ru-stats" id="ru-stats"></div>' +
+      '  <div class="ru-prog" id="ru-prog" hidden><div class="ru-prog-h"><span class="ru-spin" aria-hidden="true"></span>' +
+      '   <b id="ru-prog-t">正在升级</b><span id="ru-prog-n"></span></div>' +
+      '   <div class="ru-bar"><i id="ru-bar"></i></div><p class="ru-prog-s">关掉这个窗口也会继续；刷新页面会中断。</p></div>' +
+      '  <div class="ru-tools">' +
+      '   <div class="ru-tabs" role="tablist"><button type="button" class="ru-tab on" data-tab="all" role="tab">全部</button>' +
+      '    <button type="button" class="ru-tab" data-tab="behind" role="tab">待升级</button>' +
+      '    <button type="button" class="ru-tab" data-tab="overlay" role="tab">需手动</button></div>' +
+      '   <input class="ru-search" id="ru-search" type="search" placeholder="搜索应用" aria-label="搜索应用">' +
+      '   <button type="button" class="btn primary ru-all" id="ru-all">全部升级</button>' +
+      '   <button type="button" class="btn ru-batch" id="ru-batch" disabled>批量升级（0）</button></div>' +
+      '  <div class="ru-list" id="ru-list" role="table" aria-label="引用应用"></div>' +
+      '  <div class="ru-report" id="ru-report" hidden></div>' +
+      '  <footer class="ru-ft"><span id="ru-count"></span>' +
+      '   <div class="ru-pager"><button type="button" class="ru-pg" id="ru-prev">上一页</button>' +
+      '    <span id="ru-page"></span><button type="button" class="ru-pg" id="ru-next">下一页</button></div></footer>' +
+      ' </div></div>');
+    dlg = document.getElementById('ru-veil');
+    dlg.addEventListener('click', function (e) {
+      if (e.target === dlg) close();
+    });
+    dlg.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+      if (e.key !== 'Tab') return;
+      var f = dlg.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]');
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+    dlg.addEventListener('click', function (e) {
+      var t = e.target.closest('[data-ru]');
+      if (t) {
+        var a = t.getAttribute('data-ru');
+        if (a === 'close') close();
+        if (a === 'report-close') { st.report = null; lastReport = null; render(); }
+        return;
+      }
+      var tab = e.target.closest('[data-tab]');
+      if (tab) { st.tab = tab.getAttribute('data-tab'); st.page = 0; render(); return; }
+      var pick = e.target.closest('[data-pick]');
+      if (pick) {
+        var id = pick.getAttribute('data-pick');
+        if (pick.checked) st.picks[id] = 1; else delete st.picks[id];
+        renderRows(); renderTools(); return;
+      }
+      var one = e.target.closest('[data-one]');
+      if (one) { askRun([one.getAttribute('data-one')]); return; }
+      var pg = e.target.closest('[data-pg]');
+      if (pg) { st.page += Number(pg.getAttribute('data-pg')); render(); return; }
+    });
+    dlg.querySelector('#ru-search').addEventListener('input', function () {
+      st.q = this.value.trim(); st.page = 0; render();
+    });
+    dlg.querySelector('#ru-all').addEventListener('click', function () { askRun(null); });
+    dlg.querySelector('#ru-batch').addEventListener('click', function () {
+      askRun(picked().map(function (r) { return r.id; }));
+    });
+    dlg.querySelector('#ru-prev').addEventListener('click', function () { if (st.page > 0) { st.page--; render(); } });
+    dlg.querySelector('#ru-next').addEventListener('click', function () {
+      if (st.page < pages() - 1) { st.page++; render(); }
+    });
+  }
+
+  function open(compId) {
+    var c = DB.compById(compId);
+    if (!c) { UIK.toast('这个组件不在了'); return; }
+    build();
+    if (!st || st.id !== compId) {
+      st = { id: compId, comp: c, refs: [], picks: {}, page: 0, tab: 'all', q: '', busy: false, timer: null, progress: null };
+      st.report = (lastReport && lastReport.id === compId) ? lastReport : null;
+    }
+    st.comp = c;
+    st.refs = DB.compRefs(compId);
+    dlg.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    refresh();
+    var f = dlg.querySelector('[data-ru="close"]');
+    if (f) f.focus();
+  }
+  function close() {
+    if (!dlg) return;
+    dlg.hidden = true;
+    document.documentElement.style.overflow = '';
+  }
+
+  function pages() { return Math.max(1, Math.ceil(view().length / PAGE)); }
+  function view() {
+    return st.refs.filter(function (r) {
+      if (st.tab === 'behind' && !r.behind) return false;
+      if (st.tab === 'overlay' && !(r.behind && r.overlay)) return false;
+      if (st.q && String(r.name).toLowerCase().indexOf(st.q.toLowerCase()) < 0) return false;
+      return true;
+    });
+  }
+
+  function refresh() {
+    st.refs = DB.compRefs(st.id);
+    var s = DB.compUpgradeStats(st.id);
+    dlg.querySelector('#ru-title').textContent = '引用管理 · ' + compName();
+    dlg.querySelector('#ru-sub').textContent = '只看谁落后了；升级只换装配版本，不改应用内容，也不动客户授权版本。';
+    dlg.querySelector('#ru-stats').innerHTML =
+      '<span class="ru-stat"><b>' + s.total + '</b> 个应用在用</span>' +
+      '<span class="ru-stat warn"><b>' + s.behind + '</b> 个待升级</span>' +
+      '<span class="ru-stat"><b>' + s.manual + '</b> 个需手动</span>';
+    render();
+  }
+
+  function render() {
+    renderTools();
+    renderRows();
+    renderReport();
+  }
+
+  function renderTools() {
+    var n = behindAll().length, pn = picked().length;
+    var allBtn = dlg.querySelector('#ru-all');
+    allBtn.textContent = n ? '全部升级（' + n + '）' : '全部升级';
+    allBtn.disabled = st.busy || n === 0;
+    var b = dlg.querySelector('#ru-batch');
+    b.textContent = '批量升级（' + pn + '）';
+    b.disabled = st.busy || pn === 0;
+    dlg.querySelectorAll('.ru-tab').forEach(function (t) {
+      t.classList.toggle('on', t.getAttribute('data-tab') === st.tab);
+      t.setAttribute('aria-selected', t.getAttribute('data-tab') === st.tab ? 'true' : 'false');
+    });
+  }
+
+  function renderRows() {
+    var list = view();
+    var total = list.length;
+    var cur = Math.min(st.page, pages() - 1);
+    st.page = cur;
+    var rows = list.slice(cur * PAGE, cur * PAGE + PAGE);
+    var head = '<div class="ru-thead" role="row">' +
+      '<span class="ru-c"><input type="checkbox" id="ru-selall" aria-label="全选本页可升级应用"' + (st.busy ? ' disabled' : '') + '></span>' +
+      '<span>应用</span><span>装配版本</span><span>状态</span><span class="ru-a">操作</span></div>';
+    if (!rows.length) {
+      dlg.querySelector('#ru-list').innerHTML = head + '<div class="ru-empty">' +
+        (st.tab === 'behind' ? '没有落后的应用' : st.tab === 'overlay' ? '没有需要手动处理的应用' : '还没有应用装配这个组件') + '</div>';
+      countLine(0);
+      return;
+    }
+    var html = rows.map(function (r) {
+      var can = r.behind && !r.overlay && !st.busy;
+      var stat = !r.behind ? '<span class="ru-ok">已最新</span>' :
+        r.overlay ? '<span class="ru-manual" title="应用自定义过这一块，自动升级会覆盖它的改动">需手动</span>' :
+        '<span class="ru-warn">待升级</span>';
+      var act = r.behind && !r.overlay ? '<button type="button" class="ru-one" data-one="' + esc(r.id) + '"' + (st.busy ? ' disabled' : '') + '>升级</button>' :
+        r.overlay ? '<a class="ru-link" href="app.html?id=' + encodeURIComponent(r.id) + '" target="_blank" rel="noopener">去应用</a>' : '<span class="ru-dash">—</span>';
+      return '<div class="ru-row' + (r.overlay && r.behind ? ' is-manual' : '') + '" role="row" data-row="' + esc(r.id) + '">' +
+        '<span class="ru-c">' + (can ? '<input type="checkbox" data-pick="' + esc(r.id) + '" aria-label="选择 ' + esc(r.name) + '"' + (st.picks[r.id] ? ' checked' : '') + '>' : '') + '</span>' +
+        '<span class="ru-app"><b>' + esc(r.name) + '</b><small>' + esc(stateName(r.app)) + ' · ' + esc(r.id) + '</small></span>' +
+        '<span class="ru-v">' + '<span class="ru-vf">' + esc(fmt(r.have)) + '</span>' +
+          (r.behind ? '<span class="ru-arr">→</span><b class="ru-vt">' + esc(fmt(r.latest)) + '</b>' : '') + '</span>' +
+        '<span class="ru-st">' + stat + '</span><span class="ru-a">' + act + '</span></div>';
+    }).join('');
+    dlg.querySelector('#ru-list').innerHTML = head + html;
+    countLine(total);
+    var all = dlg.querySelector('#ru-selall');
+    var pageCan = rows.filter(function (r) { return r.behind && !r.overlay; });
+    var pagePicked = pageCan.filter(function (r) { return st.picks[r.id]; });
+    if (all) {
+      all.checked = pageCan.length > 0 && pagePicked.length === pageCan.length;
+      all.indeterminate = pagePicked.length > 0 && pagePicked.length < pageCan.length;
+      all.onchange = function () {
+        var on = this.checked;
+        pageCan.forEach(function (r) { if (on) st.picks[r.id] = 1; else delete st.picks[r.id]; });
+        renderRows(); renderTools();
+      };
+    }
+    dlg.querySelector('#ru-page').textContent = '第 ' + (cur + 1) + ' / ' + pages() + ' 页';
+    dlg.querySelector('#ru-prev').disabled = cur === 0;
+    dlg.querySelector('#ru-next').disabled = cur >= pages() - 1;
+  }
+  function countLine(total) {
+    dlg.querySelector('#ru-count').textContent = '共 ' + total + ' 个引用';
+  }
+
+  function askRun(ids) {
+    if (st.busy) return;
+    var targets = ids ? st.refs.filter(function (r) { return ids.indexOf(r.id) >= 0 && r.behind; }) : behindAll();
+    if (!targets.length) { UIK.toast(ids ? '选中的应用都已经是最新版' : '没有需要升级的应用'); return; }
+    var auto = targets.filter(function (r) { return !r.overlay; });
+    var manual = targets.filter(function (r) { return r.overlay; });
+    var body = '<p>将把 <b class="num">' + targets.length + '</b> 个应用对「' + esc(compName()) + '」的装配版本升到 <b class="num">' + fmt(st.comp.ver) + '</b>。</p>' +
+      (manual.length ? '<p class="ru-cf-warn">其中 <b class="num">' + manual.length + '</b> 个应用自定义过这一块，会自动跳过并写进报告，不会被覆盖。</p>' : '') +
+      '<p class="ru-cf-quiet">只改装配版本；应用内容与客户授权版本都不动。</p>';
+    Confirm.ask({
+      title: ids && ids.length === 1 ? '升级这个应用？' : '升级「' + compName() + '」的引用',
+      body: body,
+      ok: auto.length ? '开始升级' : '知道了',
+      cancel: '取消',
+      onOk: function () {
+        if (!auto.length) return;
+        start(auto.map(function (r) { return r.id; }), manual.length);
+      }
+    });
+  }
+
+  var lastReport = null;
+
+  function start(ids, manualCount) {
+    st.busy = true;
+    st.report = null;
+    st.progress = { total: ids.length, done: 0, ok: [], skipped: [], failed: [] };
+    if (manualCount) st.progress.manual = manualCount;
+    dlg.querySelector('#ru-prog').hidden = false;
+    renderTools(); renderRows();
+    var i = 0;
+    function step() {
+      if (i >= ids.length) return finish();
+      var id = ids[i++];
+      var res = DB.upgradeCompRefs(st.id, [id]);
+      st.progress.ok = st.progress.ok.concat(res.ok);
+      st.progress.skipped = st.progress.skipped.concat(res.skipped);
+      st.progress.failed = st.progress.failed.concat(res.failed);
+      st.progress.done++;
+      paintProgress();
+      st.timer = setTimeout(step, 500);
+    }
+    paintProgress();
+    st.timer = setTimeout(step, 120);
+  }
+
+  function paintProgress() {
+    var p = st.progress;
+    if (!p) return;
+    dlg.querySelector('#ru-prog-t').textContent = '正在升级';
+    dlg.querySelector('#ru-prog-n').textContent = p.done + ' / ' + p.total;
+    dlg.querySelector('#ru-bar').style.width = Math.round(p.done / Math.max(1, p.total) * 100) + '%';
+  }
+
+  function finish() {
+    var p = st.progress;
+    st.busy = false;
+    st.timer = null;
+    st.progress = null;
+    dlg.querySelector('#ru-prog').hidden = true;
+    st.report = {
+      id: st.id, at: new Date().toLocaleString('zh-CN', { hour12: false }),
+      total: p.total + (p.manual || 0), done: p.done,
+      ok: p.ok, skipped: p.skipped, failed: p.failed,
+      manual: p.manual || 0
+    };
+    lastReport = st.report;
+    st.picks = {};
+    st.refs = DB.compRefs(st.id);
+    render();
+    var msg = '已升级 ' + p.ok.length + ' 个应用';
+    if (p.skipped.length) msg += ' · 跳过 ' + p.skipped.length + ' 个（自定义）';
+    if (p.failed.length) msg += ' · 失败 ' + p.failed.length + ' 个';
+    UIK.toast(msg);
+    if (typeof window.onCompRefsUpgraded === 'function') window.onCompRefsUpgraded(st.id);
+  }
+
+  function renderReport() {
+    var box = dlg.querySelector('#ru-report');
+    var r = st.report;
+    if (!r) { box.hidden = true; box.innerHTML = ''; return; }
+    var skipped = r.skipped || [];
+    var failed = r.failed || [];
+    box.hidden = false;
+    box.innerHTML = '<div class="ru-rep-h"><b>升级结果</b><span>' + esc(r.at) + '</span></div>' +
+      '<div class="ru-rep-n"><span class="ok"><b>' + (r.ok ? r.ok.length : 0) + '</b> 成功</span>' +
+      '<span class="' + (skipped.length ? 'warn' : '') + '"><b>' + skipped.length + '</b> 跳过</span>' +
+      '<span class="' + (failed.length ? 'bad' : '') + '"><b>' + failed.length + '</b> 失败</span></div>' +
+      (skipped.length ? '<div class="ru-rep-list"><b>跳过（应用自定义过这一块）：</b>' +
+        skipped.map(function (x) { return '<span>' + esc(x.name) + '</span>'; }).join('') + '</div>' : '') +
+      (failed.length ? '<div class="ru-rep-list bad"><b>失败：</b>' +
+        failed.map(function (x) { return '<span>' + esc(x.name) + ' · ' + esc(x.reason) + '</span>'; }).join('') + '</div>' : '') +
+      '<button type="button" class="ru-rep-x" data-ru="report-close">知道了</button>';
+  }
+
+  window.RefUpgrade = { open: open, close: close };
+})();

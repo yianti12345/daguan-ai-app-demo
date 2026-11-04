@@ -665,10 +665,12 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
   /* ★2026-11-02 材质再统一（NB 判据）：2026-11-01 曾把两页统一成 1px 描边，那不是统一材质，
      是把两边一起做成 DESIGN.md §1.1 明令禁止的样子。现在两页都走「底色差 + 阴影」：
      静止 var(--shadow-flat)，hover 抬一层。线一条不留。 */
-  /* 卡高由六个值推出：16(上内距) + 30(名称) + 8 + 38(说明两行) + 16+32+16(运行带) = 156。
-     不许写 min-height：写死下限之后，内容不够时卡不收，底部留一条空带（旧卡 139 就是这条）。 */
+  /* 卡高由六个值推出：16(上内距) + 25(名称) + 8 + 38(说明两行) + 56(运行带) + 45(规格条) = 188。
+     ★2026-11-04（m07271）：新增规格条后卡高从 156 到 188；仍不许写死 min-height ——
+     内容不够时卡必须自己收，不能靠一个下限撑出一条空带。 */
   transition:box-shadow .16s ease;
 }
+.page-components .crow.ccard{cursor:pointer}
 .page-components .crow.ccard:hover{box-shadow:inset 0 0 0 1px var(--color-border-control), 0 6px 18px var(--shadow-color-2)}
 /* ── 身份区：类型点 + 名称（"这是什么零件"只由这一行回答）──────────────
    类型色在这张卡上**只出现一次**（那个 6px 点），不整卡染色、不加侧边条、不印类型文字：
@@ -684,8 +686,8 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
    ① 省略号落在文字尾部，不会切掉点；② 点的垂直中心用 50% + 位移对齐，
    不靠 vertical-align 的字体基线（实测 middle 会低 1.8px，是 x-height 造成的，不是设计）。 */
 .cc-hd{display:flex;align-items:center;gap:var(--space-8);min-width:0}
-/* 2026-10-31：家族图标位。尺寸由 SVG 自带（20×20），这里只管对齐与颜色 ——
-   颜色取三级文字色：它只回答"这是哪一族"，不该比名称更抢眼（颜色已经在讲启用状态了）。 */
+/* 2026-11-04（m07271）：名称占满整行；版本与更新时间已移到 .cc-spec，
+   标题行不再和右端时间抢宽度。 */
 
 .cc-hd .cl-tt{
   position:relative;margin:0;flex:1 1 auto;min-width:0;
@@ -699,11 +701,10 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      两页卡片标题现在是同一档 —— 这是"整体风格统一"里最容易被一眼看出的那一条。 */
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-/* 2026-11-01：组件卡的「最近更新」，与应用卡底栏同一个口径（精确到秒）。
-   为什么放标题行右端、不放底栏：底栏已经被开关 + 引用数 + 配置 + ⋮ 占满，
-   379 宽的卡里塞不下 19 个字的时间；标题行右端是这张卡唯一还有横向余量的位置。
-   标题过长时先截标题 —— 时间 flex:none，不会被压掉半截。 */
-.cc-hd .cc-upd{
+/* ★2026-11-04（m07271）：版本号与版本更新时间从标题行搬到卡底规格条。
+   标题行只留名称，名称再长也不会被右侧 19 个字的时间挤掉；
+   规格条里 vN 是"哪一版"、时间是"这一版什么时候落的"，两者必须挨着读。 */
+.cc-spec .cc-upd{
   flex:none;font-size:var(--font-size-caption);line-height:1.25;
   color:var(--color-text-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap;
 }
@@ -754,24 +755,52 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 .cc-body{flex:none;padding:var(--space-16) var(--space-16) 0;min-height:0}
 .page-components .cl-desc{
   flex:none;display:block;margin:var(--space-8) 0 0;
-  max-width:100%;height:var(--size-desc-2l);
-  font-size:var(--font-size-caption);line-height:var(--leading-caption-meta);color:var(--color-text-card-meta);
+  max-width:100%;height:calc(2 * var(--leading-body));
+  font-size:var(--font-size-body);line-height:var(--leading-body);color:var(--color-text-card-meta);
   /* ★2026-11-01 字级统一：原来 14px/行高19/次级灰，应用卡是真源 12px/16/#6c7da9。
-     说明文字降一档、换成同一个灰蓝之后，两页的"次要信息"读起来是同一种弱。 */
+     说明文字降一档、换成同一个灰蓝之后，两页的"次要信息"读起来是同一种弱。
+     ★2026-11-04：12px/16（1.33）被可读性判据判红（smallText+tightLeading，必须清零）。
+     说明是成句正文，不是标签，回到 14/20；高度跟着行高走，仍是两行封顶。 */
   white-space:normal;text-overflow:clip;overflow:hidden;
 }
 
 /* ── 运行带：状态开关 + 引用数 + 动作，**同一条基线** ─────────────────────
-   高 64 = 16 + 32 + 16：上下内距对称、控件 32 撑满，不再有"49 里塞 32"的空壳感。
+   运行带 56 = 12 + 32 + 12：上下内距对称、控件 32 撑满；其下再接 45 高的规格条。
    ★2026-10-28 tokscale T1：通栏改由"卡壳无内距 + 本段自带 16 内距"实现，
      不再用左右下三条 −16 负 margin（计算值 −16 不在刻度上，判据报红 ×8）。
      带子的 rect 仍与卡片的左/右/下三边重合（check-card-shape C4 量的就是这三条 0）；
      margin-top 仍是 auto：万一某张卡被栅格拉高，带子照样贴底，不会浮在半空。
    一条带的图例顺序 = 阅读顺序：先"能不能用"（开关），再"影响面"（被谁用），最后"怎么进"（配置 / ⋮）。 */
 .cc-ft{
+  margin:auto 0 0;padding:0;background:none;border:0;
+}
+/* 运行带：开关 + 影响面角标 + 动作，一条基线。 */
+.cc-run{
   display:flex;align-items:center;gap:var(--space-8);
-  margin:auto 0 0;
-  padding:var(--space-16);background:none;border:0;
+  min-height:56px;padding:var(--space-12) var(--space-16);
+}
+.cc-run .cl-ops{margin-left:auto}
+/* 规格条：vN · 版本更新时间 · 引用数。发丝线把"操作区"和"元数据"分成两层，
+   卡因此不再是一块平白的面；它只承载读取信息，不放第三个操作入口。
+   ★2026-11-04（m07271）：底色保持与卡身一致 —— C6′③ 要求卡内底色单一，
+   这里只用线分层，不用第二块底。 */
+.cc-spec{
+  display:flex;align-items:center;gap:var(--space-8);
+  /* ★2026-11-04：规格条定高 45（含 1px 上边线）。引用数可能为空（q5：零引用不印文案），
+     若让它按内容撑高，有引用的卡会比没引用的卡高 9px，一屏卡片就不齐了。 */
+  min-height:45px;padding:var(--space-8) var(--space-16) var(--space-12);
+  border-top:var(--size-border-w) solid var(--color-border-card-footer);
+}
+.cc-ver{
+  flex:none;display:inline-flex;align-items:center;height:var(--space-20);
+  padding:0 var(--space-8);border-radius:var(--radius-xs);
+  background:var(--color-brand-surface);color:var(--color-brand-ink);
+  font-size:var(--font-size-caption);font-weight:600;line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.cc-spec .cc-meta{
+  flex:0 1 auto;margin-left:auto;min-width:0;min-height:var(--space-24);
+  line-height:var(--space-24);text-align:right;
 }
 /* 状态开关：不是标签，是开关 —— 点一下就切。小圆点承担颜色，文字承担语义，
    只给颜色是"没图例的色码"，只给文字则看不出当前是开还是关。
@@ -961,6 +990,20 @@ button.cc-meta:focus-visible{
 .cf-body{margin:0;font-size:var(--font-size-body);line-height:var(--leading-title);color:var(--color-text-secondary)}
 .cf-body b{color:var(--color-text-primary);font-weight:600}
 .cf-body[hidden]{display:none}
+/* 名称输入（复制/导入共用）：和确认框同宽，标签在上、错误在下的单列。
+   错误红只落在输入框边与一行说明，不把整张卡染红。 */
+.cf-field{display:flex;flex-direction:column;gap:var(--space-8);margin-top:var(--space-16)}
+.cf-field[hidden]{display:none}
+.cf-label{font-size:var(--font-size-caption);line-height:var(--leading-caption-meta);color:var(--color-text-secondary)}
+.cf-input{
+  width:100%;height:var(--size-control-h);padding:0 var(--space-12);
+  border:var(--size-border-w) solid var(--color-border-control);border-radius:var(--radius-control);
+  background:var(--surface-page);color:var(--color-text-primary);
+  font-family:inherit;font-size:var(--font-size-body);line-height:var(--leading-title);
+}
+.cf-input:focus{outline:none;border-color:var(--color-brand);box-shadow:0 0 0 3px var(--color-brand-surface)}
+.cf-input[aria-invalid="true"]{border-color:var(--color-danger)}
+.cf-err{min-height:var(--space-16);font-size:var(--font-size-caption);line-height:var(--leading-caption-meta);color:var(--color-danger)}
 /* 版本面板改成子页面（2026-10-26 第二次改），弹窗那套 .vs-* 整段删掉。
    页面自己的样式放在 versions.html 的 <style> 里 —— 只作用于那一页，不污染别的页。 */
 
@@ -1339,8 +1382,10 @@ body[data-app] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gra
    没有「保存草稿」——画布改动自动保存；动作属于"这个应用"，不属于"这个页面底部"，
    所以跟标题同一行 —— 与 component.html 的顶栏同构。 */
 .topbar{
-  position:fixed;top: var(--space-16);left: var(--space-16);right: var(--space-16);z-index:20;
-  display:flex;align-items:center;gap: var(--space-8);pointer-events:none;
+  position:fixed;top:0;left:0;right:0;z-index:20;
+  height:56px;padding:0 var(--space-16);
+  display:flex;align-items:center;gap: var(--space-8);
+  background:var(--surface-page);border-bottom:1px solid var(--color-border-card);
 }
 .topbar > *{pointer-events:auto}
 /* ★2026-11-03（用户 m00984：「就显示当前应用名称、版本号就行了」）：
@@ -1349,9 +1394,9 @@ body[data-app] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gra
      盲审取点坐标都按这个数写的（见本文件 1320 附近那条同步提醒）。
      一行内容靠 flex 垂直居中，所以改行数不改高度。 */
 .float-hd{
-  display:flex;align-items:center;gap: var(--space-8);
-  min-height:48px;padding: 6px var(--space-16) 6px var(--space-4);border-radius:var(--radius-panel);
-  background:var(--surface-veil);border:1px solid var(--color-border-card);box-shadow:var(--shadow-flat);
+  display:flex;align-items:center;flex:1;gap: var(--space-8);
+  min-height:56px;padding: 0 var(--space-8) 0 0;
+  background:transparent;border:0;box-shadow:none;border-radius:0;
 }
 .float-hd .app-name{flex:0 1 auto}
 .count-badge{
@@ -1610,7 +1655,36 @@ body[data-mode="view"] .cv-blk:hover{background:none;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.mask[data-open="true"] .panel{animation:none}}
 /* 弹窗不再挤占画布：画布与顶栏保持原位，弹窗浮在上面 */
 body[data-app][data-drawer="on"] .canvas{padding-right:0}
-body[data-drawer="on"] .topbar{right:var(--space-16)}
+body[data-drawer="on"] .topbar{right:0}
+/* ★2026-11-03（m05120）：一键收起所有操作，让生成的内容不被顶栏/对话框遮住。 */
+body[data-ops="off"] .topbar,
+body[data-ops="off"] #topbar{display:none!important}
+/* 对话浮条自己的隐藏规则归 float.css（COMPFIRST：.fk-dock 只许有一个实现处）。 */
+/* 开关在对话框右侧、贴着它的底边：不是输入条里的文字，也不是右下角一颗按钮。 */
+.ops-switch{
+  position:fixed;left:calc(50% + 426px);bottom:63px;z-index:50;
+  display:inline-flex;align-items:center;gap:var(--space-8);
+  height:32px;padding:0;border:0;background:transparent;cursor:pointer;
+  color:var(--color-text-secondary);font-family:inherit;font-size:var(--font-size-caption);
+}
+.ops-switch-label{white-space:nowrap}
+.ops-switch-track{
+  position:relative;flex:0 0 auto;width:32px;height:18px;border-radius:9px;
+  background:var(--color-border-control);transition:background .16s ease;
+}
+.ops-switch-knob{
+  position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;
+  background:var(--surface-page);box-shadow:0 1px 2px rgba(0,0,0,.22);
+  transition:transform .16s ease;
+}
+.ops-switch[aria-checked="true"] .ops-switch-track{background:var(--color-brand)}
+.ops-switch[aria-checked="true"] .ops-switch-knob{transform:translateX(14px)}
+.ops-switch:hover{color:var(--color-text-body)}
+.ops-switch:focus-visible{outline:none;box-shadow:0 0 0 3px var(--color-focus-halo);border-radius:var(--radius-control)}
+@media (max-width:1100px){
+  /* 窄屏时对话框右边没有余量，开关上移到 FAB 之上，仍然贴着对话框的右下角。 */
+  .ops-switch{left:auto;right:var(--space-24);bottom:96px}
+}
 /* 2026-10-26（零上下文盲审 v11 抓到的回归，我自己改抽屉时漏的）：
    抽屉一拉开，底部对话条的发送键就被压在抽屉底下（实测发送键 x=1086–1118，
    抽屉从 x=1060 起，重叠 1024 像素²）—— 而"装配的时候说一句"正是这一屏最需要的能力。
@@ -1622,7 +1696,10 @@ body[data-app] .canvas{transition:padding-right .18s ease}
 .p-hd b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-body)}
 .p-x{flex:0 0 auto;margin-left: auto;width:32px;height:32px;border-radius:var(--radius-sm);display:grid;place-items:center;color:var(--color-text-tertiary)}
 .p-x:hover{background:var(--surface-sunken-2);color:var(--color-text-body)}
-.p-search{flex:1;min-width:0;padding:0;margin:0}
+/* 2026-11-04：搜索框原来 flex:1，在 1120 宽的装配弹窗里被拉成 1000px 长条，
+   把标题挤到左边一截、关闭按钮顶到最右，像条地址栏。收成 320 的定宽，靠右贴关闭。 */
+.p-search{flex:0 1 320px;min-width:0;padding:0;margin:0 0 0 auto}
+.p-hd .p-x{margin-left:var(--space-8)}
 .p-search input{
   width:100%;height:36px;padding: 0 var(--space-12);border:1px solid var(--color-border-card);border-radius:var(--radius-sm);
   background:var(--surface-page);font-size:var(--font-size-body);color:var(--color-text-body);outline:0;
@@ -1642,6 +1719,16 @@ body[data-app] .canvas{transition:padding-right .18s ease}
 .p-upd[hidden]{display:none}
 .p-upd-n{font-size:var(--font-size-caption);color:var(--ink-2)}
 .p-upd .btn-text{margin-left:auto;color:var(--color-brand);font-weight:600}
+/* 批量动作条：不抢「只看有更新」的底，只做一行轻量操作；两个页签共用。 */
+.p-batch{flex:0 0 auto;display:flex;align-items:center;gap:var(--space-8);height:32px;margin:0 var(--space-16) var(--space-8);padding:0 4px}
+.p-batch[hidden]{display:none}
+.p-batch-n{font-size:var(--font-size-caption);color:var(--color-text-tertiary);margin-right:auto;font-variant-numeric:tabular-nums}
+.p-batch .btn-text{color:var(--color-brand);font-weight:600}
+.p-batch .btn-text:disabled{color:var(--color-text-tertiary);font-weight:400}
+/* 行首勾选：只有可批量动作的行有；不改变行体点击装组件的主路径。 */
+.row-pick{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:18px}
+.row-check{width:15px;height:15px;margin:0;accent-color:var(--color-brand);cursor:pointer}
+.row.is-selected{background:var(--color-brand-surface)}
 
 /* PickRow（.row）2026-10-29 已归位组件层：assets/sys.css「PickRow · 装配候选行」段。
    组件规范 §8 点名的类名，不许再在页面里定义（check-spec-contract S1）。
@@ -1767,7 +1854,6 @@ body[data-drawer="on"] .hint{
 .cv-empty b{display:block;font-size:var(--font-size-title);font-weight:600;color:var(--color-text-body);letter-spacing:-.01em}
 .cv-empty p{margin:var(--space-8) 0 0;max-width:430px;font-size:var(--font-size-body);line-height:1.75;color:var(--color-text-secondary)}
 /* 两条起步路：主路（对话生成）实心，备路（装配）描边。 */
-.cv-acts{display:flex;align-items:center;justify-content:center;gap:var(--space-8);margin-top:var(--space-16)}
 
 /* ══ 生成块 · Gen Shell（.blk-bd--gen 把生成结果的卡壳收掉）═══════════════════ */
 /* ── 生成内容装进「一个块」里（.blk-bd--gen）────────────────────
@@ -2157,7 +2243,7 @@ body[data-drawer="on"] .hint{
 .kcard .kc-desc{
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
   margin-top:var(--space-4);
-  font-size:var(--font-size-caption);line-height:var(--leading-body);
+  font-size:var(--font-size-body);line-height:var(--leading-body);
   color:var(--color-text-tertiary);overflow:hidden;
 }
 
@@ -2333,9 +2419,9 @@ body[data-drawer="on"] .hint{
 }
 .kcard .kc-desc{
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-  height:38px;
+  height:calc(2 * var(--leading-body));
   margin:0;
-  font-size:var(--font-size-caption);line-height:var(--leading-caption-meta);
+  font-size:var(--font-size-body);line-height:var(--leading-body);
   color:var(--color-text-card-meta);overflow:hidden;
 }
 /* 卡高由 grid 行拉伸时不参与（否则一行里最高的卡会把别的撑开） */
@@ -2358,6 +2444,9 @@ body[data-drawer="on"] .hint{
 .nf-cover-thumb.is-empty{background-image:none}
 .nf-cover-thumb:not(.is-empty){border-color:var(--color-border-control)}
 .nf-cover-act{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap}
+/* ★2026-11-04：新增/编辑组件弹窗里「库里已有相近的：…」这句话原来没有任何样式，
+   跟输入框贴在一起、看不出是提示。一行小字 + 一点上间距。 */
+.nf-hint{margin:var(--space-6) 0 0; font-size:var(--font-size-caption); line-height:var(--leading-caption); color:var(--color-text-tertiary)}
 
 
 /* ★2026-11-02（1280 实测）：卡底栏宽度 = 卡宽 − 107.7，1280 下只有 121px，
@@ -2454,3 +2543,92 @@ body[data-drawer="on"] .hint{
 .sc-item:hover{background:var(--surface-sunken)}
 .sc-item input{width:14px;height:14px;margin:0;accent-color:var(--color-brand)}
 .sc-empty{margin:0;padding:var(--space-12);font-size:var(--font-size-caption);color:var(--ink-3);text-align:center}
+
+
+/* ═══ 组件引用管理（2026-11-04 m06113 需求一）══════════════════════
+   一个组件 → 谁在用、谁落后、谁自定义过。弹窗压在 Confirm(60) 之下、页面菜单之上。 */
+.ru-veil{position:fixed;inset:0;z-index:55;background:var(--surface-overlay);display:grid;place-items:center;padding:16px}
+.ru-veil[hidden]{display:none}
+.ru-dlg{width:760px;max-width:100%;max-height:calc(100vh - 48px);background:var(--surface-page);border-radius:var(--radius-panel);box-shadow:var(--shadow-dialog);display:flex;flex-direction:column;overflow:hidden}
+.ru-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 24px 12px}
+.ru-hd-t{min-width:0}
+.ru-hd h2{margin:0;font-size:17px;line-height:24px;font-weight:600;color:var(--color-text-primary)}
+.ru-sub{margin:4px 0 0;font-size:12px;line-height:18px;color:var(--color-text-tertiary)}
+.ru-x{width:28px;height:28px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--color-text-tertiary);font-size:20px;line-height:1;cursor:pointer}
+.ru-x:hover{background:var(--surface-subtle);color:var(--color-text-primary)}
+.ru-stats{display:flex;gap:8px;padding:0 24px 12px;flex-wrap:wrap}
+.ru-stat{display:inline-flex;align-items:baseline;gap:4px;height:26px;padding:0 10px;border-radius:var(--radius-pill);background:var(--surface-subtle);font-size:12px;color:var(--color-text-secondary)}
+.ru-stat b{font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-text-primary)}
+.ru-stat.warn{background:var(--color-warning-surface);color:var(--color-warning)}
+.ru-stat.warn b{color:var(--color-warning)}
+.ru-prog{margin:0 24px 12px;padding:12px 14px;border:1px solid var(--color-border-card);border-radius:var(--radius-control);background:var(--surface-subtle)}
+.ru-prog-h{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--color-text-body)}
+.ru-prog-h b{font-weight:600;color:var(--color-text-primary)}
+.ru-prog-h span:last-child{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--color-text-secondary)}
+.ru-spin{width:14px;height:14px;border:2px solid var(--color-border-control);border-top-color:var(--color-brand);border-radius:50%;animation:ru-spin .8s linear infinite}
+@keyframes ru-spin{to{transform:rotate(360deg)}}
+.ru-bar{height:4px;margin-top:8px;border-radius:var(--radius-pill);background:var(--color-border-hairline);overflow:hidden}
+.ru-bar i{display:block;height:100%;width:0;background:var(--color-brand);transition:width .2s var(--p-ease-out)}
+.ru-prog-s{margin:6px 0 0;font-size:11px;line-height:16px;color:var(--color-text-tertiary)}
+.ru-tools{display:flex;align-items:center;gap:8px;padding:0 24px 12px;flex-wrap:wrap}
+.ru-tabs{display:inline-flex;padding:2px;border-radius:var(--radius-control);background:var(--surface-subtle)}
+.ru-tab{height:28px;padding:0 10px;border:0;border-radius:var(--radius-sm);background:transparent;font-size:12px;color:var(--color-text-secondary);cursor:pointer}
+.ru-tab.on{background:var(--surface-page);color:var(--color-text-primary);box-shadow:var(--shadow-flat)}
+.ru-search{width:150px;height:32px;padding:0 10px;border:1px solid var(--color-border-control);border-radius:var(--radius-control);font-size:12px;color:var(--color-text-body);background:var(--surface-page)}
+.ru-search:focus{outline:2px solid var(--color-focus-halo);outline-offset:1px;border-color:var(--color-focus-ring)}
+.ru-tools .btn{height:32px;padding:0 12px;font-size:12px}
+.ru-tools .ru-all{margin-left:auto}
+.ru-tools .btn[disabled]{opacity:.45;cursor:not-allowed}
+.ru-batch{border:1px solid var(--color-border-control);background:var(--surface-page);color:var(--color-text-body)}
+.ru-list{margin:0 24px;border:1px solid var(--color-border-card);border-radius:var(--radius-control);overflow:auto;min-height:180px;max-height:360px}
+.ru-thead,.ru-row{display:grid;grid-template-columns:36px minmax(0,1fr) 120px 78px 64px;align-items:center;gap:8px;padding:0 12px}
+.ru-thead{height:34px;background:var(--surface-subtle);border-bottom:1px solid var(--color-border-card);font-size:11px;color:var(--color-text-tertiary);position:sticky;top:0;z-index:1}
+.ru-thead .ru-a{text-align:right}
+.ru-row{min-height:52px;border-bottom:1px solid var(--color-border-hairline);font-size:12px}
+.ru-row:last-child{border-bottom:0}
+.ru-row:hover{background:var(--surface-subtle)}
+.ru-row.is-manual{background:var(--color-warning-surface)}
+.ru-row.is-manual:hover{background:var(--color-warning-surface)}
+.ru-c{display:flex;align-items:center;justify-content:center}
+.ru-c input{width:14px;height:14px;accent-color:var(--color-brand);cursor:pointer}
+.ru-app{display:flex;flex-direction:column;min-width:0}
+.ru-app b{font-weight:500;color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ru-app small{font-size:10px;line-height:15px;color:var(--color-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ru-v{display:flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums;color:var(--color-text-tertiary)}
+.ru-vf{text-decoration:line-through;text-decoration-color:var(--color-border-control)}
+.ru-arr{color:var(--color-text-muted)}
+.ru-vt{font-weight:600;color:var(--color-text-primary)}
+.ru-st{font-size:11px}
+.ru-warn{color:var(--color-warning);font-weight:600}
+.ru-manual{color:var(--color-warning);font-weight:600}
+.ru-ok{color:var(--color-success-ink)}
+.ru-a{text-align:right}
+.ru-one{height:26px;padding:0 9px;border:1px solid var(--color-border-control);border-radius:var(--radius-sm);background:var(--surface-page);font-size:11px;color:var(--color-brand);cursor:pointer}
+.ru-one:hover{border-color:var(--color-brand);background:var(--color-brand-surface)}
+.ru-link{font-size:11px;color:var(--color-text-secondary);text-decoration:none}
+.ru-link:hover{color:var(--color-brand);text-decoration:underline}
+.ru-dash{color:var(--color-text-muted)}
+.ru-empty{padding:40px 0;text-align:center;font-size:12px;color:var(--color-text-tertiary)}
+.ru-report{margin:12px 24px 0;padding:12px 14px;border:1px solid var(--color-border-card);border-radius:var(--radius-control);background:var(--surface-subtle);position:relative}
+.ru-rep-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.ru-rep-h b{font-size:12px;font-weight:600;color:var(--color-text-primary)}
+.ru-rep-h span{font-size:11px;color:var(--color-text-tertiary)}
+.ru-rep-n{display:flex;gap:16px;margin-top:6px}
+.ru-rep-n span{font-size:11px;color:var(--color-text-secondary)}
+.ru-rep-n b{font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-text-primary)}
+.ru-rep-n .ok b{color:var(--color-success-ink)}
+.ru-rep-n .warn b{color:var(--color-warning)}
+.ru-rep-n .bad b{color:var(--color-danger)}
+.ru-rep-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:11px;line-height:17px;color:var(--color-text-secondary)}
+.ru-rep-list b{font-weight:500;color:var(--color-text-body)}
+.ru-rep-list.bad{color:var(--color-danger)}
+.ru-rep-x{position:absolute;right:10px;bottom:10px;height:24px;padding:0 8px;border:1px solid var(--color-border-control);border-radius:var(--radius-sm);background:var(--surface-page);font-size:11px;color:var(--color-text-secondary);cursor:pointer}
+.ru-ft{display:flex;align-items:center;justify-content:space-between;padding:12px 24px 16px;font-size:12px;color:var(--color-text-tertiary)}
+.ru-pager{display:flex;align-items:center;gap:8px}
+.ru-pg{height:26px;padding:0 9px;border:1px solid var(--color-border-control);border-radius:var(--radius-sm);background:var(--surface-page);font-size:11px;color:var(--color-text-secondary);cursor:pointer}
+.ru-pg[disabled]{opacity:.4;cursor:not-allowed}
+.ru-cf-warn{margin:8px 0 0;padding:8px 10px;border-radius:var(--radius-sm);background:var(--color-warning-surface);color:var(--color-warning);font-size:12px;line-height:18px}
+.ru-cf-quiet{margin:8px 0 0;color:var(--color-text-tertiary);font-size:12px;line-height:18px}
+.ck-badge{flex:none;display:inline-flex;align-items:center;height:var(--space-24);padding:0 var(--space-8);border:0;border-radius:var(--radius-pill);cursor:pointer;white-space:nowrap;font-family:inherit;font-size:var(--font-size-caption);line-height:1;font-variant-numeric:tabular-nums;background:var(--color-warning-surface);color:var(--color-warning)}
+.ck-badge:hover{background:var(--color-warning-surface);text-decoration:underline}
+
