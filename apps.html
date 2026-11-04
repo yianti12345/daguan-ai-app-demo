@@ -2,13 +2,12 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=4c306e1b">
+<link rel="stylesheet" href="assets/sys.css?v=ed96d004">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=02ac2ac8">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -161,7 +160,7 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=98d540b3"></script>
+<script src="assets/data.js?v=97d6546b"></script>
 <script src="assets/ui-kit.js?v=d6b1c479"></script>
 <script src="assets/transfer.js?v=6ef877f1"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
@@ -353,8 +352,10 @@
     if (act === 'off') {
       if (pubState(a) === '未上架') { toast('还没上架，不用下架'); return; }
       Confirm.ask({
-        title: '下架',
-        body: '下架后，客户将无法使用该应用，是否确认下架？',
+        /* ★2026-11-04 平台标准件（用户 2026-11-02 裁决）：标题统一「操作确认」，对象与后果写进正文。
+           这里原来标题是动作名「下架」，与平台口径不一致（CONFIRM A2b 判红）。 */
+        title: '操作确认',
+        body: '「' + a.name + '」下架后，客户将无法使用该应用，是否确认下架？',
         ok: '确定',
         danger: true,
         onOk: function () {

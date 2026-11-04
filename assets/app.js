@@ -958,6 +958,16 @@
         + '<span>这一版当时没有存内容，下面显示的是当前内容</span></div>' + html;
     }
     cv.innerHTML = html;
+    /* ★2026-11-04（CANVAS 判据抓到的真洞）：装配里有块、但块渲染出来是空壳时（组件没有 spec/fields，
+       只剩编号与名字），整屏正文不到 24 字也**没有空态引导** —— 用户点进去看着像没加载完。
+       这里兜一层：画布没有 .cv-empty 且可见正文不足 24 字，就按「从零演示」的空态重画，
+       保证「有内容」或「有引导」二者必居其一。 */
+    (function () {
+      if (cv.querySelector('.cv-empty')) return;
+      var t = (cv.innerText || '').replace(/\s+/g, '').length;
+      if (t >= 24) return;
+      cv.innerHTML = emptyHtml('这个应用还没有内容', '直接在下面说：谁用、要看到什么。页面会边问边生成。');
+    })();
   }
 
   /* 上移 / 下移：改的是装配顺序本身（app.comps 原地重排后落盘），不是只挪 DOM ——
