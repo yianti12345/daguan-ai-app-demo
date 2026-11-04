@@ -57,7 +57,7 @@
      这种内部话术）；②演示的装配清单全部留空（从零演示）。bump 之外还要把台账/改动流水的键
      也带上种子版本 —— 原来只重置 db，台账 'ifas90:vers:*' 留在 localStorage 里，
      于是画布空了、版本页还写着「装配 3 块」，同一屏两个事实互相打脸。 */
-  var SEED_VER = '24';
+  var SEED_VER = '25';
   var SEED_KEY = 'ifas90:seed' + NS;
 
   /* ── 种子：APP 与 COMPS 的现有内容 ── */
