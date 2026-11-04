@@ -2,11 +2,12 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>应用配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=6a4ec782">
-<link rel="stylesheet" href="assets/sys.css?v=ed96d004">
+<link rel="stylesheet" href="assets/sys.css?v=f4c7bab9">
 <link rel="stylesheet" href="assets/float.css?v=d761721c">
 <link rel="stylesheet" href="assets/viewmode.css?v=a8e1d20e">
 <link rel="stylesheet" href="assets/generated.css?v=f89c421a">
@@ -92,7 +93,7 @@
     </div>
     <div class="p-tabs" role="tablist" aria-label="组件范围">
       <button type="button" role="tab" class="p-tab" id="tab-avail" data-tab="avail" aria-selected="true">可装配 <span id="n-avail">0</span></button>
-      <button type="button" role="tab" class="p-tab" id="tab-on" data-tab="on" aria-selected="false">已装配 <span id="n-on">0</span></button>
+      <button type="button" role="tab" class="p-tab" id="tab-on" data-tab="on" aria-selected="false">已装配 <span id="n-on">0</span><i class="p-tab-chip" id="tab-upd-chip" hidden> <b id="tab-upd-n">0</b> 个可升级</i></button>
     </div>
     <!-- 只看有更新：一行筛选说明，不是第三个页签（规格 §5.2）。
          页签计数 = 已装总数；这一行的数 = 可更新数；两者不同源也不同义。
@@ -101,18 +102,17 @@
       <span class="p-filter-n" id="p-filter-n"></span>
       <button type="button" class="btn-text" id="p-showall">显示全部</button>
     </div>
-    <div class="p-upd" id="p-upd" hidden>
-      <span class="p-upd-n" id="p-upd-n"></span>
-      <!-- ★2026-11-04（用户）：「升级操作跟组件引用管理那边类似，一个一个多选操作的，批量升级，
-           然后一个是全部升级」——首行报数 + 全选；「全部升级」只管升级全部落后件，
-           「批量升级」只管当前勾中的行，两者各说各的，不共用一个动作。 -->
-      <button type="button" class="btn-text" id="p-upgrade-all">全选</button>
-      <button type="button" class="btn-text" id="p-upgrade-allnow">全部升级（0）</button>
-    </div>
-    <!-- ★2026-11-03（m05719）：多选批量动作。可装配页签是「装配（N）」，
-         已装配页签是「一键升级（N）」；没选时 0 且禁用。 -->
-    <div class="p-batch" id="p-batch">
+    <!-- ★2026-11-04（用户）：「只需要在已装配旁边显示 X 个可升级的标签」；
+       「升级跟组件引用管理那边类似，一个一个多选操作的，批量升级，然后一个是全部升级」。
+       所以：可升级数只挂在「已装配」页签上（见 .p-tabs）；操作全在这一行 ——
+       左边全选，右边 全部升级（N） / 批量升级（N），与引用管理的顺序一致。 -->
+    <div class="p-batch" id="p-batch" hidden>
+      <label class="p-selall">
+        <input type="checkbox" id="p-selall" aria-label="全选当前列表里可操作的组件">
+        <span>全选</span>
+      </label>
       <span class="p-batch-n" id="p-batch-n">已选 0</span>
+      <button type="button" class="btn-text" id="p-upgrade-allnow" hidden>全部升级（0）</button>
       <button type="button" class="btn-text" id="p-batch-do" disabled>装配（0）</button>
     </div>
     <div class="p-list" id="dlg-list" role="tabpanel"></div>
@@ -125,7 +125,7 @@
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
 <script src="assets/float.js?v=5bf0ecaf"></script>
-<script src="assets/app.js?v=87e654b3"></script>
+<script src="assets/app.js?v=04b89cf6"></script>
 <script src="assets/configurators/app-standard.js?v=a478d9a2"></script>
 <script src="assets/configurator.js?v=4558be01"></script>
 <div id="xz-host"></div>

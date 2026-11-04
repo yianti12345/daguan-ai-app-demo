@@ -1640,7 +1640,7 @@
     });
 
     /* ★2026-11-03（m05719）：「全选」只勾上当前列表里可升级的行，真正升级由下方批量键触发。 */
-    on('#p-upgrade-all', 'click', batchSelectAll);
+    on('#p-selall', 'change', function () { batchSelectAll(this.checked); });
     on('#p-upgrade-allnow', 'click', upgradeAllNow);
     on('#p-batch-do', 'click', batchDo);
 
@@ -1757,19 +1757,13 @@
     return !isOn(c.id) && DB.canInstall(c);
   }
 
-  /* ★2026-11-03（用户 m03795）：已装配行里如果有新版本，要能在弹窗里一眼看到，
-     并且一次全升。只在真有落后组件时出现，数字与卡片徽标、顶栏同源（DB.updatesOf）。 */
+  /* ★2026-11-04（用户）：「只需要在已装配旁边显示 X 个可升级的标签」。
+     可升级数只挂在「已装配」页签上，不再单独占一行；数字与卡片徽标、顶栏同源（DB.updatesOf）。 */
   function paintUpdBar() {
-    var bar = $('#p-upd'), lab = $('#p-upd-n');
-    if (!bar) return;
+    var chip = $('#tab-upd-chip'), lab = $('#tab-upd-n');
     var n = Object.keys(updNow || {}).length;
-    bar.hidden = !n;
-    if (n && lab) lab.textContent = n + ' 个组件有新版本';
-    var allNow = $('#p-upgrade-allnow');
-    if (allNow) {
-      allNow.textContent = '全部升级（' + n + '）';
-      allNow.disabled = !n || !!updBusy;
-    }
+    if (chip) chip.hidden = !n;
+    if (n && lab) lab.textContent = n;
   }
 
   /* ★2026-11-04（用户）：「一个是批量升级，然后一个是全部升级」。
@@ -1803,23 +1797,38 @@
   }
   function syncBatch(show) {
     var bar = $('#p-batch'), nEl = $('#p-batch-n'), btn = $('#p-batch-do');
+    var allNow = $('#p-upgrade-allnow'), selall = $('#p-selall');
     var boxes = batchBoxes();
     var n = boxes.filter(function (c) { return c.checked; }).length;
-    /* 没有可批量的行就别留一条「装配（0）」的空工具条：它既不可点，也占一行。 */
+    var nAll = Object.keys(updNow || {}).length;
+    /* 没有可操作的行走就别留一条「装配（0）」的空工具条：它既不可点，也占一行。 */
     if (bar) bar.hidden = !show || !boxes.length;
     if (nEl) nEl.textContent = '已选 ' + n;
+    if (selall) {
+      selall.checked = boxes.length > 0 && n === boxes.length;
+      selall.indeterminate = n > 0 && n < boxes.length;
+      selall.disabled = !boxes.length;
+    }
     if (btn) {
       btn.disabled = !n;
       btn.textContent = (tab === 'on' ? '批量升级（' : '装配（') + n + '）';
     }
+    /* 「全部升级」只在已装配页签出现，数的是落后件总数（不看勾选），与引用管理一致。 */
+    if (allNow) {
+      allNow.hidden = tab !== 'on';
+      allNow.textContent = '全部升级（' + nAll + '）';
+      allNow.disabled = !nAll || !!updBusy;
+    }
   }
-  function batchSelectAll() {
+  /* 全选 = 一次性全勾/全不勾当前列表里可操作的行（引用管理里那颗表头勾选框的行为）。 */
+  function batchSelectAll(on) {
     var boxes = batchBoxes();
     boxes.forEach(function (c) {
-      c.checked = true;
-      batchSel[c.getAttribute('data-pick')] = 1;
+      c.checked = on;
+      if (on) batchSel[c.getAttribute('data-pick')] = 1;
+      else delete batchSel[c.getAttribute('data-pick')];
       var r = c.closest('.row');
-      if (r) r.classList.add('is-selected');
+      if (r) r.classList.toggle('is-selected', !!on);
     });
     syncBatch(true);
   }
@@ -2504,19 +2513,8 @@
        （§5.1 表里"N=0 / 只看有更新"那一格写的是筛选空态 + 筛选行，与 §11.4 相反；
          两处冲突时按派单明写的"只在有更新时生效"走，筛选空态只在
          "进去时还有、当场更新到 0"这条路上出现。） */
-  if (!VIEW_MODE) {
-    var wantPanel = qs.get('panel') === 'installed';
-    var wantUpd = qs.get('updates') === '1';
-    if (wantPanel || wantUpd) {
-      var nUpd = DB.updateCount(appId);
-      updFilter = wantUpd && nUpd > 0 && app.comps.length > 0;
-      openDlg('on');              /* 手动打开仍落搜索框，这条路径下面会改焦点 */
-      stripEntryParams();
-      var focusTarget = null;
-      if (app.comps.length === 0) focusTarget = $('#dlg-close');          /* 0 装配：关闭钮 */
-      else if (updFilter) focusTarget = $('#dlg-list .btn-update');       /* 第一行「更新」 */
-      else focusTarget = $('#tab-on');                                    /* 有已装、无更新：页签 */
-      if (focusTarget) focusTarget.focus();
-    }
-  }
+  /* ★2026-11-04（用户）：「为什么一进去应用配置，就给我直接打开装配组件弹窗，逻辑给我改啊」。
+     带参进来（应用卡的「N 个组件可升级」链接）不再自动展开抽屉 —— 只把参数从地址里摘掉。
+     想升级就自己点顶栏「装配组件」，进去看已装配页签上的可升级数。 */
+  if (!VIEW_MODE) stripEntryParams();
 })();

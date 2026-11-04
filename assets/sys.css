@@ -137,6 +137,11 @@ a:hover{color:var(--color-brand-hover)}
    （--ctl-line 与 --canvas 明度只差几个点），按上去像"一块白斑"。加 1px 投影把它托起来。 */
 .btn.ghost{background:var(--surface-page); border:0; color:var(--color-text-body); box-shadow:var(--shadow-card)}
 .btn.ghost:hover{background:var(--surface-page); color:var(--color-brand-ink); box-shadow:var(--shadow-card-hover)}
+/* ★2026-11-04（用户）：「顶部的操作，都有背景条了，还加上阴影卡片真的好看吗？直接框框出来不行吗」。
+   配置页顶栏的次要按钮＝描边，不填底、不带阴影：顶栏本身就是白条，白底再叠阴影是多一层白。 */
+.topbar .btn.ghost{background:transparent; border:var(--size-border-w) solid var(--line-2); box-shadow:none}
+.topbar .btn.ghost:hover{background:var(--surface-subtle); border-color:var(--line-2); color:var(--color-brand-ink); box-shadow:none}
+.topbar .btn.ghost[disabled],.topbar .btn.ghost[aria-disabled="true"]{background:transparent; border-color:var(--line-2); color:var(--color-text-tertiary); box-shadow:none}
 /* 危险动作（2026-10-25 补）：DESIGN §4.1 的矩阵里早就有 danger 这一档，
    但 CSS 里一直没实现 —— 「停用应用」这种动作只能用主按钮的样子出现，红不红全靠文案。
    取值照 §4.1：--err-bg 底 + --err 字 + 无阴影。
@@ -1671,13 +1676,18 @@ body[data-app] .canvas{transition:padding-right .18s ease}
 /* 抽屉只有 380：候选卡一列，不再两列并排（两列时每张不到 170，组件名会被截） */
 .p-list{flex:1 1 auto;min-height:0;overflow:auto;padding:0 var(--space-16) var(--space-16);
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-12);align-content:start}
-.p-upd{flex:0 0 auto;display:flex;align-items:center;gap:var(--space-12);margin:0 var(--space-16) var(--space-8);padding:var(--space-8) var(--space-12);border-radius:var(--radius-sm);background:var(--surface-subtle)}
-.p-upd[hidden]{display:none}
-.p-upd-n{font-size:var(--font-size-caption);color:var(--ink-2)}
-.p-upd .btn-text{margin-left:auto;color:var(--color-brand);font-weight:600}
+/* ★2026-11-04：原来的「N 个组件有新版本 / 全选 / 全部升级」独立条已撤 ——
+   可升级数挂到「已装配」页签上，操作收到多选工具行里。 */
 /* 批量动作条：不抢「只看有更新」的底，只做一行轻量操作；两个页签共用。 */
 .p-batch{flex:0 0 auto;display:flex;align-items:center;gap:var(--space-8);height:32px;margin:0 var(--space-16) var(--space-8);padding:0 4px}
 .p-batch[hidden]{display:none}
+.p-selall{display:inline-flex;align-items:center;gap:6px;font-size:var(--font-size-caption);color:var(--color-text-secondary);cursor:pointer}
+.p-selall input{width:14px;height:14px;margin:0;accent-color:var(--color-brand)}
+/* 「已装配」页签上的可升级角标：只报数、不承接点击（动作在多选工具行里） */
+.p-tab-chip{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:0 6px;height:18px;border-radius:var(--radius-pill);
+  background:var(--color-warning-surface);color:var(--color-warning);font-size:var(--font-size-caption);font-style:normal;line-height:var(--leading-caption);vertical-align:1px}
+.p-tab-chip[hidden]{display:none}
+.p-tab-chip b{font-weight:600}
 .p-batch-n{font-size:var(--font-size-caption);color:var(--color-text-tertiary);margin-right:auto;font-variant-numeric:tabular-nums}
 .p-batch .btn-text{color:var(--color-brand);font-weight:600}
 .p-batch .btn-text:disabled{color:var(--color-text-tertiary);font-weight:400}
