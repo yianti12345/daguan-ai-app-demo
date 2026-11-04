@@ -214,7 +214,7 @@ window.UIK = (function () {
         '.uik-atts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}',
         '.uik-att{display:inline-flex;align-items:center;gap:6px;max-width:280px;padding:4px 8px;border:1px solid var(--line-2,#e5e7eb);border-radius:8px;background:#fff;font-size:12px;color:#333}',
         '.uik-att-thumb{width:22px;height:22px;object-fit:cover;border-radius:4px;flex:none}',
-        '.uik-att-ic{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;background:#f1f2f6;color:#6b7280;font-size:10px;flex:none}',
+        '.uik-att-ic{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;background:#f1f2f6;color:#6b7280;font-size:12px;flex:none}',
         '.uik-att-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}',
         '.uik-att-mt{color:#8a909a;flex:none}',
         '.uik-att-x{border:0;background:none;cursor:pointer;color:#8a909a;padding:0 2px;font-size:15px;line-height:1}',

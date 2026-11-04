@@ -122,7 +122,7 @@
   --color-brand:var(--p-blue-600);
   --color-brand-hover:var(--p-blue-650);
   --color-brand-active:var(--p-blue-700);
-  --color-brand-ink:var(--p-blue-800);
+  --color-brand-ink:var(--p-blue-550);
   --color-brand-surface:var(--p-blue-50);
   --color-brand-surface-2:var(--p-blue-100);
   --color-brand-nav-active:var(--p-blue-550);
@@ -272,7 +272,7 @@
 
   /* 按钮 Button（6） */
   --btn-height:var(--size-control-h);
-  --btn-radius:var(--radius-control);
+  --btn-radius:var(--radius-xs);
   --btn-pad-x:var(--space-inline-lg);
   /* 2026-10-29 裁决 #1：原 `var(--space-inline-xs)`=4 无组件规范依据；
      现盘 `.btn` gap 是 `--space-8`=8（sys.css:121），改值对齐并接线。
@@ -282,7 +282,7 @@
   --btn-disabled-fg:var(--color-text-secondary);
 
   /* 列表卡 AppCard（5） */
-  --card-radius:var(--radius-panel);
+  --card-radius:var(--radius-tag);
   /* 2026-10-29 裁决 #2：卡靠 1px 收边环分界（`.kcard` 现盘 sys.css:895 用 `--shadow-card-ring`）；
      原 `--shadow-card` 无环，off 态（sys.css:452）用本令牌会丢环。改值对齐并接线。
      盘面证据：《设计-L3组件令牌29条裁决-20261029》§逐条 #2。 */
@@ -305,9 +305,13 @@
   --card-off-fg:var(--color-text-secondary);
 
   /* 组件卡 ComponentCard（5） */
-  --ccard-radius:var(--radius-panel);
-  /* 2026-11-04：卡顶状态条的高度。3px 是下限 —— 1px 看不出色相、4px 开始像标题栏。 */
+  --ccard-radius:var(--radius-tag);
   --ccard-accent-h:3px;
+  --table-head-bg:#F2F3F5;
+  --table-head-h:39px;
+  --table-row-h:69px;
+  --field-h:30px;
+  --field-border:var(--color-border-control);
   /* 2026-11-01：与 --card-shadow 同一条口径 —— 组件卡也不许默认浮着（用户：「阴影很诡异」）。
      两页材质同源，改一起改。 */
   --ccard-shadow:var(--card-shadow);
@@ -395,17 +399,6 @@
   --row-pad-x:var(--space-inline-lg);
   --row-gap:var(--space-stack-sm);
   --row-hover-bg:var(--color-state-hover);
-  /* ── 列表（2026-11-04 按真源抓取：任务中心 · 审核任务）──────────────
-     来源 http://172.26.26.61:10612/admin/#/Expert/TaskCenter/History，
-     实测：表头高 39、底 rgb(242,243,245)、字重 600；数据行高 69；
-     筛选控件高 30、描边 rgb(193,199,205)、圆角 4。
-     这三组数以前是本仓自己拍的（48 / 54 / 无描边），和真系统差一档 ——
-     用户原话：「真的操作及列表样式呢」，指的就是这个差。 */
-  --table-head-bg:#F2F3F5;
-  --table-head-h:39px;
-  --table-row-h:69px;
-  --field-h:30px;
-  --field-border:var(--color-border-control);
 
   /* ── 2026-10-29 T1：跨文件引用的组件令牌上移（原声明在组件 CSS 里，定义源看不见）──
      病：token-audit 的定义源只认本文件，令牌声明写在组件 CSS 里＝体系里"不存在"，

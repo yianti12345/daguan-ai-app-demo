@@ -16,10 +16,10 @@
     "★标题 20px 是这次真实量出来的：抓取件 我的应用.html 写的是 18px，那是客户端卡片；管理端实际 20px/行高30"
   ],
   "card": {
-    "aspectRatio": "0.9 / 1",
+    "aspectRatio": "1.58 / 1",
     "borderWidth": 1,
     "borderColor": "#e5e7eb",
-    "radius": 12,
+    "radius": 4,
     "overflow": "hidden",
     "hoverShadow": "0 3px 9.7px 0 rgba(170,175,210,0.22)"
   },
@@ -59,10 +59,11 @@
     "color": "#252524"
   },
   "grid": {
-    "gap": 32,
+    "gap": 8,
     "cols": 4,
-    "cols2xl": 5,
+    "cols2xl": 4,
     "breakpoint2xl": 1536,
     "_evidence": "线上 <div class=\"grid 2xl:grid-cols-5 lg:grid-cols-4 grid-cols-4 gap-8 px-[8px]\">；Tailwind 的 2xl = 1536"
-  }
+  },
+  "_supersededBy": "2026-11-04 用户裁决「按真源改」：以 bsk 真浏览器量到的内网知识库页为准（1440 / 卡 292×185 / r4 / 4 列 / gap 8 / 宽屏不加列）。上面的线上 AppManage 读数保留作历史证据，不再是验收基准。"
 }

@@ -111,7 +111,7 @@ a:hover{color:var(--color-brand-hover)}
    ★ 2026-10-23 重做。原样式：2px 圆角 / 无字重 / 无过渡 / 主按钮纯色平铺 ——
      用户看过小智面板后一句话否掉：「按钮样式好看一些啊，你看看小智的风格多好看」。
    改三件事，都是小智那套语言的搬运：
-     ① 圆角 2 → 8（--r-ctl），与输入框同一档；
+     ① 圆角按内网真源实测 r2（--radius-xs），输入框仍 r8；
      ② 主按钮走渐变 + 轻投影（小智的"AI 感"来自渐变与光晕，不是来自更亮的蓝）；
      ③ 全部加 0.16s 过渡与 hover 位移质感，点击不"啪"一下。
    高度仍是 32、字号仍是 14 —— 与真源控件同尺寸，只改质感不改栅格。 */
@@ -207,7 +207,7 @@ input, select, textarea{font-family:inherit; font-size:inherit; color:inherit;}/
 /* ★2026-10-29（refparity：卡片 w 真源 273 / 我方 277）：真源 #grid 实测 1202 宽、
    padding 0 8px、轨道 272.5×4；我方 #grid 同为 1202 宽，但 padding 0 ⇒ 轨道 276.5。
    差的不是卡宽也不是 gap，是**栅格自己的 8px 内距**。补回内距，卡宽 276.5→272.5（取整 273）。 */
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-32);padding:0 var(--space-8)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-8);padding:0 var(--space-8)}
 /* ★2026-11-01 恢复线上断点（这条第三次翻烧饼，理由一次写全）：
    线上原文 `<div class="grid 2xl:grid-cols-5 lg:grid-cols-4 grid-cols-4 gap-8 px-[8px]">`
    —— Tailwind 的 2xl = 1536，**1536 起是 5 列**。
@@ -218,9 +218,8 @@ input, select, textarea{font-family:inherit; font-size:inherit; color:inherit;}/
    用户原话「你的卡片太大了，跟我们系统原本的卡片高度宽度完全不一样」量的就是这个数。
    ⇒ 恢复断点 + 演示应用补到 10 条（1920 下 5+5，不留孤行）。
    退出机制：若产品真要"任何宽度都 4 列"，必须用户明说，不许实现方为了一张演示图推断。 */
-@media (min-width:1536px){
-  .grid{grid-template-columns:repeat(5,minmax(0,1fr))}
-}
+/* ★2026-11-04 按内网真源改：知识库页 1440 实测 4 列 / gap 8 / 卡 292×185，
+   取消 1536 起 5 列的旧断点；宽屏不再另起一套列数。 */
 /* ★2026-10-26 晚（第二次）：列数改回**断点制**，不用 auto-fill。
    真源 1440 是 4 列（274/列），≥1536 才切 5 列（2xl:grid-cols-5）。
    ⚠ 2026-10-31：这半句（5 列）**已撤销**，理由见下一条注释：它与「4 列是上限」冲突。
@@ -370,7 +369,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      扫一屏分不出哪行是表头。 */
   min-height: var(--table-head-h);
   padding-block: 10px;
-  line-height: 19px;              /* 10+19+10 = 39，与真源表头等高 */
+  line-height: 18px;              /* 10+18+10+1(border) = 39，border-box 下总高 39 */
   border-bottom: 1px solid var(--color-border-hairline);
   background: var(--table-head-bg);
   font-weight: 600;
@@ -402,7 +401,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 /* 2026-11-03：范围两段让表单超过一屏。头/脚固定、中段自己滚 —— 底部「创建」永远在视口里。 */
 .nf-hd,.nf-ft{flex:0 0 auto}
 .nf-hd{height:56px;display:flex;align-items:center;padding:0 var(--space-24)}
-.nf-hd .cf-ico{width:18px;height:18px;flex:0 0 18px;border-radius:50%;background:var(--color-danger);color:var(--color-text-inverse);font-size:var(--font-size-caption);font-weight:700;display:grid;place-items:center;margin-right:8px}
+.nf-hd .cf-ico{width:18px;height:18px;flex:0 0 18px;border-radius:50%;background:var(--color-danger);color:var(--color-text-inverse);font-size:var(--font-size-caption);font-weight:600;display:grid;place-items:center;margin-right:8px}
 .nf-hd b{font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
 .nf-hd .nf-x{margin-left:auto;width:28px;height:28px;border-radius:var(--radius-xs);display:grid;place-items:center;color:var(--color-text-tertiary);border:0;background:none;cursor:pointer}
 .nf-hd .nf-x:hover{background:var(--color-state-hover);color:var(--color-text-body)}
@@ -611,7 +610,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      容器 = 视口 − 238（侧栏 200 + 左 16 + 右 22）⇒ 视口 ≥1722，取 1720。
      低于此值一律 3 列 —— 旧卡就是被"277 宽塞不下四件事"逼成上下两截的（§2.4 P2）。
      ⚠ 1536–1719 这一档会得到 411–472 的偏宽卡；该档不在验收宽内（1280/1440/1920），见 §9.1 未量项。 */
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-32);align-content:start;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-8);align-content:start;
   background:none;box-shadow:none;border-radius:0;padding:0;overflow:visible;
 }
 /* ★2026-11-01 断点与应用页对齐：1720 → **1536**。
@@ -620,9 +619,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
    现在两页共用同一个断点：1536 起各加一列（应用 4→5、组件 3→4）。
    ⚠ 组件库没有线上对应页（线上是「技能库」表格，不是卡片），所以这个断点不是照抄，
      是"跟应用页同一节奏"这条实现决定 —— 写在这里，免得下一个人以为是照线上量的。 */
-@media (min-width:1536px){
-  .page-components #grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-}
+/* ★2026-11-04 组件页与应用页共用 4 列基线，不再各写一个加列断点。 */
 /* ══ 2026-10-28 组件卡壳：三列 · 两区（《组件卡样式规范-20261028》§4 落码）══════════════
    形态一句话：上区只回答「这是什么零件」（类型点 + 名称），下区一条运行带回答
    「能不能用 / 谁在用 / 怎么进」（状态开关 + 引用数 + 配置 + ⋮），四件事同一条基线。
@@ -2062,16 +2059,13 @@ body[data-drawer="on"] .hint{
 .bar{flex-wrap:wrap;row-gap:var(--space-8)}
 .bar .right{flex-wrap:wrap;justify-content:flex-end;row-gap:var(--space-8)}
 
-/* ② 应用页降列：≤1245 三列、≤989 两列 */
+/* ② 两页同一套降列（2026-11-04 按真源统一 4 列基线）：≤1245 三列、≤989 两列。
+   真源只在 1440 量过；更窄两档是照栅格下限推的，未实机复核。 */
 @media (max-width:1245px){
-  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid,.page-components #grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:989px){
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-/* ② 组件页降列：≤1246 两列（3 列要到 1247 才够 315 的卡宽） */
-@media (max-width:1246px){
-  .page-components #grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid,.page-components #grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -2353,13 +2347,13 @@ body[data-drawer="on"] .hint{
      历史注释随旧块一起收进 git 历史，不再每轮携带。 */
   position:relative;
   display:flex;flex-direction:column;
-  aspect-ratio:.9/1;
+  aspect-ratio:1.58/1;
   height:100%;
   min-height:0;
   overflow:hidden;
   padding:0;
   border:0;
-  border-radius:var(--radius-panel);
+  border-radius:var(--radius-tag);
   background:var(--surface-page);
   /* 2026-11-02（用户 m05570）：卡与页面底几乎同色，'完全融合在一起'。
      线上是 1px 灰描边；这里按 DESIGN §1.1 不写 border，改用 1px 环画同一道界线 ——
@@ -2670,3 +2664,7 @@ body[data-drawer="on"] .hint{
 /* 规格没答完三问时的可见拦截（不是白屏，不是静默跳过） */
 .lst-blocked{padding:24px;margin:0;background:#FFF1F0;color:#A8071A;
   border:1px solid #FFCCC7;border-radius:var(--radius-xs);font-size:var(--font-size-body)}
+
+/* ★2026-11-04 按真源改：真源字重只有 400/500/600。<b> 的 UA 规则是 bolder，
+   在 600 的父级上会被算成 700/900（侧栏 logo 实测 14px/900）。一处统一到 600。 */
+b,strong{font-weight:600}

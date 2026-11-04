@@ -108,7 +108,7 @@
         { id: 'dfzq-zg', name: '东方证券 · 资管合同审查', client: '东方证券', status: '内测中', updated: '2026-10-29 20:53:30', version: 3,
           desc: '资管合同要素与备案信息交叉核对，差异逐条列出。' },
         { id: 'ifas-mon', name: 'DataGrand IFAS · 监控大屏', client: 'DataGrand', status: '已上架', updated: '2026-11-03 14:20:00', version: 1,
-          desc: '完整的管理后台：左侧导航、顶栏、指标卡、漏斗、趋势图与 Top10，一屏即一个系统。' },
+          desc: '监控大屏：指标卡、漏斗、趋势图与 Top10。' },
         { id: 'gx-pj',   name: '蓝湾互娱 · 关卡内容生成', client: '蓝湾互娱', status: '未发布', updated: '2026-10-26 13:29:05', version: 0,
           desc: '关卡文案与数值逐项校对，对不上的地方标红。' }
       ],
@@ -134,7 +134,7 @@
            状态汇总属于「任务池」这种组件自己的附属物，不属于画布。 */
         { id: 'monitor-screen', tags: ['page_frame'], name: '管理后台整页', label: '监控大屏', layout: 'full', status: '已上架', ver: 'v1', refs: 0, config: {}, block: null,
           updated: '2026-11-03 14:20:00',
-          desc: '整页后台的容器，内容由对话生成。',
+          desc: '管理后台整页容器。',
           fields: [] },
         { id: 'task-list', tags: ['task_flow'],    name: '审核任务列表', label: '待办任务',       layout: 'full', status: '已上架', ver: 'v3', refs: 0, config: {}, strip: true, block: { kind: 'table', src: 'tasks' },
           updated: '2026-10-29 17:03:41',
