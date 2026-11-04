@@ -169,15 +169,39 @@ body.fk-hist-open #canvas{padding-bottom:248px}
 }
 .fk-send[data-ready="true"]{background:var(--color-brand); color:var(--color-text-inverse); cursor:pointer}
 .fk-send[data-ready="true"]:hover{background:var(--color-brand-active)}
-/* ★2026-11-04（m06113 需求三）：语音双模式开关 + 麦克风 */
+/* ★2026-11-04（用户）：「现在这个样式，以为是选中呢，根本不是切换，也不好看，
+   可以文字后有个提示的图标，光标悬浮显示这个操作代表什么意思」。
+   语音发送方式改成两段切换（两个模式同时可见），后面挂 ⓘ 解释两个词。
+   外形与顶栏「预览/代码」同一套：1px 描边 + 选中段浅底，不再是"到底选没选"的胶囊。 */
 .fk-vmode{
-  height:28px; flex:0 0 auto; padding:0 9px; border-radius:var(--radius-pill);
-  border:1px solid var(--color-border-control); background:var(--surface-page);
-  color:var(--color-text-tertiary); font:inherit; font-size:var(--font-size-caption);
-  line-height:1; white-space:nowrap; cursor:pointer;
+  display:inline-flex; align-items:center; height:28px; flex:0 0 auto;
+  border:1px solid var(--color-border-control); border-radius:var(--radius-xs); background:transparent;
 }
-.fk-vmode:hover{border-color:var(--color-brand); color:var(--color-brand-ink)}
-.fk-vmode[data-mode="auto"]{background:var(--color-brand-surface); border-color:var(--color-brand); color:var(--color-brand-ink); font-weight:600}
+.fk-vmode-b{
+  height:26px; padding:0 8px; border:0; border-radius:0; background:none;
+  color:var(--color-text-tertiary); font:inherit; font-size:var(--font-size-caption);
+  line-height:1; white-space:nowrap; cursor:pointer; transition:background .16s ease, color .16s ease;
+}
+.fk-vmode-b + .fk-vmode-b{box-shadow:inset 1px 0 0 var(--color-border-control)}
+.fk-vmode-b:hover{color:var(--color-text-body); background:var(--surface-subtle)}
+.fk-vmode-b[aria-pressed="true"]{background:var(--surface-subtle); color:var(--color-text-body); font-weight:600}
+.fk-vmode-b:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring); outline-offset:-2px}
+.fk-vmode-tip{
+  position:relative; display:inline-flex; align-items:center; justify-content:center;
+  width:16px; height:16px; margin:0 5px 0 4px; border-radius:50%;
+  border:1px solid var(--color-border-control); color:var(--color-text-tertiary);
+  font-size:10px; font-style:normal; font-weight:600; line-height:1; cursor:help;
+}
+.fk-vmode-tip:hover,.fk-vmode-tip:focus-visible{color:var(--color-text-body); border-color:var(--color-text-secondary); outline:none}
+.fk-vmode-tip::after{
+  content:attr(data-tip); position:absolute; bottom:calc(100% + 8px); right:-6px; z-index:60;
+  width:max-content; max-width:280px; padding:8px 10px; border-radius:var(--radius-xs);
+  background:var(--color-text-primary); color:var(--surface-page);
+  font-size:var(--font-size-caption); font-weight:400; line-height:18px; text-align:left;
+  opacity:0; visibility:hidden; transform:translateY(2px);
+  transition:opacity .12s ease, transform .12s ease; box-shadow:var(--shadow-card);
+}
+.fk-vmode-tip:hover::after,.fk-vmode-tip:focus-visible::after{opacity:1; visibility:visible; transform:none}
 .fk-mic{
   width:32px; height:32px; flex:0 0 32px; border-radius:var(--radius-control);
   border:0; background:transparent; color:var(--color-text-tertiary);

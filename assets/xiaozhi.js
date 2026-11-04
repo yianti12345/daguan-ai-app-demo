@@ -284,7 +284,7 @@ document.addEventListener('click', function(e){
   }
   if (act === 'xzStop'){ e.stopPropagation(); e.preventDefault(); xzStop(); return; }
   if (act === 'xzMic'){ e.stopPropagation(); e.preventDefault(); xzMicToggle(); return; }
-  if (act === 'xzVoiceMode'){ e.stopPropagation(); e.preventDefault(); xzVoiceToggle(); return; }
+  if (act === 'xzVoiceMode'){ e.stopPropagation(); e.preventDefault(); xzVoiceToggle(e); return; }
   if (act === 'xzGrant'){ e.stopPropagation(); e.preventDefault(); xzGrant(); return; }
   if (act === 'xzDeny'){ e.stopPropagation(); e.preventDefault(); xzDeny(); return; }
   /* 计划条折叠：就地改 hidden / aria-expanded，不重建整块 —— 焦点留在按钮上，
@@ -3039,7 +3039,11 @@ function xzHtml(mode){
         + '<div class="xz-body' + (isHist ? ' is-hist' : '') + '" id="xzBody">' + (isHist ? xzHistBodyHtml() : xzMsgsHtml()) + '</div>'
         + (isHist ? '' : '<div class="xz-foot"><div class="xz-inputwrap">'
           + '<input data-act="xzInput" aria-label="说需求" placeholder="直接说你要做什么">'
-          + '<button class="xz-vmode" data-act="xzVoiceMode" data-mode="confirm" aria-label="语音发送方式" aria-pressed="false" title="语音发送方式：转成文字后等你点发送">语音确认</button>'
+          + '<span class="xz-vmode" role="group" aria-label="语音发送方式" data-mode="confirm">'
+          + '<button type="button" class="xz-vmode-b" data-act="xzVoiceMode" data-v="confirm" aria-pressed="true">语音确认</button>'
+          + '<button type="button" class="xz-vmode-b" data-act="xzVoiceMode" data-v="auto" aria-pressed="false">免确认</button>'
+          + '<span class="xz-vmode-tip" tabindex="0" role="note" aria-label="语音确认：说完先转成文字，等你点发送再发。免确认：说完停顿一下就直接发出去。" data-tip="语音确认：说完先转成文字，等你点发送再发。免确认：说完停顿一下就直接发出去。">i</span>'
+          + '</span>'
           + '<button class="xz-mic" data-act="xzMic" aria-label="按下说话" aria-pressed="false" title="按下说话">' + sv('mic') + '</button>'
           + '<button class="xz-send" data-act="xzSend" aria-label="发送">' + sv('right') + '</button>'
           + '</div></div>'
@@ -3113,16 +3117,18 @@ function xzVoiceMode(){
   try { return localStorage.getItem(XZ_VOICE_KEY) === 'auto' ? 'auto' : 'confirm'; } catch(e){ return 'confirm'; }
 }
 function xzVoicePaint(){
-  var b = document.querySelector('[data-act="xzVoiceMode"]');
-  if (!b) return;
+  var wrap = document.querySelector('.xz-vmode');
+  if (!wrap) return;
   var m = xzVoiceMode();
-  b.setAttribute('data-mode', m);
-  b.setAttribute('aria-pressed', m === 'auto' ? 'true' : 'false');
-  b.textContent = m === 'auto' ? '免确认' : '语音确认';
-  b.title = m === 'auto' ? '语音发送方式：说完静默判停，直接发送' : '语音发送方式：转成文字后等你点发送';
+  wrap.setAttribute('data-mode', m);
+  Array.prototype.forEach.call(wrap.querySelectorAll('.xz-vmode-b'), function (b) {
+    b.setAttribute('aria-pressed', b.getAttribute('data-v') === m ? 'true' : 'false');
+  });
 }
-function xzVoiceToggle(){
-  try { localStorage.setItem(XZ_VOICE_KEY, xzVoiceMode() === 'auto' ? 'confirm' : 'auto'); } catch(e){}
+function xzVoiceToggle(e){
+  var b = e && e.target && e.target.closest ? e.target.closest('.xz-vmode-b') : null;
+  var want = b ? b.getAttribute('data-v') : (xzVoiceMode() === 'auto' ? 'confirm' : 'auto');
+  try { localStorage.setItem(XZ_VOICE_KEY, want); } catch(e2){}
   xzVoicePaint();
 }
 var XZ_MIC = { st:'', mr:null, ch:[], stream:null, timer:0, tick:0, ctx:null };
