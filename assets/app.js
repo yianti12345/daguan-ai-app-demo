@@ -160,12 +160,10 @@
     }
     if (snap.name != null) app.name = snap.name;
     if (snap.desc != null) app.desc = snap.desc;
-    /* ★2026-11-04（用户：「是不是应用管理的配置页面的装配组件也有类似的问题啊」）：
-       进来时把存档快照的 content **整包灌进应用内容层**，等于给每一块都盖上"已单独改过"
-       —— 用户什么都没改，画布上却三块全带这个标，引用管理里也算成"改过"。
-       内容层只该装"应用真的改过的那几块"；刚进页面时它是空的，所以这里默认不动它。
-       真正恢复/回退版本时（restore → 下面那几处）仍整包还原，那才是内容层该变的时候。 */
-    if (!(opt && opt.keepContent)) app.content = JSON.parse(JSON.stringify(snap.content || {}));
+    /* ★2026-11-04：进页面 = 回到最后一次保存的那一版，内容层整包还原。
+       之前被误判为"给每块都盖已单独改过章"的根因是那颗标，标已删（647b077），
+       内容层还原本身是对的：画布必须和 v4 快照一致，否则一进来就报「未保存」。 */
+    app.content = JSON.parse(JSON.stringify(snap.content || {}));
     if (persist !== false) DB.save();
   }
   function saveDraft() {
@@ -182,7 +180,7 @@
   }
   if (!VIEW_MODE) {
     var bootDraft = readDraft();
-    if (bootDraft) applySnap(bootDraft, false, { keepContent: true });
+    if (bootDraft) applySnap(bootDraft, false);
     else {
       /* 没有草稿：回到**最大号**的稳定版，不是 active —— 未上架应用没有 active，
          但它的最新版本仍应作为下次编辑的起点。 */
@@ -190,7 +188,7 @@
         return r.kind === 'stable' && r.snap;
       });
       bootList.sort(function (a, b) { return b.v - a.v; });
-      if (bootList[0]) applySnap(bootList[0].snap, false, { keepContent: true });
+      if (bootList[0]) applySnap(bootList[0].snap, false);
     }
   }
 

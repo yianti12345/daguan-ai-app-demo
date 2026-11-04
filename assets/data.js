@@ -1589,11 +1589,6 @@
             var fullFields = ((DB.compById(tgtId) || {}).fields || []);
             tgt.fieldSrc = tgt.fields.map(function (f) { return fullFields.indexOf(f); });
           }
-          /* ★2026-11-04：画布与这一版必须是同一份内容，否则一进配置页就判「未保存」
-             （进页面不再整包灌内容层之后，应用内容层为空、画布按装配版本重算，
-             与这版快照的 5 列对不上）。把这一版的内容落进应用内容层，
-             进页面看到的就是 v4 的样子，版本号也只印 v4。 */
-          if (tgt) a.content = JSON.parse(JSON.stringify(demoContent));
           arr.push({ v: pv, kind: 'stable', active: false, at: at,
             snap: { comps: (a.comps || []).slice(), name: a.name, desc: a.desc, client: a.client,
                     content: demoContent, contentHash: DB.hash(demoContent),

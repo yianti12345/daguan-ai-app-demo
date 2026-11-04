@@ -53,7 +53,7 @@
 }
 .fk-hist-tt{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
 .fk-hist-col{
-  height:24px; padding:0 var(--space-2); border:0; background:none; border-radius:var(--radius-sm);
+  height:24px; padding:0 var(--space-4); border:0; background:none; border-radius:var(--radius-sm);
   color:var(--color-text-secondary); display:inline-flex; align-items:center; gap:var(--space-4);
   font-family:inherit; font-size:var(--font-size-caption); cursor:pointer; flex:0 0 auto;
 }
@@ -230,7 +230,7 @@ body.fk-hist-open #canvas{padding-bottom:248px}
 /* 2026-10-30：长条 = 整条摘要区，不再是输入框里的胶囊按钮 */
 .fk-hist-btn{
   flex:0 0 auto; min-width:0; max-width:none; height:24px; margin:0;
-  padding:0 var(--space-2); border:0; border-radius:var(--radius-sm);
+  padding:0 var(--space-4); border:0; border-radius:var(--radius-sm);
   background:none; color:var(--color-text-secondary);
   display:flex; align-items:center; gap:var(--space-4);
   font-family:inherit; font-size:var(--font-size-caption); line-height:1;
