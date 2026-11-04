@@ -57,7 +57,7 @@
      这种内部话术）；②演示的装配清单全部留空（从零演示）。bump 之外还要把台账/改动流水的键
      也带上种子版本 —— 原来只重置 db，台账 'ifas90:vers:*' 留在 localStorage 里，
      于是画布空了、版本页还写着「装配 3 块」，同一屏两个事实互相打脸。 */
-  var SEED_VER = '21';
+  var SEED_VER = '24';
   var SEED_KEY = 'ifas90:seed' + NS;
 
   /* ── 种子：APP 与 COMPS 的现有内容 ── */
@@ -89,6 +89,9 @@
           tenantId: 'c4e5f60718293a4b', authAt: '2026-10-11 11:23:56', expireAt: '2027-04-11',
           desc: '查重复核队列按状态分组：待我审、已提交、已完结。' },
         { id: 'ht-zc',   name: '海通证券 · 债承复核',   client: '海通证券', status: '已上架', updated: '2026-10-08 18:41:02', version: 5,
+          /* 2026-11-04：这一家 task-list 装的是 v2（库里 v3）—— 与 hx-zc 一起构成
+             「同一组件被 2 个应用装着、其中 2 个落后」的演示样本。 */
+          compVer: { 'task-list': 'v2' },
           tenantId: '9a8b7c6d5e4f3021', authAt: '2026-10-08 18:41:02', expireAt: '2027-10-08',
           desc: '复核任务按状态分组，逐条显示处理人与当前状态。' },
         /* ★2026-11-02：种子不能十张全证券审核。产品口径（场景清单 §0.1 逐字）是
@@ -167,22 +170,27 @@
           fields: ['规则组', '口径', '启用状态'] }
       ],
       appComps: {
-        /* ★2026-10-26 晚：hx-zc 补装 rule-panel。
-           卡面写「逐条规则给出结论与依据」，而画布第 03 块自己印着「规则结论 · 待人工 · —」：
-           承诺与画面正面打脸。渲染层（app.js 的 blockFor → rule-panel → tableBlock）
-           本来就能画规则名/结论/依据三行，缺的只是装配清单里这一项。
-           顺序有意义：页面类块在前、规则结论收在最后。 */
-        'hx-zc':   [],
-        'zj-cg':   [],
-        'gtja-zc': [],
-        'zs-dj':   [],
-        'ht-zc':   [],
+        /* ★2026-11-04（用户：「怎么没有几个应用待升级的标签呢？？都给我查」）：
+           上一版把这里的装配清单全清空了，于是 8 个组件的引用数全算成 0 ——
+           组件库卡上既没有「N 个应用在用」，也不可能出现「N 个应用待升级」角标。
+           演示要讲的是「组件被多个应用共用、改组件要顾影响面」，清单必须是真数据，不是卡面写死的字。
+           现在：除最后一条 `gx-pj`（未发布，专门留给「从零说一句话生成」的演示）之外，
+           其余应用都真装着组件；配合上面 hx-zc / ht-zc 的 compVer 落后值，
+           「审核任务列表」「任务详情」上会各出现「N 个应用待升级」。
+           顺序有意义：页面类块在前、规则结论收在最后（app-header 是应用头，钉在第一位）。 */
+        'hx-zc':   ['app-header', 'task-list', 'task-detail', 'rule-panel'],
+        'zj-cg':   ['app-header', 'doc-extract', 'rule-panel'],
+        'gtja-zc': ['app-header', 'task-list', 'verify-queue', 'rule-panel'],
+        'zs-dj':   ['app-header', 'verify-queue'],
+        'ht-zc':   ['app-header', 'task-list', 'verify-queue'],
+        /* gf-xm 是卡面就写着「尚未装配组件，向小智描述业务场景即可装配出应用」的那一条，
+           刻意留空 —— 演示「从零说一句话生成」就从它进。 */
         'gf-xm':   [],
-        'zxjt-yy': [],
-        'swhy-jd': [],
-        'dfzq-zg': [],
-        'ifas-mon': [],
-        'gx-pj':   []
+        'zxjt-yy': ['app-header', 'task-list', 'rule-panel'],
+        'swhy-jd': ['app-header', 'task-detail', 'verify-queue'],
+        'dfzq-zg': ['app-header', 'rule-panel'],
+        'ifas-mon': ['app-header', 'monitor-screen'],
+        'gx-pj':   ['app-header', 'doc-extract']
       }
     };
   }
@@ -1568,9 +1576,15 @@
              客户那份旧数据没有"，正是升级前最该拦住的情况。
              如果两版内容一样，预演永远显示"跑通了"，等于没做。 */
           var demoContent = JSON.parse(JSON.stringify(content));
-          var tgt = demoContent['task-list'] || demoContent['rule-panel'] || null;
+          var tgtId = demoContent['task-list'] ? 'task-list' : (demoContent['rule-panel'] ? 'rule-panel' : null);
+          var tgt = tgtId ? demoContent[tgtId] : null;
           if (tgt && Array.isArray(tgt.fields)) {
             tgt.fields = tgt.fields.concat(['触发规则', '责任人']);
+            /* ★2026-11-04（用户：「怎么没有几个应用待升级的标签」引发的连带修）：
+               加了列没加列位，快照里的 fieldSrc 仍只有 3 位，而现场按 app.content 重算出来是 5 位
+               —— 一进配置页就判「v4 · 未保存」，可用户什么都没改。列位跟着列一起补。 */
+            var fullFields = ((DB.compById(tgtId) || {}).fields || []);
+            tgt.fieldSrc = tgt.fields.map(function (f) { return fullFields.indexOf(f); });
           }
           arr.push({ v: pv, kind: 'stable', active: false, at: at,
             snap: { comps: (a.comps || []).slice(), name: a.name, desc: a.desc, client: a.client,
