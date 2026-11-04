@@ -1803,7 +1803,6 @@
     var nAll = Object.keys(updNow || {}).length;
     /* 没有可操作的行走就别留一条「装配（0）」的空工具条：它既不可点，也占一行。 */
     if (bar) bar.hidden = !show || !boxes.length;
-    if (nEl) nEl.textContent = '已选 ' + n;
     if (selall) {
       selall.checked = boxes.length > 0 && n === boxes.length;
       selall.indeterminate = n > 0 && n < boxes.length;

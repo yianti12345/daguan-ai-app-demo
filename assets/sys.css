@@ -1691,13 +1691,15 @@ body[data-app] .canvas{transition:padding-right .18s ease}
 .p-batch{flex:0 0 auto;display:flex;align-items:center;gap:var(--space-8);height:32px;margin:0 var(--space-16) var(--space-8);padding:0 4px}
 .p-batch[hidden]{display:none}
 .p-selall{display:inline-flex;align-items:center;gap:6px;font-size:var(--font-size-caption);color:var(--color-text-secondary);cursor:pointer}
+.p-batch .p-selall{margin-right:auto}
 .p-selall input{width:14px;height:14px;margin:0;accent-color:var(--color-brand)}
 /* 「已装配」页签上的可升级角标：只报数、不承接点击（动作在多选工具行里） */
 .p-tab-chip{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:0 6px;height:18px;border-radius:var(--radius-pill);
   background:var(--color-warning-surface);color:var(--color-warning);font-size:var(--font-size-caption);font-style:normal;line-height:var(--leading-caption);vertical-align:1px}
 .p-tab-chip[hidden]{display:none}
 .p-tab-chip b{font-weight:600}
-.p-batch-n{font-size:var(--font-size-caption);color:var(--color-text-tertiary);margin-right:auto;font-variant-numeric:tabular-nums}
+/* 2026-11-04（用户）：「跟已选有什么区别？」—— 已选 N 与按钮上的装配（N）是同一个数，
+   同一行说两遍。已选那句删掉，计数只在动作按钮上出现一次；按钮左侧用 margin-left:auto 靠右。 */
 .p-batch .btn-text{color:var(--color-brand);font-weight:600}
 .p-batch .btn-text:disabled{color:var(--color-text-tertiary);font-weight:400}
 /* 行首勾选：只有可批量动作的行有；不改变行体点击装组件的主路径。 */
