@@ -1809,8 +1809,12 @@
       selall.indeterminate = n > 0 && n < boxes.length;
       selall.disabled = !boxes.length;
     }
+    /* ★2026-11-04（用户）：「右面的装配（0）又是什么意思」——
+       它是"勾了几个就装几个"的批量键，0＝还什么都没勾。没勾的时候它就是一句废话，
+       所以不显示；一勾就出现并报数（已装配页签的「批量升级（N）」同理）。 */
     if (btn) {
-      btn.disabled = !n;
+      btn.hidden = n === 0;
+      btn.disabled = n === 0;
       btn.textContent = (tab === 'on' ? '批量升级（' : '装配（') + n + '）';
     }
     /* 「全部升级」只在已装配页签出现，数的是落后件总数（不看勾选），与引用管理一致。 */
