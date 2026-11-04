@@ -3039,8 +3039,8 @@ function xzHtml(mode){
         + '<div class="xz-body' + (isHist ? ' is-hist' : '') + '" id="xzBody">' + (isHist ? xzHistBodyHtml() : xzMsgsHtml()) + '</div>'
         + (isHist ? '' : '<div class="xz-foot"><div class="xz-inputwrap">'
           + '<input data-act="xzInput" aria-label="说需求" placeholder="直接说你要做什么">'
-          + '<button type="button" class="xz-vmode" data-act="xzVoiceMode" data-mode="confirm" aria-pressed="false" aria-label="语音发送方式：当前先确认，点一下切到直接发">'
-          + '<span class="xz-vmode-tx">先确认</span>'
+          + '<button type="button" class="xz-vmode" data-act="xzVoiceMode" data-mode="confirm" aria-pressed="false" aria-label="语音发送方式：当前转文字，点一下切到直接发">'
+          + '<span class="xz-vmode-tx">转文字</span>'
           + '<svg class="xz-vmode-ic" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>'
           + '</button>'
           + '<button class="xz-mic" data-act="xzMic" aria-label="按下说话" aria-pressed="false" title="按下说话">' + sv('mic') + '</button>'
@@ -3121,13 +3121,13 @@ function xzVoicePaint(){
   var m = xzVoiceMode(), tx = b.querySelector('.xz-vmode-tx');
   b.setAttribute('data-mode', m);
   b.setAttribute('aria-pressed', m === 'auto' ? 'true' : 'false');
-  if (tx) tx.textContent = m === 'auto' ? '直接发' : '先确认';
+  if (tx) tx.textContent = m === 'auto' ? '直接发' : '转文字';
   b.setAttribute('aria-label', m === 'auto'
-    ? '语音发送方式：当前直接发，点一下切到先确认'
-    : '语音发送方式：当前先确认，点一下切到直接发');
+    ? '语音发送方式：当前直接发，点一下切到转文字'
+    : '语音发送方式：当前转文字，点一下切到直接发');
   b.setAttribute('data-tip', m === 'auto'
-    ? '当前：直接发 —— 说完停顿一下就直接发出去。点一下改成「先确认」。'
-    : '当前：先确认 —— 说完先转成文字，等你点发送再发。点一下改成「直接发」。');
+    ? '当前：直接发 —— 说完停顿一下就直接发出去。点一下改成「转文字」。'
+    : '当前：转文字 —— 说完先转成文字，等你点发送再发。点一下改成「直接发」。');
 }
 function xzVoiceToggle(){
   try { localStorage.setItem(XZ_VOICE_KEY, xzVoiceMode() === 'auto' ? 'confirm' : 'auto'); } catch(e){}

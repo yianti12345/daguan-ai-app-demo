@@ -127,9 +127,9 @@
            收成一枚窄胶囊：左边当前模式名，右边换向图标；点整颗切换，悬浮给完整解释。 */
         var vmode = el('button', 'fk-vmode', {
           id: 'fk-vmode', type: 'button', 'data-mode': 'confirm', 'aria-pressed': 'false',
-          'aria-label': '语音发送方式：当前先确认，点一下切到直接发'
+          'aria-label': '语音发送方式：当前转文字，点一下切到直接发'
         });
-        vmode.innerHTML = '<span class="fk-vmode-tx">先确认</span>'
+        vmode.innerHTML = '<span class="fk-vmode-tx">转文字</span>'
           + '<svg class="fk-vmode-ic" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24"'
           + ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
           + '<path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>';
@@ -556,13 +556,13 @@
           var m = vmodeGet(), tx = vmode.querySelector('.fk-vmode-tx');
           vmode.setAttribute('data-mode', m);
           vmode.setAttribute('aria-pressed', m === 'auto' ? 'true' : 'false');
-          if (tx) tx.textContent = m === 'auto' ? '直接发' : '先确认';
+          if (tx) tx.textContent = m === 'auto' ? '直接发' : '转文字';
           vmode.setAttribute('aria-label', m === 'auto'
-            ? '语音发送方式：当前直接发，点一下切到先确认'
-            : '语音发送方式：当前先确认，点一下切到直接发');
+            ? '语音发送方式：当前直接发，点一下切到转文字'
+            : '语音发送方式：当前转文字，点一下切到直接发');
           vmode.setAttribute('data-tip', m === 'auto'
-            ? '当前：直接发 —— 说完停顿一下就直接发出去。点一下改成「先确认」：转成文字后等你点发送。'
-            : '当前：先确认 —— 说完先转成文字，等你点发送再发。点一下改成「直接发」：说完停顿一下就发出去。');
+            ? '当前：直接发 —— 说完停顿一下就直接发出去。点一下改成「转文字」：转成文字后等你点发送。'
+            : '当前：转文字 —— 说完先转成文字，等你点发送再发。点一下改成「直接发」：说完停顿一下就发出去。');
         }
         vmode.addEventListener('click', function () {
           try { localStorage.setItem(VOICE_KEY, vmodeGet() === 'auto' ? 'confirm' : 'auto'); } catch (e2) {}
