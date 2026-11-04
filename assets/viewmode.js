@@ -7,16 +7,19 @@
 (function () {
   var ops = document.querySelector('.tb-ops');
   if (!ops) return;
-  /* ★2026-11-03（m05120）：应用/组件配置页右上角只要两个保存操作，
-     预览/代码切换不再出现在这两页。 */
-  if (document.querySelector('#act-publish')) return;
-
+  /* ★2026-11-04（用户）：「预览/代码要的啊，这么重要的东西…不论是组件配置还是应用配置，
+     都给我放到右上角操作区的第一个。然后这个样式有些丑，而且没提示，用户不懂，
+     可以文字后有个提示的图标，光标悬浮显示这个操作代表什么意思」。
+     ⇒ 撤掉 2026-11-03 那条"这两页不显示"的限制，两页都放回操作区第一位；
+       形态与顶栏描边按钮同一套，文字后挂一枚 ⓘ，悬浮/聚焦给解释。 */
   var seg = document.createElement('div');
   seg.className = 'seg-view';
   seg.setAttribute('role', 'group');
-  seg.setAttribute('aria-label', '视图');
+  seg.setAttribute('aria-label', '视图切换');
   seg.innerHTML = '<button type="button" data-v="preview" aria-pressed="true">预览</button>'
-    + '<button type="button" data-v="code" aria-pressed="false">代码</button>';
+    + '<button type="button" data-v="code" aria-pressed="false">代码</button>'
+    + '<span class="seg-tip" tabindex="0" role="note" aria-label="预览看页面成品；代码看这个页面与组件的源码文件"'
+    + ' data-tip="预览：看页面做出来的样子。代码：看这个页面与组件的源码文件。">i</span>';
   ops.insertBefore(seg, ops.firstChild);
 
   var PAGES = ['components.html', 'component.html', 'apps.html', 'app.html', 'versions.html'];
