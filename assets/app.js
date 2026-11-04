@@ -858,9 +858,8 @@
       + '<i class="cv-blk-bar" aria-hidden="true"></i>'
       + '<div class="cv-blk-hd">'
       +   '<span class="cv-blk-tag"><b>' + num + '</b> · ' + esc(c.name) + '</span>'
-      /* ★2026-10-28（产品判断必修 C6）：这一块若已被本应用单独改过，标出来。
-         否则配置者改共用件、以为修好了、发布，而这家因为有自己的覆盖根本不会变——界面上没有任何信号。 */
-      +   ((app.content && app.content[c.id]) ? '<span class="cv-blk-own" title="这一块在本应用里被单独改过；改共用件不会改变它">已单独改过</span>' : '')
+      /* ★2026-11-04（用户：「没有所谓的定制！！给我去掉『已单独改过』的小标」）：
+         这个标已删。块头只留 序号·组件名 与操作组，不再给任何一块盖状态章。 */
       +   '<span class="cv-blk-ops" role="group" aria-label="' + esc(c.name) + ' 的操作">'
       /* 首块「上移」、末块「下移」置灰不隐藏：隐藏会让 hover 时整组宽度跳一下。 */
       +     '<button type="button" class="cv-op" data-move="up" data-id="' + esc(c.id) + '"' + (idx === 0 ? ' disabled' : '') + '>上移</button>'

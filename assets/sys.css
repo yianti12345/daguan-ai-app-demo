@@ -1432,7 +1432,6 @@ body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gr
 .cv-blk-hd{display:flex;align-items:center;gap:var(--space-8);height:24px;padding-left:var(--space-16)}
 .cv-blk--head .cv-blk-hd{padding-left:var(--space-24)}
 /* ★2026-10-28（产品判断必修 C6）：块被本应用单独改过的标记 */
-.cv-blk-own{flex:none;padding:0 6px;border-radius:var(--radius-xs);background:var(--color-warning-surface);color:var(--color-warning);font-size:var(--font-size-caption);line-height:var(--leading-caption);margin-left:6px}
 .cv-blk-tag{
   display:inline-flex;align-items:center;gap:var(--space-4);
   font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap;
@@ -2531,8 +2530,6 @@ body[data-drawer="on"] .hint{
 .ru-row{min-height:52px;border-bottom:1px solid var(--color-border-hairline);font-size:12px}
 .ru-row:last-child{border-bottom:0}
 .ru-row:hover{background:var(--surface-subtle)}
-.ru-row.is-manual{background:var(--color-warning-surface)}
-.ru-row.is-manual:hover{background:var(--color-warning-surface)}
 .ru-c{display:flex;align-items:center;justify-content:center}
 .ru-c input{width:14px;height:14px;accent-color:var(--color-brand);cursor:pointer}
 .ru-app{display:flex;flex-direction:column;min-width:0}
@@ -2544,13 +2541,10 @@ body[data-drawer="on"] .hint{
 .ru-vt{font-weight:600;color:var(--color-text-primary)}
 .ru-st{font-size:11px}
 .ru-warn{color:var(--color-warning);font-weight:600}
-.ru-manual{color:var(--color-warning);font-weight:600}
 .ru-ok{color:var(--color-success-ink)}
 .ru-a{text-align:right}
 .ru-one{height:26px;padding:0 9px;border:1px solid var(--color-border-control);border-radius:var(--radius-sm);background:var(--surface-page);font-size:11px;color:var(--color-brand);cursor:pointer}
 .ru-one:hover{border-color:var(--color-brand);background:var(--color-brand-surface)}
-.ru-link{font-size:11px;color:var(--color-text-secondary);text-decoration:none}
-.ru-link:hover{color:var(--color-brand);text-decoration:underline}
 .ru-dash{color:var(--color-text-muted)}
 .ru-empty{padding:40px 0;text-align:center;font-size:12px;color:var(--color-text-tertiary)}
 .ru-report{margin:12px 24px 0;padding:12px 14px;border:1px solid var(--color-border-card);border-radius:var(--radius-control);background:var(--surface-subtle);position:relative}
@@ -2571,7 +2565,6 @@ body[data-drawer="on"] .hint{
 .ru-pager{display:flex;align-items:center;gap:8px}
 .ru-pg{height:26px;padding:0 9px;border:1px solid var(--color-border-control);border-radius:var(--radius-sm);background:var(--surface-page);font-size:11px;color:var(--color-text-secondary);cursor:pointer}
 .ru-pg[disabled]{opacity:.4;cursor:not-allowed}
-.ru-cf-warn{margin:8px 0 0;padding:8px 10px;border-radius:var(--radius-sm);background:var(--color-warning-surface);color:var(--color-warning);font-size:12px;line-height:18px}
 .ru-cf-quiet{margin:8px 0 0;color:var(--color-text-tertiary);font-size:12px;line-height:18px}
 .ck-badge{flex:none;display:inline-flex;align-items:center;height:var(--space-24);padding:0 var(--space-8);border:0;border-radius:var(--radius-pill);cursor:pointer;white-space:nowrap;font-family:inherit;font-size:var(--font-size-caption);line-height:1;font-variant-numeric:tabular-nums;background:var(--color-warning-surface);color:var(--color-warning)}
 .ck-badge:hover{background:var(--color-warning-surface);text-decoration:underline}

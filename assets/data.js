@@ -254,6 +254,10 @@
        真产品里这些值来自「系统设置 › 字典配置」的 comp_tag，改字典不用改代码。 */
     tags: { d: [] },
     enabled: { d: true }, config: { d: {} }, configBy: { d: null }, strip: { d: false },
+    /* ★2026-11-04 真 bug（content-contract 抓到的）：编辑弹窗与「新增组件」表单都在写
+       c.visScope / c.cfgScope（components.html:246/264/785/786），但 COMP_FIELDS 没这两个键，
+       pickSchema 一存就丢 —— 正是上面 249 行注释说的那个坑。补进模型，两个作用域才真的存得住。 */
+    visScope: { d: null }, cfgScope: { d: null },
     layout: { d: 'full' }, block: { d: null },
     /* ★2026-11-03（m03263）：可见 / 可配置范围。白名单漏一个键 = 刷新后静默丢，
        这个坑今天已经踩过三次，所以组件与应用两边同时登记。 */
