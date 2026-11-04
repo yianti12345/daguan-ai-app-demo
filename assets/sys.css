@@ -718,8 +718,10 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 .cc-body{flex:none;padding:var(--space-16) var(--space-16) 0;min-height:0}
 .page-components .cl-desc{
   flex:none;display:block;margin:var(--space-8) 0 0;
-  max-width:100%;height:calc(2 * var(--leading-body));
-  font-size:var(--font-size-body);line-height:var(--leading-body);color:var(--color-text-card-meta);
+  /* ★2026-11-04 T2：14px 正文行高必须 1.5（21–22px）。原来跟 --leading-body=20px（1.43），
+     tokscale 判红 6 处卡片说明。这里局部抬到 21px，不动全局 --leading-body（它管表格等紧凑行）。 */
+  max-width:100%;height:calc(2 * 21px);
+  font-size:var(--font-size-body);line-height:21px;color:var(--color-text-card-meta);
   /* ★2026-11-01 字级统一：原来 14px/行高19/次级灰，应用卡是真源 12px/16/#6c7da9。
      说明文字降一档、换成同一个灰蓝之后，两页的"次要信息"读起来是同一种弱。
      ★2026-11-04：12px/16（1.33）被可读性判据判红（smallText+tightLeading，必须清零）。

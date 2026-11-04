@@ -48,7 +48,7 @@
       '  <div class="ru-tools">' +
       '   <div class="ru-tabs" role="tablist"><button type="button" class="ru-tab on" data-tab="all" role="tab">全部</button>' +
       '    <button type="button" class="ru-tab" data-tab="behind" role="tab">待升级</button>' +
-      '    <button type="button" class="ru-tab" data-tab="overlay" role="tab">需手动</button></div>' +
+      '    <button type="button" class="ru-tab" data-tab="overlay" role="tab">已自定义</button></div>' +
       '   <input class="ru-search" id="ru-search" type="search" placeholder="搜索应用" aria-label="搜索应用">' +
       '   <button type="button" class="btn primary ru-all" id="ru-all">全部升级</button>' +
       '   <button type="button" class="btn ru-batch" id="ru-batch" disabled>批量升级（0）</button></div>' +
@@ -141,11 +141,11 @@
     st.refs = DB.compRefs(st.id);
     var s = DB.compUpgradeStats(st.id);
     dlg.querySelector('#ru-title').textContent = '引用管理 · ' + compName();
-    dlg.querySelector('#ru-sub').textContent = '只看谁落后了；升级只换装配版本，不改应用内容，也不动客户授权版本。';
+    dlg.querySelector('#ru-sub').textContent = '只看谁落后了；升级只换装配版本，不改应用内容，也不动客户授权版本。改过这一块的（已自定义）不能批量升，进应用手动处理。';
     dlg.querySelector('#ru-stats').innerHTML =
       '<span class="ru-stat"><b>' + s.total + '</b> 个应用在用</span>' +
       '<span class="ru-stat warn"><b>' + s.behind + '</b> 个待升级</span>' +
-      '<span class="ru-stat"><b>' + s.manual + '</b> 个需手动</span>';
+      '<span class="ru-stat"><b>' + s.manual + '</b> 个应用改过这一块</span>';
     render();
   }
 
@@ -175,8 +175,14 @@
     var cur = Math.min(st.page, pages() - 1);
     st.page = cur;
     var rows = list.slice(cur * PAGE, cur * PAGE + PAGE);
+    /* ★2026-11-04（用户：「我理解多选应该是在下面列表每行的前面吧」）：
+       能勾选的只有"落后且没被应用改过"的行；一页里连一行能勾的都没有时，
+       表头那颗"全选"就是一颗点了没意义的空勾 —— 不渲染它。 */
+    var pageCan = rows.filter(function (r) { return r.behind && !r.overlay; });
     var head = '<div class="ru-thead" role="row">' +
-      '<span class="ru-c"><input type="checkbox" id="ru-selall" aria-label="全选本页可升级应用"' + (st.busy ? ' disabled' : '') + '></span>' +
+      '<span class="ru-c">' + (pageCan.length
+        ? '<input type="checkbox" id="ru-selall" aria-label="全选本页可升级应用"' + (st.busy ? ' disabled' : '') + '>'
+        : '') + '</span>' +
       '<span>应用</span><span>装配版本</span><span>状态</span><span class="ru-a">操作</span></div>';
     if (!rows.length) {
       dlg.querySelector('#ru-list').innerHTML = head + '<div class="ru-empty">' +
@@ -187,7 +193,7 @@
     var html = rows.map(function (r) {
       var can = r.behind && !r.overlay && !st.busy;
       var stat = !r.behind ? '<span class="ru-ok">已最新</span>' :
-        r.overlay ? '<span class="ru-manual" title="应用自定义过这一块，自动升级会覆盖它的改动">需手动</span>' :
+        r.overlay ? '<span class="ru-manual" title="应用在这个组件上改过内容，自动升级会覆盖它的改动，只能进应用手动处理">已自定义</span>' :
         '<span class="ru-warn">待升级</span>';
       var act = r.behind && !r.overlay ? '<button type="button" class="ru-one" data-one="' + esc(r.id) + '"' + (st.busy ? ' disabled' : '') + '>升级</button>' :
         r.overlay ? '<a class="ru-link" href="app.html?id=' + encodeURIComponent(r.id) + '" target="_blank" rel="noopener">去应用</a>' : '<span class="ru-dash">—</span>';
@@ -201,7 +207,6 @@
     dlg.querySelector('#ru-list').innerHTML = head + html;
     countLine(total);
     var all = dlg.querySelector('#ru-selall');
-    var pageCan = rows.filter(function (r) { return r.behind && !r.overlay; });
     var pagePicked = pageCan.filter(function (r) { return st.picks[r.id]; });
     if (all) {
       all.checked = pageCan.length > 0 && pagePicked.length === pageCan.length;
