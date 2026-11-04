@@ -1078,7 +1078,7 @@
   /* 一次升级某个组件在多个应用里的装配版本。只改 a.compVer[compId]，不碰应用内容、
      不动客户授权版本 —— 与 upgradeAll/upgradeSome 的语义完全一致。
      ids 省略 = 全部引用（"全部升级"无视分页，就靠这一条）。
-     有 overlay 的一律 skipped，绝不自动覆盖；写盘失败才进 failed。
+     写盘失败才进 failed（2026-11-04：overlay 跳过已退役）。
      逐条 save 是为了失败时只回滚那一条，不把已经成功的也一起退掉。 */
   DB.upgradeCompRefs = function (compId, ids) {
     var c = DB.compById(compId);
@@ -1089,10 +1089,10 @@
     DB.compRefs(compId).forEach(function (r) {
       if (!r.behind) return;
       if (want && !want[r.id]) return;
-      if (r.overlay) {
-        out.skipped.push({ id: r.id, name: r.name, reason: '应用自定义过这一块，自动升级会覆盖它的改动' });
-        return;
-      }
+      /* ★2026-11-04（用户：「没有所谓的需手动和已自定义！给我移除掉」）：
+         不再有"改过就不升"这条分支 —— 升级只动 compVer，应用自己的内容层
+         （app.content）原封不动，渲染仍以应用那份为准，所以不存在"覆盖私有改动"。
+         引用管理页也只讲两件事：谁落后了、升到最新。 */
       var a = DB.appById(r.id);
       if (!a) return;
       var old = (a.compVer && a.compVer[compId]) || null;

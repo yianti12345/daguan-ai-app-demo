@@ -2,7 +2,7 @@
    一个组件被哪些应用装着、谁落后、谁自定义过这一块，都在这里一次看清。
    两个升级入口：全部升级（无视当前筛选/分页）与批量升级（N）（只认勾选）。
    升级只改应用的装配版本 a.compVer[compId]，不碰应用内容、不动客户授权版本；
-   Overlay（应用私有改过这一块）自动跳过并进报告。
+   只讲两态：待升级 / 已最新（2026-11-04 用户否决「需手动 / 已自定义」）。
 
    异步口径：前端按 500ms/条分批执行，关掉弹窗也继续跑；完成 toast + 报告。
    刷新会丢任务 —— 与用户拍板一致，不假装后端队列。 */
@@ -30,7 +30,9 @@
   }
   function compName() { return st.comp ? st.comp.name : ''; }
   function behindAll() { return st.refs.filter(function (r) { return r.behind; }); }
-  function selectable() { return st.refs.filter(function (r) { return r.behind && !r.overlay; }); }
+  /* ★2026-11-04（用户：「没有所谓的需手动和已自定义！给我移除掉」）：
+     引用管理只讲一件事 —— 谁落后了、升到最新。没有第三种状态。 */
+  function selectable() { return st.refs.filter(function (r) { return r.behind; }); }
   function picked() { return selectable().filter(function (r) { return st.picks[r.id]; }); }
 
   function build() {
@@ -47,8 +49,7 @@
       '   <div class="ru-bar"><i id="ru-bar"></i></div><p class="ru-prog-s">关掉这个窗口也会继续；刷新页面会中断。</p></div>' +
       '  <div class="ru-tools">' +
       '   <div class="ru-tabs" role="tablist"><button type="button" class="ru-tab on" data-tab="all" role="tab">全部</button>' +
-      '    <button type="button" class="ru-tab" data-tab="behind" role="tab">待升级</button>' +
-      '    <button type="button" class="ru-tab" data-tab="overlay" role="tab">已自定义</button></div>' +
+      '    <button type="button" class="ru-tab" data-tab="behind" role="tab">待升级</button></div>' +
       '   <input class="ru-search" id="ru-search" type="search" placeholder="搜索应用" aria-label="搜索应用">' +
       '   <button type="button" class="btn primary ru-all" id="ru-all">全部升级</button>' +
       '   <button type="button" class="btn ru-batch" id="ru-batch" disabled>批量升级（0）</button></div>' +
@@ -131,7 +132,6 @@
   function view() {
     return st.refs.filter(function (r) {
       if (st.tab === 'behind' && !r.behind) return false;
-      if (st.tab === 'overlay' && !(r.behind && r.overlay)) return false;
       if (st.q && String(r.name).toLowerCase().indexOf(st.q.toLowerCase()) < 0) return false;
       return true;
     });
@@ -141,11 +141,11 @@
     st.refs = DB.compRefs(st.id);
     var s = DB.compUpgradeStats(st.id);
     dlg.querySelector('#ru-title').textContent = '引用管理 · ' + compName();
-    dlg.querySelector('#ru-sub').textContent = '只看谁落后了；升级只换装配版本，不改应用内容，也不动客户授权版本。改过这一块的（已自定义）不能批量升，进应用手动处理。';
+    dlg.querySelector('#ru-sub').textContent = '只看谁落后了；升级只换装配版本，不改应用内容，也不动客户授权版本。';
     dlg.querySelector('#ru-stats').innerHTML =
       '<span class="ru-stat"><b>' + s.total + '</b> 个应用在用</span>' +
       '<span class="ru-stat warn"><b>' + s.behind + '</b> 个待升级</span>' +
-      '<span class="ru-stat"><b>' + s.manual + '</b> 个应用改过这一块</span>';
+      '';
     render();
   }
 
@@ -178,7 +178,7 @@
     /* ★2026-11-04（用户：「我理解多选应该是在下面列表每行的前面吧」）：
        能勾选的只有"落后且没被应用改过"的行；一页里连一行能勾的都没有时，
        表头那颗"全选"就是一颗点了没意义的空勾 —— 不渲染它。 */
-    var pageCan = rows.filter(function (r) { return r.behind && !r.overlay; });
+    var pageCan = rows.filter(function (r) { return r.behind; });
     var head = '<div class="ru-thead" role="row">' +
       '<span class="ru-c">' + (pageCan.length
         ? '<input type="checkbox" id="ru-selall" aria-label="全选本页可升级应用"' + (st.busy ? ' disabled' : '') + '>'
@@ -186,18 +186,15 @@
       '<span>应用</span><span>装配版本</span><span>状态</span><span class="ru-a">操作</span></div>';
     if (!rows.length) {
       dlg.querySelector('#ru-list').innerHTML = head + '<div class="ru-empty">' +
-        (st.tab === 'behind' ? '没有落后的应用' : st.tab === 'overlay' ? '没有需要手动处理的应用' : '还没有应用装配这个组件') + '</div>';
+        (st.tab === 'behind' ? '没有落后的应用' : '还没有应用装配这个组件') + '</div>';
       countLine(0);
       return;
     }
     var html = rows.map(function (r) {
-      var can = r.behind && !r.overlay && !st.busy;
-      var stat = !r.behind ? '<span class="ru-ok">已最新</span>' :
-        r.overlay ? '<span class="ru-manual" title="应用在这个组件上改过内容，自动升级会覆盖它的改动，只能进应用手动处理">已自定义</span>' :
-        '<span class="ru-warn">待升级</span>';
-      var act = r.behind && !r.overlay ? '<button type="button" class="ru-one" data-one="' + esc(r.id) + '"' + (st.busy ? ' disabled' : '') + '>升级</button>' :
-        r.overlay ? '<a class="ru-link" href="app.html?id=' + encodeURIComponent(r.id) + '" target="_blank" rel="noopener">去应用</a>' : '<span class="ru-dash">—</span>';
-      return '<div class="ru-row' + (r.overlay && r.behind ? ' is-manual' : '') + '" role="row" data-row="' + esc(r.id) + '">' +
+      var can = r.behind && !st.busy;
+      var stat = !r.behind ? '<span class="ru-ok">已最新</span>' : '<span class="ru-warn">待升级</span>';
+      var act = r.behind ? '<button type="button" class="ru-one" data-one="' + esc(r.id) + '"' + (st.busy ? ' disabled' : '') + '>升级</button>' : '<span class="ru-dash">—</span>';
+      return '<div class="ru-row" role="row" data-row="' + esc(r.id) + '">' +
         '<span class="ru-c">' + (can ? '<input type="checkbox" data-pick="' + esc(r.id) + '" aria-label="选择 ' + esc(r.name) + '"' + (st.picks[r.id] ? ' checked' : '') + '>' : '') + '</span>' +
         '<span class="ru-app"><b>' + esc(r.name) + '</b><small>' + esc(stateName(r.app)) + ' · ' + esc(r.id) + '</small></span>' +
         '<span class="ru-v">' + '<span class="ru-vf">' + esc(fmt(r.have)) + '</span>' +
@@ -229,30 +226,23 @@
     if (st.busy) return;
     var targets = ids ? st.refs.filter(function (r) { return ids.indexOf(r.id) >= 0 && r.behind; }) : behindAll();
     if (!targets.length) { UIK.toast(ids ? '选中的应用都已经是最新版' : '没有需要升级的应用'); return; }
-    var auto = targets.filter(function (r) { return !r.overlay; });
-    var manual = targets.filter(function (r) { return r.overlay; });
     var body = '<p>将把 <b class="num">' + targets.length + '</b> 个应用对「' + esc(compName()) + '」的装配版本升到 <b class="num">' + fmt(st.comp.ver) + '</b>。</p>' +
-      (manual.length ? '<p class="ru-cf-warn">其中 <b class="num">' + manual.length + '</b> 个应用自定义过这一块，会自动跳过并写进报告，不会被覆盖。</p>' : '') +
       '<p class="ru-cf-quiet">只改装配版本；应用内容与客户授权版本都不动。</p>';
     Confirm.ask({
       title: ids && ids.length === 1 ? '升级这个应用？' : '升级「' + compName() + '」的引用',
       body: body,
-      ok: auto.length ? '开始升级' : '知道了',
+      ok: '开始升级',
       cancel: '取消',
-      onOk: function () {
-        if (!auto.length) return;
-        start(auto.map(function (r) { return r.id; }), manual.length);
-      }
+      onOk: function () { start(targets.map(function (r) { return r.id; })); }
     });
   }
 
   var lastReport = null;
 
-  function start(ids, manualCount) {
+  function start(ids) {
     st.busy = true;
     st.report = null;
     st.progress = { total: ids.length, done: 0, ok: [], skipped: [], failed: [] };
-    if (manualCount) st.progress.manual = manualCount;
     dlg.querySelector('#ru-prog').hidden = false;
     renderTools(); renderRows();
     var i = 0;
@@ -287,16 +277,14 @@
     dlg.querySelector('#ru-prog').hidden = true;
     st.report = {
       id: st.id, at: new Date().toLocaleString('zh-CN', { hour12: false }),
-      total: p.total + (p.manual || 0), done: p.done,
-      ok: p.ok, skipped: p.skipped, failed: p.failed,
-      manual: p.manual || 0
+      total: p.total, done: p.done,
+      ok: p.ok, skipped: p.skipped, failed: p.failed
     };
     lastReport = st.report;
     st.picks = {};
     st.refs = DB.compRefs(st.id);
     render();
     var msg = '已升级 ' + p.ok.length + ' 个应用';
-    if (p.skipped.length) msg += ' · 跳过 ' + p.skipped.length + ' 个（自定义）';
     if (p.failed.length) msg += ' · 失败 ' + p.failed.length + ' 个';
     UIK.toast(msg);
     if (typeof window.onCompRefsUpgraded === 'function') window.onCompRefsUpgraded(st.id);
@@ -313,7 +301,7 @@
       '<div class="ru-rep-n"><span class="ok"><b>' + (r.ok ? r.ok.length : 0) + '</b> 成功</span>' +
       '<span class="' + (skipped.length ? 'warn' : '') + '"><b>' + skipped.length + '</b> 跳过</span>' +
       '<span class="' + (failed.length ? 'bad' : '') + '"><b>' + failed.length + '</b> 失败</span></div>' +
-      (skipped.length ? '<div class="ru-rep-list"><b>跳过（应用自定义过这一块）：</b>' +
+      (skipped.length ? '<div class="ru-rep-list"><b>跳过：</b>' +
         skipped.map(function (x) { return '<span>' + esc(x.name) + '</span>'; }).join('') + '</div>' : '') +
       (failed.length ? '<div class="ru-rep-list bad"><b>失败：</b>' +
         failed.map(function (x) { return '<span>' + esc(x.name) + ' · ' + esc(x.reason) + '</span>'; }).join('') + '</div>' : '') +
