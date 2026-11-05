@@ -40,11 +40,6 @@
 /* 介绍：2–3 行（约 72），固定高度不跟下面的内容框抢；想写更多仍可拉高。 */
 .it-intro{flex:0 0 auto;min-height:72px;resize:vertical;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:var(--space-12);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
 .it-intro:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
-/* 标签行：左边标签、右边贴着它作用对象的行内动作（选文件）。 */
-.it-lb-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8)}
-.it-pick{padding:0;border:0;background:none;font-family:inherit;font-size:var(--font-size-caption);color:var(--color-brand-ink);cursor:pointer}
-.it-pick:hover{text-decoration:underline}
-.it-pick:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px;border-radius:var(--radius-xs)}
 .it-cnt{font-size:var(--font-size-caption);color:var(--color-text-tertiary);text-align:right}
 .it-pv{flex:1 1 auto;min-height:300px;overflow:auto;border:1px solid var(--color-border-hairline);border-radius:var(--radius-control);padding:var(--space-16);background:var(--surface-subtle);font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)}
 .it-pv h4{margin:0 0 var(--space-8);font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
@@ -124,21 +119,17 @@
                「原文」这个词也换掉——用户贴进来的不只原文，也可能是一份文档。 -->
           <label class="it-lb" for="intro">介绍</label>
           <textarea class="it-intro" id="intro" placeholder="选填"></textarea>
-          <div class="it-lb-row">
-            <label class="it-lb" for="raw">内容</label>
-            <!-- 选文件跟"内容"是同一个对象上的两种输入方式，所以贴着它放，不放栏底：
-                 栏底一滚就看不见，入口等于没有。 -->
-            <button type="button" class="it-pick" id="bfile-btn">选文件<span id="bstat"></span></button>
-            <input type="file" id="bfile" accept=".json,.yaml,.yml,.txt,.md" hidden>
-          </div>
-          <textarea class="it-raw" id="raw" placeholder="贴 URL、cURL，或者一段大白话"></textarea>
+          <label class="it-lb" for="raw">内容</label>
+          <!-- 2026-11-05（用户）：不设上传。贴 JSON / 贴文本 / 贴 cURL 都走这一个框，
+               整份 OpenAPI 贴进来会自动拆成多条。没有文件选择，用户也不用猜该选什么。 -->
+          <textarea class="it-raw" id="raw" placeholder="贴 URL、cURL、JSON，或者一段大白话"></textarea>
           <span class="it-cnt" id="cnt">0 字</span>
         </div>
         <div class="it-col">
           <!-- 多条：贴整份文档 / OpenAPI 时自动切到这块 -->
           <div id="multi" hidden>
             <div class="it-pv-hd">
-              <span class="it-lb">解析出多条，逐条确认</span>
+              <span class="it-lb" id="multi-hint">解析出多条，逐条确认</span>
               <button type="button" class="it-op" id="bd-merge" disabled>合并所选</button>
             </div>
             <ul class="it-res" id="bres"></ul>
@@ -189,6 +180,6 @@
 <script src="assets/spec.js?v=3bee1acc"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=573b1f60"></script>
-<script src="assets/interfaces.js?v=1ff11ee8"></script>
+<script src="assets/interfaces.js?v=b5893d82"></script>
 </body>
 </html>

@@ -299,7 +299,8 @@
         + '<span>' + esc(p.desc) + '</span>'
         + '<button class="it-op is-danger" type="button" data-i="' + i + '">移除</button></li>';
     }).join('');
-    $('#bstat').textContent = PARSED.length ? ('解析出 ' + PARSED.length + ' 条') : '没解析出东西';
+    var hint = $('#multi-hint');
+    if (hint) hint.textContent = PARSED.length ? ('解析出 ' + PARSED.length + ' 条，逐条确认') : '没解析出东西';
     $('#bd-merge').disabled = picked().length < 2;
   }
 
@@ -340,21 +341,6 @@
     PARSED = PARSED.filter(function (p, i) { return idx.indexOf(i) < 0 || p === first; });
     renderParsed();
     toast('已合并 ' + idx.length + ' 条');
-  });
-
-  /* 选文件：读成文本走同一条解析，不另写一套。 */
-  $('#bfile-btn').addEventListener('click', function () { $('#bfile').click(); });
-  $('#bfile').addEventListener('change', function () {
-    var f = this.files && this.files[0]; if (!f) return;
-    var fr = new FileReader();
-    fr.onload = function () {
-      $('#raw').value = String(fr.result || '');
-      doGen();
-      doParse();
-      $('#bstat').textContent = f.name + ' ｜ ' + $('#bstat').textContent;
-    };
-    fr.readAsText(f);
-    this.value = '';
   });
 
 
