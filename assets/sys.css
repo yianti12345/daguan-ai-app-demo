@@ -2474,9 +2474,11 @@ body[data-drawer="on"] .hint{
 }
 .kcard .kc-desc{
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-  height:calc(2 * var(--leading-body));
-  margin:0;
-  font-size:var(--font-size-body);line-height:var(--leading-body);
+  /* 2026-11-05 按真源 .app-desc：12px / 行高 16 / 高 38 / 上边距 4。
+     内容区因此回到 72（标题 30 + 4 + 38），封面稳在真源的 176。 */
+  /* 间距由 .kc-info 的 gap 4 给，这里不再叠 margin（叠了内容区就 76，真源是 72） */
+  height:38px;margin:0;
+  font-size:var(--font-size-caption);line-height:16px;
   color:var(--color-text-card-meta);overflow:hidden;
 }
 /* 卡高由 grid 行拉伸时不参与（否则一行里最高的卡会把别的撑开） */

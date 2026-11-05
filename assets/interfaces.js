@@ -1,4 +1,4 @@
-/* interfaces.js —— 能力接入列表 + 新增/编辑 + 批量导入
+/* interfaces.js —— 接入清单 + 新增/编辑 + 批量导入
    列表骨架、列宽、空态全部交给 List（assets/list.js），这一页只说每格画什么。 */
 (function () {
   'use strict';
@@ -73,7 +73,7 @@
       },
       empty: function () {
         return '<div class="empty"><div>'
-          + (S.kw || S.state || S.on || S.src ? '没有匹配的能力' : '还没有能力')
+          + (S.kw || S.state || S.on || S.src ? '没有匹配的' : '还没有接入任何接口或项目')
           + '</div></div>';
       }
     });
@@ -135,7 +135,7 @@
   function openDlg(id) {
     EDIT_ID = id || null;
     var it = id ? CAP.apiById(id) : null;
-    $('#dlg-t').textContent = it ? '编辑能力' : '接入能力';
+    $('#dlg-t').textContent = it ? '编辑' : '接入';
     $('#raw').value = it ? (it.raw || '') : '';
     $('#src').value = it ? (it.source || '') : '';
     $('#cnt').textContent = ($('#raw').value.length) + ' 字';
@@ -248,21 +248,62 @@
     $('#bd').hidden = false;
   });
 
-  function doParse() {
-    var raw = $('#braw').value.trim();
-    if (!raw) { toast('先贴点东西', 'error'); return; }
+  /* 导入项目：先认 OpenAPI / Swagger（paths 是真结构，能一条条拆准），
+     认不出来再按空行 / --- 切纯文本。项目级导入就是把整份 spec 或整份文档贴进来。 */
+  function parseProject(raw) {
+    var data = null;
+    try { data = JSON.parse(raw); } catch (e) { data = null; }
+    if (data && data.paths && typeof data.paths === 'object') {
+      var out = [], METHODS = ['get', 'post', 'put', 'patch', 'delete'];
+      var projName = (data.info && data.info.title) || '导入项目';
+      Object.keys(data.paths).forEach(function (path) {
+        var item = data.paths[path] || {};
+        METHODS.forEach(function (m) {
+          var op = item[m];
+          if (!op) return;
+          var body = m.toUpperCase() + ' ' + path
+            + (op.summary ? '\n' + op.summary : '')
+            + (op.description ? '\n' + op.description : '');
+          var d = makeDoc(body, '');
+          out.push({
+            name: op.summary || op.operationId || (m.toUpperCase() + ' ' + path),
+            desc: String(op.description || op.summary || path).replace(/\s+/g, ' ').slice(0, 60),
+            raw: body, doc: d.md, source: projName, state: 'ok'
+          });
+        });
+      });
+      if (out.length) return out;
+    }
     var parts = /\n\s*---+\s*\n/.test(raw) ? raw.split(/\n\s*---+\s*\n/) : raw.split(/\n\s*\n/);
-    var blocks = parts.filter(function (b) { return b.trim(); });
-    PARSED = blocks.map(function (b) {
+    return parts.filter(function (b) { return b.trim(); }).map(function (b) {
       var d = makeDoc(b, '');
       return { name: d.name, desc: d.desc, raw: b.trim(), doc: d.md, source: '未标注', state: 'ok' };
     });
+  }
+
+  function picked() {
+    return [].slice.call(document.querySelectorAll('#bres [data-mk]'))
+      .filter(function (x) { return x.checked; })
+      .map(function (x) { return Number(x.getAttribute('data-mk')); });
+  }
+
+  function renderParsed() {
     $('#bres').innerHTML = PARSED.map(function (p, i) {
-      return '<li><b>' + esc(p.name) + '</b><span>' + esc(p.desc) + '</span>'
+      return '<li><input class="it-mk" type="checkbox" data-mk="' + i + '" aria-label="选择「' + esc(p.name) + '」">'
+        + '<input class="it-rn" type="text" data-rn="' + i + '" value="' + esc(p.name) + '" aria-label="名称，可改">'
+        + '<span>' + esc(p.desc) + '</span>'
         + '<button class="it-op is-danger" type="button" data-i="' + i + '">移除</button></li>';
     }).join('');
-    $('#bstat').textContent = '解析出 ' + PARSED.length + ' 条';
+    $('#bstat').textContent = PARSED.length ? ('解析出 ' + PARSED.length + ' 条') : '没解析出东西';
     $('#bd-do').disabled = !PARSED.length;
+    $('#bd-merge').disabled = picked().length < 2;
+  }
+
+  function doParse() {
+    var raw = $('#braw').value.trim();
+    if (!raw) { toast('先贴点东西', 'error'); return; }
+    PARSED = parseProject(raw);
+    renderParsed();
   }
   var parseTimer = null;
   $('#braw').addEventListener('input', function () {
@@ -276,12 +317,46 @@
   $('#bres').addEventListener('click', function (e) {
     var b = e.target.closest('[data-i]'); if (!b) return;
     PARSED.splice(Number(b.getAttribute('data-i')), 1);
-    $('#bres').innerHTML = PARSED.map(function (p, i) {
-      return '<li><b>' + esc(p.name) + '</b><span>' + esc(p.desc) + '</span>'
-        + '<button class="it-op is-danger" type="button" data-i="' + i + '">移除</button></li>';
-    }).join('');
-    $('#bstat').textContent = '解析出 ' + PARSED.length + ' 条';
-    $('#bd-do').disabled = !PARSED.length;
+    renderParsed();
+  });
+  /* 名称就地改：模型拆出来的名字经常要顺手修一下，不该逼人重新贴。 */
+  $('#bres').addEventListener('input', function (e) {
+    var n = e.target.closest('[data-rn]'); if (!n) return;
+    var it = PARSED[Number(n.getAttribute('data-rn'))];
+    if (it) it.name = n.value;
+  });
+  $('#bres').addEventListener('change', function (e) {
+    if (!e.target.closest('[data-mk]')) return;
+    $('#bd-merge').disabled = picked().length < 2;
+  });
+  /* 同一份文档里常被切成几条重复的，勾上合并成一条：名称留第一条，说明与原文相加。 */
+  $('#bd-merge').addEventListener('click', function () {
+    var idx = picked();
+    if (idx.length < 2) return;
+    var first = PARSED[idx[0]];
+    var parts = idx.map(function (i) { return PARSED[i]; });
+    var mergedRaw = parts.map(function (p) { return p.raw; }).join('\n\n');
+    var md = makeDoc(mergedRaw, '');
+    first.raw = mergedRaw;
+    first.doc = md.md;
+    first.desc = parts.map(function (p) { return p.desc; }).join('；').slice(0, 60);
+    PARSED = PARSED.filter(function (p, i) { return idx.indexOf(i) < 0 || p === first; });
+    renderParsed();
+    toast('已合并 ' + idx.length + ' 条');
+  });
+
+  /* 选文件：读成文本走同一条解析，不另写一套。 */
+  $('#bfile-btn').addEventListener('click', function () { $('#bfile').click(); });
+  $('#bfile').addEventListener('change', function () {
+    var f = this.files && this.files[0]; if (!f) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      $('#braw').value = String(fr.result || '');
+      doParse();
+      $('#bstat').textContent = f.name + ' ｜ ' + $('#bstat').textContent;
+    };
+    fr.readAsText(f);
+    this.value = '';
   });
 
   $('#bd-do').addEventListener('click', function () {
@@ -311,7 +386,7 @@
     if (act === 'del') {
       var it = CAP.apiById(id); if (!it) return;
       ask({
-        title: '删除能力',
+        title: '删除',
         body: '删除「' + it.name + '」后，组件装配时不再可选。已生成的组件不受影响。',
         ok: '删除', danger: true,
         onOk: function () { CAP.removeApi(id); paint(); toast('已删除'); }

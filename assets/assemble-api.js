@@ -206,7 +206,7 @@
       var tryAi = KW && !AI_IDS && TAB === 'avail';
       list.innerHTML = '<div class="p-empty">'
         + (KW ? '没有匹配的能力'
-              : (TAB === 'on' ? '还没装配任何能力' : '能装的都装上了。去能力管理登记更多能力。'))
+              : (TAB === 'on' ? '还没装配任何能力' : '能装的都装上了。去「接入清单」导入更多。'))
         + (tryAi ? '<button type="button" class="p-ai-try" data-ai-try>用 AI 搜这句话</button>' : '')
         + '</div>';
       syncBatch();
