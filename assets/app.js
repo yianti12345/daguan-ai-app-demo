@@ -2058,7 +2058,10 @@
     updNow = updMap();                      /* 每次重画现算一次，N 只有一个算法（§11.2） */
     var kw = (($('#dlg-search') || {}).value || '').trim().toLowerCase();
     var wantOn = tab === 'on';
+    var aiIds = window.__aiIds;
     var rows = (wantOn ? orderedOn() : listOf('avail')).filter(function (c) {
+      /* 2026-11-05：AI 检索的结果优先；空数组＝AI 说没找到，就走空态，不再回落全量。 */
+      if (aiIds) return aiIds.indexOf(c.id) >= 0;
       var hay = (c.name + c.id + (c.desc || '') + ' ' + (KEYWORDS[c.id] || '')).toLowerCase();
       return !kw || hay.indexOf(kw) >= 0;
     });

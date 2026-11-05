@@ -1738,6 +1738,16 @@ body[data-app] .canvas{transition:padding-right .18s ease}
   width:100%;height:36px;padding: 0 var(--space-12);border:1px solid var(--color-border-card);border-radius:var(--radius-sm);
   background:var(--surface-page);font-size:var(--font-size-body);color:var(--color-text-body);outline:0;
 }
+.p-search{position:relative}
+/* 2026-11-05：AI 检索钮——搜索框右侧，品牌浅底 + 星芒；点亮时描边表示"现在按 AI 的结果筛" */
+.p-ai{position:absolute;right:4px;top:50%;transform:translateY(-50%);height:24px;padding:0 8px;border:0;
+  border-radius:var(--radius-xs);display:inline-flex;align-items:center;gap:4px;cursor:pointer;
+  background:linear-gradient(135deg,var(--color-brand-surface) 0%,var(--color-brand-surface-2) 100%);
+  color:var(--color-brand-ink);font-family:inherit;font-size:var(--font-size-caption);line-height:1}
+.p-ai:hover{box-shadow:0 0 0 2px var(--color-brand-glow)}
+.p-ai.is-on{box-shadow:inset 0 0 0 1px var(--color-brand)}
+.p-ai.is-busy{opacity:.6;cursor:progress}
+.p-ai svg{display:block}
 .p-search input::placeholder{color:var(--color-text-tertiary)}
 .p-search input:focus{border-color:var(--color-brand);outline:2px solid var(--color-brand);outline-offset:-1px}
 /* 2026-11-04（用户）：「这个 tab 就不能做的大气一些，好看一些吗」。
@@ -2355,13 +2365,13 @@ body[data-drawer="on"] .hint{
      历史注释随旧块一起收进 git 历史，不再每轮携带。 */
   position:relative;
   display:flex;flex-direction:column;
-  aspect-ratio:1.58/1;
+  aspect-ratio:.9/1;
   height:100%;
   min-height:0;
   overflow:hidden;
   padding:0;
   border:0;
-  border-radius:var(--radius-tag);
+  border-radius:var(--radius-panel);
   background:var(--surface-page);
   /* 2026-11-02（用户 m05570）：卡与页面底几乎同色，'完全融合在一起'。
      线上是 1px 灰描边；这里按 DESIGN §1.1 不写 border，改用 1px 环画同一道界线 ——

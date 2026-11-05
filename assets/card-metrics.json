@@ -16,10 +16,10 @@
     "★标题 20px 是这次真实量出来的：抓取件 我的应用.html 写的是 18px，那是客户端卡片；管理端实际 20px/行高30"
   ],
   "card": {
-    "aspectRatio": "1.58 / 1",
+    "aspectRatio": "0.9 / 1",
     "borderWidth": 1,
     "borderColor": "#e5e7eb",
-    "radius": 4,
+    "radius": 12,
     "overflow": "hidden",
     "hoverShadow": "0 3px 9.7px 0 rgba(170,175,210,0.22)"
   },

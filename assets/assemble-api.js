@@ -13,7 +13,7 @@
   };
   var toast = function (m, k) { if (window.UIK && UIK.toast) UIK.toast(m, k); };
 
-  var COMP = null, TAB = 'avail', KW = '', PICK = {};
+  var COMP = null, TAB = 'avail', KW = '', PICK = {}, AI_IDS = null;
 
   function ensure() {
     if ($('#api-mask')) return;
@@ -22,7 +22,8 @@
       +   '<div class="panel">'
       +     '<div class="p-hd">'
       +       '<b id="api-title">装配接口</b>'
-      +       '<div class="p-search"><input id="api-search" type="text" placeholder="搜索接口名或描述" aria-label="搜索接口" autocomplete="off"></div>'
+      +       '<div class="p-search"><input id="api-search" type="text" placeholder="搜接口，或说要做什么" aria-label="搜索接口" autocomplete="off">'
+      +         '<button type="button" class="p-ai" id="api-ai" title="让模型按你的描述找接口"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.7 5.3L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.7z"/><path d="M19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI</button></div>'
       +       '<button type="button" class="p-x" id="api-close" aria-label="关闭">'
       +         '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
       +       '</button>'
@@ -41,7 +42,25 @@
 
     $('#api-close').addEventListener('click', close);
     $('#api-mask').addEventListener('mousedown', function (e) { if (e.target === this) close(); });
-    $('#api-search').addEventListener('input', function () { KW = this.value.trim().toLowerCase(); PICK = {}; render(); });
+    $('#api-search').addEventListener('input', function () {
+      KW = this.value.trim().toLowerCase(); PICK = {};
+      AI_IDS = null; $('#api-ai').classList.remove('is-on');
+      render();
+    });
+    $('#api-ai').addEventListener('click', function () {
+      var btn = this;
+      if (AI_IDS) { AI_IDS = null; btn.classList.remove('is-on'); render(); return; }
+      var q = $('#api-search').value.trim();
+      if (!q) { toast('先说要找什么', 'error'); $('#api-search').focus(); return; }
+      btn.classList.add('is-busy');
+      AISearch.run(q, CAP.apis()).then(function (ids) {
+        btn.classList.remove('is-busy');
+        if (ids === null) { toast('AI 检索没连上，按关键词找', 'error'); return; }
+        AI_IDS = ids; btn.classList.add('is-on');
+        if (!ids.length) toast('没找到相关的');
+        render();
+      });
+    });
     $$('#api-mask .p-tab').forEach(function (t) {
       t.addEventListener('click', function () {
         TAB = t.getAttribute('data-tab'); PICK = {};
@@ -116,7 +135,9 @@
     } else {
       list = CAP.apis().filter(function (a) { return on.indexOf(a.id) < 0; }).map(function (a) { return { id: a.id, api: a }; });
     }
-    if (KW) {
+    if (AI_IDS) {
+      list = list.filter(function (x) { return AI_IDS.indexOf(x.id) >= 0; });
+    } else if (KW) {
       list = list.filter(function (x) {
         var hay = x.api ? (x.api.name + ' ' + x.api.desc + ' ' + (x.api.source || '')) : ('已删除 ' + x.id);
         return hay.toLowerCase().indexOf(KW) >= 0;
@@ -183,8 +204,9 @@
   function open(compId) {
     ensure();
     COMP = compId || 'draft';
-    TAB = 'avail'; KW = ''; PICK = {};
+    TAB = 'avail'; KW = ''; PICK = {}; AI_IDS = null;
     $('#api-search').value = '';
+    var aib = $('#api-ai'); if (aib) aib.classList.remove('is-on', 'is-busy');
     $$('#api-mask .p-tab').forEach(function (x) {
       x.setAttribute('aria-selected', String(x.getAttribute('data-tab') === 'avail'));
     });
