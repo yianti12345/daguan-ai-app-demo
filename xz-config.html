@@ -39,7 +39,6 @@
 .cf-hd{display:flex;align-items:center;gap:var(--space-8)}
 .cf-lb{font-size:var(--font-size-body);color:var(--color-text-body)}
 .cf-lb i{font-style:normal;color:var(--color-danger);margin-right:2px}
-.cf-hd .btn{margin-left:auto}
 .cf-hint{margin:var(--space-4) 0 0;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 .cf-ta{display:block;width:100%;box-sizing:border-box;height:168px;margin-top:var(--space-8);padding:var(--space-12);
   border:1px solid var(--color-border-control);border-radius:var(--radius-control);background:var(--surface-page);
@@ -68,7 +67,10 @@
         <h1>小智配置</h1>
         <div class="ops">
           <button type="button" class="btn ghost" id="act-import">导入</button>
-          <button type="button" class="btn primary" id="act-new">新建 skill</button>
+          <button type="button" class="btn ghost" id="act-new">新建 skill</button>
+          <!-- 2026-11-05（用户）：「整页保存」。保存只有一个，压在页头右上；
+               列表里的导入/新建/启停/删除是即时动作，不属于这张表单。 -->
+          <button type="button" class="btn primary" id="p-save" disabled>保存</button>
         </div>
       </div>
 
@@ -77,7 +79,6 @@
       <section class="cfg-form" aria-labelledby="cp-t">
         <div class="cf-hd">
           <span class="cf-lb" id="cp-t"><i aria-hidden="true">*</i>默认系统提示词：</span>
-          <button type="button" class="btn primary" id="p-save">保存</button>
         </div>
         <p class="cf-hint">小智每次对话都会带上这段，用来定它的基调</p>
         <textarea id="p-text" class="cf-ta" aria-labelledby="cp-t" placeholder="例如：你是达观平台的业务助理，回答要严谨，不确定就说不确定，不许编造数据。"></textarea>
@@ -184,10 +185,16 @@
   var b = document.getElementById('p-save');
   if (!t || !b || !window.CAP) return;
   t.value = CAP.prompt();
+  /* 没改过就没什么可存：按钮先灰着，改一个字才亮。省掉"点了没反应"的困惑。 */
+  var dirty = false;
+  function setDirty(v) { dirty = v; b.disabled = !v; }
+  t.addEventListener('input', function () { setDirty(t.value !== CAP.prompt()); });
   b.addEventListener('click', function () {
     CAP.setPrompt(t.value);
+    setDirty(false);
     if (window.UIK && UIK.toast) UIK.toast('已保存');
   });
+  setDirty(t.value !== CAP.prompt());
 })();
 </script>
 <script src="assets/skills.js?v=6d81f991"></script>
