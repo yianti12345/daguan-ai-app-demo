@@ -124,6 +124,9 @@
       forbidden: ['恢复', '在用的客户', '改了什么', '当前版本 v']
     },
     'client-auth.html': {
+      /* ★2026-11-05：这一页的自造字段出过太多次（新建客户、授权版本、有效期、撤销…），
+         所以打开列级来源校验：每列 / 每个操作都必须写明「真源有 / 用户说过 / 我加的（带到期日）」。 */
+      requireColFrom: true,
       object: '授权关系（应用 × 客户）——不是客户池',
       source: '_docs/基线-客户授权.md',
       truth: '真源 /AuditAgent/AppManage/ClientConfig/775',
@@ -134,13 +137,13 @@
       variants: {
         global: {
           headCols: [
-            { key: 'pick', label: '', docLabel: '选择框', cls: 'au-sel' },
-            { key: 'client', label: '客户', cls: 'au-c' },
-            { key: 'tenant', label: '租户 ID', cls: 'au-id' },
-            { key: 'app', label: '应用', cls: 'au-app' },
-            { key: 'ver', label: '授权版本', cls: 'au-ver' },
-            { key: 'exp', label: '有效期', cls: 'au-exp' },
-            { key: 'ops', label: '操作', cls: 'au-o' }
+            { key: 'pick', label: '', docLabel: '选择框', cls: 'au-sel', from: 'user' },
+            { key: 'client', label: '客户', cls: 'au-c', from: 'truth' },
+            { key: 'tenant', label: '租户 ID', cls: 'au-id', from: 'truth' },
+            { key: 'app', label: '应用', cls: 'au-app', from: 'truth' },
+            { key: 'ver', label: '授权版本', cls: 'au-ver', from: 'user' },
+            { key: 'exp', label: '有效期', cls: 'au-exp', from: 'truth' },
+            { key: 'ops', label: '操作', cls: 'au-o', from: 'user' }
           ],
           /* ★2026-11-05（用户选 A：保留版本与升级，风格照真源）：
              真源的「有效期」是区间（2026-11-05 ~ 2027-11-01），起点就是授权日 ——
@@ -149,12 +152,12 @@
         },
         sub: {
           headCols: [
-            { key: 'pick', label: '', docLabel: '选择框', cls: 'au-sel' },
-            { key: 'client', label: '客户', cls: 'au-c' },
-            { key: 'tenant', label: '租户 ID', cls: 'au-id' },
-            { key: 'ver', label: '授权版本', cls: 'au-ver' },
-            { key: 'exp', label: '有效期', cls: 'au-exp' },
-            { key: 'ops', label: '操作', cls: 'au-o' }
+            { key: 'pick', label: '', docLabel: '选择框', cls: 'au-sel', from: 'user' },
+            { key: 'client', label: '客户', cls: 'au-c', from: 'truth' },
+            { key: 'tenant', label: '租户 ID', cls: 'au-id', from: 'truth' },
+            { key: 'ver', label: '授权版本', cls: 'au-ver', from: 'user' },
+            { key: 'exp', label: '有效期', cls: 'au-exp', from: 'truth' },
+            { key: 'ops', label: '操作', cls: 'au-o', from: 'user' }
           ],
           /* 列宽：客户吃掉剩余，其余按内容收口；操作列 210 放得下两颗按钮。 */
           cols: '40px minmax(0,1fr) 220px 96px 200px 210px'

@@ -606,7 +606,6 @@ function byVer(r) { return !VER || String(r.version) === VER; }
         '<input type="checkbox" name="fm-client" value="' + esc(c.id) + '">' +
         '<span class="fm-client-name">' + esc(c.name) + '</span>' +
         '<span class="fm-client-id">' + esc(c.tenantId || '—') + '</span>' +
-        '<span class="fm-client-state">' + (rec ? '已取消，再授即恢复' : '') + '</span>' +
       '</label>';
     }).join('');
   }

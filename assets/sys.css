@@ -1734,6 +1734,15 @@ body[data-mode="view"] .cv-blk:hover{background:none;box-shadow:none}
   /* 入场只做 12px 位移 + 淡入。面板内没有 position:fixed 的子元素，
      所以这里的 transform 不会改任何固定定位的基准（那类坑记在交接说明里）。 */
 }
+/* ★2026-11-05 P0（用户截图：客户授权的弹窗只露出上半截，「确定」被剪掉了）：
+   弹窗内容区必须"可压 + 自己滚"，否则内容一高就顶穿 .panel 的 overflow:hidden，把底栏一起剪掉。
+   共享件 .nf 早就这么写了（.nf-bd 有 flex:1 1 auto;min-height:0），
+   但客户授权页另写了 .au-bd 回退到"只 overflow:auto"——少了可压缩的两行，又一次绕开共享件。
+   这里给所有弹窗的内容区兜一条底：页面自己写内容区也跑不掉。 */
+.panel > .p-bd,
+.panel > .nf-bd,
+.panel > .au-bd{flex:1 1 auto;min-height:0;overflow:auto}
+
 .mask[data-open="true"] .panel{animation:drawer-in .18s ease-out}
 @keyframes drawer-in{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.mask[data-open="true"] .panel{animation:none}}

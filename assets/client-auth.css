@@ -89,8 +89,15 @@
    原来只写了 #mask .au-dlg，作用域限死在一个容器上。 */
 /* 用 .mask .au-dlg 而不是 .panel.au-dlg：.panel 是装配面板的共享件，
    在页面 CSS 里再写一次它的选择器，组件优先判据会当成"复制共享件"报红（C1）。 */
-.mask .au-dlg{width:min(var(--dialog-max-w),92vw);height:auto;max-height:calc(100vh - 96px)}
-.au-bd{padding:0 var(--space-16) var(--space-8);overflow:auto}
+/* ★2026-11-05 P0：弹窗超出视口时，底栏被 .panel 的 overflow:hidden 直接剪掉 ——
+   矮屏（或列表展开后）根本点不到「确定」。原因是 height:auto + flex 子项 min-height:auto：
+   内容撑多高就多高，max-height 只裁不滚。
+   修：内容区必须能被压缩（flex:1 1 auto + min-height:0）并自己滚，头/脚固定。
+   这条是结构约束，不是给某一次尺寸打的补丁。 */
+.mask .au-dlg{width:min(var(--dialog-max-w),92vw);height:auto;
+  max-height:calc(100vh - 96px);display:flex;flex-direction:column}
+.au-bd{flex:1 1 auto;min-height:0;overflow:auto}
+.au-bd{padding:0 var(--space-16) var(--space-8)}
 .fm{display:flex;flex-direction:column;gap:var(--space-16)}
 .fm-row{display:flex;flex-direction:column;gap:6px}
 .fm-row>label{font-size:var(--font-size-body);color:var(--color-text-secondary)}
@@ -117,14 +124,18 @@
 #mask #fm-list-wrap[hidden]{display:none}
 /* 滚动只发生在列表里（搜索框始终可见）；高度取 7 行的整倍，底部不会切出半行。
    2026-11-05：原来限高的是整块面板，最后一行被弹窗边界裁成半截。 */
-#mask #fm-list-wrap .fm-clients{max-height:224px;overflow:auto;border:0;padding:0;background:none}
+#mask #fm-list-wrap .fm-clients{max-height:224px;overflow-y:auto;overflow-x:hidden;
+  scrollbar-gutter:stable;border:0;padding:0;background:none}
 /* ── 2026-11-02 多客户授权 ──────────────────────────────────── */
 /* 弹窗里的客户勾选列表：每家一行，名字在左、租户 ID 在右，状态在最右。
    列表限高，客户多了内部滚动，弹窗不会顶出屏幕。 */
 .fm-label{font-size:var(--font-size-body);color:var(--color-text-secondary)}
 .fm-clients{display:flex;flex-direction:column;max-height:240px;overflow:auto;
   border:1px solid var(--color-border-card);border-radius:var(--radius-sm);background:var(--surface-page)}
-.fm-client{display:grid;grid-template-columns:18px minmax(0,1fr) auto 56px;align-items:center;gap:8px;
+/* 2026-11-05：原第四列是固定 56px 的状态位，大部分行是空的，
+   却把租户 ID 挤到列表右边缘、被滚动条压住（截图里 ID 左边少两位就是它）。
+   改成三列，状态并进名字那一格。 */
+.fm-client{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:8px;
   min-height:38px;padding:0 10px;cursor:pointer;border-bottom:1px solid var(--color-border-hairline)}
 .fm-client:last-child{border-bottom:0}
 .fm-client:hover{background:var(--color-state-hover)}
@@ -132,7 +143,7 @@
 .fm-client input{width:14px;height:14px;margin:0;accent-color:var(--color-brand)}
 .fm-client-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--font-size-body)}
 .fm-client-id{font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums}
-.fm-client-state{font-size:var(--font-size-caption);color:var(--color-text-tertiary);text-align:right}
+.fm-client-state{margin-left:8px;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 /* 版本是一句陈述，不是一个控件。
    ★2026-11-05：原来给了 36px 高 + 描边 + 灰底，看上去就是一个"不能点的输入框"——
    形式在说"这是控件"，语义在说"这不是控件"。去掉盒子，只留一行字。 */

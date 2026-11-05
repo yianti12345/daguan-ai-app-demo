@@ -61,6 +61,22 @@
         throw new Error('[List] 列宽 ' + n + ' 段 ≠ 表头 ' + cols.length + ' 列');
       }
     }
+    /* ★2026-11-05 列级来源：spec 打开 requireColFrom 后，每一列必须交代它从哪来。
+       truth=真源取证文件里有；user=用户原话要的；mine=我自己加的 —— mine 必须带到期日，
+       到期没并回真源或用户口径，这一页就渲染不出来。
+       为什么做成拦断不是提醒：这一页的错全是"我补出一个真源没有的东西"，
+       而加判据拦不住新形态 —— 只有"说不出谁要的就不许画"能拦住。 */
+    if (spec.requireColFrom) {
+      cols.forEach(function (c) {
+        var f = c.from;
+        if (f !== 'truth' && f !== 'user' && f !== 'mine') {
+          throw new Error('[List] 列「' + (c.label || c.key) + '」没交代来源（truth / user / mine）');
+        }
+        if (f === 'mine' && !c.due) {
+          throw new Error('[List] 列「' + (c.label || c.key) + '」是我自己加的，但没写到期日');
+        }
+      });
+    }
     var keys = {};
     cols.forEach(function (c) {
       if (!c.key) throw new Error('[List] 有一列没写 key');
