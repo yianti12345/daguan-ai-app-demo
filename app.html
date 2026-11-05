@@ -6,8 +6,8 @@
 <title>应用配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
-<link rel="stylesheet" href="assets/sys.css?v=317dd3ac">
-<link rel="stylesheet" href="assets/float.css?v=5b5a44ff">
+<link rel="stylesheet" href="assets/sys.css?v=84128590">
+<link rel="stylesheet" href="assets/float.css?v=dae66bba">
 <link rel="stylesheet" href="assets/viewmode.css?v=d7d2718f">
 <link rel="stylesheet" href="assets/generated.css?v=f89c421a">
 <link rel="stylesheet" href="assets/configurator.css?v=59b1113c">
@@ -83,11 +83,32 @@
     <!-- 2026-11-06（用户）：「saas 端出现大问题了…最终拼装的应用几乎都是个性化的，那么没有返回和平台的相关信息及操作了」。
          照 SaaS 真源应用内页实测补：头像 + 账号 + 组织两行 + 下拉，尺寸/层级与真源一致（条高 48）。
          拼装出来的应用是全屏的，这里是唯一的"我在哪个平台、我是谁"的锚点。 -->
-    <button type="button" class="ab-user" id="ab-user" aria-label="当前账号 zheng，达观数据">
+    <div class="ab-wrap">
+    <button type="button" class="ab-user" id="ab-user" aria-haspopup="true" aria-expanded="false" aria-controls="ab-menu" aria-label="当前账号 zheng，达观数据">
       <span class="ab-av" aria-hidden="true">郑</span>
       <span class="ab-nm"><b>zheng</b><i>达观数据</i></span>
       <svg class="ab-cv" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
     </button>
+    <!-- 四项照用户 2026-11-06 截图逐项复刻：切换平台 / 修改密码 / 关于系统 / 退出登录 -->
+    <div class="ab-menu" id="ab-menu" role="menu" hidden>
+      <button type="button" class="ab-mi" role="menuitem">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+        切换平台
+      </button>
+      <button type="button" class="ab-mi" role="menuitem">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        修改密码
+      </button>
+      <button type="button" class="ab-mi" role="menuitem">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.6"/></svg>
+        关于系统
+      </button>
+      <button type="button" class="ab-mi is-out" role="menuitem">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 8l4 4-4 4M13 12H4"/></svg>
+        退出登录
+      </button>
+    </div>
+    </div>
   </div>
 </div>
 
@@ -128,14 +149,14 @@
   </div>
 </div>
 
-<script src="assets/ui-kit.js?v=a5237023"></script>
+<script src="assets/ui-kit.js?v=17f759c1"></script>
 <script src="assets/ai-search.js?v=80eda2c1"></script>
 <script src="assets/gen.js?v=741d5dc2"></script>
 <script src="assets/data.js?v=b3d5f9ec"></script>
 <script src="assets/confirm.js?v=33f3cd5b"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
 <script src="assets/float.js?v=1e26e2a7"></script>
-<script src="assets/app.js?v=8d949499"></script>
+<script src="assets/app.js?v=75e0d8d1"></script>
 <script src="assets/ai-comp.js?v=39f7c8da"></script>
 <script src="assets/configurators/app-standard.js?v=a478d9a2"></script>
 <script src="assets/configurator.js?v=70d866b6"></script>

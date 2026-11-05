@@ -453,7 +453,42 @@ window.UIK = (function () {
     return { open: open, close: close, bindDesc: bindDesc, bindLine: bindLine };
   })();
 
+  /* ── 账号下拉（2026-11-06）─────────────────────────────────────────
+     应用配置页与组件配置页都有这条平台条，开合 / 点外面关 / Esc 还焦三件事必须一样，
+     所以只在这里写一份。菜单项是占位：接后端时替换各自的动作，形态不动。 */
+  function userMenu() {
+    var btn = document.getElementById('ab-user');   /* optional-id：只有带平台条的页才有 */
+    var menu = document.getElementById('ab-menu');   /* optional-id：同上 */
+    if (!btn || !menu) return;
+    function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+    function open() {
+      menu.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      var first = menu.querySelector('.ab-mi');
+      if (first) first.focus();
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    document.addEventListener('click', function (e) {
+      if (menu.hidden) return;
+      if (menu.contains(e.target) || btn.contains(e.target)) return;
+      close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !menu.hidden) { close(); btn.focus(); }
+    });
+    menu.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.ab-mi')) close();
+    });
+  }
+
   return { toast: toast, pickHtml: pickHtml, copy: copy, esc: esc,
            cardBadge: cardBadge, badgeLabel: badgeLabel, setDisabled: setDisabled, hist: hist,
-           Attach: Attach, Full: Full };
+           Attach: Attach, Full: Full, userMenu: userMenu };
 })();
+
+/* 两页都引 ui-kit，账号菜单在 DOM 就绪后自动挂上，调用方不用记。 */
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.UIK.userMenu(); });
+else window.UIK.userMenu();

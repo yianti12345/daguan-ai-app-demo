@@ -300,3 +300,9 @@ body[data-drawer="on"] .fk-dock{left:50%}
    放在 float.css；sys.css 只管页面顶栏（COMPFIRST 要求 .fk-dock 只有一个实现处）。 */
 body[data-ops="off"] .fk-dock,
 body[data-ops="off"] #fk-dock{display:none!important}
+
+/* ── 客户运行态（body[data-mode="view"]，2026-11-06）────────────────────
+   客户进应用只看内容：对话浮条是配置者的输入口，不该出现。
+   这条写在 float.css 而不是 sys.css —— .fk-dock 的唯一实现在这里，
+   跨文件复制会被 check-component-first C1 判红。 */
+body[data-mode="view"] .fk-dock{display:none}

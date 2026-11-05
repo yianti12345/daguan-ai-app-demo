@@ -1509,6 +1509,45 @@ body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gr
 .ab-nm b{font-size:var(--font-size-caption);font-weight:600;color:var(--color-text-primary);white-space:nowrap}
 .ab-nm i{font-style:normal;font-size:var(--fs-xs);color:var(--color-text-tertiary);white-space:nowrap}
 .ab-user .ab-cv{flex:none;color:var(--color-text-tertiary)}
+/* ── 账号下拉（2026-11-06，照用户截图逐项复刻）──────────────────────────
+   四项：切换平台 / 修改密码 / 关于系统 / 退出登录。
+   形态取自截图：白底、圆角、轻投影、一项一行带图标、左对齐、无右箭头。 */
+.ab-wrap{position:relative;display:flex}
+.ab-menu{
+  position:absolute;top:calc(100% + 6px);right:0;z-index:30;
+  min-width:184px;padding:var(--space-4);
+  background:var(--surface-page);border:1px solid var(--color-border-card);
+  border-radius:var(--radius-sm);box-shadow:var(--shadow-menu,0 8px 24px rgba(0,0,0,.14));
+}
+.ab-menu[hidden]{display:none}
+.ab-mi{
+  display:flex;align-items:center;gap:var(--space-8);width:100%;height:40px;
+  padding:0 var(--space-8);border:0;border-radius:var(--radius-xs);
+  background:transparent;cursor:pointer;font:inherit;
+  font-size:var(--font-size-body);color:var(--color-text-primary);text-align:left;
+}
+.ab-mi:hover{background:var(--surface-subtle)}
+.ab-mi:focus-visible{outline:2px solid var(--color-focus-halo);outline-offset:-2px}
+.ab-mi svg{flex:none;color:var(--color-text-tertiary)}
+.ab-mi.is-out{color:var(--color-danger)}
+.ab-mi.is-out svg{color:var(--color-danger)}
+
+/* ── 客户运行态（?mode=view，2026-11-06）────────────────────────────────
+   用户原话：「客户登录 saas 端，去我的应用里面，点击任意应用就是咱们授权的 AI 应用了，
+   基本就是配置页面，只不过没有配置信息及能力了，就是什么装配组件、对话框等等」。
+   所以运行态 = 同一块画布 + 同一条平台条，去掉一切"配置"入口：
+     · 顶栏右侧只留账号（装配组件 / 保存草稿 / 保存发布 / 预览 / 代码 全部不出现）
+     · 小智对话框、悬浮输入条、块级编辑操作（上移下移隐藏）都不出现
+   用 body[data-mode="view"] 前缀，不写 !important —— 优先级靠属性+类，够高了。 */
+body[data-mode="view"] .tb-ops > *:not(.ab-wrap){display:none}
+body[data-mode="view"] #xz-host,
+body[data-mode="view"] .cv-op,
+body[data-mode="view"] .ops-switch,
+/* 「隐藏操作」开关与块头的状态词是配置者看的：客户只关心内容，
+   看不出来源/抽取状态这些内部口径。块序号与块名保留（那是内容的骨架）。 */
+body[data-mode="view"] .blk-hd > span{display:none}
+/* 对话浮条 .fk-dock 的隐藏写在 assets/float.css —— 那是它的唯一实现所在文件
+   （check-component-first C1 会把跨文件复制判红）。 */
 .float-hd .app-name{flex:0 1 auto}
 /* ── 顶栏第二行：这一页东西的介绍（2026-11-04）─────────────────────
    用户：「组件和应用的配置详情，左上角的信息，再加上一行介绍，太长显示不全，
@@ -1645,8 +1684,11 @@ body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gr
    （今天已经有 RULE_ROWS 3 行 vs COL_DATA 8 行这个现成教训）。
    刻意保留的：应用名（客户要知道打开的是哪个应用）、块序号与块名（这是内容的骨架）。
    刻意去掉的：返回、装配入口、保存/发布、编辑态提示、块操作、对话条、全局提示条。 */
-body[data-mode="view"] .topbar .back,
-body[data-mode="view"] .topbar .tb-ops,
+/* ★2026-11-06（用户）：「客户登录 saas 端，去我的应用里面，点击任意应用就是咱们授权的 ai 应用了，
+   基本就是配置页面，只不过没有配置信息及能力了，就是什么装配组件、对话框等等」。
+   原设计把「返回」和整个 .tb-ops 一起去掉（注释写着"刻意去掉的：返回、装配入口、保存/发布…"），
+   结果客户进了应用既回不去「我的应用」，也不知道自己在谁的账号下。
+   现在改成：**返回保留**、右上只留账号块（本文件 1542 那条把 .tb-ops 的其余子项隐掉）。 */
 body[data-mode="view"] .topbar .app-edit,
 body[data-mode="view"] .cv-blk-more,
 body[data-mode="view"] .cv-blk-ops,

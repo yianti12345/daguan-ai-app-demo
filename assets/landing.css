@@ -1,0 +1,76 @@
+/* landing.css —— 落地汇总页（2026-11-06）
+ *
+ * 为什么单独一个文件而不是写进 sys.css：
+ *   这一页只有两个卡片 + 一句标题，属于"一次性页面形态"，塞进共享层会污染它；
+ *   但也不能写成页面内联 <style> —— check-page-style 的规矩是"页面不许有私有样式"。
+ *   外部页面级 CSS 是第三条路：样式有归处、不污染共享层、不计入内联基线。
+ *
+ * 视觉口径：白底、浅灰分隔、不发光不渐变；卡片 hover 只抬 1px 加一层极轻投影。 */
+
+body.landing{
+  margin:0;min-height:100vh;
+  background:var(--surface-page);color:var(--color-text-primary);
+  font-family:var(--font-family-sans);
+  display:flex;align-items:center;justify-content:center;
+  padding:var(--space-24)
+}
+
+.ld-wrap{width:100%;max-width:760px}
+
+.ld-hd{display:flex;align-items:center;gap:var(--space-8);margin-bottom:var(--space-32)}
+.ld-logo{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border-radius:var(--radius-sm);
+  background:var(--color-brand);color:var(--color-text-inverse);
+  font-size:var(--fs-xs);font-weight:600;letter-spacing:.5px
+}
+.ld-hd b{font-size:var(--font-size-body);font-weight:600;letter-spacing:.2px}
+
+.ld-hero{margin-bottom:var(--space-32)}
+.ld-hero h1{
+  margin:0;font-size:var(--font-size-display);font-weight:600;
+  line-height:var(--leading-display);letter-spacing:-.4px
+}
+.ld-hero p{
+  margin:var(--space-8) 0 0;
+  font-size:var(--font-size-body);line-height:var(--leading-body);color:var(--color-text-tertiary)
+}
+
+.ld-cards{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-16)}
+.ld-card{
+  display:flex;flex-direction:column;gap:var(--space-8);
+  padding:var(--space-24);border:1px solid var(--color-border-card);
+  border-radius:var(--radius-panel);background:var(--surface-page);
+  text-decoration:none;color:inherit;
+  transition:border-color .16s,box-shadow .16s,transform .16s
+}
+.ld-card:hover{
+  border-color:var(--color-border-control);
+  box-shadow:var(--shadow-flat);transform:translateY(-1px)
+}
+.ld-card:focus-visible{outline:2px solid var(--color-focus-halo);outline-offset:2px}
+.ld-tag{
+  align-self:flex-start;display:inline-flex;align-items:center;height:22px;padding:0 var(--space-8);
+  border-radius:var(--radius-pill);background:var(--surface-subtle);
+  font-size:var(--fs-xs);color:var(--color-text-tertiary)
+}
+.ld-card b{font-size:var(--font-size-heading);font-weight:600}
+.ld-card p{
+  margin:0;font-size:var(--font-size-caption);line-height:var(--leading-body);
+  color:var(--color-text-tertiary)
+}
+.ld-go{
+  margin-top:var(--space-8);font-size:var(--font-size-caption);
+  color:var(--color-brand-ink);font-weight:500
+}
+
+.ld-ft{
+  margin-top:var(--space-32);padding-top:var(--space-16);
+  border-top:1px solid var(--color-border-hairline);
+  font-size:var(--fs-xs);color:var(--color-text-tertiary)
+}
+
+@media (max-width:720px){
+  .ld-cards{grid-template-columns:1fr}
+  .ld-hero h1{font-size:var(--font-size-title)}
+}

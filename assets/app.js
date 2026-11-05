@@ -131,6 +131,10 @@
   if (VIEW_MODE) {
     document.body.setAttribute('data-mode', 'view');
     document.title = (app ? app.name : '应用');
+    /* 2026-11-06：客户视图的「返回」不该回到配置台（apps.html 是管理后台）。
+       真实 SaaS 回到的是「我的应用」，这一版没有那一屏，先回到落地汇总页。 */
+    var vBack = document.getElementById('act-back');
+    if (vBack) { vBack.setAttribute('href', 'index.html'); vBack.setAttribute('aria-label', '返回概览'); }
   }
 
   if (!app) {
