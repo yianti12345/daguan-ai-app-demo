@@ -1,0 +1,631 @@
+{
+  "_why": "真源取值冻结样本。每条带 role/选择器/属性白名单/取值/出处(url,viewport,at,tool)。ref-parity 在 bsk 不可用时可对着这份样本判；--check 保证它没过期、没漏角色、没缺出处。",
+  "meta": {
+    "generatedAt": "2026-10-23T00:03:48.166Z",
+    "tool": "bsk",
+    "bskVersion": "0.3.2",
+    "refUrl": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "roles": 15
+  },
+  "items": [
+    {
+      "role": "侧栏整块",
+      "refSelector": ".bixi-dashboard-layout-menu",
+      "mineSelector": ".sider",
+      "props": [
+        "w",
+        "bg"
+      ],
+      "values": {
+        "w": 200,
+        "h": 900,
+        "x": 0,
+        "y": 0,
+        "fs": 14,
+        "fw": 400,
+        "br": 0,
+        "lh": 21,
+        "color": "rgba(246, 247, 248, 0.7)",
+        "bg": "rgb(243,244,247)",
+        "bd": "rgb(229,231,235)",
+        "bw": 0,
+        "pad": "0px",
+        "padTop": 0,
+        "padRight": 0,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 14,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "菜单一级项",
+      "refSelector": ".ant-menu-submenu:not(.ant-menu-submenu-open):not(.ant-menu-submenu-selected) .ant-menu-submenu-title",
+      "mineSelector": ".sider .grp[data-open=\"false\"] .gt",
+      "props": [
+        "h",
+        "x"
+      ],
+      "values": {
+        "w": 177,
+        "h": 48,
+        "x": 9,
+        "y": 60,
+        "fs": 14,
+        "fw": 400,
+        "br": 0,
+        "lh": 48,
+        "color": "rgba(0, 0, 0, 0.7)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgb(229,231,235)",
+        "bw": 0,
+        "pad": "0px 34px 0px 16px",
+        "padTop": 0,
+        "padRight": 34,
+        "padBottom": 0,
+        "padLeft": 16,
+        "fontSize": 14,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "菜单二级项",
+      "refSelector": ".ant-menu-submenu-open .ant-menu-item:not(.ant-menu-item-selected)",
+      "mineSelector": ".sider .gs a:not([aria-current])",
+      "props": [
+        "h",
+        "x"
+      ],
+      "values": {
+        "w": 177,
+        "h": 48,
+        "x": 9,
+        "y": 220,
+        "fs": 14,
+        "fw": 400,
+        "br": 0,
+        "lh": 48,
+        "color": "rgba(0, 0, 0, 0.7)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgb(229,231,235)",
+        "bw": 0,
+        "pad": "0px 16px 0px 32px",
+        "padTop": 0,
+        "padRight": 16,
+        "padBottom": 0,
+        "padLeft": 32,
+        "fontSize": 14,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "菜单当前项",
+      "refSelector": ".ant-menu-item-selected",
+      "mineSelector": ".sider a[aria-current]",
+      "props": [
+        "h",
+        "bg",
+        "color"
+      ],
+      "values": {
+        "w": 177,
+        "h": 48,
+        "x": 9,
+        "y": 376,
+        "fs": 14,
+        "fw": 400,
+        "br": 0,
+        "lh": 48,
+        "color": "rgb(81,122,255)",
+        "bg": "rgb(255,255,255)",
+        "bd": "rgb(229,231,235)",
+        "bw": 0,
+        "pad": "0px 16px 0px 32px",
+        "padTop": 0,
+        "padRight": 16,
+        "padBottom": 0,
+        "padLeft": 32,
+        "fontSize": 14,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "面包屑",
+      "refSelector": ".ant-breadcrumb",
+      "mineSelector": ".crumb",
+      "props": [
+        "h"
+      ],
+      "values": {
+        "w": 156,
+        "h": 22,
+        "x": 240,
+        "y": 13,
+        "fs": 14,
+        "fw": 400,
+        "br": 0,
+        "lh": 22,
+        "color": "rgba(0, 0, 0, 0.45)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgb(229,231,235)",
+        "bw": 0,
+        "pad": "0px",
+        "padTop": 0,
+        "padRight": 0,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 14,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "面包屑末项",
+      "refSelector": ".ant-breadcrumb li:last-child",
+      "mineSelector": ".crumb b:last-of-type",
+      "props": [
+        "color"
+      ],
+      "values": {
+        "w": 56,
+        "h": 22,
+        "x": 340,
+        "y": 13,
+        "fs": 14,
+        "fw": 400,
+        "br": 0,
+        "lh": 22,
+        "color": "rgba(0, 0, 0, 0.9)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgb(229,231,235)",
+        "bw": 0,
+        "pad": "0px",
+        "padTop": 0,
+        "padRight": 0,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 14,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "主按钮",
+      "refSelector": ".ant-btn-primary",
+      "mineSelector": ".bar .btn.primary",
+      "props": [
+        "h",
+        "br",
+        "bg",
+        "color"
+      ],
+      "values": {
+        "w": 110,
+        "h": 32,
+        "x": 224,
+        "y": 68,
+        "fs": 14,
+        "fw": 400,
+        "br": 2,
+        "lh": 22,
+        "color": "rgb(255,255,255)",
+        "bg": "rgb(88,127,255)",
+        "bd": "rgba(0, 0, 0, 0)",
+        "bw": 1,
+        "pad": "4px 15px",
+        "padTop": 4,
+        "padRight": 15,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 14,
+        "radius": 2
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "工具条图标钮",
+      "refSelector": ".ant-btn-icon-only",
+      "mineSelector": ".icon-btn",
+      "props": [
+        "w",
+        "h",
+        "br",
+        "bd"
+      ],
+      "values": {
+        "w": 32,
+        "h": 32,
+        "x": 1378,
+        "y": 69,
+        "fs": 14,
+        "fw": 400,
+        "br": 2,
+        "lh": 22,
+        "color": "rgba(0, 0, 0, 0.9)",
+        "bg": "rgb(255,255,255)",
+        "bd": "rgb(217,217,217)",
+        "bw": 1,
+        "pad": "4px 0px",
+        "padTop": 4,
+        "padRight": 0,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 14,
+        "radius": 2
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "输入框",
+      "refSelector": "input[placeholder*=\"应用名\"]",
+      "mineSelector": ".field input",
+      "props": [
+        "h",
+        "fs",
+        "color"
+      ],
+      "values": {
+        "w": 134,
+        "h": 22,
+        "x": 1028,
+        "y": 74,
+        "fs": 14,
+        "fw": 400,
+        "br": 0,
+        "lh": 22,
+        "color": "rgba(0, 0, 0, 0.9)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgba(0, 0, 0, 0.9)",
+        "bw": 0,
+        "pad": "0px",
+        "padTop": 0,
+        "padRight": 0,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 14,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "卡片",
+      "refSelector": ".grid > *",
+      "mineSelector": ".grid > *",
+      "props": [
+        "w",
+        "h",
+        "br",
+        "bd"
+      ],
+      "values": {
+        "w": 273,
+        "h": 303,
+        "x": 224,
+        "y": 136,
+        "fs": 14,
+        "fw": 400,
+        "br": 12,
+        "lh": 21,
+        "color": "rgba(0, 0, 0, 0.65)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgb(229,231,235)",
+        "bw": 1,
+        "pad": "0px",
+        "padTop": 0,
+        "padRight": 0,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 14,
+        "radius": 12
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "卡标题",
+      "refSelector": ".app-title > div",
+      "mineSelector": ".card-tt",
+      "props": [
+        "fs",
+        "fw",
+        "color"
+      ],
+      "values": {
+        "w": 247,
+        "h": 30,
+        "x": 237,
+        "y": 317,
+        "fs": 20,
+        "fw": 600,
+        "br": 0,
+        "lh": 30,
+        "color": "rgba(0, 0, 0, 0.9)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgb(229,231,235)",
+        "bw": 0,
+        "pad": "0px",
+        "padTop": 0,
+        "padRight": 0,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 20,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "卡描述",
+      "refSelector": ".app-desc > div",
+      "mineSelector": ".card-desc",
+      "props": [
+        "fs",
+        "color",
+        "lh"
+      ],
+      "values": {
+        "w": 247,
+        "h": 19,
+        "x": 237,
+        "y": 351,
+        "fs": 12,
+        "fw": 400,
+        "br": 0,
+        "lh": 19,
+        "color": "rgb(108,125,169)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgb(229,231,235)",
+        "bw": 0,
+        "pad": "0px",
+        "padTop": 0,
+        "padRight": 0,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 12,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "卡底栏",
+      "refSelector": "footer",
+      "mineSelector": ".card-ft",
+      "props": [
+        "h",
+        "fs",
+        "color",
+        "bg"
+      ],
+      "values": {
+        "w": 271,
+        "h": 49,
+        "x": 225,
+        "y": 389,
+        "fs": 14,
+        "fw": 400,
+        "br": 0,
+        "lh": 21,
+        "color": "rgb(37,37,36)",
+        "bg": "rgb(255,255,255)",
+        "bd": "rgb(243,244,246)",
+        "bw": 0,
+        "pad": "12px 12px 13px",
+        "padTop": 12,
+        "padRight": 12,
+        "padBottom": 13,
+        "padLeft": 0,
+        "fontSize": 14,
+        "radius": 0
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "卡底栏图标钮",
+      "refSelector": ".card-actions-button",
+      "mineSelector": ".icbtn",
+      "props": [
+        "w",
+        "h",
+        "br",
+        "color"
+      ],
+      "values": {
+        "w": 24,
+        "h": 24,
+        "x": 426,
+        "y": 401,
+        "fs": 14,
+        "fw": 400,
+        "br": 2,
+        "lh": 22,
+        "color": "rgb(37,37,36)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgba(0, 0, 0, 0)",
+        "bw": 1,
+        "pad": "0px",
+        "padTop": 0,
+        "padRight": 0,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 14,
+        "radius": 2
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    },
+    {
+      "role": "卡角标",
+      "refSelector": ".available-app-tag",
+      "mineSelector": ".card-tag",
+      "props": [
+        "w",
+        "h",
+        "br",
+        "fs",
+        "color"
+      ],
+      "values": {
+        "w": 50,
+        "h": 20,
+        "x": 420,
+        "y": 164,
+        "fs": 12,
+        "fw": 400,
+        "br": 4,
+        "lh": 20,
+        "color": "rgb(255,255,255)",
+        "bg": "rgba(0, 0, 0, 0)",
+        "bd": "rgba(0, 0, 0, 0)",
+        "bw": 0,
+        "pad": "0px 7px",
+        "padTop": 0,
+        "padRight": 7,
+        "padBottom": 0,
+        "padLeft": 0,
+        "fontSize": 12,
+        "radius": 4
+      },
+      "source": {
+        "url": "http://172.26.26.61:10612/admin/#/AiWriting/AppManage?q=%7B%22pagination%22%3A%7B%22page%22%3A1%2C%22per_page%22%3A10%7D%7D",
+        "viewport": {
+          "w": 1440,
+          "h": 900
+        },
+        "at": "2026-10-23T00:03:48.166Z",
+        "tool": "bsk",
+        "bskVersion": "0.3.2"
+      }
+    }
+  ]
+}

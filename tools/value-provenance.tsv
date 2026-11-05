@@ -1,0 +1,57 @@
+# 视觉值出处台账 —— 每个裸值都必须在这里回答「它从哪来」。
+# 列（TAB 分隔）：值	类别	出处	证据	[文件（可选）]
+# 第 5 列＝只给这个文件的这处裸值作证；留空＝全局（旧行的行为不变）。
+#   ⚠ 值+类别是全站键：不给第 5 列，就把**所有文件里同值的裸值**一起洗成「有出处」。
+#   2026-10-28 实测：给 app.html 的 72px 补出处时，component.html 的 72px（顶栏只有 44 高，
+#   64+8 的推导在它身上不成立）被一并洗白 —— 这就是"补一行代替改值"，故台账加此列。
+# 类别只许：color / font-size / spacing / radius / gradient
+# 出处只许四个值：
+#   真源实测  → 证据写「哪个页面的哪个元素」，写不出就是没量过，别写这一行
+#   规范复用  → 证据写「DESIGN.md 哪一节」或「tokens.css 哪个 token」
+#   派生      → 证据写「由什么推出」，空 ⇒ 判红（没有证据的出处等于没有出处）
+#   待删      → 出现即判红：这个值在等死，却还活着
+# 这份台账是**例外名单**，不是白名单：能改用 token 的一律改用 token，不留在这里。
+#
+# 2026-10-26 建账时核对过、**没有**写进来的（剥注释后不再是裸值，写进来只是噪音）：
+#   #E5E7EB / #F0F0F0 / #F2F3F5 / #9FA0A1 … → 全在注释里（讲「真源描边实测是什么色」），
+#     代码里已走 var(--line-2) / var(--line) / var(--bg-2)。注释写色值是对的，不该红。
+#   #FFF（component.html:119 注释）→ 是 var(--on-brand)=#FFFFFF 的白话写法，代码里没有裸 #fff。
+#   rgb(217,217,217)（apps.html:63 注释）→ 真源刷新钮描边实测色，但代码用 var(--line-2)=#E5E7EB，
+#     两者不是同一个值（217 vs 229）—— 已在下面登记真源口径，⚠ 差异待人工核（见证据列）。
+#
+# 数据行从下面开始（第一列是值，TAB 分隔，不要表头）
+rgba(170,175,210,.22)	color	真源实测	apps.html 应用卡 .kcard:hover 与 components.html 组件卡 .crow.ccard:hover 的投影色：真源 hover 是 scale(1.05)+0 3px 9.7px，我方禁 transform（会拽走 fixed 菜单）只留同强度投影，色值照抄真源未改
+rgb(217,217,217)	color	真源实测	apps.html:63 注释指真源刷新钮 32×32 描边实测色；当前代码未落裸值（用 var(--line-2)=#E5E7EB）。⚠ 两者不等（217,217,217 vs 229,231,235），是真源口径与 token 的差异，须人工核一次：若注释对，--line-2 就是错的
+rgba(25,30,41,.04)	color	派生	由 DESIGN §1.1「层次靠底色差/阴影，不靠描边」+ 2026-10-27 零上下文评审实测（页面与卡片同为 #FFFFFF、色差为零；两侧阴影只覆盖 5px、最深 9%；底边 216 而两侧 232，下沿清楚两侧发虚）推出需要一圈 1px 均匀环收边。4% 是取「看得见但不成为一条线」的上限；未做 3%/4%/6% 的梯度对比，若评审判环偏重可下调
+# ── 2026-10-28（机制审查官）补记三条。只记「能核的」：值等于某个令牌，或端点由渐变定义本身推出。
+#    其余 6 处（封面瓷面 #F8FAFF/#ECF0FA、.kp-b 的 46% 与 rgba(25,30,41,.07)、
+#    app.html 的 18px / 9px、versions.html 的 5px）**没有出处**，不许写进这张表来换绿：
+#    实测 .cv-say-b 高 41px（9×2+行高 21+描边 1×2），既不是 --h-ctl 32 也不是任何档位反推；
+#    .kp-b 色带止于 46%，而名称起点实测只占块宽 14.4%–18.0%，对不上。
+#    这六处的正解是改成令牌/收进刻度（违反《组件卡样式规范》§8.1「页面规则里一律 var()」），
+#    已列清单交前端，改完即 rc=0。不许用「往台账里补一行」代替改值 —— 那是把红改成绿，不是把错改对。
+0%	gradient	派生	双色标渐变的首标端点（linear-gradient(a 0%, b N%) 的起点位置）。端点由渐变定义本身推出、不是可调参数 —— 要调的是后一个色标停在哪，把它当「可调值」正是 10-26 那次把渐变从 9% 手调到 28% 的入口
+100%	gradient	派生	双色标渐变的末标端点（linear-gradient(a 0%, b 100%) 的终点位置），同上：端点由定义推出，不是可调参数
+# ── 2026-10-28（机制审查官）只补一条：app.html 画布顶部内距 72px。
+#    P0 修「首块被顶栏压住」时由 64 改到 72，判据当场判红；本行回答「凭什么 72」。
+72px	spacing	派生	顶栏底边 64 ＋ 8px 呼吸。64 = .topbar top:16 + .float-hd min-height:48（1440×900 实测 .float-hd 的 rect.bottom=64）；8 = 体验盲审 2026-10-28 P0-1 的间距要求「首块不许被顶栏压住」（改前 padding-top 也是 64 ⇒ 首块顶边与顶栏贴死，实测 gap=0）。刻度上无 72（--space-* 只到 32），故登记出处而非改 token；也不写成 calc(16px+48px+8px) —— 那只是把数字塞进受保护括号，判据看不见＝没回答「凭什么」。⚠ 改 .topbar 的 top 或 .float-hd 的 min-height 时必须同步回本值与 app.html:30	app.html
+13px	spacing	真源实测	官网 agents.datagrand.com/#/Expert/ManageAgent 应用卡底栏 computed padding=12px 12px 13px（2026-11-02 1440×900 实测）；49 = 12 + 24 + 13，13 是底栏内容下沿留白。刻度无 13，登记出处不改 token	assets/sys.css
+11px	font-size	规范复用	引用管理浮层（components.html 的 ⋮→引用管理）次级说明字级：同浮层 9 处统一（.ru-prog-s/.ru-thead/.ru-st/.ru-one/.ru-rep-h span 等），令牌最小档 12px，密集表格刻意低一档	assets/sys.css
+10px	font-size	规范复用	引用管理浮层：应用名下的次要计数（.ru-app small），比 11px 再低一档	assets/sys.css
+13px	font-size	规范复用	引用管理浮层：进度行小标题（.ru-prog-h），取 12 与 14 之间的中间档	assets/sys.css
+17px	font-size	规范复用	引用管理浮层标题（.ru-hd h2）：比页面标题 20px 低、比正文 14px 高，标记浮层层级	assets/sys.css
+20px	spacing	规范复用	引用管理浮层标题区上内距（.ru-hd padding-top），与 .ru-stats 的 24px 左右内距成一套	assets/sys.css
+40px	spacing	规范复用	引用管理浮层空态上下留白（.ru-empty），与列表最小高度配套	assets/sys.css
+5px	spacing	派生	引用管理浮层值间距（.ru-v gap）：11px 小字基线需要比 --space-4 多 1px	assets/sys.css
+9px	radius	派生	操作开关轨道圆角（.ops-switch-track）：轨道高 18px，圆角取半高 9px 才是完整胶囊	assets/sys.css
+rgba(0,0,0,.22)	color	派生	操作开关滑块投影（.ops-switch-knob）：3px 位移用的轻投影，--shadow-* 档位过重	assets/sys.css
+45%	gradient	真源实测	全文角标白底渐变的止点：真源列表文字截断处渐变到 45% 才露出「全文」。2026-11-04 组件卡全文角标实机截图	assets/sys.css
+2px	radius	规范复用	页签指示条圆角，沿用 tokens --radius-xs 的旧档（历史存量，非本轮新增）	assets/sys.css
+3px	spacing	规范复用	页签 chip 内部间距，沿用同一浮层的紧凑档（历史存量）	assets/sys.css
+1px	spacing	真源实测	真源状态胶囊内距 1px 6px（2026-11-04 任务中心列表实测）	versions.html
+6px	spacing	真源实测	真源状态胶囊内距 1px 6px（2026-11-04 任务中心列表实测）	versions.html
+6px	radius	规范复用	tokens.css --r-sm:6px 同值；sys.css .kp-b 沿用这一档，写法仍是裸值（已进前端清单）	assets/sys.css
+6px	spacing	规范复用	同值复用：.kp-b 的 6px 与 --r-sm 同一档，不是新拍的数	assets/sys.css
+6px	radius	规范复用	tokens.css --r-sm:6px（同值）。本行只回答凭什么 6px；违反 §8.1 页面规则一律 var()，已进前端清单
+
+

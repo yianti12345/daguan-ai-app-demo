@@ -1,0 +1,77 @@
+{
+  "_why": "列表页卡片的信息契约：写第一行 markup 之前就要定下「这张卡允许出现哪个数据字段」。2026-10-24 的教训是——没有这份东西，写模板时会即兴把 data.js 里现成的键往卡上搬（fields/refs 都搬过），数据里真有，所以不觉得在编。",
+  "_source": "所有 key 必须存在于 assets/data.js（唯一真源）。本文件不许手写数据模型里没有的字段；判据会双向校验。",
+  "_how": "required = 用户在这页要完成动作时非看不可的；allowed = 允许出现；forbidden = 数据里有但这一页的读者不需要（出现即红）；derived = 该字段不直接读对象、由别处现算（同样算「出现了」）。",
+  "entity": {
+    "apps": {
+      "dataKey": "apps",
+      "page": "apps.html",
+      "card": {
+        "required": [
+          "name",
+          "desc",
+          "status",
+          "version",
+          "updated"
+        ],
+        "allowed": [
+          "id",
+          "name",
+          "desc",
+          "status",
+          "version",
+          "updated",
+          "client",
+          "cover",
+          "coverStyle",
+          "trialAt",
+          "visScope",
+          "cfgScope"
+        ],
+        "forbidden": [
+          "comps",
+          "fields",
+          "refs",
+          "enabled"
+        ],
+        "derived": {
+          "version": "DB.appVer",
+          "comps": "DB.installedCount"
+        },
+        "notes": "client 只出现在搜索关键字里（apps.html 的 kw 命中范围），不上卡面；version/comps 由 DB 现算。★2026-10-30：应用卡上不出现任何客户维度状态（授权版本、可升级、需确认、可回退）—— 这里的主语是应用，应用永远是最新；版本历史在「版本管理」，客户的授权与升级属于客户授权那一层（本 demo 无此页）。 ★2026-11-04：trialAt 进 allowed（三态动作「发布内测版」写它，apps.html:315；数据模型原来漏登记，已补进 APP_FIELDS）。 ★2026-11-04：visScope/cfgScope 进 allowed（应用配置器写这两个字段，apps.html:994；APP_FIELDS 早有登记）。"
+      }
+    },
+    "comps": {
+      "dataKey": "COMPS",
+      "page": "components.html",
+      "card": {
+        "required": [
+          "name",
+          "desc",
+          "status"
+        ],
+        "allowed": [
+          "id",
+          "name",
+          "label",
+          "desc",
+          "status",
+          "enabled",
+          "tags",
+          "updated",
+          "visScope",
+          "cfgScope",
+          "ver"
+        ],
+        "forbidden": [
+          "fields",
+          "refs"
+        ],
+        "derived": {
+          "refs": "DB.APPS.filter"
+        },
+        "notes": "2026-10-25 改版（单列行式列表）后逐条复核：enabled 只多出一颗「已禁用」标签；fields 是配置器实现层，列表页永不出现。ver 是组件当前版本（用户 m04536 把「当前版本」点名为首要信息）。refs 不再读 c.refs 那个数字，而是用 DB.APPS.filter(a => a.comps 含 c.id) 现算真名（行内 2 个 + `+N`，全名进 title，点 ⋮ 的「被 N 个应用使用」打开浮层）—— 与 apps 页 version/comps 同样按 derived 登记，故此处派生函数的锚是 DB.APPS.filter（components.html 里仅两处，均为同一次 refs 现算：行内与浮层）。 ★2026-10-26：ver/refs 从「必含」改成「不许上卡」——用户原话「版本不在卡上」；版本进版本管理页，引用数只在删除/切换前的影响面提示里出现。 ★2026-10-29：type 已按用户裁决从 data.js 删除，契约里关于 type 的 allowed/说明一并删掉（判据报「声明了 data.js 不存在的字段」）。 ★2026-10-30 标签：tags 存的是数据字典 comp_tag 的 code（多值、可选、最多 3），卡上只显示 label，最多 2 个 + N。 ★2026-11-04：visScope/cfgScope 已补进 COMP_FIELDS（原来页面在写、模型里没有，存一次就丢）。 ★2026-11-04（用户 m07271）：「版本号与版本更新时间一起下放到卡底规格条」—— 2026-10-26 那条「版本不在卡上」被这次用户决定覆盖，ver 从 forbidden 移回 allowed，refs/fields 仍不许上卡。"
+      }
+    }
+  }
+}

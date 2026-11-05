@@ -1,0 +1,7 @@
+# token-crossfile.tsv —— 跨文件令牌定义的例外账（2026-10-29 立）
+# 规矩：tokens.css 是令牌唯一真源（DESIGN.md §8 第 7 条：新增令牌一律进 tokens.css 的 L2/L3）。
+#   任何定义在别的 CSS 文件、又被另一个文件 var() 引用的令牌，必须在这里留一行；
+#   没有这一行，token-audit 的「引用不存在的 token」照旧判红。
+#   例外账只放行**这一个 token**，不等于把那个文件整份并入定义源。
+# 列（TAB）：token	file	why	owner	due
+--fk-clear-bottom	assets/float.css	对话区底部占位（输入条 60 + 底距 24 + 呼吸 88 = 172），几何归对话区文件所有；2026-10-29 由前端从 sys.css 裸值移入	前端开发官	2026-11-15

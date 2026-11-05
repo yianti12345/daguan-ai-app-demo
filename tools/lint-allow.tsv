@@ -1,0 +1,15 @@
+rule	scope	selector	reason	expires	by
+# 视觉 lint 例外账（check-visual-lint.mjs 读）
+# 列：rule  scope(a=外部lint / b=自查对比度 / both)  selector  reason  expires(YYYY-MM-DD)  by
+# 规矩：reason 空 = 该行无效；expires 空缺或已过 = 判红。放行必须有理由，没理由的放行就是假绿。
+# selector 按空格切段，每段都要在定位串（祖先 > 自己）里出现，所以多写几段才收得住。
+#
+# 现有四条全部是**同一笔债**：真源蓝色照抄，压字不过 AA。不是没看见，是用户 2026-10-22 三次
+# 要求「跟真源一致」，于是照抄并把欠账登记在这里（DESIGN §2 / §6 同一笔）。
+# 到期 2026-12-31：到期仍不处置，这条账自己变红——续命要重新给理由，不许拖着。
+contrast	b	.btn.primary	真源主按钮底 rgb(88,127,255) 照抄，白字 3.56:1；用户三次要求「跟真源一致」，改为加深即违背该决定。欠账登记 DESIGN §2	2026-12-31	lead
+contrast	b	[aria-current]	真源侧栏当前项是第四个蓝 rgb(81,122,255)，压白 3.77:1；同上照抄，且与 --brand 必须是两个值（线上本来就是两个）	2026-12-31	lead
+contrast	b	.gn	当前分组的标题用同一支第四个蓝，压 --sider-bg 3.42:1；与上一条同源	2026-12-31	lead
+contrast	b	.logo	品牌标识字形（logotype），WCAG 1.4.3 对 logotype 免责；它不是正文，改色等于改标识	2026-12-31	lead
+sideStripe	a	.hint	不是装饰色块：同一元素用 data-kind 在 info/err 间切换，这条 3px 色带就是**状态编码**（app.html:164/169）；去掉它错误提示只能靠字色区分，反而更差。到期复查是否换成图标+文字	2026-12-31	lead
+contrast	b	.kcard .kc-tag	白字压真源蓝 --brand(#587FFF) = 3.56:1，与 .btn.primary 同一支蓝同一笔债。**不改的理由**：单独加深这一处会出现同屏两个蓝（角标 #2F55C0 / 主按钮 #587FFF），比 12px 小字读不清更难解释；要么两个一起改，要么等真源改。**这处比主按钮更该修**（角标是卡上唯一的状态信息，主按钮有位置与悬停可辨），到期时优先处置这一处	2026-12-31	lead

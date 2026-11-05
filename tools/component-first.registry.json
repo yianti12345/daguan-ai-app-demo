@@ -1,0 +1,1826 @@
+{
+  "schema": "component-first/1",
+  "frozen": "2026-10-29",
+  "why": "组件层必须先于页面存在：页面只做组装，样式归组件层；页面里自写一份组件＝判红。闸只读文件，不启浏览器。",
+  "surfaces": {
+    "pages": [
+      "app.html",
+      "component.html",
+      "versions.html",
+      "components.html",
+      "apps.html",
+      "downloads.html",
+      "client-auth.html",
+      "interfaces.html",
+      "xz-config.html",
+      "skills.html",
+      "skill-edit.html",
+      "config.html",
+      "abilities.html",
+      "ability.html"
+    ],
+    "componentCss": [
+      "assets/sys.css",
+      "assets/client-auth.css",
+      "assets/float.css",
+      "assets/xiaozhi.css",
+      "assets/configurator.css",
+      "assets/viewmode.css",
+      "assets/generated.css"
+    ],
+    "jsScan": "assets/*.js"
+  },
+  "targets": {
+    "inlineStyleRatio": {
+      "max": 0.3,
+      "enforceFrom": "2026-11-30",
+      "perPageBaseline": {
+        "app.html": 1305,
+        "component.html": 18617,
+        "versions.html": 6679,
+        "components.html": 2017,
+        "apps.html": 557,
+        "downloads.html": 1890,
+        "client-auth.html": 0,
+        "interfaces.html": 6475,
+        "xz-config.html": 3674,
+        "skills.html": 2570,
+        "skill-edit.html": 2252,
+        "config.html": 2594,
+        "abilities.html": 1074,
+        "ability.html": 2942
+      },
+      "slackBytes": 1024,
+      "refrozenAt": "2026-10-29",
+      "why": "2026-10-29 重冻为每页基线。旧口径是 5 页合计 61,570 B＋1,024 B：现盘合计只有 29,175 B，页面级还剩 33,419 B 免费额度 —— 盲审往任一页加 33 KB 内联仍 rc=0，是假绿。现在每页各自锁定现盘（app 1,305／component 18,617／versions 6,679／components 2,017／apps 557 B），某页比自己的基线多 1,024 B 即红（A1p）；缺基线的新页面直接 A0 红。1,024 B 只放页面级胶水，不放整段组件样式。30%×sys.css 仍是第二阶段目标（宽限至 2026-11-30），不替代页面级棘轮。"
+    },
+    "legacyTokenRatio": {
+      "max": 0.1,
+      "why": "冻结日 1,623→≤178 条；10 个 CSS 面平均 ≤18 条。单个组件块 var() 引用中位 3、最大 7（.btn）；≤18/面≈每面最多剩三个组件块的旧引用。L0 全是 alias，改名不改语义，成本按面计（10 个面各一次 review），89% 降幅属一次机械迁移的量级。"
+    },
+    "specCoverage": {
+      "min": 0.8,
+      "basis": "component-families",
+      "why": "分母按家族口径（口径件 _docs/设计-规范覆盖率口径-20261029.spec.md §3、§7）：24 个家族，旧 80 根里的变体/部件/栅格工具不再各计一个组件。80% 是阶段线（≥20/24，2026-11-30），终线 100%（24/24，2027-03-31）；min 未下调，只换分母算法。"
+    }
+  },
+  "baseline": {
+    "inlineBytesByPage": {
+      "app.html": 35518,
+      "component.html": 17642,
+      "versions.html": 5973,
+      "components.html": 1981,
+      "apps.html": 456
+    },
+    "inlineBytes": 61570,
+    "sysBytes": 96800,
+    "legacyRefs": 1623,
+    "varRefs": 1779,
+    "specCovered": 52,
+    "specTotal": 128,
+    "roots": 80,
+    "rootsCovered": 38
+  },
+  "pagePrivate": {
+    "app.html": {
+      "due": "2026-11-30",
+      "classes": [],
+      "note": "2026-10-29 复测：页面已无 <style>，历史 85 条白名单全部销账（清掉，不转组件）"
+    },
+    "component.html": {
+      "due": "2026-11-30",
+      "classes": [
+        "back-btn",
+        "comp-name",
+        "comp-status",
+        "comp-ver",
+        "canvas-inner",
+        "empty-wrap",
+        "empty-hint",
+        "empty-lead",
+        "empty-card",
+        "empty-seeds",
+        "seed-cap",
+        "seed",
+        "seed-tx",
+        "seed-ar",
+        "strip-act",
+        "cstep",
+        "trail-row",
+        "trail-t",
+        "trail-who",
+        "trail-txt",
+        "bd-chip-sel"
+      ],
+      "note": "历史 29 条白名单中 8 条 tb-* 已移组件层（现由 BatchAssign 债管），实测私有类 21 条；组件副本交 C2，空态部件迁 Empty，其余单页骨架续期（见 plan）",
+      "plan": [
+        {
+          "action": "component-debt",
+          "classes": [
+            "back-btn",
+            "bd-chip-sel"
+          ],
+          "to": "button/chip 的 C2 债",
+          "why": "页面自写组件实现，已由 C 段登记债管到 2026-12-31；B 段不重复计红"
+        },
+        {
+          "action": "migrate",
+          "classes": [
+            "empty-wrap",
+            "empty-hint",
+            "empty-lead",
+            "empty-card",
+            "empty-seeds",
+            "seed-cap",
+            "seed",
+            "seed-tx",
+            "seed-ar"
+          ],
+          "to": "empty（§12 空态族）",
+          "due": "2027-03-31",
+          "why": "空态/种子部件只在组件库页实例化；迁入 Empty 族后删本行"
+        },
+        {
+          "action": "renew",
+          "classes": [
+            "comp-name",
+            "comp-status",
+            "comp-ver",
+            "canvas-inner",
+            "strip-act",
+            "cstep",
+            "trail-row",
+            "trail-t",
+            "trail-who",
+            "trail-txt"
+          ],
+          "to": "2027-03-31",
+          "why": "组件库单页骨架（组件名/状态/版本、画布内层、步骤、轨迹），无第二实例；转组件会为一页造组件，续期随组件库页改版处置"
+        }
+      ]
+    },
+    "versions.html": {
+      "due": "2026-12-31",
+      "classes": [
+        "vl-who",
+        "vl-now",
+        "dot",
+        "vl-bar",
+        "vl-chg",
+        "vl-chg-hd",
+        "chg-row",
+        "chg-t",
+        "chg-b",
+        "vl-table",
+        "vl-head",
+        "vl-row",
+        "vl-body",
+        "vl-v",
+        "vl-on",
+        "vl-off",
+        "vl-at",
+        "vl-o",
+        "vl-btn",
+        "is-main",
+        "is-primary",
+        "is-quiet",
+        "vl-foot",
+        "vl-empty",
+        "is-now",
+        "vl-pg"
+      ],
+      "note": "版本对比单页 28 条；vl-btn 交按钮 C2，其余续期（见 plan）",
+      "plan": [
+        {
+          "action": "component-debt",
+          "classes": [
+            "vl-btn"
+          ],
+          "to": "button 的 C2 债",
+          "why": "页面自写按钮实现，已由按钮族登记债管到 2026-12-31；B 段不重复计红"
+        },
+        {
+          "action": "renew",
+          "classes": [
+            "vl-who",
+            "vl-now",
+            "dot",
+            "vl-bar",
+            "vl-chg",
+            "vl-chg-hd",
+            "chg-row",
+            "chg-t",
+            "chg-b",
+            "vl-table",
+            "vl-head",
+            "vl-row",
+            "vl-body",
+            "vl-v",
+            "vl-on",
+            "vl-off",
+            "vl-at",
+            "vl-o",
+            "is-main",
+            "is-primary",
+            "is-quiet",
+            "vl-foot",
+            "vl-empty",
+            "is-now"
+          ],
+          "to": "2027-03-31",
+          "why": "版本对比单页（变更行/版本表/对比条/当前态），全站仅此一页实例化；转组件无复用收益，续期随版本页重构处置"
+        },
+        {
+          "action": "renew",
+          "to": "2027-03-31",
+          "why": "页面私有类（分页/列宽），与 versions 页同批处理，未转共享组件",
+          "classes": [
+            "vl-pg"
+          ]
+        }
+      ]
+    },
+    "components.html": {
+      "due": "2026-12-31",
+      "classes": [
+        "cc-meta",
+        "cc-tags",
+        "cc-tag",
+        "ei-tags",
+        "ei-tag",
+        "ei-sub"
+      ],
+      "note": "cc-meta 迁 ComponentCard（见 plan）",
+      "plan": [
+        {
+          "action": "migrate",
+          "classes": [
+            "cc-meta",
+            "cc-tags",
+            "cc-tag",
+            "ei-tags",
+            "ei-tag",
+            "ei-sub"
+          ],
+          "to": "componentcard（§3 组件卡）",
+          "due": "2027-03-31",
+          "why": "组件卡 .cc-meta 部件只在 components.html 定义；迁入 ComponentCard 组件层后删本行"
+        }
+      ]
+    },
+    "apps.html": {
+      "due": "2026-12-31",
+      "classes": [
+        "nf-hint",
+        "dl-btn",
+        "dl-menu"
+      ],
+      "note": "nf-hint 续期；dl-btn/dl-menu 是应用卡上的导出菜单，登记为按钮族 C2 债（见 plan）",
+      "plan": [
+        {
+          "action": "component-debt",
+          "classes": [
+            "dl-btn",
+            "dl-menu"
+          ],
+          "to": "button 的 C2 债",
+          "why": "应用卡的下载菜单按钮是页面自写按钮实现，登记到 2026-12-31 由按钮族统一收口"
+        },
+        {
+          "action": "renew",
+          "classes": [
+            "nf-hint"
+          ],
+          "to": "2027-03-31",
+          "why": "应用页表单旁注 nf-hint 仅 apps 一页使用，属页面级说明而非可复用组件；续期随表单块收口"
+        }
+      ]
+    },
+    "downloads.html": {
+      "due": "2026-12-31",
+      "classes": [
+        "dl-hd",
+        "dl-lead",
+        "dl-grid",
+        "dl-card",
+        "dl-os",
+        "dl-sub",
+        "dl-meta",
+        "dl-cta",
+        "dl-how",
+        "dl-sha",
+        "dl-empty",
+        "dl-sha-btn"
+      ],
+      "note": "下载页自己的排版：标题区 / 两列平台卡 / 校验值。按钮已用 .btn 组件，不复议。",
+      "plan": [
+        {
+          "action": "renew",
+          "classes": [
+            "dl-hd",
+            "dl-lead",
+            "dl-grid",
+            "dl-card",
+            "dl-os",
+            "dl-sub",
+            "dl-meta",
+            "dl-cta",
+            "dl-how",
+            "dl-sha",
+            "dl-empty"
+          ],
+          "why": "这一页只有一种形态（两个平台的下载卡），现在抽组件等于给一次性排版起名字；等出现第二个'交付入口'页再抽成 DeliveryCard。",
+          "to": "2027-03-31"
+        },
+        {
+          "action": "component-debt",
+          "classes": [
+            "dl-sha-btn"
+          ],
+          "to": "button 的 C2 债",
+          "why": "校验值复制按钮是页面自写按钮实现，登记到 2026-12-31 由按钮族收口"
+        }
+      ]
+    },
+    "client-auth.html": {
+      "due": "2027-03-31",
+      "classes": [],
+      "note": "客户授权页 2026-11-02 新登记。页面专用样式已迁到 assets/client-auth.css（登记为样式层），页内不再有私有类；au-btn / au-tag 登记在按钮与胶囊族的 C2 债里"
+    },
+    "interfaces.html": {
+      "due": "2026-11-30",
+      "classes": [
+        "gtable-foot",
+        "gtable-head",
+        "gtable-row",
+        "is-danger",
+        "it-at",
+        "it-bar",
+        "it-cnt",
+        "it-col",
+        "it-desc",
+        "it-file",
+        "it-hint",
+        "it-intro",
+        "it-lb",
+        "it-lb-row",
+        "it-mk",
+        "it-name",
+        "it-name-in",
+        "it-op",
+        "it-ops",
+        "it-pager",
+        "it-pg",
+        "it-pick",
+        "it-pn",
+        "it-pv",
+        "it-pv-hd",
+        "it-raw",
+        "it-res",
+        "it-rn",
+        "it-sp",
+        "it-table",
+        "it-two",
+        "ops",
+        "page-hd",
+        "req"
+      ],
+      "note": "2026-11-05 入册：这几页是能力配置/小智配置/基础配置/技能编辑器，做的时候没登记，B0 判据扫不到，属最上游的假绿",
+      "plan": [
+        {
+          "action": "renew",
+          "to": "2027-03-31",
+          "why": "2026-11 新建的配置类页面（能力配置/小智配置/基础配置/技能编辑器），样式先按页面落地；收敛顺序排在卡片类之后，2027-03 前并入共享组件，届时此处置整组销账",
+          "classes": [
+            "gtable-foot",
+            "gtable-head",
+            "gtable-row",
+            "is-danger",
+            "it-at",
+            "it-bar",
+            "it-cnt",
+            "it-col",
+            "it-desc",
+            "it-file",
+            "it-hint",
+            "it-intro",
+            "it-lb",
+            "it-lb-row",
+            "it-mk",
+            "it-name",
+            "it-name-in",
+            "it-op",
+            "it-ops",
+            "it-pager",
+            "it-pg",
+            "it-pick",
+            "it-pn",
+            "it-pv",
+            "it-pv-hd",
+            "it-raw",
+            "it-res",
+            "it-rn",
+            "it-sp",
+            "it-table",
+            "it-two",
+            "ops",
+            "page-hd",
+            "req"
+          ]
+        }
+      ]
+    },
+    "xz-config.html": {
+      "due": "2026-11-30",
+      "classes": [
+        "btn",
+        "cf-hd",
+        "cf-lb",
+        "cf-ta",
+        "cfg-form",
+        "gtable-foot",
+        "is-danger",
+        "ops",
+        "page-hd",
+        "sec-t",
+        "sk-at",
+        "sk-bar",
+        "sk-desc",
+        "sk-drop",
+        "sk-form",
+        "sk-hint",
+        "sk-name",
+        "sk-op",
+        "sk-ops",
+        "sk-pg",
+        "sk-sp",
+        "sk-ta-lg",
+        "sk-table",
+        "cf-save"
+      ],
+      "note": "2026-11-05 入册：这几页是能力配置/小智配置/基础配置/技能编辑器，做的时候没登记，B0 判据扫不到，属最上游的假绿",
+      "plan": [
+        {
+          "action": "renew",
+          "to": "2027-03-31",
+          "why": "2026-11 新建的配置类页面（能力配置/小智配置/基础配置/技能编辑器），样式先按页面落地；收敛顺序排在卡片类之后，2027-03 前并入共享组件，届时此处置整组销账",
+          "classes": [
+            "btn",
+            "cf-hd",
+            "cf-lb",
+            "cf-ta",
+            "cfg-form",
+            "gtable-foot",
+            "is-danger",
+            "ops",
+            "page-hd",
+            "sec-t",
+            "sk-at",
+            "sk-bar",
+            "sk-desc",
+            "sk-drop",
+            "sk-form",
+            "sk-hint",
+            "sk-name",
+            "sk-op",
+            "sk-ops",
+            "sk-pg",
+            "sk-sp",
+            "sk-ta-lg",
+            "sk-table",
+            "cf-save"
+          ]
+        }
+      ]
+    },
+    "skills.html": {
+      "due": "2026-11-30",
+      "classes": [
+        "gtable-foot",
+        "is-danger",
+        "ops",
+        "page-hd",
+        "sk-at",
+        "sk-bar",
+        "sk-desc",
+        "sk-drop",
+        "sk-form",
+        "sk-hint",
+        "sk-name",
+        "sk-op",
+        "sk-ops",
+        "sk-pg",
+        "sk-sp",
+        "sk-table"
+      ],
+      "note": "2026-11-05 入册：这几页是能力配置/小智配置/基础配置/技能编辑器，做的时候没登记，B0 判据扫不到，属最上游的假绿",
+      "plan": [
+        {
+          "action": "renew",
+          "to": "2027-03-31",
+          "why": "2026-11 新建的配置类页面（能力配置/小智配置/基础配置/技能编辑器），样式先按页面落地；收敛顺序排在卡片类之后，2027-03 前并入共享组件，届时此处置整组销账",
+          "classes": [
+            "gtable-foot",
+            "is-danger",
+            "ops",
+            "page-hd",
+            "sk-at",
+            "sk-bar",
+            "sk-desc",
+            "sk-drop",
+            "sk-form",
+            "sk-hint",
+            "sk-name",
+            "sk-op",
+            "sk-ops",
+            "sk-pg",
+            "sk-sp",
+            "sk-table"
+          ]
+        }
+      ]
+    },
+    "skill-edit.html": {
+      "due": "2026-11-30",
+      "classes": [
+        "is-on",
+        "se-code",
+        "se-editor",
+        "se-editor-hd",
+        "se-file",
+        "se-folder",
+        "se-form",
+        "se-main",
+        "se-tree",
+        "se-tree-hd"
+      ],
+      "note": "2026-11-05 入册：这几页是能力配置/小智配置/基础配置/技能编辑器，做的时候没登记，B0 判据扫不到，属最上游的假绿",
+      "plan": [
+        {
+          "action": "renew",
+          "to": "2027-03-31",
+          "why": "2026-11 新建的配置类页面（能力配置/小智配置/基础配置/技能编辑器），样式先按页面落地；收敛顺序排在卡片类之后，2027-03 前并入共享组件，届时此处置整组销账",
+          "classes": [
+            "is-on",
+            "se-code",
+            "se-editor",
+            "se-editor-hd",
+            "se-file",
+            "se-folder",
+            "se-form",
+            "se-main",
+            "se-tree",
+            "se-tree-hd"
+          ]
+        }
+      ]
+    },
+    "config.html": {
+      "due": "2026-11-30",
+      "classes": [
+        "cfg-sec",
+        "cfg-sec-hd",
+        "cfg-table",
+        "gtable-foot",
+        "is-danger",
+        "m-dim",
+        "m-form",
+        "m-name",
+        "m-op",
+        "m-ops",
+        "m-pg",
+        "m-sp",
+        "ops",
+        "page-hd",
+        "scene",
+        "scene-sel",
+        "scene-t",
+        "wide"
+      ],
+      "note": "2026-11-05 入册：这几页是能力配置/小智配置/基础配置/技能编辑器，做的时候没登记，B0 判据扫不到，属最上游的假绿",
+      "plan": [
+        {
+          "action": "renew",
+          "to": "2027-03-31",
+          "why": "2026-11 新建的配置类页面（能力配置/小智配置/基础配置/技能编辑器），样式先按页面落地；收敛顺序排在卡片类之后，2027-03 前并入共享组件，届时此处置整组销账",
+          "classes": [
+            "cfg-sec",
+            "cfg-sec-hd",
+            "cfg-table",
+            "gtable-foot",
+            "is-danger",
+            "m-dim",
+            "m-form",
+            "m-name",
+            "m-op",
+            "m-ops",
+            "m-pg",
+            "m-sp",
+            "ops",
+            "page-hd",
+            "scene",
+            "scene-sel",
+            "scene-t",
+            "wide"
+          ]
+        }
+      ]
+    },
+    "abilities.html": {
+      "due": "2026-11-30",
+      "classes": [
+        "ab-at",
+        "ab-bar",
+        "ab-cnt",
+        "ab-desc",
+        "ab-md",
+        "ab-name",
+        "ab-op",
+        "ab-ops",
+        "ab-pg",
+        "ab-table",
+        "is-danger"
+      ],
+      "note": "2026-11-05 能力/接口分层时新建：能力列表与能力详情",
+      "plan": [
+        {
+          "action": "renew",
+          "to": "2027-03-31",
+          "why": "能力分层（能力=容器、接口=原子）第一版，页面私有类先落地；与配置类页面同批并入共享组件",
+          "classes": [
+            "ab-at",
+            "ab-bar",
+            "ab-cnt",
+            "ab-desc",
+            "ab-md",
+            "ab-name",
+            "ab-op",
+            "ab-ops",
+            "ab-pg",
+            "ab-table",
+            "is-danger"
+          ]
+        }
+      ]
+    },
+    "ability.html": {
+      "due": "2026-11-30",
+      "classes": [
+        "abt-bar",
+        "abt-doc-ta",
+        "abt-hint",
+        "abt-in",
+        "abt-lb",
+        "abt-list",
+        "abt-m",
+        "abt-op",
+        "abt-p",
+        "abt-row",
+        "abt-sec",
+        "abt-state",
+        "abt-ta",
+        "abt-two",
+        "is-danger",
+        "is-gone"
+      ],
+      "note": "2026-11-05 能力/接口分层时新建：能力列表与能力详情",
+      "plan": [
+        {
+          "action": "renew",
+          "to": "2027-03-31",
+          "why": "能力分层（能力=容器、接口=原子）第一版，页面私有类先落地；与配置类页面同批并入共享组件",
+          "classes": [
+            "abt-bar",
+            "abt-doc-ta",
+            "abt-hint",
+            "abt-in",
+            "abt-lb",
+            "abt-list",
+            "abt-m",
+            "abt-op",
+            "abt-p",
+            "abt-row",
+            "abt-sec",
+            "abt-state",
+            "abt-ta",
+            "abt-two",
+            "is-danger",
+            "is-gone"
+          ]
+        }
+      ]
+    }
+  },
+  "components": {
+    "button": {
+      "label": "按钮",
+      "specHeading": "## 1 按钮 Button",
+      "canonical": {
+        "root": "btn",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "(^|-)btn(-|$)",
+        "^(kbtn|fk-op)$"
+      ],
+      "debt": [
+        {
+          "kind": "button",
+          "root": "dl-btn",
+          "file": "apps.html",
+          "due": "2026-12-31",
+          "note": "应用卡导出菜单按钮（页面自写实现）"
+        },
+        {
+          "kind": "button",
+          "root": "dl-menu",
+          "file": "apps.html",
+          "due": "2026-12-31",
+          "note": "导出菜单容器（页面自写实现）"
+        },
+        {
+          "kind": "button",
+          "root": "au-btn",
+          "file": "assets/client-auth.css",
+          "due": "2026-12-31",
+          "note": "客户授权页行内按钮（页面自写实现，第五份按钮）"
+        },
+        {
+          "kind": "button",
+          "root": "dl-sha-btn",
+          "file": "downloads.html",
+          "due": "2026-12-31",
+          "note": "校验值复制按钮（页面自写实现）"
+        },
+        {
+          "root": "kbtn",
+          "file": "assets/sys.css",
+          "due": "2026-11-30"
+        },
+        {
+          "root": "fk-op",
+          "file": "assets/float.css",
+          "due": "2026-11-30"
+        },
+        {
+          "root": "quiet",
+          "file": "assets/sys.css",
+          "mode": "literal",
+          "literal": ".nf-ft .btn.quiet",
+          "due": "2026-11-30",
+          "note": "第四份：弹层脚按钮的局部覆盖"
+        },
+        {
+          "kind": "button",
+          "root": "tb-batch-btn",
+          "file": "app.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "button",
+          "root": "btn-undo",
+          "file": "app.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "button",
+          "root": "btn-ghost-s",
+          "file": "app.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "button",
+          "root": "btn-update",
+          "file": "app.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "button",
+          "root": "btn-plain",
+          "file": "app.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "button",
+          "root": "btn-text",
+          "file": "app.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "button",
+          "root": "back-btn",
+          "file": "component.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "button",
+          "root": "tb-batch-btn",
+          "file": "component.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "button",
+          "root": "vl-btn",
+          "file": "versions.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        }
+      ],
+      "scopeNote": "只判类名根；不看元素选择器与内联 style="
+    },
+    "chip": {
+      "label": "胶囊",
+      "specHeading": "## 6 胶囊 Chip / Pill",
+      "canonical": {
+        "root": "cond",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "(^|-)(tag|chip|pill|cond)(-|$)"
+      ],
+      "debt": [
+        {
+          "kind": "chip",
+          "root": "au-tag",
+          "file": "assets/client-auth.css",
+          "due": "2026-12-31",
+          "note": "客户授权页「已取消」行内小标（页面自写胶囊）"
+        },
+        {
+          "root": "tag",
+          "file": "assets/sys.css",
+          "due": "2026-11-30"
+        },
+        {
+          "root": "chip",
+          "file": "assets/sys.css",
+          "due": "2026-11-30"
+        },
+        {
+          "root": "cond",
+          "file": "assets/generated.css",
+          "due": "2026-11-30"
+        },
+        {
+          "kind": "chip",
+          "root": "chip",
+          "file": "app.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "chip",
+          "root": "cv-blk-tag",
+          "file": "app.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        },
+        {
+          "kind": "chip",
+          "root": "bd-chip-sel",
+          "file": "component.html",
+          "due": "2026-12-31",
+          "note": "页面内自写组件实现（盘点既有，未重构）"
+        }
+      ],
+      "scopeNote": "几何以 .cond 为基准（_docs/设计-组件级令牌与禁用三态-20261029.spec.md §2.3）"
+    },
+    "input": {
+      "label": "输入",
+      "specHeading": "## 11 输入 Input",
+      "canonical": {
+        "root": "field",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "^(field|nf-in)(-|$)"
+      ],
+      "debt": [
+        {
+          "root": "nf-in",
+          "file": "assets/sys.css",
+          "due": "2026-11-30"
+        },
+        {
+          "root": "nf-row input",
+          "file": "assets/sys.css",
+          "mode": "literal",
+          "literal": ".nf-row input",
+          "due": "2026-11-30",
+          "note": "元素选择器写法，与 .field 两套"
+        }
+      ],
+      "scopeNote": "元素选择器只按字面量登记，新增写法不在类名射程"
+    },
+    "table": {
+      "label": "表格",
+      "specHeading": "## 5 表格 Table",
+      "specRoot": "tb",
+      "canonical": null,
+      "missingCanonicalDue": "2026-11-30",
+      "pageWatch": [
+        "^gtable(-(head|body|row|foot))?$"
+      ],
+      "debt": [
+        {
+          "file": "assets/app.js",
+          "marker": "<table",
+          "expected": 2,
+          "due": "2026-11-30"
+        },
+        {
+          "file": "assets/component.js",
+          "marker": "<table",
+          "expected": 3,
+          "due": "2026-11-30"
+        },
+        {
+          "file": "assets/gen.js",
+          "marker": "<table",
+          "expected": 1,
+          "due": "2026-11-30"
+        }
+      ],
+      "scopeNote": "表格无共享渲染件；唯一实现＝把 6 个渲染点收成 1 个。2026-10-29 补：网格版 .gtable 五类（gtable/gtable-head/gtable-body/gtable-row/gtable-foot）归本族；页面只许在 markup 使用，不许在页面 <style> 里重定义（盲审：.gtable-row 复制进 apps.html 曾因未登记而 rc=0）。"
+    },
+    "menu": {
+      "label": "菜单定位",
+      "specHeading": "## 8 ⋯ 菜单",
+      "canonical": {
+        "root": "k-menu",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "^(k-menu|k-pop)$"
+      ],
+      "debt": [
+        {
+          "root": "k-pop",
+          "file": "assets/sys.css",
+          "due": "2026-11-30",
+          "note": "第二套定位写法"
+        }
+      ],
+      "scopeNote": "左导航 .sider .menu 不是同一组件，不在射程"
+    },
+    "appcard": {
+      "label": "列表卡",
+      "specHeading": "## 2 列表卡 AppCard（`.kcard`）",
+      "specRoot": "kcard",
+      "canonical": {
+        "root": "kcard",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "(^|-)kcard(-|$)",
+        "^kc-[\\w-]+$"
+      ],
+      "debt": [],
+      "scopeNote": "§2 族边界：kcard + kc-* 部件；页面里出现根或部件即视为私货",
+      "binding": {
+        "pages": [
+          "apps.html"
+        ],
+        "pageNeedle": "kcard",
+        "tokens": [
+          "--surface-page",
+          "--color-border-card",
+          "--color-border-control",
+          "--shadow-color-1",
+          "--shadow-color-2",
+          "--radius-panel",
+          "--font-size-title",
+          "--space-12"
+        ],
+        "states": [
+          ".kcard:hover",
+          ".kcard:focus-within",
+          ".kcard[data-off=\"1\"]"
+        ],
+        "checks": [
+          {
+            "file": "tools/check-card-shape.mjs",
+            "ids": [
+              "C6′②",
+              "C8",
+              "C9′",
+              "C10"
+            ]
+          }
+        ],
+        "negctl": "check-card-shape.mjs"
+      }
+    },
+    "assemblepanel": {
+      "label": "装配面板",
+      "specHeading": "## 16 装配面板 AssemblePanel（`.panel`）",
+      "specRoot": "panel",
+      "canonical": {
+        "root": "panel",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "^panel(-|$)",
+        "^p-[\\w-]+$",
+        "^(pending|genbar|err-strip)$"
+      ],
+      "debt": [
+        {
+          "root": "err-strip",
+          "file": "component.html",
+          "due": "2027-03-31",
+          "note": "页面自写面板失败条；已与 sys.css 同形，随组件页收口"
+        }
+      ],
+      "scopeNote": "§16 族边界 14 类；.mask/.row/.btn-* 是借件，不重复计"
+    },
+    "canvasblock": {
+      "label": "画布块",
+      "specHeading": "## 17 画布块 CanvasBlock（`.cv-blk`）",
+      "specRoot": "cv-blk",
+      "canonical": {
+        "root": "cv-blk",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "^cv-blk(-|$)",
+        "^cv-op(-|$)"
+      ],
+      "debt": [],
+      "scopeNote": "§17 族边界 12 类；.cv-empty/.cv-say* 归 Empty，不在本族射程"
+    },
+    "topbar": {
+      "label": "顶栏",
+      "specHeading": "## 18 顶栏 Topbar（`.hdr`）",
+      "specRoot": "hdr",
+      "canonical": {
+        "root": "hdr",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "^(hdr|crumb|sep|me|topbar|float-hd|back|app-name|hd-sub|app-meta|app-edit|count-badge)$"
+      ],
+      "debt": [
+        {
+          "root": "crumb",
+          "file": "component.html",
+          "due": "2027-03-31",
+          "note": "页面自写面包屑；顶栏族部件，随组件页收口"
+        }
+      ],
+      "scopeNote": "§18 族边界 12 类；一页只许一种 kind（page/canvas）"
+    },
+    "batchassign": {
+      "label": "批量指派",
+      "specHeading": "## 19 批量指派 BatchAssign（`.tb-batch`）",
+      "specRoot": "tb-batch",
+      "canonical": {
+        "root": "tb-batch",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "^(tb-batch|tb-batch-btn|tb-batch-cancel|tb-pick|tb-pick-list|tb-pick-row|tb-pick-ok)$"
+      ],
+      "debt": [
+        {
+          "root": "tb-batch",
+          "file": "component.html",
+          "due": "2027-03-31",
+          "note": "页面自写批量指派；组件页旧实现，随组件页收口"
+        },
+        {
+          "root": "tb-batch-btn",
+          "file": "component.html",
+          "due": "2027-03-31",
+          "note": "页面自写批量指派；组件页旧实现，随组件页收口"
+        },
+        {
+          "root": "tb-batch-cancel",
+          "file": "component.html",
+          "due": "2027-03-31",
+          "note": "页面自写批量指派；组件页旧实现，随组件页收口"
+        },
+        {
+          "root": "tb-pick",
+          "file": "component.html",
+          "due": "2027-03-31",
+          "note": "页面自写批量指派；组件页旧实现，随组件页收口"
+        },
+        {
+          "root": "tb-pick-list",
+          "file": "component.html",
+          "due": "2027-03-31",
+          "note": "页面自写批量指派；组件页旧实现，随组件页收口"
+        },
+        {
+          "root": "tb-pick-row",
+          "file": "component.html",
+          "due": "2027-03-31",
+          "note": "页面自写批量指派；组件页旧实现，随组件页收口"
+        },
+        {
+          "root": "tb-pick-ok",
+          "file": "component.html",
+          "due": "2027-03-31",
+          "note": "页面自写批量指派；组件页旧实现，随组件页收口"
+        }
+      ],
+      "scopeNote": "§19 族边界 7 类；.tb-ck 归 Table，不两边都算"
+    },
+    "sidebar": {
+      "label": "侧栏",
+      "specHeading": "## 20 侧栏 Sidebar（`.sider`）",
+      "specRoot": "sider",
+      "canonical": {
+        "root": "sider",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "^(sider|grp|gt|gi|gn|gv|gs)$"
+      ],
+      "debt": [],
+      "scopeNote": "§20 族边界 1+6；.logo/.menu 是布局，不计组件类"
+    },
+    "contentcompare": {
+      "label": "内容对照",
+      "specHeading": "## 21 内容对照 ContentCompare（`.cmp`）",
+      "specRoot": "cmp",
+      "canonical": {
+        "root": "cmp",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "^(cmp|cmp-side|lbl|orig|fx-wrap|fx|rule-row|rule-nm)$"
+      ],
+      "debt": [],
+      "scopeNote": "§21 族边界 8 类；.off-note 是一次性说明，不在族内"
+    },
+    "genshell": {
+      "label": "生成块",
+      "specHeading": "## 22 生成块 GenShell（`.blk`）",
+      "specRoot": "blk",
+      "canonical": {
+        "root": "blk",
+        "file": "assets/sys.css"
+      },
+      "pageWatch": [
+        "^(blk|blk-hd|blk-bd|blk-bd--gen)$"
+      ],
+      "debt": [],
+      "scopeNote": "§22 族边界 6 个落点；进度/失败条借 §16，不另计"
+    },
+    "viewmode": {
+      "label": "视图切换",
+      "specHeading": "## 23 视图切换 ViewMode",
+      "canonical": {
+        "root": "seg-view",
+        "file": "assets/viewmode.css"
+      },
+      "pageWatch": [
+        "^seg-view$",
+        "^code-(pane|tree|file|main|copy)$"
+      ]
+    },
+    "floatdock": {
+      "label": "对话浮条",
+      "specHeading": "## 25 对话浮条 FloatDock",
+      "canonical": {
+        "root": "fk-dock",
+        "file": "assets/float.css"
+      },
+      "pageWatch": [
+        "^fk-"
+      ]
+    }
+  },
+  "expiryPolicy": {
+    "from": "2026-10-29",
+    "why": "页面私有类到期不整页一刀切：每类必须挂 clear/migrate/renew/component-debt 之一。renew 必须写新到期日（晚于原到期日）和理由；migrate 必须写目标；component-debt 必须能在 components[*].debt 找到同页同根的登记债，B 段不重复计红。到期前 14 天 B5w，组件债到期前 30 天 C2w。"
+  },
+  "judgedFamilies": {
+    "total": 24,
+    "judged": 15,
+    "ids": [
+      "button",
+      "chip",
+      "input",
+      "table",
+      "menu",
+      "appcard",
+      "assemblepanel",
+      "canvasblock",
+      "topbar",
+      "batchassign",
+      "sidebar",
+      "contentcompare",
+      "genshell",
+      "viewmode",
+      "floatdock"
+    ],
+    "notJudged": [
+      "componentcard",
+      "versionrow",
+      "switch",
+      "dialog",
+      "status",
+      "empty",
+      "pickrow",
+      "contentflow",
+      "iconbutton",
+      "pager"
+    ],
+    "note": "C 段射程＝ids；notJudged 仍可能在页面里抄一份而不报，下一批顺序：旧契约 7 族→未契约 4 族。不要拿 13 当 24。"
+  },
+  "specCoverage": {
+    "basis": "component-families",
+    "scan": [
+      "assets/sys.css"
+    ],
+    "min": 0.8,
+    "interim": {
+      "min": 0.8,
+      "due": "2026-11-30"
+    },
+    "final": {
+      "min": 1,
+      "due": "2027-03-31"
+    },
+    "maxWaived": 2,
+    "note": "口径件：_docs/设计-规范覆盖率口径-20261029.spec.md §3；分母=状态 spec/must-spec/waived 的家族；layout/pageScope/merge 单列计数，不匿名消化；未登记类=未量。",
+    "exclusions": {
+      "merge": [
+        "idc",
+        "cmenu",
+        "notice",
+        "notice-x"
+      ],
+      "layout": [
+        "grid",
+        "cols",
+        "col",
+        "app",
+        "main",
+        "workspace",
+        "bar",
+        "bar-count",
+        "canvas"
+      ],
+      "pageScope": [
+        "page-components"
+      ]
+    },
+    "families": [
+      {
+        "id": "button",
+        "root": "btn",
+        "aliases": [
+          "kbtn",
+          "primary",
+          "ghost",
+          "danger",
+          "quiet",
+          "btn-install",
+          "btn-uninstall",
+          "btn-update",
+          "btn-undo",
+          "btn-plain",
+          "btn-text",
+          "btn-ghost-s"
+        ],
+        "parts": [],
+        "specRef": "## 1 按钮 Button",
+        "status": "spec",
+        "due": null,
+        "why": "5 页共用；§1 有 anatomy/props/状态"
+      },
+      {
+        "id": "appcard",
+        "root": "kcard",
+        "aliases": [],
+        "parts": [
+          "kcard-hit",
+          "kc-body",
+          "kc-cover",
+          "kc-cover-img",
+          "kc-go",
+          "kc-meta",
+          "kc-ops",
+          "kc-print",
+          "kc-tag",
+          "kc-upd",
+          "card-tt",
+          "card-desc",
+          "card-ft",
+          "card-tag",
+          "k-hit",
+          "k-open",
+          "k-open-gt",
+          "k-meta",
+          "is-draft",
+          "is-off",
+          "is-up",
+          "is-empty"
+        ],
+        "specRef": "## 2 列表卡 AppCard（`.kcard`）",
+        "status": "spec",
+        "due": null,
+        "why": "§2 族边界 root+部件"
+      },
+      {
+        "id": "componentcard",
+        "root": "ccard",
+        "aliases": [
+          "crow"
+        ],
+        "parts": [
+          "cc-body",
+          "cc-dot",
+          "cc-ft",
+          "cc-hd",
+          "cl-desc",
+          "cl-nm",
+          "cl-ops",
+          "cl-tt"
+        ],
+        "specRef": "## 3 组件卡 ComponentCard（`.crow.ccard`）",
+        "status": "spec",
+        "due": null,
+        "why": "§3 anatomy/props/状态"
+      },
+      {
+        "id": "versionrow",
+        "root": "ver-row",
+        "aliases": [],
+        "parts": [
+          "ver-app",
+          "ver-list",
+          "ver-pair",
+          "ver-from",
+          "ver-arrow",
+          "ver-to",
+          "ver-note",
+          "view-ver",
+          "is-now"
+        ],
+        "specRef": "## 4 版本行 VersionRow（`.ver-row`）",
+        "status": "spec",
+        "due": null,
+        "why": "§4 anatomy/props/状态"
+      },
+      {
+        "id": "table",
+        "root": "tb",
+        "aliases": [],
+        "parts": [
+          "tb-detail",
+          "tb-ops",
+          "tb-ck",
+          "ref"
+        ],
+        "specRef": "## 5 表格 Table（`.tb` / `.tb-detail`）",
+        "status": "spec",
+        "due": null,
+        "why": "§5 anatomy/props/状态；唯一实现仍是债"
+      },
+      {
+        "id": "chip",
+        "root": "cond",
+        "aliases": [
+          "tag",
+          "chip",
+          "chip-sm",
+          "chip-count",
+          "on-tag",
+          "off-tag",
+          "ok",
+          "off",
+          "draft"
+        ],
+        "parts": [],
+        "specRef": "## 6 胶囊 Chip / Pill",
+        "status": "spec",
+        "due": null,
+        "why": "§6 三份实现合一族"
+      },
+      {
+        "id": "switch",
+        "root": "nf-sw",
+        "aliases": [],
+        "parts": [
+          "cc-sw",
+          "cc-sw-dot"
+        ],
+        "specRef": "## 7 开关 Switch",
+        "status": "spec",
+        "due": null,
+        "why": "§7 两份实现合一族"
+      },
+      {
+        "id": "menu",
+        "root": "k-menu",
+        "aliases": [
+          "k-pop"
+        ],
+        "parts": [
+          "k-more",
+          "k-mi",
+          "kp-b",
+          "kp-more",
+          "is-danger"
+        ],
+        "specRef": "## 8 ⋯ 菜单 Menu（`.k-more` + `.k-menu` / `.k-pop`）",
+        "status": "spec",
+        "due": null,
+        "why": "§8 标题原文解析（与 PickRow 的 §8 重号）"
+      },
+      {
+        "id": "dialog",
+        "root": "nf",
+        "aliases": [],
+        "parts": [
+          "nf-mask",
+          "nf-hd",
+          "nf-bd",
+          "nf-ft",
+          "nf-x",
+          "nf-confirm",
+          "nf-err",
+          "nf-note",
+          "cf-body",
+          "fk-dock",
+          "sheet",
+          "sheet-hd",
+          "sheet-bd",
+          "sub",
+          "who"
+        ],
+        "specRef": "## 9 弹层 Dialog（`.nf-mask` + `.nf`）",
+        "status": "spec",
+        "due": null,
+        "why": "§9 anatomy/props/状态"
+      },
+      {
+        "id": "status",
+        "root": "status",
+        "aliases": [
+          "toast",
+          "hint"
+        ],
+        "parts": [
+          "hint-act",
+          "note"
+        ],
+        "specRef": "## 10 提示条 Status / Toast",
+        "status": "spec",
+        "due": null,
+        "why": "§10 四态：ok/error/loading/undo"
+      },
+      {
+        "id": "input",
+        "root": "field",
+        "aliases": [
+          "nf-in",
+          "w180",
+          "w220"
+        ],
+        "parts": [
+          "nf-row",
+          "nf-lb",
+          "nf-req"
+        ],
+        "specRef": "## 11 输入 Input",
+        "status": "spec",
+        "due": null,
+        "why": "§11 三份实现合一族"
+      },
+      {
+        "id": "empty",
+        "root": "empty",
+        "aliases": [
+          "empty-sub"
+        ],
+        "parts": [
+          "cv-empty",
+          "p-empty"
+        ],
+        "specRef": "## 12 空态 Empty（`.empty`）",
+        "status": "spec",
+        "due": null,
+        "why": "§12 空态族"
+      },
+      {
+        "id": "pickrow",
+        "root": "row",
+        "aliases": [],
+        "parts": [
+          "row-desc",
+          "row-hd",
+          "row-meta",
+          "right"
+        ],
+        "specRef": "## 15 装配候选行 PickRow（`.row`）",
+        "status": "spec",
+        "due": null,
+        "why": "标题原文解析（2026-10-29 规范重排后为 §15）"
+      },
+      {
+        "id": "assemblepanel",
+        "root": "panel",
+        "aliases": [],
+        "parts": [
+          "p-hd",
+          "p-tabs",
+          "p-tab",
+          "p-list",
+          "p-ft",
+          "p-filter",
+          "p-filter-n",
+          "p-search",
+          "p-x",
+          "pending",
+          "genbar",
+          "err-strip",
+          "mask",
+          "cnt"
+        ],
+        "specRef": "## 16 装配面板 AssemblePanel（`.panel`）",
+        "status": "spec",
+        "due": null,
+        "why": "§16–§22 P0/P1 七族之一"
+      },
+      {
+        "id": "canvasblock",
+        "root": "cv-blk",
+        "aliases": [],
+        "parts": [
+          "cv-blk--head",
+          "cv-blk-bar",
+          "cv-blk-hd",
+          "cv-blk-more",
+          "cv-blk-ops",
+          "cv-blk-tag",
+          "cv-op",
+          "cv-op--off",
+          "cv-say",
+          "cv-say-b"
+        ],
+        "specRef": "## 17 画布块 CanvasBlock（`.cv-blk`）",
+        "status": "spec",
+        "due": null,
+        "why": "§16–§22 P0/P1 七族之一"
+      },
+      {
+        "id": "topbar",
+        "root": "hdr",
+        "aliases": [
+          "topbar"
+        ],
+        "parts": [
+          "crumb",
+          "sep",
+          "me",
+          "float-hd",
+          "back",
+          "app-name",
+          "hd-sub",
+          "app-meta",
+          "app-edit",
+          "count-badge",
+          "page-act",
+          "act"
+        ],
+        "specRef": "## 18 顶栏 Topbar（`.hdr`）",
+        "status": "spec",
+        "due": null,
+        "why": "§16–§22 P0/P1 七族之一"
+      },
+      {
+        "id": "batchassign",
+        "root": "tb-batch",
+        "aliases": [],
+        "parts": [
+          "tb-batch-btn",
+          "tb-batch-cancel",
+          "tb-pick",
+          "tb-pick-list",
+          "tb-pick-row",
+          "tb-pick-ok"
+        ],
+        "specRef": "## 19 批量指派 BatchAssign（`.tb-batch`）",
+        "status": "spec",
+        "due": null,
+        "why": "§16–§22 P0/P1 七族之一"
+      },
+      {
+        "id": "sidebar",
+        "root": "sider",
+        "aliases": [
+          "menu"
+        ],
+        "parts": [
+          "grp",
+          "gt",
+          "gi",
+          "gn",
+          "gv",
+          "gs",
+          "logo"
+        ],
+        "specRef": "## 20 侧栏 Sidebar（`.sider`）",
+        "status": "spec",
+        "due": null,
+        "why": "§16–§22 P0/P1 七族之一"
+      },
+      {
+        "id": "contentcompare",
+        "root": "cmp",
+        "aliases": [],
+        "parts": [
+          "cmp-side",
+          "lbl",
+          "orig",
+          "fx-wrap",
+          "fx",
+          "rule-row",
+          "rule-nm",
+          "off-note"
+        ],
+        "specRef": "## 21 内容对照 ContentCompare（`.cmp`）",
+        "status": "spec",
+        "due": null,
+        "why": "§16–§22 P0/P1 七族之一"
+      },
+      {
+        "id": "genshell",
+        "root": "blk",
+        "aliases": [],
+        "parts": [
+          "blk-hd",
+          "blk-bd",
+          "blk-bd--gen",
+          "bd-fields",
+          "bd-filters",
+          "bd-group",
+          "bd-note",
+          "bd-pager",
+          "bd-sec",
+          "bd-two-col"
+        ],
+        "specRef": "## 22 生成块 GenShell（`.blk`）",
+        "status": "spec",
+        "due": null,
+        "why": "§16–§22 P0/P1 七族之一"
+      },
+      {
+        "id": "contentflow",
+        "root": "flow",
+        "aliases": [],
+        "parts": [
+          "flow-bar",
+          "flow-n",
+          "flow-nm",
+          "flow-row"
+        ],
+        "specRef": null,
+        "status": "must-spec",
+        "due": "2027-03-31",
+        "why": "P1；审批流条/进度，终线前补契约"
+      },
+      {
+        "id": "iconbutton",
+        "root": "icon-btn",
+        "aliases": [
+          "icbtn"
+        ],
+        "parts": [
+          "rt",
+          "is-loading"
+        ],
+        "specRef": null,
+        "status": "must-spec",
+        "due": "2027-03-31",
+        "why": "P1；两份实现，icbtn 应删；终线前补契约"
+      },
+      {
+        "id": "skeleton",
+        "root": "sk",
+        "aliases": [],
+        "parts": [],
+        "specRef": null,
+        "status": "must-spec",
+        "due": "2027-03-31",
+        "why": "P2；可并入 Table loading 态"
+      },
+      {
+        "id": "pager",
+        "root": "pager",
+        "aliases": [
+          "pg"
+        ],
+        "parts": [],
+        "specRef": null,
+        "status": "must-spec",
+        "due": "2027-03-31",
+        "why": "P2；只有 apps 一页用，终线前定去留"
+      }
+    ]
+  },
+  "contracted": {
+    "componentcard": {
+      "section": "26.1",
+      "status": "成立",
+      "label": "组件卡",
+      "specHeading": "## 3 组件卡 ComponentCard（`.crow.ccard`）",
+      "canonical": {
+        "file": "assets/sys.css",
+        "root": ".page-components .crow.ccard"
+      },
+      "binding": {
+        "pages": [
+          "components.html"
+        ],
+        "pageNeedle": "crow ccard",
+        "tokens": [
+          "--surface-page",
+          "--color-border-card",
+          "--color-border-control",
+          "--shadow-color-1",
+          "--shadow-color-2",
+          "--radius-panel"
+        ],
+        "states": [
+          ".page-components .crow.ccard:hover"
+        ],
+        "checks": [
+          {
+            "file": "tools/check-card-shape.mjs",
+            "ids": [
+              "C6′②",
+              "C8",
+              "C9′"
+            ]
+          }
+        ],
+        "negctl": "check-card-shape.mjs"
+      }
+    },
+    "versionrow": {
+      "section": "26.2",
+      "status": "已处置：死样式已删除（2026-10-30）"
+    },
+    "switch": {
+      "section": "26.3",
+      "status": "成立"
+    },
+    "dialog": {
+      "section": "26.4",
+      "status": "成立"
+    },
+    "status": {
+      "section": "26.5",
+      "status": "已处置：三处合并为 sys.css 单一声明（2026-10-30）"
+    },
+    "empty": {
+      "section": "26.6",
+      "status": "成立"
+    },
+    "pickrow": {
+      "section": "26.7",
+      "status": "成立；跨页选未实现"
+    },
+    "contentflow": {
+      "section": "26.8",
+      "status": "成立"
+    },
+    "iconbutton": {
+      "section": "26.9",
+      "status": "成立"
+    },
+    "pager": {
+      "section": "26.11",
+      "status": "已处置：补 hover / 焦点 / 禁用（2026-10-30）"
+    },
+    "floatdock": {
+      "section": "25",
+      "status": "已登记为组件（2026-10-30）"
+    }
+  },
+  "contractDebts": [],
+  "bindingPolicy": {
+    "required": [
+      "appcard",
+      "componentcard"
+    ],
+    "pilot": true,
+    "allBy": "2026-11-30",
+    "why": "先试点两张卡：绑规范小节、根选择器、令牌、状态、判据、负控、使用页面；绑定缺项判红。其余组件按 allBy 逐步补齐，未绑期间不假装已覆盖。"
+  }
+}

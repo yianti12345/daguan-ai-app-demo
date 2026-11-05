@@ -1,0 +1,232 @@
+{
+ "schema": "component-lifecycle/1",
+ "frozen": "2026-11-02",
+ "why": "组件不能只进不退：每个已登记组件必须有状态、负责人、复审到期日；deprecated 必须写替代件与移除日，到期未复审即红。",
+ "components": {
+  "button": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "chip": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "input": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "table": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "menu": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "appcard": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "assemblepanel": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "canvasblock": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "topbar": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "batchassign": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "sidebar": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "contentcompare": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "genshell": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "viewmode": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "floatdock": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "componentcard": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "versionrow": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "switch": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "dialog": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "status": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "empty": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "pickrow": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "contentflow": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "iconbutton": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  },
+  "pager": {
+   "status": "stable",
+   "introduced": "2026-10-29",
+   "owner": "主会话",
+   "reviewBy": "2027-03-31",
+   "replacement": "",
+   "removalBy": "",
+   "notes": "纳入组件优先登记，绑定判据与状态矩阵覆盖"
+  }
+ }
+}

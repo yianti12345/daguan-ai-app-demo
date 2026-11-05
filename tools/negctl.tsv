@@ -1,0 +1,82 @@
+判据	负控怎么跑	上次实测	结果	到期日	备注
+check-align.mjs	node tools/check-align.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-anchor-coverage.mjs	node tools/check-anchor-coverage.mjs --negctl	2026-10-26	pass		门槛降到 1，必然出现裸奔，rc=1
+check-canvas-empty.mjs	node tools/check-canvas-empty.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-card-menu.mjs	node tools/check-card-menu.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-card-shape.mjs	node tools/check-card-shape.mjs --negctl	2026-10-28	pass		2026-10-28 换形态后重写成**逐刀**负控（17 刀：C1–C10 各一刀，C6′ 四刀＝删点/去阴影/加描边/恢复伪元素渐变，C9′ 三刀＝改4列（下限）/改gap/改2列（上界），另加 i2 只打像素读数）；每刀单独加载、必须命中点名的编号，注入前基线先验绿。实测正控 rc=0（21 条）、负控 17/17 rc=2、还原后基线复绿。改前的负控是"一次注入五处、数一数有几条红"：实测基线本来就有 7 条红时它照样 rc=2 —— 那是假绿。｜2026-11-02 手工负控：应用卡回 4% 投影 → C6′② FAIL（应用列表 #0/#1 边界不可见），还原 26 通过 0 断点；同日补 Network.setCacheDisabled，负控不再读旧 stamp
+check-card-uniform.mjs	node tools/check-card-uniform.mjs --negctl	2026-10-28	pass		2026-10-28 随形态改四格（② 容差取规格 ±1、④/④b 列数改断点声明值并在 1440/1720 两档自证、⑪ 改判左缘16+定宽66+开关/配置/⋮ 同基线）；刀表由 5 刀扩到 9 刀，各刀点名命中。实测正控 rc=0、负控 9/9 rc=2、基线复绿。补刀时抓到一处真漏洞：SNAP 的 .k-more 只取了 w/h/r 没有 t，⑪ 的中线算出 NaN，而 NaN>1 恒 false —— 那条断言当时是死的（刀 g 一开始没红就是因为这个）。
+check-chain.mjs	node tools/check-chain.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-confirm.mjs	node tools/check-confirm.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2｜2026-10-28 机制审查官：B1b 改名并补断言（有 vers、无复制链接），另一支负控 node tools/check-confirm.mjs --negctl-copy 实测 rc=2（注入「复制链接」后 B1b 判红）；--negctl 原档仍 rc=2
+check-consistency.mjs	node tools/check-consistency.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-content-contract.mjs	node tools/check-content-contract.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-criteria-lock.mjs	node tools/check-criteria-lock.mjs --negctl	2026-10-26	pass		改一个判据一字节，不许先重签再补理由｜2026-10-28 机制审查官实测三支：--negctl rc=4（改判据不留记录）、--negctl-ledger rc=4（台账记一条指向不存在判据的记录）、--negctl-families rc=4（建出第二本族账 tools/families.tsv）
+check-cross-page.mjs	node tools/check-cross-page.mjs --negctl	2026-11-04	fail	2026-11-11	「还原后仍有 2 处 FAIL」实为基线红（⓪ 缺 .cl-head、①b 读行自己的轨道=0 档、①e 量到卡内首个子元素被 1px 边框带偏），不是撤不干净；改为读 #grid 轨道与卡左缘，加基线前提（红则 rc=4）与干净加载复核，负控 6/6 rc=2、正控 rc=0｜2026-11-04 复测 rc=3（负控有一刀未命中），与旧记录 pass 不符 —— 台账记的是「曾经」，不是「现在」
+check-data-domain.mjs	node tools/check-data-domain.mjs --negctl；node tools/check-data-domain.mjs --negctl-status	2026-10-28	pass		--negctl 注入「已上线」+ load() 后 ghost-comp ⇒ rc=2（两条各自真红）；--negctl-status 只注入值域外 status ⇒ rc=2。旧版孤儿外键注入打在 COMPS 定义数组（data.js:58）上，从未真注入，靠 status 一刀冒充两刀
+check-deprecated.mjs	node tools/check-deprecated.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-design-truth.mjs	node tools/check-design-truth.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-dialog-focus.mjs	node tools/check-dialog-focus.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-disabled-state.mjs	node tools/check-disabled-state.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-drag.mjs	node tools/check-drag.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-empty-contrast.mjs	node tools/check-empty-contrast.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-focus-obscure.mjs	node tools/check-focus-obscure.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-gate-coverage.mjs	node tools/check-gate-coverage.mjs --negctl；node tools/check-gate-coverage.mjs --negctl-due	2026-10-28	pass		注入 check-__negctl__.mjs（没进闸也没登记）⇒ rc=1；--negctl-due 注入一条到期日已过的「在闸内未量」行 ⇒ rc=1
+gate-states.mjs	node tools/gate-states.mjs --negctl；node tools/gate-states.mjs --negctl-boundary	2026-10-28	pass		改坏 .kcard:hover(6 处)/.row:hover(3 处) ⇒ rc=2；--negctl-boundary 在 §4.8 注入假条目 ⇒ §4.7 仍解析 9 条、逐字相同 rc=0
+check-geometry.mjs	node tools/check-geometry.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-global.mjs	node tools/check-global.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-icon-size.mjs	node tools/check-icon-size.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-inset.mjs	node tools/check-inset.mjs --negctl	2026-10-27	pass		负控原注入 .card-ft .kbtn（10-26 已移出测量表）⇒ 恒不红；改注入 .kc-meta 后 rc=2，正控 rc=0
+check-judgments.mjs	node tools/check-judgments.mjs --negctl	2026-10-27	pass		此前根本没有 --negctl 分支，参数被吞⇒负控＝跑全量（浏览器+50 个工具负控）90s 必超时；现负控只验本判据自己的四套判定（缺登记/幽灵条目/主体命中 0/负控 rc 语义），5/5 秒级 rc=2；全量另挂 240s 看门狗并在超时时打印卡住的阶段
+check-layout.mjs	node tools/check-layout.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-list-rows.mjs	node tools/check-list-rows.mjs --negctl	2026-10-28	pass		2026-10-28 按 data.js 现行为把 R7 的 STATES 从「启用/禁用/草稿」改成「启用/禁用/未发布/草稿」（草稿留作历史兼容），并新增一刀 keep 型负控：把禁用卡文案改成「未发布」后 R7 必须**仍然绿**（防假红）。实测正控 rc=0、负控 8/8 rc=2（7 刀点名命中 + 1 刀保持绿）。
+check-noborder.mjs	node tools/check-noborder.mjs --negctl	2026-10-28	pass		2026-10-28 名单补 .crow.ccard，并把匹配从"容器写在最左"改成取选择器右端（subject）—— 不改这一处，名单加了也命中不了 .page-components .crow.ccard。负控从 1 支扩到 2 支（.seed / .crow.ccard），两支各自注入各自还原。实测正控 rc=0（14 个容器类）、负控 2/2 rc=2。
+check-predicate.mjs	node tools/check-predicate.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-preview.mjs	node tools/check-preview.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-reversible.mjs	node tools/check-reversible.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-review.mjs	node tools/check-review.mjs --negctl	2026-10-26	pass		评审过期+抹掉发现+去掉分档 ⇒ rc=2
+check-solid.mjs	node tools/check-solid.mjs --negctl	2026-10-28	pass		R1/R2/R3/R4 各一刀 + R9 三刀 + 2026-10-28 新增 R6 两刀（status 写成「已发布」「草稿」各判红）⇒ 9/9，负控成立 rc=2（失败改 rc=1 与红分开）
+check-structure.mjs	node tools/check-structure.mjs <base> --negctl	2026-10-26	pass		注入 #__no_such_region__，rc=1 命中 5 页
+check-token-scale.mjs	node tools/check-token-scale.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-ui-contract.mjs	node tools/check-ui-contract.mjs <base> --negctl	2026-10-26	pass		注入 #__no_such_anchor__，rc=1 命中 6 处
+e2e-flow.mjs	node tools/e2e-flow.mjs --negctl	2026-10-28	pass		三刀都真红（rc=2），不起浏览器、纯函数自证同一份 judgeRound 判逻辑：①finish 记录缺失 ②本轮脚注数字与 finish.actsTotal 不符 ③档位词与 kind 不符；并有正控：干净读数三处必须全绿，否则 rc=3。2026-10-28 之前这条判据在账上根本没有行（e2e 不匹配 check-* 前缀，没人查它能不能红），本轮补登
+check-value-provenance.mjs	node tools/check-value-provenance.mjs --negctl	2026-10-27	pass		负控本来就会红（注入新裸值），但退出码 1 与「正控发现新增裸值」同码，台账分不清"判据会红"与"判据真发现新值"；统一负控档 rc=2（判据本身 0/1 语义不动，门禁读正控），正控 rc=0、负控 rc=2
+check-versions.mjs	node tools/check-versions.mjs --negctl	2026-11-04	fail	2026-11-11	本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2｜2026-11-04 复测 rc=0（负控没红），与旧记录 pass 不符 —— 台账记的是「曾经」，不是「现在」
+check-visual-lint.mjs	node tools/check-visual-lint.mjs --negctl	2026-10-27	pass		本轮之前没有负控台账；一周内补测，过期即红｜2026-10-27 主会话实测负控 rc=2
+check-promise.mjs	node tools/check-promise.mjs --negctl	2026-10-26	pass		--negctl 注入 __NO_SUCH_TOKEN__ 必红 rc=1；正控换成已兑现的 5 句 rc=0；空端口 rc=3
+check-view-mode.mjs	node tools/check-view-mode.mjs --negctl	2026-10-27	pass		负控＝同一套断言跑在**不带 mode** 的编辑态上，必须抓到 ≥1 个可见管理控件（实测 9 个）；抓不到就是断言的可见性口径失效
+check-ux-review.mjs	node tools/check-ux-review.mjs --negctl	2026-10-27	pass		四组（真实场景复刻）：产品 11:44 改过/产品评审 11:38/飞象报告 14:01 最新⇒rc=2｜只剩飞象报告⇒rc=2｜最新一份审 components.html 而 app.html 改过⇒rc=2｜正控补 11:50 对应 app.html 的评审⇒rc=0
+check-edit-unit.mjs	node tools/check-edit-unit.mjs --negctl	2026-10-27	pass		负控＝在 DB.save 上注入「目标块加列时顺手给 task-list 加一列 + 改写目标块第一行第一格」，必须抓到 4 条越界（E2/E3/E4/E5），rc=2
+check-terminology.mjs	node tools/check-terminology.mjs --negctl ｜ --negctl-eng ｜ --negctl-title ｜ --negctl-words ｜ --negctl-ledger ｜ --negctl-forbid ｜ --negctl-reverse	2026-10-28	pass		七支各证明一面：--negctl 正文注入（模块/停用）rc=2；--negctl-eng 插 div 写工程词 rc=2；--negctl-title 只改 document.title rc=2（5/5 页）；--negctl-words 把 17 个禁用词逐词注入 5 页，5/5 页 × 17/17 词全抓到 rc=2；--negctl-ledger 台账 §一 多一行 ⇒ [ROWCOUNT] rc=2；--negctl-forbid 台账写一个 TERMS 里没有的禁用词 ⇒ [FORBID] rc=2；--negctl-reverse 把「快照」从判红写成退役 ⇒ [REVERSE] rc=2。三支台账负控只在内存里改 doc 文本，盘面不动。另 --prove-forbid 逐词自证 17+24+4 全认得 rc=0（不打浏览器，作为匹配器级正控）｜2026-10-27 主会话实测 --negctl rc=2
+check-card-copy.mjs	node tools/check-card-copy.mjs --negctl ｜ --negctl-blank	2026-10-28	pass		--negctl 两页各注入一句没出处的卡面文案（字段 5 项 / 装配 5 个应用）rc=2，同时证明两个区域都切得出内容；--negctl-blank 把 components.html 的取样结果清空 ⇒ 分母断言判红 rc=2（证明「一页 0 段中文」不再假绿）｜2026-10-27 主会话实测 --negctl rc=2
+check-quote-provenance.mjs	node tools/check-quote-provenance.mjs --negctl ｜ --negctl-self	2026-10-28	pass		--negctl 注入一条随机编造引文 rc=2（负控成立＝rc2）；--negctl-self 证明「判据不扫自己」这一刀是活的：自文件里确有 1 条会被 CLAIM 抓到的模板（「' + marker + '」），排除后正常跑不再计入 rc=2；--selftest 自检（抓到了＝通过）rc=0；正控 rc=0：抽到 22 条（可核 17 条、5 条取不出 12 字针不判），无出处 0 条。2026-10-28 之前印的 23 条里多出来的那 1 条就是自检模板自己
+run-gates.sh	bash tools/run-gates.sh --negctl-stamp（另有 --selftest-stamp 正控）	2026-10-28	pass		E9-3：全绿章的唯一写入点。--selftest-stamp 5 例（全量 rc0 盖章／--only 不盖／--stylequick 不盖／全量 rc2 不盖／--changed 不盖）+ 接线 1 条（去掉注释后全脚本只许一处写全绿章）rc=0；--negctl-stamp 在脚本副本末尾多塞一个写入点 ⇒ 自检判红 rc=2｜2026-10-28 增 --negctl-print：把 ✗ 埋到 tail -10 够不到的第 6 行必须仍被印出、全 ✓ 日志不许印「失败行」，rc=2；同时保留 --negctl-stamp rc=2
+check-selfcheck.mjs	node tools/check-selfcheck.mjs --negctl	2026-10-28	pass		S1/S2/S3 各真注入一处（伪源码行写 .cl-negctlghost ／ run-gates 首行插 `rc 1` ／ 首行插 `echo "$TMP）"
+check-gate-wiring.mjs	node tools/check-gate-wiring.mjs --negctl-want（同 --negctl-dup；--negctl 两条都跑）	2026-10-28	pass		两刀各自 rc=2 且输出点名注入项（__negctl_missing_group__ / __negctl_dup__）；dup 刀复制盘上第一条真实注册，签名不会漂。正控 rc=0（want 调用 58 条 / 分支 11 个 / run_one 59 条 59 签名）；注入前盘面必须绿，否则退化 rc=1。--selftest 8/8`），三处必须全部判红，rc=2；一处没红即 rc=1。★本轮之前这支负控是空的：不注入、只重判盘面并无条件 exit 2，所以判据真失效时 check-judgments 仍读到「能红」
+e33-struct-undo.mjs	把 _bak/e33-20261028/app.js.bak 临时换到 assets/app.js，同命令 node tools/e33-struct-undo.mjs（跑完换回并核 sha）	2026-10-28	rc=2；通过 1/9，红 8（V1/V2/V3/V4/V4b/V5/V5b/V6）	2026-11-28	已验证；缺口见 E46——它证伪的是「整份旧件」这一集合，缺浏览器级单点注入
+gate-links.mjs	node tools/gate-links.mjs --negctl	2026-10-28	rc=2；L1/L2/L5/L6/L7 逐条判红，基线全绿	2026-11-28	本轮补登记（此前未入台账）
+check-component-first.mjs	node tools/check-component-first.mjs --negctl	2026-10-29	pass	2026-11-30	负控 rc=2（设计如此，非失败）；13/13 命中（N1 A1r / N2 B1 / N3 C1 / N4 .kcard C1 / N4b .kc-body C4 / N5 .p-hd C4 / N6 .cv-op C4 / N7 .crumb C4 / N8 .tb-pick C4 / N9 .gt C4 / N10 .orig C4 / N11 .blk-hd C4 / N12 抽处置 B4p）；正控 rc=0（13 类；私类 51 条全有处置路径；2026-10-29 复测）；--selftest 22/22
+check-card-updates.mjs	node tools/check-card-updates.mjs --negctl	2026-10-29	pass	2026-11-30	U3 注入坏文案后判红，rc=2；2026-10-29 实测
+check-entry-params.mjs	node tools/check-entry-params.mjs --negctl	2026-10-29	pass	2026-11-30	E1 反转后判红 5 条，rc=2；2026-10-29 实测
+check-schema-roundtrip.mjs	node tools/check-schema-roundtrip.mjs --negctl	2026-10-29	pass	2026-11-30	摘掉 app.updUndo 派生后 S1/S2 抓住，rc=2；2026-10-29 实测
+check-spec-contract.mjs	node tools/check-spec-contract.mjs --negctl	2026-10-29	pass	2026-11-30	三类坏法 3/3 判红，rc=2；2026-10-29 实测
+check-tokens.mjs	node tools/check-tokens.mjs --negctl	2026-10-29	pass	2026-11-30	预算档自检：临时目录注入一条裸色值后 184→185，预算 184 判红、185 判绿，rc=2；2026-10-29 实测
+check-update-view-tokens.mjs	node tools/check-update-view-tokens.mjs --negctl	2026-10-29	pass	2026-11-30	段落迁到 sys.css 后重跑：塞 13px 被 T3 抓住，rc=2；2026-10-29 实测
+check-seat-pass.mjs	node tools/check-seat-pass.mjs --negctl	2026-11-04	pass		删掉最新一轮的一席读数 ⇒ 必须判红（实测 rc=2，输出「recent 缺席位 product」）｜2026-11-04 修好：负控原来只删「全局最新一条」，同页同 hash 多轮读数会顶上，恒绿；改为按 (page,seat) 删该席所有轮次，实测判红（versions.html 缺席位 product）
+check-no-dead-end.mjs	node tools/check-no-dead-end.mjs --negctl	2026-10-30	pass		2026-10-30 主会话实测负控 rc=2（死菜单项 D1 + 站外角色状态 D2 各抓 1 条）；另有 --selftest 7/7
+check-state-matrix.mjs	无 --negctl（人工验红：改 tools/state-matrix.json 里一项）	2026-11-01	pass		人工验过：给「未发布」菜单加一项「下架」⇒ 报「少：下架」，改回即绿。矩阵判据的负控就是改表，不需要再注入一层。
+check-publish-empty.mjs	node tools/check-publish-empty.mjs --negctl	2026-11-02	pass		2026-11-02 主会话实测：正控 rc=0；负控往 doPublish 注入 !app.comps.length 后 rc=2
+check-m3-gaps.mjs	node tools/check-m3-gaps.mjs --negctl	2026-11-02	pass		2026-11-02 主会话实测：正控 rc=0；负控三格各注入一处（裸动词链接/摘掉批量入口/清空空态文案）后 rc=2，三条各自点名
+check-client-registry.mjs	node tools/check-client-registry.mjs --negctl	2026-11-02	pass		2026-11-02 主会话实测（第二次改）：正控 rc=0；负控往 apps.html 注回 select#ap-client 后 rc=2，点名 1 处
+check-entity-model.mjs	node tools/check-entity-model.mjs --negctl	2026-11-02	pass		2026-11-02 主会话实测：正控 rc=0；负控①往 APP_FIELDS 注 clientId＋把删除按钮插到公共区 ⇒ rc=2 点名 3 处；负控②把冻结表「应用」行真源改成「—」⇒ rc=2 点名 1 处，已复原
+check-component-binding.mjs	node tools/check-component-binding.mjs --negctl	2026-11-02	pass		2026-11-02 首建：4 刀（去令牌/状态/判据/页面）全中 rc=2；正控 2/2 通过 rc=0
+check-card-footer.mjs	node tools/check-card-footer.mjs --negctl	2026-11-02	pass		2026-11-02 主会话实测：正控 76 通过 0 断点 rc=0；负控注入 32×32 后 30 项变红 rc=2
+check-component-lifecycle.mjs	node tools/check-component-lifecycle.mjs --negctl	2026-11-02	pass		2026-11-02 主会话实测：正控 25 组件 rc=0；负控注入 deprecated 无 replacement 命中 2 条
+check-dead-css.mjs	node tools/check-dead-css.mjs --negctl	2026-11-02	pass		2026-11-02 首建：正控 rc=0（7 页 / 16 脚本，活跃死选择器 0）；负控注入 .ghost-dead-xyz 后 rc=2 命中
+check-topbar-lean.mjs	node tools/check-topbar-lean.mjs --negctl	2026-11-03	pass		负控＝往 .float-hd 注入「已上架 · 1 家客户 · 都是最新」，A2/A4 必须 rc=2（实测 rc=2）；注入点与断言点同一元素，防「改了顶栏却量了个旧节点」
+check-app-invariants.mjs	node tools/check-app-invariants.mjs --negctl	2026-11-04	pass		2026-11-04 补测：负控把历史值期望改成「内测中」后 rc=2（同轮改了退出码：负控档抓到即 2，原来一律 1）
+check-form-hygiene.mjs	node tools/check-form-hygiene.mjs --negctl	2026-11-04	pass		2026-11-04 补测：负控注入说明句/图标变宽/间距变乱，四项全红 rc=2
+check-publish-parity.mjs	node tools/check-publish-parity.mjs --negctl	2026-11-04	pass		2026-11-04 补测：负控下 rc=2
+check-state-actions.mjs	node tools/check-state-actions.mjs --negctl	2026-11-04	pass		2026-11-04 补测：原负控只改「内测中」一格、那张卡要先走迁移才出现，注入常落空（rc=1）⇒ 改成注入必然出现在每张卡的假菜单项，现 rc=2
+check-panel-ia.mjs	node tools/check-panel-ia.mjs --negctl	2026-11-04	pass		IA1-IA10 坏样本 + IA6 十二条禁用词（含加空格写法），负控 rc=2；本轮改退出码语义后复测
+check-logic-wiring.mjs	node tools/check-logic-wiring.mjs --negctl	2026-11-04	pass		--selftest 7/7（rc=0）、4 类坏样本全红（rc=2）；本轮新登记
+
+walk.mjs	node tools/walk.mjs --negctl	2026-11-04	fail	2026-11-11	本轮实测 rc=0：脚本内 grep negctl 命中 0 处，压根没有 --negctl 分支，传参当正控跑

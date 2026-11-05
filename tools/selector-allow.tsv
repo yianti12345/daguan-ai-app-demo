@@ -1,0 +1,18 @@
+# 过期选择器白名单（2026-10-26 立）
+# 列：类名 | 为什么它"不存在"是对的/已知的 | 谁覆盖 | 类别
+# 类别只许两种：
+#   allow = 合理例外（真源类名、故意不存在的测试锚点），永久在册
+#   debt  = 确实过期，但所在判据整段待重写 —— 不算红，但必须打印出来
+#
+.card--hover-not-exist	故意不存在的锚点，用来问"负控能不能发现一个不存在的东西"	check-states.mjs	allow
+.card-actions-button	真源（线上）的类名，跨站选择器，本仓当然没有	ref-parity.mjs	allow
+.cl-head	组件库"表头"类，卡片化之后没有表头了	check-card-copy / check-card-uniform	debt
+.cl-h	同上，表头单元格类	check-card-uniform / judgments	debt
+.cl-more-n	"引用应用名"的计数类，10-25 已从卡上砍掉	check-list-rows	debt
+.k-tt	应用卡旧标题类，现在是 .card-tt	check-card-shape	debt
+.k-ico	卡片左侧图标列，已删（用户："为什么要有第一个字的图标"）	check-card-uniform	debt
+.k-used	"被 N 个应用使用"字样，已从卡上砍掉	check-card-uniform	debt
+.card-tx	旧卡正文类，现在是 .card-desc	check-terminology	debt
+.vs-btn	版本弹窗时代的按钮类，改成子页面后是 .vl-btn	scan-blind	debt
+.card-tt	真源站点（AiWriting 应用管理）的旧卡标题类；ref-vs-mine 用同一探针同时量真源与我方，我方现用 .kc-title	ref-vs-mine.mjs	allow
+.card-desc	真源站点的旧卡说明类；同一探针同时量真源与我方，我方现用 .kc-desc	ref-vs-mine.mjs	allow

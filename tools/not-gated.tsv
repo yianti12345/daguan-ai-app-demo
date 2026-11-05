@@ -1,0 +1,16 @@
+﻿判据	为什么不进闸	谁覆盖	到期日
+check-align.mjs	2026-10-26 复核：它的判据基准是「4 列卡片阵列」时期的列左缘与卡内边距，而组件库已改成行式列表、应用页改成封面三段式卡，量对象在组件页不存在；能力由 check-card-shape 的 C10 左缘同一栅格承接	check-card-shape C10	2026-11-15
+check-global.mjs	全局态（登录/壳/侧栏）判据，当前工作面是 90 号 AI 应用方案五页，不含登录与壳；等壳层改造那轮再接	未覆盖（壳改造轮）	2026-11-30
+audit-states.mjs	状态审计的输入来自 states.mjs 的全量状态清单，一次要跑十余个 Chrome 实例；已由 check-canvas-empty 与 e2e-flow 的 B 段覆盖空态与生成态	e2e-flow B + check-canvas-empty	2026-11-15
+visible-audit.mjs	元素可见性审计（隐藏/遮挡/零尺寸），需要与 px-parity 同一批截图；px-parity 已在闸内跑同一批页面，可见性尚未并入 —— 这是已知覆盖缺口，不是可以不管	未覆盖（缺口，已挂到期）	2026-11-08
+ref-vs-mine.mjs	真源 vs 我方对比，需要 bsk 登录态（仅在人工会话里可用），门禁是无人值守跑，起不来就是 rc=3 噪声	未覆盖（需登录态，人工轮跑）	2026-11-15
+configurator-parity.mjs	与真源的对齐判定，依赖 ref-snapshot.json 的冻结快照；真源是线上系统，快照过期时需要人工重新采样，不能每轮自动跑	ref-parity（同源快照）+ 人工采样	2026-11-15
+ref-parity.mjs	在闸内但每轮 rc=3 未量：真源 http://172.26.26.61:10612 登录态失效（非本仓可控），门禁每轮打 SKIP，不等于绿｜2026-11-04 续期：真源登录态仍失效（非本仓可控），本期靠 REF-SNAP 每轮对冻结基线兜底，续到 2026-12-31	替代核法：逐项对冻结基线 tools/ref-snapshot.json（REF-SNAP 闸每轮 --check），人工重新采样前不得声称与真源一致	2026-12-31
+check-card-updates.mjs	2026-10-28 由 FE-UPD-A-20261028 新建的卡片更新徽标探针（U1–U8）。本单验收只跑了它一次正控 + 一次负控，没有接进 run-gates.sh；接线与否归机制席按下一单（装配面板）的判据清单决定，本单不越界改闸门｜2026-11-04 实测：正控 rc=2，U4 红 1 条（ht-zc 独立复算 1 条可升级、徽标在位，而白名单 NEED 只有 hx-zc）。判据断言本身没问题，是数据里 ht-zc 多了一条可升级记录 —— 修数据还是扩演示白名单属产品口径，未接闸，续到 2026-11-11 由产品席定	本次交付回执 §4 逐条 rc + 人工复跑 tools/check-card-updates.mjs（正控 rc=0 / 负控 rc=2）	2026-11-11
+check-entry-params.mjs	2026-10-28 由 FE-UPD-C-20261028 新建的入口与状态机探针（E1–E13，含四个边界、撤回窗内外两种筛选口径、更新中与失败两态）。本单验收真跑正控 rc=0（26 条）、负控 rc=2（E1 反转被抓）；接线归机制席，本单不越界改闸门	本次交付回执 §2 逐条 rc；人工复跑 node tools/check-entry-params.mjs	2026-11-11
+check-update-view-tokens.mjs	2026-10-28 由 FE-UPD-C-20261028 新建的令牌闭合判据（T2–T7，纯静态、约 0.1 秒）。本单验收真跑正控 rc=0（7 条）、负控 rc=2（段内塞 13px 被抓）；接线归机制席，本单不越界改闸门	本次交付回执 §2 逐条 rc；人工复跑 node tools/check-update-view-tokens.mjs	2026-11-11
+check-ux-review.mjs	2026-10-30 退役：用户 2026-10-29 两次定调盲审机制移除（不派盲审、不写报告、不记账），本条要求一份晚于产品改动的盲审报告＝强制已废除的流程，会永久红	不覆盖（按用户决定；质量改由源头设计＋真跑判据保证）	
+e33-struct-undo.mjs	2026-11-02 退役：00e-版本与授权模型.md §4 按用户决定「不要撤回」，功能与撤回栈已于 2026-10-31 删除；V4-V6 仍在验撤回按钮/Tab/收起，功能不在会永久红。加列隔离由 EDITUNIT 的 A/X 段继续判，撤回入口的缺席由 EDITUNIT B1b 判	不覆盖（用户决定不做撤回；同一决定在 00e §4）	
+check-tokens.mjs	2026-11-04 退役（用户解限整改）：J 判据「裸值总数 ≤184 存量预算」与 VALUEPROV「裸值必须给出处、存量放过、新增判红」是同一条覆盖的两种写法；存量预算随重构必然漂移、红了也不指向任何产品问题（实测 189>184 长期红），属记账不判质量	VALUEPROV（check-value-provenance.mjs，每轮 style 档跑）＋ token 组 gate-tokens.mjs 判 J1 越界取值	2027-01-01
+check-state-matrix.mjs	2026-11-04 退役：与 STATEACT 重复覆盖同一件事（状态×菜单/电源/确认），而且它读的 tools/state-matrix.json 是手抄第二份真源、已停在旧状态词（未发布/已下架）与旧菜单文案，必红且与产品无关	STATEACT（check-state-actions.mjs，按 tools/truth-apps-menu.json 真机抓取，2026-11-03 bsk）	2027-01-01
+check-baseline-oracle.mjs	2026-11-04 新增的 oracle 自检（静态、0.1s）；由 tools/run-gates.sh --only=baseline 点名跑，发布前必跑一次；不进 --fast 是为了不把静态档变成全量	check-versions T2/T2c/T2d + 基线表	2026-11-30

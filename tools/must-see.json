@@ -1,0 +1,302 @@
+[
+  {
+    "page": "apps.html",
+    "sel": ".sider",
+    "why": "左侧导航整块——一级组与二级项都在这里面，看不见等于导航没了"
+  },
+  {
+    "page": "apps.html",
+    "sel": ".crumb",
+    "why": "面包屑「AI 应用方案 › 应用管理」，用户靠它定位当前在哪一层"
+  },
+  {
+    "page": "apps.html",
+    "sel": ".bar",
+    "why": "新建 + 状态筛选 + 搜索 + 刷新，这一行是整页的操作入口"
+  },
+  {
+    "page": "apps.html",
+    "sel": ".bar .btn.primary",
+    "why": "「新建应用」主按钮"
+  },
+  {
+    "page": "apps.html",
+    "sel": "#f-st",
+    "why": "状态筛选下拉（全部/已上架/草稿）"
+  },
+  {
+    "page": "apps.html",
+    "sel": "#f-kw",
+    "why": "搜索输入框（应用名或客户）"
+  },
+  {
+    "page": "apps.html",
+    "sel": "#refresh",
+    "why": "刷新图标钮——32×32 描边，缩成 0 就是一个死控件"
+  },
+  {
+    "page": "apps.html",
+    "sel": "#grid .kcard",
+    "why": "应用卡本体，列表页的主内容"
+  },
+  {
+    "page": "apps.html",
+    "sel": ".k-meta .card-tag",
+    "why": "卡信息行里的状态胶囊（已上架/草稿/已下架）"
+  },
+  {
+    "page": "apps.html",
+    "sel": ".kcard .card-tt",
+    "why": "卡标题——20/600，被 overflow 压掉就只剩一张图"
+  },
+  {
+    "page": "apps.html",
+    "sel": ".kcard .card-desc",
+    "why": "卡描述：客户 · 已装 N 个组件"
+  },
+  {
+    "page": "apps.html",
+    "sel": ".kcard .kbtn",
+    "why": "卡底栏「配置」按钮 —— 卡身可点，但这是显式的动作入口"
+  },
+  {
+    "page": "apps.html",
+    "sel": ".pager #total",
+    "why": "「共 N 个应用」——筛完后用户唯一能确认结果条数的地方"
+  },
+  {
+    "page": "apps.html",
+    "sel": ".xz-fab",
+    "why": "小智浮球——右下角常驻入口，零尺寸就点不开"
+  },
+  {
+    "page": "components.html",
+    "sel": ".sider",
+    "why": "左侧导航整块"
+  },
+  {
+    "page": "components.html",
+    "sel": ".crumb",
+    "why": "面包屑「AI 应用方案 › 组件库」"
+  },
+  {
+    "page": "components.html",
+    "sel": ".bar",
+    "why": "新增 + 三个筛选 + 刷新，组件库的操作入口行"
+  },
+  {
+    "page": "components.html",
+    "sel": "#btn-new",
+    "why": "「新增组件」主按钮——它被压掉就走不到创建流程"
+  },
+  {
+    "page": "components.html",
+    "sel": "#f-st",
+    "why": "状态筛选（已上架/草稿/已下架）"
+  },
+  {
+    "page": "components.html",
+    "sel": "#f-kw",
+    "why": "搜索组件名称"
+  },
+  {
+    "page": "components.html",
+    "sel": "#refresh",
+    "why": "刷新图标钮"
+  },
+  {
+    "page": "components.html",
+    "sel": "#grid > .crow",
+    "why": "组件行本体（单列行列表的每一行），组件库的主内容"
+  },
+  {
+    "page": "components.html",
+    "sel": ".cl-main .cl-tt",
+    "why": "组件名——行上唯一能认出「这是哪个组件」的地方"
+  },
+  {
+    "page": "components.html",
+    "sel": ".cl-main .cl-desc",
+    "why": "组件描述（类型 · 被几个应用引用）"
+  },
+  {
+    "page": "components.html",
+    "sel": ".cl-st .card-tag",
+    "why": "行状态胶囊（已上架/草稿/已下架）——原 .k-meta 那行的状态位；版本与引用那两段现在是独立列 .cl-ver / .cl-refs .cl-names"
+  },
+  {
+    "page": "components.html",
+    "sel": ".pager #total",
+    "why": "「第 1-8 条 / 共 8 条」"
+  },
+  {
+    "page": "components.html",
+    "sel": ".xz-fab",
+    "why": "小智浮球"
+  },
+  {
+    "page": "component.html",
+    "sel": "#topbar",
+    "why": "左上角浮层：返回 + 组件名 + 版本，画布上没有第二个出口"
+  },
+  {
+    "page": "component.html",
+    "sel": "#topbar .back-btn",
+    "why": "「返回组件库」圆钮——唯一能回到列表的控件"
+  },
+  {
+    "page": "component.html",
+    "sel": "#comp-name",
+    "why": "组件名（14/600）"
+  },
+  {
+    "page": "component.html",
+    "sel": "#comp-status",
+    "why": "状态胶囊（已上架 / 草稿 / 已下架）—— 版本号移到页脚「v1 · 草稿」，原来那条 #comp-ver 现在 display:none"
+  },
+  {
+    "page": "component.html",
+    "sel": "#canvas",
+    "why": "画布本体——就是最终页面本身，零高度等于什么都没生成"
+  },
+  {
+    "page": "component.html",
+    "sel": "#canvas-inner",
+    "why": "画布内容区（空态卡 / 生成的骨架都挂在这里）"
+  },
+  {
+    "page": "component.html",
+    "sel": ".fk-bar",
+    "why": "底部对话框整条——720×56，唯一的输入入口"
+  },
+  {
+    "page": "component.html",
+    "sel": "#fk-input",
+    "why": "对话框输入框——被压成 0×0 就一个字也打不进去"
+  },
+  {
+    "page": "component.html",
+    "sel": "#fk-send",
+    "why": "「发送」圆钮"
+  },
+  {
+    "page": "component.html",
+    "sel": ".xz-fab",
+    "why": "小智浮球"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-form",
+    "sel": ".cfg-bar",
+    "why": "配置器条（配置器选择 / 导入 / 设为默认）——?cfg= 下唯一多出来的那一行"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-form",
+    "sel": ".cfg-box",
+    "why": "配置器整体（头 + 主体 + 底栏三区的外框）"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-form",
+    "sel": ".cfg-hd",
+    "why": "配置器头部：名称 + 标签"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-form",
+    "sel": ".cfg-bd",
+    "why": "配置器主体区——min-height:300px，被压掉就是一片空白"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-form",
+    "sel": ".cfg-bd .cfg-field",
+    "why": "配置器字段（组件名 / 适用口径 / 字段 / 说明），表单式的四块"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-form",
+    "sel": ".cfg-ft",
+    "why": "配置器底栏（重置 / 保存）"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-form",
+    "sel": ".cfg-ft .cfg-btn[data-kind=\"primary\"]",
+    "why": "配置器主按钮——保存动作的唯一出口"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-dialog",
+    "sel": ".cfg-bd",
+    "why": "对话装配式配置器的主体区"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-dialog",
+    "sel": ".cfg-bd .cfg-field",
+    "why": "对话装配式的字段区（说明 + 字段编辑）"
+  },
+  {
+    "page": "component.html?id=task-list&cfg=cfg-comp-dialog",
+    "sel": ".cfg-ft .cfg-btn[data-kind=\"primary\"]",
+    "why": "配置器主按钮"
+  },
+  {
+    "page": "app.html?id=hx-zc&cfg=cfg-app-standard",
+    "sel": ".cfg-bd .cfg-switch",
+    "why": "「是否可装配」开关——就是被 `.bd-field label{display:block}` 压成零尺寸的那个。它属于应用标准配置器（bindsTo:app），而 app.html 没有 #cfg-bar / #canvas-inner，所以这条现在必然红：全站没有任何 URL 能把这个开关渲染出来"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": ".float-hd",
+    "why": "左上角浮层：返回 + 应用名"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": "#app-name",
+    "why": "应用名——认不出在配哪个应用就全乱了"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": "#canvas",
+    "why": "画布本体（这个应用现在长什么样）"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": "#canvas .sheet",
+    "why": "画布里那张「应用屏幕」——装了什么就长什么样"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": "#canvas .sheet-hd",
+    "why": "屏幕头部：应用名 + 状态 chip"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": "#canvas .sheet-bd",
+    "why": "屏幕主体：一个组件一块"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": "#canvas .blk",
+    "why": "已装组件块——装了组件却看不见块，等于没装"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": "#canvas .blk .blk-hd",
+    "why": "组件块头部（组件名 + 状态）"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": ".fk-bar",
+    "why": "底部对话框整条"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": "#fk-input",
+    "why": "对话框输入框"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": "#fk-send",
+    "why": "「发送」圆钮"
+  },
+  {
+    "page": "app.html?id=hx-zc",
+    "sel": ".xz-fab",
+    "why": "小智浮球"
+  }
+]

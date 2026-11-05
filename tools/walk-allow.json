@@ -1,0 +1,6 @@
+{
+  "_why": "点了没反应但**是正确的**条目。每条必须写清为什么算正确，否则不许进这个文件。",
+  "component.html|div|fk-grip|拖动对话区": "展开态下点抓手不做事是对的——它只负责 pointer 拖拽，click 不是它的入口。",
+  "app.html?id=hx-zc|div|fk-grip|拖动对话区": "同上：拖拽把手，靠 pointer 事件，不响应 click。",
+  "*|div|fk-grip|拖动对话区": "拖动把手按页面无关：它只吃 pointer 拖拽，click 本来就不该有反应（各个应用/组件页共用同一颗浮球）。"
+}
