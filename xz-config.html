@@ -39,7 +39,7 @@
 .cf-hd{display:flex;align-items:center;gap:var(--space-8)}
 .cf-lb{font-size:var(--font-size-body);color:var(--color-text-body)}
 .cf-lb i{font-style:normal;color:var(--color-danger);margin-right:2px}
-.cf-hint{margin:var(--space-4) 0 0;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.cf-hd .btn{margin-left:auto}
 .cf-ta{display:block;width:100%;box-sizing:border-box;height:168px;margin-top:var(--space-8);padding:var(--space-12);
   border:1px solid var(--color-border-control);border-radius:var(--radius-control);background:var(--surface-page);
   resize:vertical;font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)}
@@ -69,8 +69,8 @@
       <section class="cfg-form" aria-labelledby="cp-t">
         <div class="cf-hd">
           <span class="cf-lb" id="cp-t"><i aria-hidden="true">*</i>默认系统提示词：</span>
+          <button type="button" class="btn primary" id="p-save" disabled>保存</button>
         </div>
-        <p class="cf-hint">小智每次对话都会带上这段，用来定它的基调</p>
         <textarea id="p-text" class="cf-ta" aria-labelledby="cp-t" placeholder="例如：你是达观平台的业务助理，回答要严谨，不确定就说不确定，不许编造数据。"></textarea>
       </section>
 
@@ -80,7 +80,6 @@
       <div class="sk-bar">
         <button type="button" class="btn ghost" id="act-import">导入</button>
         <button type="button" class="btn ghost" id="act-new">新建 skill</button>
-        <button type="button" class="btn primary" id="p-save" disabled>保存</button>
         <span class="bar-sp"></span>
         <label class="field w220"><input id="kw" placeholder="搜 skill 名称或描述" autocomplete="off"></label>
         <label class="field w120"><select id="f-on"><option value="">是否启用</option><option value="1">已启用</option><option value="0">已停用</option></select></label>
