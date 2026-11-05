@@ -21,7 +21,14 @@
   var NAV = [
     ['AI 应用方案', [
       ['应用管理', 'apps.html', 'apps'],
-      ['组件库', 'components.html', 'components']
+      ['组件库', 'components.html', 'components'],
+      /* ★2026-11-05（用户）：「不要叫能力管理（当一级组），放到 AI 应用方案里，
+         然后叫能力管理，下面再加 2 个菜单：接口注册、小智技能」。
+         层级：AI 应用方案 → 能力管理 → 接口注册 / 小智技能。 */
+      ['能力管理', '', 'cap', [
+        ['接口注册', 'interfaces.html', 'cap-apis'],
+        ['小智技能', 'skills.html', 'cap-skills']
+      ]]
       /* ★2026-11-01（用户原话：「左侧只有两个模块，一个是应用管理，一个是 AI 组件库」）：
          这里**只许有两项**。
          上一版我擅自在中间加了「客户授权」，在末尾挂着「下载客户端」——两个都错了：
@@ -31,13 +38,6 @@
              比没有入口更差"），我加项等于把这条决定推翻了，而且没问。
          加项之前必须先问：这个东西是"跨应用的模块"，还是"某个应用身上的属性"？
          属后者，一律进页面，不进导航。 */
-    ]],
-    /* ★2026-11-05（用户）：「能力中枢里面的小智相关配置一并加上」。
-       它管的是跨应用的能力资产（接口、技能），不是某个应用身上的属性，
-       按 shell.js 自己的规矩，属于该进导航的那一类。只加这一组，不加别的。 */
-    ['能力管理', [
-      ['接口注册', 'interfaces.html', 'cap-apis'],
-      ['小智技能', 'skills.html', 'cap-skills']
     ]]
   ];
 
@@ -77,6 +77,8 @@
       var group = NAV[g], items = group[1], cur = false;
       for (var k = 0; k < items.length; k++) {
         if (items[k][2] && items[k][2] === active) cur = true;
+        var kids0 = items[k][3];
+        if (kids0) for (var q0 = 0; q0 < kids0.length; q0++) if (kids0[q0][2] === active) cur = true;
       }
       html += '<div class="grp" data-open="' + (cur ? 'true' : 'false') + '">'
         + '<button class="gt" type="button" aria-expanded="' + (cur ? 'true' : 'false') + '">'
@@ -86,7 +88,22 @@
         + '</button>'
         + '<div class="gs">';
       for (var i = 0; i < items.length; i++) {
-        var item = items[i], name = item[0], href = item[1], key = item[2];
+        var item = items[i], name = item[0], href = item[1], key = item[2], kids = item[3];
+        if (kids) {
+          var subOpen = false;
+          for (var q = 0; q < kids.length; q++) if (kids[q][2] === active) subOpen = true;
+          html += '<div class="grp sub" data-open="' + (subOpen ? 'true' : 'false') + '">'
+            + '<button class="gt gt-sub" type="button" aria-expanded="' + (subOpen ? 'true' : 'false') + '">'
+              + '<span class="gn">' + name + '</span>' + chev(subOpen)
+            + '</button>'
+            + '<div class="gs">';
+          for (var w = 0; w < kids.length; w++) {
+            html += '<a href="' + kids[w][1] + '"'
+              + (kids[w][2] === active ? ' aria-current="page"' : '') + '>' + kids[w][0] + '</a>';
+          }
+          html += '</div></div>';
+          continue;
+        }
         html += '<a href="' + href + '"'
           + ((key && key === active) ? ' aria-current="page"' : '') + '>' + name + '</a>';
       }

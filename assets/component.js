@@ -1055,7 +1055,8 @@
     Gen.componentSpec(text, {
       app: app ? app.name : '',
       name: IS_EDIT ? COMP.name : '',
-      fields: COMP.fields
+      fields: COMP.fields,
+      compId: COMP.id || ''
     }).then(function (spec) {
       clearInterval(tick);
       progress(50);

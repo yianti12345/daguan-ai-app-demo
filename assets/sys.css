@@ -49,15 +49,19 @@ a:hover{color:var(--color-brand-hover)}
 .sider .gt .gn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sider .gt .gv{flex:0 0 12px;color:var(--color-text-muted);transition:transform .2s}
 .sider .grp[data-open="true"] .gt .gv{transform:rotate(180deg)}/* 展开组的一级项整体转蓝（线上实测：展开的"生成智能体""定制化流程"字和图标都是蓝的） */
-.sider .grp[data-open="true"] .gt,
-.sider .grp[data-open="true"] .gt .gi,
-.sider .grp[data-open="true"] .gt .gv{color:var(--color-brand-nav-active)}
-.sider .grp[data-open="true"] .gt .gi{color:var(--color-brand-nav-active)}
+.sider .grp[data-open="true"] > .gt,
+.sider .grp[data-open="true"] > .gt .gi,
+.sider .grp[data-open="true"] > .gt .gv{color:var(--color-brand-nav-active)}
+.sider .grp[data-open="true"] > .gt .gi{color:var(--color-brand-nav-active)}
 .sider .gt:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:-2px}/* 二级块右留 8：线上选中块宽 177（9→186），不是通栏 185。
    展开/收起要有过渡 —— 线上 antd 的 submenu 是高度动画，我原来是 display:none 硬切，
    点下去"啪"一下出现，这就是"展开交互不一样"。用 max-height 过渡，5 项 × 48 = 240，给 320 余量。 */
 .sider .gs{padding-right:var(--space-8);max-height:0;overflow:hidden;transition:max-height .2s ease}
-.sider .grp[data-open="true"] .gs{max-height:320px}
+.sider .menu > .grp[data-open="true"] > .gs{max-height:320px}
+/* 2026-11-05 三级：能力管理是可折叠子组，子项再缩进一档 */
+.sider .grp.sub > .gt{height:44px;padding-left:54px}
+.sider .grp.sub > .gs > a{padding-left:86px;height:44px}
+.sider .grp.sub[data-open="true"] > .gs{max-height:200px}
 .sider .gs a{
   display:flex;align-items:center;height:48px;padding:0 10px 0 54px;
   font-size:var(--font-size-body);color:var(--color-text-nav);

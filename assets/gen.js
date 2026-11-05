@@ -296,12 +296,25 @@ window.Gen = (function () {
     ctx = ctx || {};
     /* 先探活再决定谁来搭：探到模型就用模型，探不到就用上面的确定性结构器。
        这一分支是"跑不通"的正面回答 —— 没有模型代理也不再是死键。 */
+    /* 2026-11-05：装配接口的用途在这里落地——组件生成时，把已装接口的说明书
+       作为上下文交给模型。接口是知识，不是运行时绑定；没装的接口不许编。 */
+    var apiDocs = '';
+    if (typeof window !== 'undefined' && window.CAP && ctx.compId) {
+      var ids = CAP.compApis(ctx.compId);
+      var docs = ids.map(function (id) {
+        var a = CAP.apiById(id);
+        return a ? ('### ' + a.name + '\n' + String(a.doc || a.desc || '')) : '';
+      }).filter(Boolean);
+      if (docs.length) {
+        apiDocs = '\n可用接口（这个组件装配的能力，需要时按说明书调用；没列出的不许编）：\n' + docs.join('\n\n');
+      }
+    }
     var facts = [
       '所属应用：' + (ctx.app || '未指定'),
       '组件原名：' + (ctx.name || '（新建）'),
       '已有字段：' + ((ctx.fields && ctx.fields.length) ? ctx.fields.join('、') : '（无）'),
       '用户这句话：' + text
-    ].join('\n');
+    ].join('\n') + apiDocs;
     /* 先探活再定谁来搭：探到模型走模型，探不到走确定性结构器。
        这是"打字对话跑不通"的正面回答 —— 没有模型代理也不再是死键。 */
     return probe().then(function (p) {

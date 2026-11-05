@@ -84,6 +84,11 @@
     load().skills.unshift(it); save(); return it;
   }
   function removeSkill(id) { var d = load(); d.skills = d.skills.filter(function (x) { return x.id !== id; }); save(); }
+  function updateSkill(id, patch) {
+    var it = load().skills.filter(function (x) { return x.id === id; })[0];
+    if (!it) return null;
+    Object.assign(it, patch, { at: now() }); save(); return it;
+  }
   function toggleSkill(id) { var it = load().skills.filter(function (x) { return x.id === id; })[0]; if (it) { it.on = !it.on; it.at = now(); save(); } return it; }
   function skillById(id) { return load().skills.filter(function (x) { return x.id === id; })[0] || null; }
 
@@ -107,7 +112,7 @@
   window.CAP = {
     load: load, save: save,
     apis: apis, apiById: apiById, addApi: addApi, updateApi: updateApi, removeApi: removeApi, toggleApi: toggleApi,
-    skills: skills, skillById: skillById, addSkill: addSkill, removeSkill: removeSkill, toggleSkill: toggleSkill,
+    skills: skills, skillById: skillById, addSkill: addSkill, updateSkill: updateSkill, removeSkill: removeSkill, toggleSkill: toggleSkill,
     compApis: compApis, setCompApis: setCompApis,
     now: now
   };

@@ -82,13 +82,14 @@
   $('#dlg-save').addEventListener('click', function () {
     var name = $('#f-name').value.trim();
     if (!name) { toast('先填名称', 'error'); $('#f-name').focus(); return; }
-    CAP.addSkill({
+    var it = CAP.addSkill({
       name: name,
       scope: $('#f-scope').value,
       desc: $('#f-desc').value.trim() || '—',
-      state: 'ok'
+      state: 'run'
     });
-    closeNew(); paint(); toast('已新建');
+    closeNew(); paint();
+    setTimeout(function () { CAP.updateSkill(it.id, { state: 'ok' }); paint(); }, 900);
   });
 
   /* ── 导入 ── */

@@ -183,7 +183,8 @@
   $('#parse').addEventListener('click', function () {
     var raw = $('#braw').value.trim();
     if (!raw) { toast('先贴点东西', 'error'); return; }
-    var blocks = raw.split(/\n\s*\n/).filter(function (b) { return b.trim(); });
+    var parts = /\n\s*---+\s*\n/.test(raw) ? raw.split(/\n\s*---+\s*\n/) : raw.split(/\n\s*\n/);
+    var blocks = parts.filter(function (b) { return b.trim(); });
     PARSED = blocks.map(function (b) {
       var d = makeDoc(b, '');
       return { name: d.name, desc: d.desc, raw: b.trim(), doc: d.md, source: '未标注', state: 'ok' };
