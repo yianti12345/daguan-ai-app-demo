@@ -228,7 +228,7 @@
     var old = $('#pk-mask'); if (old) old.remove();
     ADD = { mode: 'bulk', parsed: null, busy: false, text: '' };
     document.body.insertAdjacentHTML('beforeend',
-      '<div class="nf-mask" id="pk-mask"><div class="nf" role="dialog" aria-modal="true" aria-labelledby="pk-t" style="width:660px;max-width:calc(100vw - 48px)">'
+      '<div class="nf-mask" id="pk-mask"><div class="nf" role="dialog" aria-modal="true" aria-labelledby="pk-t">'
       + '<div class="nf-hd"><b id="pk-t">添加接口</b>'
       + '<button type="button" class="icon-btn" id="pk-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
       /* 页签用现成的 .p-tabs / .p-tab（装配能力面板同一套），间距一行都不许在这里改；
@@ -238,7 +238,7 @@
       +   '<button type="button" role="tab" class="p-tab" data-mode="form" aria-selected="false">手动填一条</button>'
       + '</div>'
       + '<div class="nf-bd" id="pk-bd"></div>'
-      + '<div class="nf-ft"><span id="pk-left" style="margin-right:auto"></span>'
+      + '<div class="nf-ft">'
       + '<button type="button" class="btn ghost" id="pk-cancel">取消</button>'
       + '<button type="button" class="btn primary" id="pk-ok">解析</button></div>'
       + '</div></div>');
@@ -261,12 +261,9 @@
     });
   }
 
-  function paintFoot(leftHtml, okText, okOff) {
-    $('#pk-left').innerHTML = leftHtml || '';
+  function paintFoot(okText, okOff) {
     var ok = $('#pk-ok');
     ok.textContent = okText; ok.disabled = !!okOff;
-    var l = $('#pk-left').firstChild;
-    if (l && l.id === 'pk-back') l.addEventListener('click', function () { ADD.mode = 'bulk'; ADD.parsed = null; paintAdd(); });
   }
 
   function paintAdd() {
@@ -275,29 +272,26 @@
     if (ADD.mode === 'bulk') {
       bd.innerHTML = ''
         + '<div class="nf-row"><label for="fb-raw">把接口文档或说明贴进来</label>'
-        + '<textarea id="fb-raw" style="min-height:230px" placeholder="OpenAPI / Swagger 的 JSON 或 YAML；也可以是一段段接口说明，空行分开。贴完点「解析」。"></textarea></div>'
-        + '<div class="nf-row" style="flex-direction:row;align-items:center;gap:var(--space-8)">'
-        + '<span class="abt-hint" id="fb-tip" style="margin-left:auto"></span></div>';
+        + '<textarea id="fb-raw" rows="9" placeholder="OpenAPI / Swagger 的 JSON 或 YAML；也可以是一段段接口说明，空行分开。贴完点「解析」。"></textarea></div>'
+        + '<div class="abt-hint" id="fb-tip" hidden></div>';
       $('#fb-raw').value = ADD.text || '';
-      paintFoot('', ADD.busy ? '解析中…' : '解析', ADD.busy);
+      paintFoot(ADD.busy ? '解析中…' : '解析', ADD.busy);
       return;
     }
     if (ADD.mode === 'form') {
       bd.innerHTML = ''
         + '<div class="nf-row"><label for="fa-name">接口名称<span class="nf-req">*</span></label><input id="fa-name" placeholder="这个接口叫什么"></div>'
-        + '<div class="nf-row" style="flex-direction:row;gap:var(--space-8)">'
-        +   '<div style="flex:0 0 108px;display:flex;flex-direction:column;gap:var(--space-8)"><label for="fa-m">方法</label><select id="fa-m"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select></div>'
-        +   '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:var(--space-8)"><label for="fa-path">路径<span class="nf-req">*</span></label><input id="fa-path" placeholder="/api/v1/…"></div>'
-        + '</div>'
+        + '<div class="nf-row"><label for="fa-m">方法</label><select id="fa-m"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select></div>'
+        + '<div class="nf-row"><label for="fa-path">路径<span class="nf-req">*</span></label><input id="fa-path" placeholder="/api/v1/…"></div>'
         + '<div class="nf-row"><label for="fa-desc">说明</label><input id="fa-desc" placeholder="干什么用，一句话"></div>'
-        + '<div class="nf-row"><label for="fa-in">入参（JSON）</label><textarea id="fa-in" style="min-height:80px;font-family:var(--font-family-mono);font-size:var(--font-size-caption)" placeholder="{&quot;page&quot;: 1, &quot;status&quot;: &quot;done&quot;}"></textarea></div>'
-        + '<div class="nf-row"><label for="fa-out">返回（JSON）</label><textarea id="fa-out" style="min-height:80px;font-family:var(--font-family-mono);font-size:var(--font-size-caption)" placeholder="{&quot;total&quot;: 0, &quot;items&quot;: []}"></textarea></div>';
+        + '<div class="nf-row"><label for="fa-in">入参（JSON）</label><textarea id="fa-in" placeholder="{&quot;page&quot;: 1, &quot;status&quot;: &quot;done&quot;}"></textarea></div>'
+        + '<div class="nf-row"><label for="fa-out">返回（JSON）</label><textarea id="fa-out" placeholder="{&quot;total&quot;: 0, &quot;items&quot;: []}"></textarea></div>';
       ['#fa-name', '#fa-path'].forEach(function (sel) {
         $(sel).addEventListener('input', function () {
           $('#pk-ok').disabled = !($('#fa-name').value.trim() && $('#fa-path').value.trim());
         });
       });
-      paintFoot('', '添加', true);
+      paintFoot('添加', true);
       return;
     }
     /* list：拆出来的先给人看一眼 */
@@ -313,10 +307,11 @@
         + '<span class="abt-hint" style="text-align:right">' + (inIt ? '已在里面' : '') + '</span></div>';
     }).join('');
     bd.innerHTML = '<div class="abt-sec" style="margin:0 0 var(--space-8)"><b>识别到 ' + items.length + ' 个接口</b>'
-      + (dup ? '<span class="abt-hint" style="margin-left:var(--space-8)">其中 ' + dup + ' 个已经在这个能力里</span>' : '') + '</div>'
+      + (dup ? '<span class="abt-hint" style="margin-left:var(--space-8)">其中 ' + dup + ' 个已经在这个能力里</span>' : '')
+      + '<button type="button" class="abt-op" id="pk-back" style="margin-left:auto">重新贴</button></div>'
       + '<div class="abt-list" style="max-height:320px;overflow:auto">' + rows + '</div>';
-    paintFoot('<button type="button" class="abt-op" id="pk-back">重新贴</button>',
-      '加入 ' + (items.length - dup) + ' 个', items.length - dup === 0);
+    $('#pk-back').addEventListener('click', function () { ADD.mode = 'bulk'; ADD.parsed = null; paintAdd(); });
+    paintFoot('加入 ' + (items.length - dup) + ' 个', items.length - dup === 0);
   }
 
   function onAddOk() {
@@ -352,13 +347,13 @@
       ADD.busy = false;
       if (!r || !r.length) {
         ADD.mode = 'bulk'; paintAdd();
-        var tp = $('#fb-tip'); if (tp) tp.textContent = '这段内容里没认出接口';
+        var tp = $('#fb-tip'); if (tp) { tp.textContent = '这段内容里没认出接口'; tp.hidden = false; }
         return;
       }
       ADD.parsed = r; ADD.mode = 'list'; paintAdd();
     }).catch(function (e) {
       ADD.busy = false; ADD.mode = 'bulk'; paintAdd();
-      var t2 = $('#fb-tip'); if (t2) t2.textContent = '没拆出来：' + String((e && e.message) || e);
+      var t2 = $('#fb-tip'); if (t2) { t2.textContent = '没拆出来：' + String((e && e.message) || e); t2.hidden = false; }
     });
   }
 
