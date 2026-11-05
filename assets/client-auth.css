@@ -95,11 +95,11 @@
    修：内容区必须能被压缩（flex:1 1 auto + min-height:0）并自己滚，头/脚固定。
    这条是结构约束，不是给某一次尺寸打的补丁。 */
 .mask .au-dlg{width:min(var(--dialog-max-w),92vw);height:auto;
-  max-height:calc(100vh - 96px);display:flex;flex-direction:column;
-  /* ★2026-11-05：这个弹窗里有个多选下拉。窗口只有 195 高时，下拉无论向上还是向下
-     都会遮住东西（向上遮标题、向下遮「确定」），怎么摆都不像正常产品。
-     留出 400 的高度给下拉往下展开：不遮标题、不遮按钮、弹窗也不因展开而变高。 */
-  min-height:min(400px,calc(100vh - 96px))}
+  max-height:calc(100vh - 96px);display:flex;flex-direction:column}
+/* ★2026-11-05 收回上一版的错：为了"下拉不遮住确定"给这个弹窗加了 min-height:400px，
+   结果一个字段的弹窗里出现 207px 纯空白（截图实测：下拉底 129、页脚顶 335）。
+   标准做法是弹窗高度由内容决定，下拉浮层向下弹出、允许盖住弹窗下部 ——
+   用户选完点外面收起再点确定，这是所有后台产品的默认，不需要为它撑高弹窗。 */
 .au-bd{flex:1 1 auto;min-height:0;overflow:auto}
 .au-bd{padding:0 var(--space-16) var(--space-8)}
 .fm{display:flex;flex-direction:column;gap:var(--space-16)}
@@ -117,26 +117,25 @@
 /* 客户选择器（2026-11-05 照真源形态）：点开是一层下拉浮层，不把弹窗撑高。
    原来列表inline展开，弹窗从 195 撑到 480，触发器/搜索框/列表三层框叠在一起，
    看着像三个输入框摞着。 */
-/* 选择客户 = 标准多选下拉（真源是 ant-select 多选）。
-   ★2026-11-05：上一版把列表内联展开，弹窗从 195 撑到 485、里面还要滚 ——
-   那不是选择器。改成：框只显示「已选 N 家」，点开在框下方弹一层浮层（fixed 定位，
-   挂在 .mask 下，不受 .panel 的 overflow:hidden 裁剪），点外面收起。弹窗高度不变。 */
-#mask #fm-trigger{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);
-  width:100%;text-align:left;cursor:pointer}
-#mask #fm-trigger[aria-expanded="true"]{border-color:var(--color-brand)}
-.fm-caret{flex:0 0 auto;color:var(--color-text-tertiary);transition:transform .12s ease}
-#mask #fm-trigger[aria-expanded="true"] .fm-caret{transform:rotate(180deg)}
-
-/* z-index 要高于 .mask（100）：浮层挂在 mask 之外，低于它就会被弹窗盖住 ——
-   实测 elementFromPoint 返回的是弹窗底栏，不是列表。 */
-.fm-pop{position:fixed;z-index:120;display:flex;flex-direction:column;gap:var(--space-8);
-  padding:var(--space-8);background:var(--surface-page);
-  border:1px solid var(--color-border-hairline);border-radius:var(--radius-sm);
-  box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden}
-.fm-pop[hidden]{display:none}
-.fm-pop .fm-clients{max-height:none;overflow-y:auto;overflow-x:hidden;
-  scrollbar-gutter:stable;border:0;padding:0;background:none;flex:1 1 auto;min-height:0}
-.fm-pop-search{flex:0 0 auto}
+/* 选择客户 = 选择器弹窗（2026-11-05 第三次，按行业标准形态定稿）：
+   标题 + 「搜索框」+ 占满内容区的多选列表 + 底栏「已选 N 家 / 取消 / 确定」。
+   为什么不是下拉：这个弹窗只有一行字段，下拉浮层必然盖住取消/确定，
+   还会在弹窗右边缘露出一条白边（实测截图里像渲染错误）。
+   为什么不是内联展开撑高：那也不是选择器。
+   选择器弹窗（像"添加成员"）是三选一里唯一没有副作用的形态。 */
+/* 高度随客户数走：客户少时弹窗矮，客户多时列表内部滚（不是把弹窗拉到 620 空着） */
+.mask .au-dlg--pick{height:auto;max-height:min(620px,calc(100vh - 96px))}
+.au-dlg--pick .au-bd{overflow:hidden;display:flex;flex-direction:column}
+.au-dlg--pick .fm{display:flex;flex-direction:column;gap:var(--space-8);flex:1 1 auto;min-height:0}
+.au-dlg--pick .fm-clients{flex:0 1 auto;min-height:0;max-height:340px;
+  overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;
+  /* 列表要有自己的边界：不然最后一行直接贴在底栏上，看着像被切断 */
+  border:1px solid var(--color-border-hairline);border-radius:var(--radius-sm)}
+/* 选中的行整行淡底：只靠 14px 勾选框认选中，扫一列眼睛很累（11 家里找 3 个） */
+.fm-client:has(input:checked){background:var(--color-state-hover)}
+/* 底栏左侧的已选计数：靠右会跟按钮挤，靠左单独一处，和按钮分开读 */
+.au-picked{margin-right:auto;font-size:var(--font-size-body);color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
+.au-picked b{color:var(--color-text-primary);font-weight:600}
 /* ── 2026-11-02 多客户授权 ──────────────────────────────────── */
 /* 弹窗里的客户勾选列表：每家一行，名字在左、租户 ID 在右，状态在最右。
    列表限高，客户多了内部滚动，弹窗不会顶出屏幕。 */

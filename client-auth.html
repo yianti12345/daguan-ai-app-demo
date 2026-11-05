@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
 <link rel="stylesheet" href="assets/sys.css?v=5c7c9486">
-<link rel="stylesheet" href="assets/client-auth.css?v=e46e3e69">
+<link rel="stylesheet" href="assets/client-auth.css?v=202bc703">
   <meta name="robots" content="noindex,nofollow">
 </head>
 <body>
@@ -97,7 +97,7 @@
      「应用」这一行只在一级页面（授权总览）出现，进了某个应用就隐藏（上下文已定）。
      一次可选多家客户：同一应用下各家各有一条授权记录。 -->
 <div class="mask" id="mask" data-open="false">
-  <div class="panel au-dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+  <div class="panel au-dlg au-dlg--pick" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
     <div class="p-hd">
       <b id="dlg-title">新增客户授权</b>
       <button class="p-x" type="button" id="dlg-x" aria-label="关闭">
@@ -110,19 +110,15 @@
           <label for="fm-app">应用</label>
           <select id="fm-app"></select>
         </div>
-        <!-- 选择客户 = 标准多选下拉（真源就是 ant-select 多选）：
-             框里只显示「已选 N 家」，点开在框的下方弹出一层浮层（搜索 + 多选列表），
-             点外面收起。浮层不占弹窗高度 —— 弹窗始终是 195 高。
-             ★2026-11-05：上一版把列表直接内联展开，弹窗被撑到 485、内容还要滚，
-             那不是选择器，是个四不像。 -->
+        <!-- 选择客户 = 常驻的「搜索 + 多选列表」（2026-11-05 第三次改，这次按行业标准形态）：
+             为什么不做成下拉 —— 下拉浮层会盖住这个短弹窗的取消/确定，还会露出弹窗右边缘一条白边，
+             实测截图里像渲染错误。8~1000 家客户的场景，标准做法是"选择器弹窗"：
+             搜索框固定在顶部、列表占满内容区、底栏报「已选 N 家」。 -->
         <div class="fm-row">
           <span class="fm-label" id="fm-pick-lb">选择客户</span>
-          <button class="field" type="button" id="fm-trigger" aria-expanded="false" aria-controls="fm-list-wrap"
-                  aria-haspopup="listbox">
-            <span id="fm-picked">请选择客户</span>
-            <svg class="fm-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
+          <label class="field"><input id="fm-kw" type="text" placeholder="搜客户名称或租户 ID" autocomplete="off"></label>
         </div>
+        <div class="fm-clients" id="fm-clients" role="group" aria-labelledby="fm-pick-lb"></div>
         <!-- 数据层要一个有效期，但真源新增时不问它（到期在行内「配置」里设），默认 12 个月 -->
         <div class="fm-row" hidden>
           <select id="fm-exp"><option value="12" selected>12 个月</option></select>
@@ -130,17 +126,12 @@
       </div>
     </div>
     <div class="p-ft au-ft">
+      <span class="au-picked" id="fm-picked-lb">已选 0 家</span>
       <button class="btn ghost" type="button" id="dlg-cancel">取消</button>
       <button class="btn primary" type="button" id="dlg-ok">确定</button>
     </div>
   </div>
 </div>
-
-  <!-- 客户下拉浮层：挂在 mask 下、fixed 定位，不受 .panel 的 overflow:hidden 裁剪。 -->
-  <div class="fm-pop" id="fm-list-wrap" hidden role="listbox" aria-multiselectable="true" aria-label="选择客户">
-    <label class="field fm-pop-search"><input id="fm-kw" type="text" placeholder="搜客户名称或租户 ID" autocomplete="off"></label>
-    <div class="fm-clients" id="fm-clients" role="group" aria-label="选择客户"></div>
-  </div>
 
 <script src="assets/data.js?v=b3d5f9ec"></script>
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
@@ -148,6 +139,6 @@
 <script src="assets/spec.js?v=caaab450"></script>
 <script src="assets/list.js?v=cbb213a1"></script>
 <script src="assets/shell.js?v=1736883e"></script>
-<script src="assets/client-auth.js?v=57bca868"></script>
+<script src="assets/client-auth.js?v=397b25a6"></script>
 </body>
 </html>
