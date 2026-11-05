@@ -127,10 +127,15 @@
   --color-brand:var(--p-blue-600);
   --color-brand-hover:var(--p-blue-650);
   --color-brand-active:var(--p-blue-700);
-  --color-brand-ink:var(--p-blue-550);
+  /* 2026-11-05（体检 P1）：原来指 blue-550 #517AFF，白底只有 3.77，当文字色不达 AA。
+     文字/链接改指 blue-700 #3D63E0（白底 5.21、浅灰底 4.73）；图形与按钮底仍用 --color-brand。 */
+  --color-brand-ink:var(--p-blue-700);
   --color-brand-surface:var(--p-blue-50);
   --color-brand-surface-2:var(--p-blue-100);
-  --color-brand-nav-active:var(--p-blue-550);
+  /* 2026-11-05（体检 P1）：原来 blue-550 #517AFF，侧栏灰底 3.42 不达 AA；改 blue-700 4.73。 */
+  --color-brand-nav-active:var(--p-blue-700);
+  /* 主按钮的按压档：底已经用 blue-700，hover/active 要更深一档才有反馈。 */
+  --color-brand-strong:var(--p-blue-800);
   --color-brand-glow:var(--p-blue-a42);
   --color-brand-glow-strong:var(--p-blue-a55);
 
