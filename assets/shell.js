@@ -28,7 +28,7 @@
       ['能力管理', '', 'cap', [
         ['接口注册', 'interfaces.html', 'cap-apis'],
         ['小智技能', 'skills.html', 'cap-skills'],
-        ['通用配置', 'config.html', 'cap-config']
+        ['能力配置', 'config.html', 'cap-config']
       ]]
       /* ★2026-11-01（用户原话：「左侧只有两个模块，一个是应用管理，一个是 AI 组件库」）：
          这里**只许有两项**。

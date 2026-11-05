@@ -30,9 +30,8 @@
           + esc(m.label) + '</option>';
       }).join('');
       return '<div class="scene" data-key="' + esc(s.key) + '">'
-        + '<div><b>' + esc(s.name) + '</b><p>' + esc(s.desc) + '</p></div>'
-        + '<span class="m-dim">' + (chatModels().length ? '' : '没有可用的对话模型') + '</span>'
-        + '<label class="field"><select data-scene="' + esc(s.key) + '" aria-label="' + esc(s.name) + '使用的模型">' + opts + '</select></label>'
+        + '<div class="scene-t"><b>' + esc(s.name) + '</b><p>' + esc(s.desc) + '</p></div>'
+        + '<label class="field scene-sel"><select data-scene="' + esc(s.key) + '" aria-label="' + esc(s.name) + '使用的模型">' + opts + '</select></label>'
         + '</div>';
     }).join('');
   }

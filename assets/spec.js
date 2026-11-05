@@ -38,7 +38,7 @@
     },
     'config.html': {
       object: '模型（对话/视觉/向量/重排）以及各场景绑定哪一个',
-      source: '真源 /Expert/Management/Config/model 的字段结构（默认模型不可下线、温度/迭代/输出上限/上下文）',
+      source: '真源 /Expert/Management/Config（页面就叫「能力配置」，模型配置是其中一项；默认模型不可下线，温度/迭代/输出上限/上下文）',
       truth: '按场景绑定建模：应用配置对话 / 组件配置对话 / 技能生成',
       states: ['无模型', '有数据', '有停用项', '默认模型'],
       headCols: [
