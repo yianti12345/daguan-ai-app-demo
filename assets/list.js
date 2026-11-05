@@ -26,6 +26,8 @@
      rowExtra  function(row) -> 额外类名（可选）
      rowAttr   function(row) -> ' data-x="1"'（可选）
      cell      function(key, row) -> 单元格内层 HTML
+     headCell  function(key) -> 表头单元格内层 HTML（可选）。表头要放控件（比如全选框）
+               就必须走这里：表头每次重绘都是整段重建，写死在页面 HTML 里的控件会被覆盖。
      cellAttr  function(key, row) -> 单元格上的额外属性（可选），例 ' data-expired="1"'
      empty     function() -> 空态 HTML（整块，含自己的类名）
      foot      function(rows) -> 表尾文字；不给则不动表尾
@@ -91,9 +93,11 @@
     /* ② 表头 */
     if (head) {
       head.innerHTML = spec.headCols.map(function (c) {
+        var inner = (typeof spec.headCell === 'function') ? spec.headCell(c.key) : null;
+        if (inner == null) inner = (c.label == null ? '' : esc(c.label));
         return '<span' + (c.cls ? ' class="' + esc(c.cls) + '"' : '') +
           (c.align ? ' style="text-align:' + esc(c.align) + '"' : '') + '>' +
-          (c.label == null ? '' : esc(c.label)) + '</span>';
+          inner + '</span>';
       }).join('');
     }
 

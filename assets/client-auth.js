@@ -242,6 +242,22 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     var SUB = !!APP_ID;
     var baseSpec = SPEC['client-auth.html'];
     var viewSpec = Object.assign({}, baseSpec, SUB ? baseSpec.variants.sub : baseSpec.variants.global);
+    /* ★2026-11-05（真源基线 · _docs/基线-客户授权.md 第一列）：
+       「选择框：该行可升级才有；**无可用行时整列不出现**」。
+       原来不管有没有可升级的客户，这一列都占着 40px，表头还空着一格 ——
+       0 家客户的应用（比如监控大屏）看上去就是"表格左边缺了一块"。 */
+    var CAN_PICK = list.some(function (r) { return r.behind; });
+    if (!CAN_PICK) {
+      viewSpec = Object.assign({}, viewSpec, {
+        headCols: viewSpec.headCols.filter(function (c) { return c.key !== 'pick'; }),
+        /* 列宽按段删，不用正则猜 40px：与 List 自己的拆段规则同一套（括号里的空格不算分隔）。 */
+        cols: (function () {
+          var segs = String(viewSpec.cols).trim().split(/\s+(?![^(]*\))/);
+          segs.shift();
+          return segs.join(' ');
+        })()
+      });
+    }
 
     List.render(viewSpec, {
       table: '.au-table', head: '#head', body: '#list', total: '#total',
@@ -260,6 +276,12 @@ function byVer(r) { return !VER || String(r.version) === VER; }
         if (key === 'app') a += ' title="' + esc(r.appName) + '"';
         if (key === 'client') a += ' title="' + esc(r.clientName) + '"';
         return a;
+      },
+      /* 表头全选框由页面给：List 每次重绘都会重建表头，写死在 HTML 里会被覆盖掉
+         （2026-11-05 实测：#au-all 渲染完就不存在了，全选一直是死的）。 */
+      headCell: function (key) {
+        if (key !== 'pick') return null;
+        return '<input type="checkbox" id="au-all" aria-label="全选本页可升级客户">';
       },
       cell: function (key, r) {
         if (key === 'pick') return r.behind
@@ -284,6 +306,14 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       },
       after: function () {
         syncBatch();
+        /* 2026-11-05：0 条时表尾原来只剩一句"每页 10 家"，左边空着 ——
+           没有行就没有分页可言。空列表只说总数。 */
+        if (!list.length) {
+          if (total) total.textContent = '共 0 条';
+          var pg0 = $('#pager');
+          if (pg0) pg0.innerHTML = '';
+          return;
+        }
         paintPager(pages);
       }
     });
@@ -338,7 +368,8 @@ function byVer(r) { return !VER || String(r.version) === VER; }
 
     var selAll = $('#au-all');
     if (selAll) {
-      if (selAll.parentNode) selAll.parentNode.hidden = !pageBoxes.length;
+      /* 2026-11-05：这一格是网格里的一列，把它 hidden 掉会让整张表错位一格 ——
+         本页没有可升级的行时只禁用，不隐藏（列本身由整份列表决定在不在）。 */
       selAll.disabled = !pageBoxes.length;
       selAll.checked = pageBoxes.length > 0 && pagePicked.length === pageBoxes.length;
       selAll.indeterminate = pagePicked.length > 0 && pagePicked.length < pageBoxes.length;
@@ -639,8 +670,12 @@ if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; PG 
       PG += Number(b.getAttribute('data-pg'));
       paint();
     });
-    var all = $('#au-all');
-    if (all) all.addEventListener('change', function () {
+    /* ★2026-11-05：改为委托在 #head 上。表头每次重绘都换元素，直接绑在 #au-all 上
+       第一帧之后就失效了 —— 这正是"表头全选点了没反应"的原因。 */
+    var headEl = $('#head');
+    if (headEl) headEl.addEventListener('change', function (e) {
+      var all = e.target.closest && e.target.closest('#au-all');
+      if (!all) return;
       var on = all.checked;
       $$('#list [data-pick]').forEach(function (c) {
         var id = c.getAttribute('data-pick');

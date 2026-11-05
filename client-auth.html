@@ -52,8 +52,10 @@
           <!-- ★2026-11-05：三件事分开说清 ——
                全部升级（N）= 当前筛选里所有落后的客户，不看勾选（1000 家的主路径）；
                批量升级（N）= 只升勾选的（跨页、跨筛选都算）。 -->
-          <button class="btn ghost" type="button" id="act-all" hidden>全部升级（<span id="all-n">0</span>）</button>
-          <button class="btn ghost" type="button" id="act-batch" hidden>批量升级（<span id="batch-n">0</span>）</button>
+          <!-- 整句包在一个 span 里：.btn 是 flex + gap:8px，直接放「文字 + span + 文字」
+               会被撑成「全部升级（ 3 ）」——括号里多出两道 8px 缝（2026-11-05 截图抓到的）。 -->
+          <button class="btn ghost" type="button" id="act-all" hidden><span>全部升级（<span id="all-n">0</span>）</span></button>
+          <button class="btn ghost" type="button" id="act-batch" hidden><span>批量升级（<span id="batch-n">0</span>）</span></button>
           <div class="right">
             <span class="au-latest" id="au-latest" hidden>最新版本 <b>—</b></span>
             <label class="field w120">
@@ -172,8 +174,8 @@
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/spec.js?v=837054ad"></script>
-<script src="assets/list.js?v=51a688c6"></script>
+<script src="assets/list.js?v=99cbc618"></script>
 <script src="assets/shell.js?v=1736883e"></script>
-<script src="assets/client-auth.js?v=ccae4a69"></script>
+<script src="assets/client-auth.js?v=75711531"></script>
 </body>
 </html>
