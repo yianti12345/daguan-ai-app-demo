@@ -302,15 +302,95 @@ window.Gen = (function () {
     /* 2026-11-05：本机没有模型代理时，装配的能力不能白装 —— 用既有的 cards 块
        出一块「可用能力」，人看得见这个组件能调什么。块类型没变，渲染契约没动。 */
     if (typeof window !== 'undefined' && window.CAP && ctx.compId) {
-      var caps = CAP.compApis(ctx.compId).map(function (id) {
-        var a = CAP.apiById(id);
-        return a ? { t: a.name, d: a.desc || '', s: a.source || '' } : null;
+      var caps = CAP.compAbilities(ctx.compId).map(function (id) {
+        var b = CAP.abilityById(id);
+        return b ? { t: b.name, d: b.intro || '', s: (b.apiIds || []).length + ' 个接口' } : null;
       }).filter(Boolean);
       if (caps.length) blocks.push({ type: 'cards', title: '可用能力', items: caps.slice(0, 6) });
     }
 
     return validate({ title: title, blocks: blocks },
       { model: '本地结构器（本机无模型代理）', ms: 0 }, q);
+  }
+
+  /* ── 能力说明书（MD）────────────────────────────────────────
+     装配到组件里的其实不是接口，是这份文档：模型读它才知道「什么时候该用、
+     按什么方式调」。所以它必须在建能力的那一刻就存在，而不是事后手写。
+     为什么不复用 componentSpec：那个的产物是页面骨架 JSON，这个是给人/模型
+     读的业务说明 —— 产物不同、契约不同，混在一起两边都会走形。
+     失败必须显式：没有模型代理就报错，绝不拿接口 summary 拼一份假装是 AI 写的。 */
+  var DOC_SYS = [
+    '你写给另一个 AI 读的能力说明书。它要靠这份文档判断「什么时候该用这个能力」，并按里面写的方式调接口。',
+    '只输出 Markdown 正文。不要用代码块包住整篇，不要开场白，不要结尾客套。',
+    '按这四节写，每节都要有：',
+    '## 用途 —— 一两句话说清这个能力替人做完哪件事。',
+    '## 什么时候用 —— 什么条件下该调用；什么情况下不要调。',
+    '## 接口 —— 每个接口一节：方法与路径、干什么、必须给什么、返回什么。',
+    '## 调用约定 —— 接口之间的依赖用句子写清（先查什么再写什么、拿不到哪个字段就停）。',
+    '硬规则：',
+    '1) 只能出现给定接口里有的方法、路径、字段，一个都不许编；缺的信息就不写，不要猜。',
+    '2) 不要写「第一步 / 第二步」这种编号步骤，也不要把几个接口排成流程清单 —— 依赖关系用文字讲。',
+    '3) 用中文业务词，不写「能力中枢 / 装配 / 接口包 / 节点」这类内部叫法。',
+    '4) 不写「以下是」「本文档」「希望对你有帮助」这类废话。',
+    '5) 接口少的就写短，不许为了凑长度编业务场景；名称和说明里已经说过的事不要重复。'
+  ].join('\n');
+
+  /* 没有模型时的兜底：只用接口自己写的文档拼，不改写、不发明。
+     ⚠ 这不是"假装生成成功"—— 产物来源在界面上如实标出（「按接口文档拼的」），
+     跟 componentSpec 走本地结构器时同一个口径。发布站是纯静态的，没有 /xz/plan，
+     要是只认模型，那「建能力即生成 MD」在客户面前就是一句空话。 */
+  function localAbilityDoc(b, apis) {
+    var out = ['## 用途', b.intro || ('用下面这些接口完成「' + (b.name || '这件事') + '」。')];
+    out.push('', '## 接口');
+    apis.forEach(function (a) {
+      out.push('', '### ' + (a.name || '未命名'));
+      out.push('`' + (a.method || 'GET') + ' ' + (a.path || '（未标注）') + '`');
+      /* 接口自己的文档开头常有一行标题，名字已经进了小标题，去掉免得同一句念两遍。 */
+      var d = String(a.doc || a.summary || a.desc || '').trim().replace(/^#{1,4}\s+[^\n]*\n?/, '').trim();
+      if (d) out.push('', d);
+    });
+    out.push('', '## 调用约定');
+    out.push('只能用上面列出的接口和方法，没列出的不许编。参数按每个接口里写明的字段给，缺必填字段就停下来问，不要猜。');
+    return out.join('\n');
+  }
+
+  function abilityDoc(b) {
+    GEN_SCENE = 'config';
+    var apis = ((b && b.apiIds) || []).map(function (id) {
+      return (window.CAP && CAP.apiById) ? CAP.apiById(id) : null;
+    }).filter(Boolean);
+    if (!apis.length) return Promise.reject(new Error('这个能力里还没有接口'));
+    var facts = [
+      '能力名称：' + (b.name || '未命名'),
+      '说明：' + (b.intro || '（没写）'),
+      '',
+      '这个能力可以用的接口，只有这些：',
+      ''
+    ].concat(apis.map(function (a, i) {
+      return (i + 1) + '. ' + (a.name || '未命名')
+        + '\n   方法与路径：' + (a.method || 'GET') + ' ' + (a.path || '（未标注）')
+        + '\n   一句说明：' + (a.summary || a.desc || '（没写）')
+        + (a.doc ? '\n   原有文档：\n' + String(a.doc).split('\n').map(function (l) { return '     ' + l; }).join('\n') : '');
+    })).join('\n');
+    /* 三种结局都要说得清：模型写成了 / 模型不行按文档拼 / 连拼都拼不出来。 */
+    return probe().then(function (p) {
+      if (!p.ok) return { local: true, why: p.why };
+      return ask([
+        { role: 'system', content: DOC_SYS },
+        { role: 'user', content: facts }
+      ], { temperature: 0.15, maxTokens: 2000 }).then(function (r) {
+        var txt = String(r.text || '').trim();
+        if (!txt) throw new Error('模型回了空内容');
+        return { text: txt, from: 'model' };
+      }).catch(function (e) {
+        return { local: true, why: String((e && e.message) || e) };
+      });
+    }).then(function (r) {
+      if (!r.local) return r;
+      var txt = localAbilityDoc(b, apis).trim();
+      if (!txt) throw new Error('接口没有文档，拼不出 MD');
+      return { text: txt, from: 'local', why: r.why };
+    });
   }
 
   function componentSpec(text, ctx) {
@@ -322,10 +402,10 @@ window.Gen = (function () {
        作为上下文交给模型。能力是知识，不是运行时绑定；没装的能力不许编。 */
     var apiDocs = '';
     if (typeof window !== 'undefined' && window.CAP && ctx.compId) {
-      var ids = CAP.compApis(ctx.compId);
+      var ids = CAP.compAbilities(ctx.compId);
       var docs = ids.map(function (id) {
-        var a = CAP.apiById(id);
-        return a ? ('### ' + a.name + '\n' + String(a.doc || a.desc || '')) : '';
+        var b = CAP.abilityById(id);
+        return b && b.doc ? ('## ' + b.name + '\n' + String(b.doc)) : '';
       }).filter(Boolean);
       if (docs.length) {
         apiDocs = '\n可用能力（这个组件装配的能力，需要时按每份 MD 文档里写的调用方式调用；没列出的不许编）：\n' + docs.join('\n\n');
@@ -786,6 +866,7 @@ window.Gen = (function () {
   return {
     probe: probe,
     ask: ask,
+    abilityDoc: abilityDoc,
     componentSpec: componentSpec,
     specFields: specFields,
     renderComponent: renderComponent,

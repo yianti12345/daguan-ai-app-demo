@@ -1,11 +1,11 @@
-/* ability.js —— 一个能力：名称 + 说明 + 接口清单 + MD 文档（只读）
+/* ability.js —— 一个能力：名称 + 说明 + 接口清单 + MD 文档
    能力只是容器：apiIds 引用池子，界面不复制接口字段。
-   MD 是产物，由 AI 生成，界面不给手改（改了就说不清是谁写的）。 */
+   ★ MD 才是产物：装配到组件里的是这份文档，所以保存即生成，不给手改
+     （改了就说不清是谁写的，也让"装配的是 MD"这句话落不了地）。 */
 (function () {
   'use strict';
 
   var $ = function (s, r) { return (r || document).querySelector(s); };
-  var $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -15,35 +15,40 @@
 
   /* MD 是给模型的，但人也要能读：只做最小渲染（标题/加粗/行内代码），
      不引第三方库、不搞完整 markdown。 */
+  /* 「## 用途」和它下面那句话常在同一块里（中间只有一个换行），
+     按块整体判断是不是标题会把正文一起吞掉 —— 必须逐行看。 */
   function mdHtml(md) {
     var e = esc;
-    return String(md || '').split(/\n{2,}/).map(function (blk) {
-      var h = blk.match(/^#{1,4}\s+(.+)$/m);
-      if (h && blk.trim().indexOf(h[0]) === 0) {
-        return '<p style="margin:0 0 8px;font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)">'
-          + e(h[1]) + '</p>';
-      }
-      var t = e(blk)
-        .replace(/\*\*([^*]+)\*\*/g, '<b style="font-weight:600">$1</b>')
+    function inline(s) {
+      return e(s).replace(/\*\*([^*]+)\*\*/g, '<b style="font-weight:600">$1</b>')
         .replace(/`([^`]+)`/g, '<code style="font-family:var(--font-family-mono);font-size:var(--font-size-caption);background:var(--surface-sunken-2);border-radius:var(--radius-xs);padding:0 4px">$1</code>')
         .replace(/\n/g, '<br>');
-      return '<p style="margin:0 0 10px">' + t + '</p>';
+    }
+    return String(md || '').split(/\n{2,}/).map(function (blk) {
+      var lines = blk.split('\n'), out = [];
+      var h = lines[0].match(/^#{1,4}\s+(.+)$/);
+      if (h) { out.push('<p style="margin:0 0 8px;font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)">' + e(h[1]) + '</p>'); lines.shift(); }
+      var rest = lines.join('\n').trim();
+      if (rest) out.push('<p style="margin:0 0 10px">' + inline(rest) + '</p>');
+      return out.join('');
     }).join('');
   }
 
   var ID = '';
-  var MDTXT = {
-    ready: function (b) { return 'MD 已就绪' + (b.docAt ? ' · ' + b.docAt : ''); },
-    run:   function () { return 'MD 生成中'; },
-    fail:  function () { return 'MD 生成失败'; },
-    none:  function () { return 'MD 还没生成'; }
-  };
+  var B = null;
+  var BUSY = false;    /* 正在生成，防止保存键按第二下 */
+  var CHANGED = false; /* 自上次生成后，接口清单动过 */
 
   /* 新建：先建一条空记录再改地址栏，刷新不会丢。 */
   function boot() {
     var q = new URLSearchParams(location.search);
     ID = q.get('id') || 'new';
     if (ID === 'new') {
+      /* 「新建」会先落一条空记录（刷新不丢）。上次点到一半就走的空壳在这里收掉，
+         否则清单里会越攒越多「未命名能力」。 */
+      CAP.abilities().forEach(function (x) {
+        if (!String(x.name || '').trim()) CAP.removeAbility(x.id);
+      });
       var b = CAP.addAbility({ name: '', intro: '', project: q.get('project') || '' });
       location.replace('ability.html?id=' + encodeURIComponent(b.id));
       return false;
@@ -56,7 +61,15 @@
     return true;
   }
 
-  var B = null;
+  function formDirty() {
+    return $('#f-name').value.trim() !== (B.name || '')
+      || $('#f-intro').value.trim() !== (B.intro || '');
+  }
+  function filled() {
+    return $('#f-name').value.trim()
+      && $('#f-intro').value.trim()
+      && (CAP.abilityById(ID).apiIds || []).length;
+  }
 
   function paint() {
     B = CAP.abilityById(ID);
@@ -65,13 +78,49 @@
     document.title = (B.name || '新建能力') + ' · 能力详情';
     $('#f-name').value = B.name || '';
     $('#f-intro').value = B.intro || '';
-    var st = MDTXT[B.docState] || MDTXT.none;
-    $('#md-state').textContent = st(B);
-    $('#doc').innerHTML = B.doc
-      ? mdHtml(B.doc)
-      : '<span class="abt-hint">还没有 MD。保存后由 AI 汇总生成。</span>';
+    paintState();
+    paintDoc();
     paintApis();
-    syncDirty();
+    syncBar();
+  }
+
+  /* 状态只描述事实：在生成、已就绪、失败（带原因）、还没生成、改了没重生成。 */
+  function paintState() {
+    var st = B.docState || 'none';
+    var el = $('#md-state'), rt = $('#act-retry');
+    if (st === 'run') {
+      el.textContent = 'MD 生成中…';
+      el.style.color = 'var(--color-text-tertiary)';
+    } else if (st === 'fail') {
+      el.textContent = 'MD 生成失败：' + (B.docErr || '模型没返回');
+      el.style.color = 'var(--color-danger)';
+    } else if (st === 'ready') {
+      var moved = CHANGED || formDirty();
+      el.textContent = moved ? '有改动，保存后重新生成' : ('MD 已就绪' + (B.docAt ? ' · ' + B.docAt : ''));
+      el.style.color = moved ? 'var(--color-text-tertiary)' : '';
+    } else {
+      el.textContent = 'MD 还没生成';
+      el.style.color = 'var(--color-text-tertiary)';
+    }
+    /* 重试只在"本来该由模型写、但模型没写成"时出现：真失败，或者退成了按文档拼。 */
+    var canRetry = st === 'fail' || (st === 'ready' && B.docFrom === 'local' && !!B.docErr);
+    if (rt) rt.hidden = !(canRetry && !BUSY);
+  }
+
+  function paintDoc() {
+    var body = B.doc
+      ? mdHtml(B.doc)
+      : '<span class="abt-hint">保存后按这些接口写出来</span>';
+    var old = (B.docState === 'fail' && B.doc)
+      ? '<div class="abt-hint" style="margin:0 0 8px;color:var(--color-danger)">下面是上一次生成的</div>'
+      : '';
+    $('#doc').innerHTML = old + body;
+    /* 来源照实写：模型写的和按接口文档拼的，不是一回事，界面上得分得开。 */
+    var src = $('#doc-src');
+    if (src) {
+      src.textContent = '只读 · ' + (B.docFrom === 'model' ? '模型生成' : (B.doc ? '按接口文档拼的' : '还没生成'));
+      src.title = B.docErr || '';
+    }
   }
 
   function paintApis() {
@@ -79,7 +128,7 @@
     $('#api-title').textContent = '接口清单（' + rows.length + '）';
     var box = $('#api-list');
     if (!rows.length) {
-      box.innerHTML = '<div class="abt-row" style="grid-template-columns:1fr;color:var(--color-text-tertiary)">还没有接口，点上面「添加接口」从池子里挑</div>';
+      box.innerHTML = '<div class="abt-row" style="grid-template-columns:1fr;color:var(--color-text-tertiary)">还没有接口，从「添加接口」里挑</div>';
       return;
     }
     box.innerHTML = rows.map(function (x) {
@@ -97,31 +146,59 @@
     }).join('');
   }
 
-  /* 保存按钮：没改过就是灰的，改一个字才亮。 */
-  function syncDirty() {
-    if (!B) return;
-    var n = $('#f-name').value.trim(), i = $('#f-intro').value.trim();
-    var dirty = n !== (B.name || '') || i !== (B.intro || '');
+  /* 保存键：没改过就是灰的；名称、说明、至少一个接口三样齐了才算填完。 */
+  function syncBar() {
     var btn = $('#act-save');
-    btn.disabled = !(dirty && n);
+    var ok = filled();
+    btn.disabled = BUSY || !(ok && (CHANGED || formDirty()));
+    btn.title = ok ? '' : '要填名称和说明，再加至少一个接口';
   }
 
-  $('#f-name').addEventListener('input', syncDirty);
-  $('#f-intro').addEventListener('input', syncDirty);
+  $('#f-name').addEventListener('input', function () { paintState(); syncBar(); });
+  $('#f-intro').addEventListener('input', function () { paintState(); syncBar(); });
+
+  /* ── 保存 = 落库 + 生成 MD。生成失败就记失败，不拿旧内容冒充新的。 ── */
+  function regenerate() {
+    if (!window.Gen || !Gen.abilityDoc) {
+      CAP.updateAbility(ID, { docState: 'fail', docErr: '生成脚本没加载' });
+      paint(); return;
+    }
+    BUSY = true; CHANGED = false;
+    CAP.updateAbility(ID, { docState: 'run', docErr: '' });
+    B = CAP.abilityById(ID);
+    paintState(); paintDoc(); syncBar();
+    Gen.abilityDoc(CAP.abilityById(ID)).then(function (r) {
+      CAP.updateAbility(ID, {
+        doc: r.text, docState: 'ready', docAt: CAP.now(),
+        docFrom: r.from || 'model', docErr: r.from === 'local' ? (r.why || '') : ''
+      });
+      BUSY = false; paint(); toast('MD 已生成');
+    }).catch(function (e) {
+      CAP.updateAbility(ID, { docState: 'fail', docErr: String((e && e.message) || e) });
+      BUSY = false; paint(); toast('MD 没生成出来', 'error');
+    });
+  }
 
   $('#act-save').addEventListener('click', function () {
     var n = $('#f-name').value.trim(), i = $('#f-intro').value.trim();
     if (!n) { toast('填能力名称', 'error'); $('#f-name').focus(); return; }
+    if (!i) { toast('填说明', 'error'); $('#f-intro').focus(); return; }
+    if (!(CAP.abilityById(ID).apiIds || []).length) { toast('先加一个接口', 'error'); return; }
     CAP.updateAbility(ID, { name: n, intro: i });
-    paint(); toast('已保存');
+    regenerate();
   });
+
+  $('#act-retry').addEventListener('click', function () { regenerate(); });
 
   $('#api-list').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act="rm"]'); if (!b) return;
     var aid = b.getAttribute('data-id');
     var cur = (CAP.abilityById(ID).apiIds || []).filter(function (x) { return x !== aid; });
     CAP.updateAbility(ID, { apiIds: cur });
-    paintApis(); toast('已移除');
+    CHANGED = true;
+    B = CAP.abilityById(ID);
+    paintApis(); paintState(); syncBar();
+    toast('已移除');
   });
 
   /* ── 添加接口：从一个面板里勾。只勾，不填任何字段。 ── */
@@ -162,11 +239,14 @@
     $('#pk-ok').addEventListener('click', function () {
       var ids = (CAP.abilityById(ID).apiIds || []).concat(Object.keys(pick));
       CAP.updateAbility(ID, { apiIds: ids });
-      close(); paintApis(); toast('已添加 ' + Object.keys(pick).length + ' 个接口');
+      CHANGED = true;
+      B = CAP.abilityById(ID);
+      close(); paintApis(); paintState(); syncBar();
+      toast('已添加 ' + Object.keys(pick).length + ' 个接口');
     });
   }
 
-  var sec = $('.abt-sec');
+  var sec = $('#api-title') ? $('#api-title').parentNode : null;
   if (sec) {
     sec.insertAdjacentHTML('beforeend', '<button type="button" class="abt-op" id="act-add" style="margin-left:auto">＋ 添加接口</button>');
     $('#act-add').addEventListener('click', openPicker);

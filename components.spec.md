@@ -1,4 +1,6 @@
 # components.spec.md · 组件规范（v1 · 2026-10-28）
+> **取值坐标（2026-11-04）**：本件组件尺寸与状态表里的数值**的数值章节已作废**，不再作为判定依据。唯一坐标是 `assets/tokens.css` + `assets/spec.js` + `_docs/活规格.md`。
+> 本件只保留「为什么这么定」与流程；下面出现的旧数值是历史记录，不要照抄进实现或判据。
 
 > 对象：盘上现有的 12 类可复用单元。本件**只定契约**（插槽 / 取值 / 状态 / 唯一实现），
 > 不改页面结构与 JS。改取值先改 `assets/tokens.css`，本件只引用语义层令牌。
@@ -81,23 +83,26 @@
 
 ## 3 组件卡 ComponentCard（`.crow.ccard`）
 
-**anatomy**（sys.css:626 root；653 标题；719 运行带）
+**anatomy**（2026-11-04 m07271；sys.css 组件卡段）
 ```
 .crow.ccard〔root, data-on / data-st〕
- ├─ .cc-hd〔身份区〕
- │   ├─ .cc-dot〔类型点 6px〕
- │   └─ .cl-tt〔名称，1 行省略〕
- ├─ .cc-body〔说明，固定 2 行 = 2×19〕
- └─ .cc-ft〔运行带〕
-     ├─ .cc-meta〔引用数，吃剩余宽〕
-     └─ .cl-ops
-         ├─ .kbtn.act〔配置〕
-         └─ .k-more〔⋮〕
+ ├─ .cc-body
+ │   ├─ .cc-hd > .cl-tt〔名称，1 行省略；右侧不再放时间〕
+ │   └─ .cl-desc〔说明，固定 2 行〕
+ └─ .cc-ft
+     ├─ .cc-run〔运行带：开关 + 待升级角标 + 动作〕
+     │   ├─ .cc-sw
+     │   ├─ .ck-badge〔N 个应用待升级，可无〕
+     │   └─ .cl-ops > .kbtn.act / .k-more / .k-menu / .k-pop
+     └─ .cc-spec〔规格条：版本 + 版本更新时间 + 引用数〕
+         ├─ .cc-ver〔vN〕
+         ├─ .cc-upd〔版本更新时间〕
+         └─ .cc-meta〔N 个应用在用 / 还没有应用在用〕
 ```
 
-**props**：`state: on|off|draft`（`data-on` / `data-st` 两属性表达三态）；`disabled` boolean（只作用于"配置"这一颗，`aria-disabled` + `tabindex=-1`）。
+**props**：`state: on|off|draft`（`data-on` / `data-st` 两属性表达三态）；`disabled` boolean（只作用于"配置"这一颗，`aria-disabled` + `tabindex=-1`）；`ver: vN`、`updated: 时间`、`refs: N`、`behind: N`（引用数只读，点击开引用管理）。
 
-**几何（由六个值推出，不许写 min-height）**：16(上内距) + 30(名称) + 8 + 38(说明两行) + 16+32+16(运行带) = **156**。
+**几何（由六个值推出，不许写 min-height）**：16(上内距) + 25(名称) + 8 + 38(说明两行) + 56(运行带) + 45(规格条，含 1px 上边线) = **188**。
 
 **状态**：hover 有（`--shadow-card-ring-hover`）；focus-visible 有（开关/配置/⋮ 三条）；disabled 有（`.kbtn.act[aria-disabled=true]`：`pointer-events:none` + `tabindex=-1` + 灰 + opacity .72）；selected=on、warning=draft 复用状态色；loading/error/read-only 无规则。
 
@@ -340,7 +345,7 @@
 ## 15 装配候选行 PickRow（`.row`）
 
 > 2026-10-28 补登记（设计审查 C1）：装配面板里的候选/已装行一直没有进组件规范，
-> 于是它和组件库卡片（§3 `ComponentCard`）各长各的：一个 538×113.69 横条、一个 379×156 卡片，
+> 于是它和组件库卡片（§3 `ComponentCard`）各长各的：一个 538×113.69 横条、一个 379×188 卡片，
 > 宽度差与信息顺序都没有书面理由。本节把它定下来。
 >
 > **解析面提示（2026-10-29）**：本节原为第二个 `## 8`，已改为 `## 15` 消除撞号。`tools/check-spec-contract.mjs` 当前只取 §1–§12，故本节暂不在其 S1/S2 射程；解析面扩到 §1–§22 由机制席另开单（到期 2026-11-30）。本节仍按 §1–§14 同格式维护，不因暂不在射程而降格。
@@ -907,8 +912,8 @@ kind=canvas：.topbar（fixed 16/16，pointer-events:none）
 | 格 | 内容 | 现盘证据 |
 |---|---|---|
 | 用户任务 | 运营判断"这个零件能不能装、影响谁、去哪配" | — |
-| 结构 | `.crow.ccard` = `.cc-body`（`.cc-hd` 名称 + `.cl-desc` 简介）+ `.cc-ft`（开关 / 引用数 / 配置 / ⋮） | sys.css:437,655 |
-| 槽位 | 名称（链接，禁用时降为文本）、简介两行截断、引用数（0 时纯文本） | components.html:521-545 |
+| 结构 | `.crow.ccard` = `.cc-body`（`.cc-hd` 名称 + `.cl-desc` 简介）+ `.cc-ft`（`.cc-run` 开关/待升级角标/动作 + `.cc-spec` 版本/更新时间/引用数） | sys.css 组件卡段 |
+| 槽位 | 名称（链接，禁用时降为文本）、简介两行截断、vN + 版本更新时间、引用数（0 时纯文本） | components.html 组件卡模板 |
 | 状态 | 悬停（投影加深）、菜单展开（`z-index:10`）、启用/禁用/未发布（`data-on` / `data-st`） | sys.css:667,835 |
 | 锚定与方向 | 三列网格；菜单与引用浮层锚在 ⋮ 下沿，视口内翻上避让 | float.css/Popover |
 | 可供性 | 名称→详情；开关→启停；引用数→引用名单；配置→配置页；⋮→四动作。**无整卡热区** | — |

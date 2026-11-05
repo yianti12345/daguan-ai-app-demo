@@ -1,6 +1,7 @@
-/* assemble-api.js —— 组件配置页的「引用能力」面板
+/* assemble-api.js —— 组件配置页的「装配能力」面板
    形态照应用配置页的「装配组件」：同一个 .mask/.panel/.p-hd/.p-tabs/.p-batch/.p-list/.row。
-   装配关系存在 CAP 的 compApis 里；能力只是生成时的知识，不做运行时绑定。 */
+   ★ 2026-11-05：勾的是**能力**，不是单个接口。装配到组件里的是那份 MD 文档，
+     没有 MD 的能力勾不上 —— 装了也没东西给模型读。关系存在 CAP 的 compAbilities 里。 */
 (function () {
   'use strict';
 
@@ -68,7 +69,8 @@
       var q = $('#api-search').value.trim();
       if (!q) { toast('先说要找什么', 'error'); $('#api-search').focus(); return; }
       btn.classList.add('is-busy');
-      AISearch.run(q, CAP.apis()).then(function (ids) {
+      AISearch.run(q, CAP.abilities().filter(function (b) { return String(b.name || '').trim(); })
+        .map(function (b) { return { id: b.id, name: b.name, desc: b.intro || '' }; })).then(function (ids) {
         btn.classList.remove('is-busy');
         if (ids === null) { toast('AI 检索没连上，按关键词找', 'error'); return; }
         AI_IDS = ids; setAi(true);
@@ -84,20 +86,20 @@
       });
     });
     $('#api-selall').addEventListener('change', function () {
-      var all = rows().list;
-      if (this.checked) all.forEach(function (a) { PICK[a.id] = 1; });
+      var all = rows().list.filter(selectable);
+      if (this.checked) all.forEach(function (x) { PICK[x.id] = 1; });
       else PICK = {};
       render();
     });
     $('#api-batch').addEventListener('click', function () {
       var ids = Object.keys(PICK).filter(function (k) { return PICK[k]; });
       if (!ids.length) return;
-      var cur = CAP.compApis(COMP);
+      var cur = CAP.compAbilities(COMP);
       if (TAB === 'avail') {
         ids.forEach(function (id) { if (cur.indexOf(id) < 0) cur.push(id); });
-        CAP.setCompApis(COMP, cur); toast('已装配 ' + ids.length + ' 个');
+        CAP.setCompAbilities(COMP, cur); toast('已装配 ' + ids.length + ' 个');
       } else {
-        CAP.setCompApis(COMP, cur.filter(function (id) { return ids.indexOf(id) < 0; }));
+        CAP.setCompAbilities(COMP, cur.filter(function (id) { return ids.indexOf(id) < 0; }));
         toast('已移除 ' + ids.length + ' 个');
       }
       PICK = {}; render(); syncBadge();
@@ -113,11 +115,11 @@
       var b = e.target.closest('[data-do]'); if (!b) return;
       var row = b.closest('.row'); if (!row) return;
       var id = row.getAttribute('data-id');
-      var ids = CAP.compApis(COMP);
+      var ids = CAP.compAbilities(COMP);
       if (b.getAttribute('data-do') === 'add') {
-        ids.push(id); CAP.setCompApis(COMP, ids); toast('已装配');
+        ids.push(id); CAP.setCompAbilities(COMP, ids); toast('已装配');
       } else {
-        CAP.setCompApis(COMP, ids.filter(function (x) { return x !== id; })); toast('已移除');
+        CAP.setCompAbilities(COMP, ids.filter(function (x) { return x !== id; })); toast('已移除');
       }
       delete PICK[id]; render(); syncBadge();
     });
@@ -134,53 +136,67 @@
     });
   }
 
-  function installed() { return CAP.compApis(COMP); }
+  function installed() { return CAP.compAbilities(COMP); }
+
+  function mdReady(x) { return !!(x && x.b && x.b.docState === 'ready'); }
+  /* 可勾的条件：已装配的随时可移除；可装配的必须有 MD。 */
+  function selectable(x) { return TAB === 'on' ? !!x.b : mdReady(x); }
 
   /* 已装配里可能有能力被删掉的旧编号：照样列出来，给一键移除，不静默吞掉。 */
   function rows() {
     var on = installed();
     var alive = [], gone = [];
     on.forEach(function (id) {
-      var a = CAP.apiById(id);
-      if (a) alive.push(a); else gone.push(id);
+      var b = CAP.abilityById(id);
+      if (b) alive.push(b); else gone.push(id);
     });
     var list;
     if (TAB === 'on') {
-      list = alive.map(function (a) { return { id: a.id, api: a }; })
-        .concat(gone.map(function (id) { return { id: id, api: null }; }));
+      list = alive.map(function (b) { return { id: b.id, b: b }; })
+        .concat(gone.map(function (id) { return { id: id, b: null }; }));
     } else {
-      list = CAP.apis().filter(function (a) { return on.indexOf(a.id) < 0; }).map(function (a) { return { id: a.id, api: a }; });
+      list = CAP.abilities()
+        .filter(function (b) { return String(b.name || '').trim() && on.indexOf(b.id) < 0; })
+        .map(function (b) { return { id: b.id, b: b }; });
     }
     if (AI_IDS) {
       list = list.filter(function (x) { return AI_IDS.indexOf(x.id) >= 0; });
     } else if (KW) {
       list = list.filter(function (x) {
-        var hay = x.api ? (x.api.name + ' ' + x.api.desc + ' ' + (x.api.source || '')) : ('已删除 ' + x.id);
+        var hay = x.b ? (x.b.name + ' ' + (x.b.intro || '')) : ('已删除 ' + x.id);
         return hay.toLowerCase().indexOf(KW) >= 0;
       });
     }
+    /* 没有 MD 的排后面：它们看得见、知道为什么不能装，但不挡着能装的。 */
+    list.sort(function (p, q) { return (mdReady(q) ? 1 : 0) - (mdReady(p) ? 1 : 0); });
     return { on: on, list: list };
   }
 
   function rowHtml(x, isOn) {
-    var a = x.api;
-    var pick = '<input type="checkbox" class="p-pick" aria-label="选择' + esc(a ? a.name : '已失效能力') + '"'
-      + (PICK[x.id] ? ' checked' : '') + '>';
-    if (!a) {
+    var b = x.b;
+    var can = isOn || mdReady(x);
+    var pick = '<input type="checkbox" class="p-pick" aria-label="选择' + esc(b ? b.name : '已失效能力') + '"'
+      + (PICK[x.id] ? ' checked' : '') + (can ? '' : ' disabled') + '>';
+    if (!b) {
       return '<div class="row is-gone" data-id="' + esc(x.id) + '">'
         + '<div class="row-hd">' + pick + '<b>能力已删除</b><div class="act">'
         + '<button class="btn-uninstall" type="button" data-do="rm">移除</button></div></div>'
-        + '<p class="row-desc">这条能力已从能力管理里删除，组件里只留了一个旧编号。</p>'
+        + '<p class="row-desc">这条能力已从能力配置里删除，组件里只留了一个旧编号。</p>'
         + '<p class="row-meta">' + esc(x.id) + '</p></div>';
     }
-    return '<div class="row" data-id="' + esc(a.id) + '">'
-      + '<div class="row-hd">' + pick + '<b>' + esc(a.name) + '</b><div class="act">'
+    var n = (b.apiIds || []).length;
+    var meta = n + ' 个接口 · ' + (mdReady(x) ? 'MD 已就绪'
+      : (b.docState === 'run' ? 'MD 生成中' : 'MD 没生成'));
+    return '<div class="row' + (can ? '' : ' is-gone') + '" data-id="' + esc(b.id) + '">'
+      + '<div class="row-hd">' + pick + '<b>' + esc(b.name) + '</b><div class="act">'
       + (isOn
           ? '<span class="on-tag">已装配</span><button class="btn-uninstall" type="button" data-do="rm">移除</button>'
-          : '<button class="btn-install" type="button" data-do="add">装配</button>')
+          : (can
+              ? '<button class="btn-install" type="button" data-do="add">装配</button>'
+              : '<span class="on-tag">没有 MD</span>'))
       + '</div></div>'
-      + '<p class="row-desc">' + esc(a.desc) + '</p>'
-      + '<p class="row-meta">' + esc(a.source || '未标注') + ' · ' + (a.on ? '已启用' : '已停用') + '</p>'
+      + '<p class="row-desc">' + esc(b.intro || '—') + '</p>'
+      + '<p class="row-meta">' + meta + '</p>'
       + '</div>';
   }
 
@@ -190,14 +206,16 @@
     if (!b) return;
     b.textContent = (TAB === 'on' ? '移除（' : '装配（') + n + '）';
     b.disabled = !n;
-    var all = rows().list;
+    var all = rows().list.filter(selectable);
     var sel = $('#api-selall');
     if (sel) sel.checked = all.length > 0 && n === all.length;
   }
 
   function render() {
     var r = rows(), ids = r.on;
-    $('#api-n-avail').textContent = CAP.apis().filter(function (a) { return ids.indexOf(a.id) < 0; }).length;
+    $('#api-n-avail').textContent = CAP.abilities().filter(function (b) {
+      return String(b.name || '').trim() && ids.indexOf(b.id) < 0;
+    }).length;
     $('#api-n-on').textContent = ids.length;
     var list = $('#api-list');
     if (!r.list.length) {
@@ -206,7 +224,7 @@
       var tryAi = KW && !AI_IDS && TAB === 'avail';
       list.innerHTML = '<div class="p-empty">'
         + (KW ? '没有匹配的能力'
-              : (TAB === 'on' ? '还没装配任何能力' : '能装的都装上了。去「能力配置」导入更多。'))
+              : (TAB === 'on' ? '还没装配任何能力' : '能装的都装上了。去「能力配置」新建。'))
         + (tryAi ? '<button type="button" class="p-ai-try" data-ai-try>用 AI 搜这句话</button>' : '')
         + '</div>';
       syncBatch();
@@ -218,7 +236,7 @@
 
   function syncBadge() {
     var el = $('#api-count');
-    if (el) el.textContent = '已装 ' + CAP.compApis(COMP).length;
+    if (el) el.textContent = '已装 ' + CAP.compAbilities(COMP).length;
   }
 
   function open(compId) {
@@ -246,7 +264,7 @@
   window.AssembleApi = {
     open: open,
     close: close,
-    count: function (id) { return CAP.compApis(id).length; },
+    count: function (id) { return CAP.compAbilities(id).length; },
     syncBadge: function (id) { if (id) COMP = id; syncBadge(); }
   };
 

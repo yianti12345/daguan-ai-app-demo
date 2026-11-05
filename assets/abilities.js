@@ -25,6 +25,8 @@
   function rows() {
     var kw = S.kw.toLowerCase();
     return CAP.abilities().filter(function (b) {
+      /* 名字还没填的草稿不进清单：那是"正在建"的一条，不是一个能力。 */
+      if (!String(b.name || '').trim()) return false;
       if (!kw) return true;
       return (b.name + ' ' + (b.intro || '')).toLowerCase().indexOf(kw) >= 0;
     });

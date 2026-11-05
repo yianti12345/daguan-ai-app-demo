@@ -163,6 +163,13 @@
       if (!a.doc) a.doc = d.doc;
       if (!a.raw) a.raw = d.raw;
     });
+    /* 「生成中」只在页面开着的时候成立。刷新或关页之后还挂着 run，
+       说明那次生成没跑完 —— 记账成失败，别让清单里永远转圈。 */
+    var stale = false;
+    (cache.abilities || []).forEach(function (b) {
+      if (b.docState === 'run') { b.docState = 'fail'; b.docErr = '上次生成没跑完'; stale = true; }
+    });
+    if (stale) save();
     return cache;
   }
 
@@ -312,7 +319,7 @@
   function addAbility(v) {
     var it = Object.assign({
       id: uid('ab'), name: '未命名能力', intro: '', apiIds: [],
-      doc: '', docState: 'none', docAt: '', project: '', at: now()
+      doc: '', docState: 'none', docFrom: '', docErr: '', docAt: '', project: '', at: now()
     }, v);
     load().abilities.push(it); save(); return it;
   }
