@@ -358,12 +358,29 @@ function byVer(r) { return !VER || String(r.version) === VER; }
   }
 
   /* 勾了谁就升谁。确认框里把数量再报一次 —— 和按钮上的括号是同一个数。 */
+  /* 确认框只说"37 家"等于什么都没说：得让人看见升到哪一版、是哪几家。
+     单应用页写明目标版本；总览页各应用版本不同，只能写"各自最新"。 */
+  function upgradeWhere(list) {
+    if (APP_ID) {
+      var a = DB.appById(APP_ID);
+      return '「' + (a ? a.name : '这个应用') + '」的 v' + (DB.latestVer(APP_ID) || 0);
+    }
+    var tops = {};
+    list.forEach(function (r) { tops[r.appName] = 1; });
+    var names = Object.keys(tops);
+    return names.length === 1 ? ('「' + names[0] + '」的最新版本') : '各自应用的最新版本';
+  }
+  function whoText(list) {
+    var names = list.slice(0, 3).map(function (r) { return r.clientName; }).join('、');
+    return list.length > 3 ? (names + ' 等 ' + list.length + ' 家') : names;
+  }
   function batchUpgrade() {
     var picked = pickedRows();
     if (!picked.length) return;
     Confirm.ask({
       title: '批量升级',
-      body: '将把勾选的 <b>' + picked.length + '</b> 家客户升到各自应用的最新版本，升级后立刻生效。',
+      body: '将把勾选的 <b>' + picked.length + '</b> 家客户升到 ' + upgradeWhere(picked) + '，升级后立刻对客户生效。'
+        + '<br>' + whoText(picked),
       ok: '升级这 ' + picked.length + ' 家',
       onOk: function () { run(picked, '批量'); }
     });
@@ -378,30 +395,55 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     if (KW) scope.push('搜索「' + KW + '」');
     Confirm.ask({
       title: '全部升级',
-      body: '将把 <b>' + targets.length + '</b> 家客户升到各自应用的最新版本，升级后立刻生效。'
+      body: '将把 <b>' + targets.length + '</b> 家客户升到 ' + upgradeWhere(targets) + '，升级后立刻对客户生效。'
+        + '<br>' + whoText(targets)
         + (scope.length ? '<br>范围：当前筛选（' + scope.join(' · ') + '），筛选外的客户不动。' : ''),
       ok: '全部升级（' + targets.length + ' 家）',
-      onOk: function () {
-        run(targets.map(function (r) { return { authId: r.authId, clientName: r.clientName }; }), '全部');
-      }
+      onOk: function () { run(targets, '全部'); }
     });
   }
 
   /* 一次跑完：本地数据，没有网络等待，所以不假装"逐条 500ms 推进"。
-     有失败就把名字说出来，不吞成一句"部分失败"。 */
+     跑完给一条回执（升了几家、谁失败），并且留 10 秒撤销窗口 ——
+     一千家一次升完，点错了没有任何人工办法退回去，这窗口是唯一的安全网。 */
+  var UNDO = null, undoTimer = 0;
   function run(list, word) {
-    var ok = 0, fail = [];
+    var ok = 0, fail = [], undo = [];
     list.forEach(function (r) {
       var x = DB.authUpgrade(r.authId);
-      if (x && x.ok) ok++; else fail.push(r.clientName + (x && x.msg ? '（' + x.msg + '）' : ''));
+      if (x && x.ok) { ok++; undo.push({ authId: r.authId, from: x.from }); }
+      else fail.push(r.clientName + (x && x.msg ? '（' + x.msg + '）' : ''));
     });
     sel = {};
     paint();
-    if (fail.length) {
-      toast(word + '升级：成功 ' + ok + ' 家，失败 ' + fail.length + ' 家 · ' + fail.slice(0, 2).join('；'), 'err');
-    } else {
-      toast(word + '升级：' + ok + ' 家已升到最新版本');
-    }
+    showResult(word, ok, fail, fail.length ? null : undo);
+  }
+  function showResult(word, ok, fail, undo) {
+    var box = $('#bulk-result');
+    if (!box) return;
+    clearTimeout(undoTimer);
+    UNDO = undo && undo.length ? undo : null;
+    box.hidden = false;
+    box.setAttribute('data-kind', fail.length ? 'warn' : 'ok');
+    $('#bulk-result-t').textContent = fail.length
+      ? (word + '升级：成功 ' + ok + ' 家，失败 ' + fail.length + ' 家 · ' + fail.slice(0, 3).join('；')
+         + (fail.length > 3 ? ' 等' : ''))
+      : (word + '升级：' + ok + ' 家已升到最新版本');
+    var u = $('#bulk-undo');
+    if (u) u.hidden = !UNDO;
+    /* 只有"全成功"才给撤销：一半成功一半失败时，退回去等于把成功的也抹了，反而更乱。 */
+    if (UNDO) undoTimer = setTimeout(function () { UNDO = null; box.hidden = true; }, 10000);
+  }
+  function undoRun() {
+    if (!UNDO) return;
+    var n = 0;
+    UNDO.forEach(function (x) { if (DB.authSetVersion(x.authId, x.from).ok) n++; });
+    UNDO = null;
+    clearTimeout(undoTimer);
+    var box = $('#bulk-result');
+    if (box) box.hidden = true;
+    paint();
+    toast('已撤销：' + n + ' 家回到升级前的版本');
   }
 
   /* ── 升级 / 取消 / 恢复 / 删除 ─────────────────────────────── */
@@ -600,6 +642,8 @@ if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; PG 
     if (batch) batch.addEventListener('click', batchUpgrade);
     var allUp = $('#act-all');
     if (allUp) allUp.addEventListener('click', upgradeAll);
+    var undoBtn = $('#bulk-undo');
+    if (undoBtn) undoBtn.addEventListener('click', undoRun);
     var pager = $('#pager');
     if (pager) pager.addEventListener('click', function (e) {
       var b = e.target.closest && e.target.closest('[data-pg]');

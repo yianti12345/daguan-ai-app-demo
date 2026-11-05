@@ -2421,6 +2421,9 @@
   }
   function closeDlg() {
     if (!mask) return;
+    /* ★2026-11-05：关掉面板＝结束这一次操作。原来勾选留在内存里，下次打开会看到
+       「批量升级（1）」，而用户早忘了勾的是哪一个 —— 一不小心就升错了。 */
+    batchSel = {};
     mask.setAttribute('data-open', 'false');
     document.body.removeAttribute('data-drawer');
     setBackgroundInert(false);

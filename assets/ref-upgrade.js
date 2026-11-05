@@ -49,7 +49,8 @@
       '   <button type="button" class="ru-x" data-ru="close" aria-label="关闭">×</button></header>' +
       '  <div class="ru-stats" id="ru-stats"></div>' +
       '  <div class="ru-prog" id="ru-prog" hidden><div class="ru-prog-h"><span class="ru-spin" aria-hidden="true"></span>' +
-      '   <b id="ru-prog-t">正在升级</b><span id="ru-prog-n"></span></div>' +
+      '   <b id="ru-prog-t">正在升级</b><span id="ru-prog-n"></span>' +
+      '   <button type="button" class="ru-pg" id="ru-stop">停止</button></div>' +
       '   <div class="ru-bar"><i id="ru-bar"></i></div><p class="ru-prog-s">关掉这个窗口也会继续；刷新页面会中断。</p></div>' +
       '  <div class="ru-tools">' +
       '   <div class="ru-tabs" role="tablist"><button type="button" class="ru-tab on" data-tab="all" role="tab">全部</button>' +
@@ -115,6 +116,14 @@
     dlg.querySelector('#ru-all').addEventListener('click', function () { askRun(null); });
     dlg.querySelector('#ru-batch').addEventListener('click', function () {
       askRun(picked().map(function (r) { return r.id; }));
+    });
+    dlg.querySelector('#ru-stop').addEventListener('click', function () {
+      /* 1000 个约 8 秒，但"点了停不下来"本身就是一种焦虑：给了停止键，
+         停的是剩下的，已经升完的不回滚（回滚是另一件事，见客户授权的撤销）。 */
+      if (!st.busy) return;
+      clearTimeout(st.timer);
+      st.cancelled = true;
+      finish();
     });
     dlg.querySelector('#ru-prev').addEventListener('click', function () { if (st.page > 0) { st.page--; render(); } });
     dlg.querySelector('#ru-next').addEventListener('click', function () {
@@ -260,7 +269,10 @@
     if (st.busy) return;
     var targets = ids ? st.refs.filter(function (r) { return ids.indexOf(r.id) >= 0 && r.behind; }) : behindAll();
     if (!targets.length) { UIK.toast(ids ? '选中的应用都已经是最新版' : '没有需要升级的应用'); return; }
+    /* 与客户授权同一口径：只说"3 个"等于没说是哪几个。列前三家，其余给总数。 */
+    var who = targets.slice(0, 3).map(function (r) { return r.name; }).join('、');
     var body = '<p>将把 <b class="num">' + targets.length + '</b> 个应用对「' + esc(compName()) + '」的装配版本升到 <b class="num">' + fmt(st.comp.ver) + '</b>。</p>' +
+      '<p class="ru-cf-quiet">' + esc(who) + (targets.length > 3 ? ' 等 ' + targets.length + ' 个' : '') + '</p>' +
       ((!ids && (st.q || st.tab === 'behind'))
         ? '<p class="ru-cf-quiet">范围：当前筛选里的 ' + targets.length + ' 个（库里共 ' + behindEvery().length + ' 个待升级）。</p>'
         : '') +
@@ -268,7 +280,7 @@
     Confirm.ask({
       title: ids && ids.length === 1 ? '升级这个应用？' : '升级「' + compName() + '」的引用',
       body: body,
-      ok: '开始升级',
+      ok: ids && ids.length === 1 ? '开始升级' : ('全部升级（' + targets.length + '）'),
       cancel: '取消',
       onOk: function () { start(targets.map(function (r) { return r.id; })); }
     });
@@ -278,9 +290,11 @@
 
   function start(ids) {
     st.busy = true;
+    st.cancelled = false;
     st.report = null;
     st.progress = { total: ids.length, done: 0, ok: [], skipped: [], failed: [] };
     dlg.querySelector('#ru-prog').hidden = false;
+    dlg.querySelector('#ru-stop').hidden = false;
     renderTools(); renderRows();
     /* ★2026-11-05：原来 500ms/条 —— 37 个要 18 秒，1000 个要 8 分钟，中间还只能干看着。
        改成每拍 10 个（80ms），1000 个约 8 秒；进度条照样能看见在走。 */
@@ -316,16 +330,19 @@
     st.timer = null;
     st.progress = null;
     dlg.querySelector('#ru-prog').hidden = true;
+    var stopBtn = dlg.querySelector('#ru-stop');
+    if (stopBtn) stopBtn.hidden = true;
     st.report = {
       id: st.id, at: new Date().toLocaleString('zh-CN', { hour12: false }),
-      total: p.total, done: p.done,
+      total: p.total, done: p.done, cancelled: !!st.cancelled,
       ok: p.ok, skipped: p.skipped, failed: p.failed
     };
     lastReport = st.report;
     st.picks = {};
     st.refs = DB.compRefs(st.id);
     render();
-    var msg = '已升级 ' + p.ok.length + ' 个应用';
+    var msg = (st.cancelled ? '已停止 · ' : '') + '已升级 ' + p.ok.length + ' 个应用'
+      + (st.cancelled ? '（还有 ' + (p.total - p.done) + ' 个没跑）' : '');
     if (p.failed.length) msg += ' · 失败 ' + p.failed.length + ' 个';
     UIK.toast(msg);
     if (typeof window.onCompRefsUpgraded === 'function') window.onCompRefsUpgraded(st.id);
@@ -338,7 +355,7 @@
     var skipped = r.skipped || [];
     var failed = r.failed || [];
     box.hidden = false;
-    box.innerHTML = '<div class="ru-rep-h"><b>升级结果</b><span>' + esc(r.at) + '</span></div>' +
+    box.innerHTML = '<div class="ru-rep-h"><b>升级结果' + (r.cancelled ? '（已停止）' : '') + '</b><span>' + esc(r.at) + '</span></div>' +
       '<div class="ru-rep-n"><span class="ok"><b>' + (r.ok ? r.ok.length : 0) + '</b> 成功</span>' +
       '<span class="' + (skipped.length ? 'warn' : '') + '"><b>' + skipped.length + '</b> 跳过</span>' +
       '<span class="' + (failed.length ? 'bad' : '') + '"><b>' + failed.length + '</b> 失败</span></div>' +

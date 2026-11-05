@@ -111,6 +111,9 @@ a:hover{color:var(--color-brand-active)}
   background: var(--color-warning-surface);color: var(--color-warning);font-size: var(--font-size-caption);line-height: 1.6;
   display: flex;align-items: flex-start;gap:var(--space-8)}
 .notice[hidden]{display:none}
+/* 2026-11-05：批量操作要有回执（升了多少家、能不能撤销）。
+   原来这一条只有 warn 一色，成功回执套上去像出错，所以只补一个变体，不新造组件。 */
+.notice[data-kind="ok"]{background:var(--color-success-surface);color:var(--color-success-ink)}
 .notice .notice-x{margin-left:auto;flex:0 0 auto;background:none;border:0;padding:0 2px;
   min-width:24px;min-height:24px;display:inline-grid;place-items:center;
   color:inherit;font:inherit;cursor:pointer;opacity:.75}

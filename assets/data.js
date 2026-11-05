@@ -496,6 +496,16 @@
     if (DB.save() === false) return { ok: false, msg: '没存进去' };
     return { ok: true, from: from, to: v };
   };
+  /* 2026-11-05：批量升级要能撤销。1000 家一次升完，误点一次没人能手动改回去。
+     只写版本号 + 时间戳，不动别的字段 —— 与 authUpgrade 对称。 */
+  DB.authSetVersion = function (authId, v) {
+    var rec = null;
+    for (var i = 0; i < DB.AUTHS.length; i++) if (DB.AUTHS[i].id === authId) rec = DB.AUTHS[i];
+    if (!rec || rec.status !== '已授权') return { ok: false };
+    rec.version = v; rec.upgradedAt = nowStamp();
+    if (DB.save() === false) return { ok: false };
+    return { ok: true };
+  };
   DB.authRevoke = function (authId) {
     var rec = null;
     for (var i = 0; i < DB.AUTHS.length; i++) if (DB.AUTHS[i].id === authId) rec = DB.AUTHS[i];
