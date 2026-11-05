@@ -96,43 +96,8 @@
 
   $('#kw').addEventListener('input', function () { S.kw = this.value.trim(); paint(); });
 
-  /* ── 导入项目：把一份文档拆成接口进池子。P0 只做「拆」，不在此处分组。 ── */
-  function parseDoc(raw) {
-    var out = [];
-    var d = null;
-    try { d = JSON.parse(raw); } catch (err) { d = null; }
-    if (d && d.paths && typeof d.paths === 'object') {
-      var proj = (d.info && d.info.title) || '未标注';
-      Object.keys(d.paths).forEach(function (p) {
-        ['get', 'post', 'put', 'patch', 'delete'].forEach(function (m) {
-          var op = d.paths[p][m];
-          if (!op) return;
-          out.push({
-            name: op.summary || op.operationId || (m.toUpperCase() + ' ' + p),
-            method: m.toUpperCase(), path: p, host: '', project: proj,
-            summary: String(op.description || op.summary || p).replace(/\s+/g, ' ').slice(0, 60),
-            raw: m.toUpperCase() + ' ' + p + (op.summary ? '\n' + op.summary : '')
-          });
-        });
-      });
-      if (out.length) return out;
-    }
-    var parts = /\n\s*---+\s*\n/.test(raw) ? raw.split(/\n\s*---+\s*\n/) : raw.split(/\n\s*\n/);
-    return parts.filter(function (b) { return b.trim(); }).map(function (b) {
-      var mp = CAP.pickMethodPath(b);
-      var lines = b.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
-      var first = lines[0] || '';
-      var nm = first.replace(/^(curl\s+)?(-X\s+)?(GET|POST|PUT|PATCH|DELETE)\s+/i, '')
-        .replace(/^(https?:\/\/\S+|\/\S*)\s*/, '').trim();
-      /* 第一行只有「方法 路径」时（客户最常这么贴），名字取第二行，别拿路径当名字。 */
-      if (!nm && lines[1]) nm = lines[1];
-      return {
-        name: nm.slice(0, 24) || (mp.method + ' ' + mp.path),
-        method: mp.method, path: mp.path, host: '', project: '未标注',
-        summary: b.replace(/\s+/g, ' ').slice(0, 60), raw: b.trim()
-      };
-    });
-  }
+  /* ── 导入项目：把一份文档拆成接口，直接落成一条能力。
+     拆解逻辑只有一份，在 CAP.parseApis 里（能力详情页的「添加接口」用的也是它）。 ── */
 
   function openImport() {
     var m = $('#imp-mask');
@@ -153,7 +118,7 @@
         $('#imp-ok').disabled = !this.value.trim();
       });
       $('#imp-ok').addEventListener('click', function () {
-        var list = parseDoc($('#imp-raw').value.trim());
+        var list = CAP.parseApis($('#imp-raw').value.trim());
         if (!list.length) { toast('没解析出接口', 'error'); return; }
         var ids = [], added = 0;
         list.forEach(function (x) {

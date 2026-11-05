@@ -85,6 +85,78 @@
     return { method: m, path: path };
   }
 
+  /* ── 把一段原文拆成接口（本地规则，不花模型钱）───────────────────
+     客户给的东西就三种：OpenAPI/Swagger 的 JSON、OpenAPI 的 YAML、一段段接口说明（含 curl）。
+     前两种能精确拆；第三种按空行/--- 分块，块里找方法+路径。全都拆不出来就返回空数组，
+     由调用方决定要不要交给模型 —— 这里绝不猜。 */
+  function paramText(ps) {
+    if (!Array.isArray(ps) || !ps.length) return '';
+    return ps.map(function (p) {
+      if (!p || !p.name) return '';
+      var t = p.name + (p.description ? ' ' + String(p.description).replace(/\s+/g, ' ') : '');
+      return t;
+    }).filter(Boolean).join('；').slice(0, 120);
+  }
+
+  function parseApis(text) {
+    var raw = String(text || '').trim();
+    if (!raw) return [];
+    var out = [];
+
+    /* 1｜JSON：OpenAPI / Swagger，一条 path 下的每个方法算一个接口 */
+    var j = null;
+    try { j = JSON.parse(raw); } catch (e) { j = null; }
+    if (j && j.paths && typeof j.paths === 'object') {
+      var proj = (j.info && j.info.title) || '未标注';
+      Object.keys(j.paths).forEach(function (p) {
+        ['get', 'post', 'put', 'patch', 'delete'].forEach(function (m) {
+          var op = j.paths[p] && j.paths[p][m];
+          if (!op) return;
+          out.push({
+            name: op.summary || op.operationId || (m.toUpperCase() + ' ' + p),
+            method: m.toUpperCase(), path: p, project: proj,
+            summary: String(op.description || op.summary || p).replace(/\s+/g, ' ').slice(0, 60),
+            params: paramText(op.parameters), returns: '',
+            raw: m.toUpperCase() + ' ' + p + (op.summary ? '\n' + op.summary : '')
+          });
+        });
+      });
+      if (out.length) return out;
+    }
+
+    /* 2｜YAML：不引解析库，只认缩进里的「/路径:」和它下面的方法行 */
+    var cur = null, hit = 0;
+    raw.split('\n').forEach(function (ln) {
+      var p = ln.match(/^(\s*)(\/[A-Za-z0-9_\-./{}:]*)\s*:\s*$/);
+      if (p) { cur = p[2]; return; }
+      var m = ln.match(/^(\s+)(get|post|put|patch|delete)\s*:\s*$/i);
+      if (m && cur) {
+        out.push({
+          name: m[2].toUpperCase() + ' ' + cur, method: m[2].toUpperCase(), path: cur,
+          project: '未标注', summary: '', params: '', returns: '', raw: m[2].toUpperCase() + ' ' + cur
+        });
+        hit++;
+      }
+    });
+    if (hit) return out;
+
+    /* 3｜一段段说明：空行或 --- 分隔；名字取第一行，第一行只有路径时取第二行 */
+    var parts = /\n\s*---+\s*\n/.test(raw) ? raw.split(/\n\s*---+\s*\n/) : raw.split(/\n\s*\n/);
+    return parts.filter(function (b) { return b.trim(); }).map(function (b) {
+      var mp = pickMethodPath(b);
+      var lines = b.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+      var first = lines[0] || '';
+      var nm = first.replace(/^(curl\s+)?(-X\s+)?(GET|POST|PUT|PATCH|DELETE)\s+/i, '')
+        .replace(/^(https?:\/\/\S+|\/\S*)\s*/, '').trim();
+      if (!nm && lines[1]) nm = lines[1];
+      return {
+        name: nm.slice(0, 24) || (mp.method + ' ' + mp.path),
+        method: mp.method, path: mp.path, project: '未标注',
+        summary: b.replace(/\s+/g, ' ').slice(0, 60), params: '', returns: '', raw: b.trim()
+      };
+    }).filter(function (x) { return x.path; });
+  }
+
   /* 接口指纹：同一份文档贴两次不会长出两条。老数据保留原 id，新导入才用指纹。 */
   function fingerprint(method, path, host) {
     var str = (method || '').toUpperCase() + ' ' + (host || '') + (path || '');
@@ -382,7 +454,7 @@
     abilities: abilities, abilityById: abilityById, addAbility: addAbility,
     updateAbility: updateAbility, removeAbility: removeAbility, abilityApis: abilityApis,
     compAbilities: compAbilities, setCompAbilities: setCompAbilities,
-    fingerprint: fingerprint, pickMethodPath: pickMethodPath,
+    fingerprint: fingerprint, pickMethodPath: pickMethodPath, parseApis: parseApis,
     models: models, modelById: modelById, addModel: addModel, updateModel: updateModel,
     removeModel: removeModel, toggleModel: toggleModel,
     scenes: scenes, setSceneModel: setSceneModel, sceneModel: sceneModel,

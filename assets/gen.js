@@ -354,6 +354,46 @@ window.Gen = (function () {
     return out.join('\n');
   }
 
+  /* 本地规则拆不动的原文，才交给模型：它只做一件事 —— 把内容读成接口清单。
+     输出形状写死；抽不出来就 []，不许编接口（编了也过不了路径校验）。 */
+  var API_SYS = [
+    '你从一段接口文档或说明里抽接口清单。只输出 JSON 数组，不要解释、不要代码块。',
+    '每项：{"name":"接口名（中文，动词开头）","method":"GET|POST|PUT|PATCH|DELETE","path":"/开头的资源路径","summary":"一句话干什么","params":"入参，没有就空串","returns":"返回什么，没有就空串"}',
+    '规则：',
+    '1) path 必须以 / 开头，不许带域名、不许带查询串。',
+    '2) 原文没写方法就按语义判：查询 GET，提交/新建 POST，修改 PUT 或 PATCH，删除 DELETE。',
+    '3) 同一个方法+路径只出现一次。',
+    '4) 原文里压根没有接口（只是需求描述）就输出 []，不许凭想象编。'
+  ].join('\n');
+
+  function parseApis(text) {
+    GEN_SCENE = 'config';
+    var src = String(text || '').trim().slice(0, 8000);
+    if (!src) return Promise.resolve([]);
+    return probe().then(function (p) {
+      if (!p.ok) throw new Error(p.why);
+      return ask([
+        { role: 'system', content: API_SYS },
+        { role: 'user', content: src }
+      ], { temperature: 0, maxTokens: 2000 });
+    }).then(function (r) {
+      var m = String(r.text || '').match(/\[[\s\S]*\]/);
+      if (!m) throw new Error('模型没给出接口清单');
+      var arr;
+      try { arr = JSON.parse(m[0]); } catch (e) { throw new Error('模型给的清单不是合法 JSON'); }
+      return (Array.isArray(arr) ? arr : []).map(function (x) {
+        return {
+          name: String(x.name || '').slice(0, 24),
+          method: String(x.method || 'GET').toUpperCase(),
+          path: String(x.path || '').trim(),
+          summary: String(x.summary || '').slice(0, 60),
+          params: String(x.params || ''), returns: String(x.returns || ''),
+          project: '未标注', raw: String(x.method || 'GET') + ' ' + String(x.path || '')
+        };
+      }).filter(function (x) { return x.path && x.path.charAt(0) === '/'; });
+    });
+  }
+
   function abilityDoc(b) {
     GEN_SCENE = 'config';
     var apis = ((b && b.apiIds) || []).map(function (id) {
@@ -867,6 +907,7 @@ window.Gen = (function () {
     probe: probe,
     ask: ask,
     abilityDoc: abilityDoc,
+    parseApis: parseApis,
     componentSpec: componentSpec,
     specFields: specFields,
     renderComponent: renderComponent,
