@@ -124,4 +124,3 @@
 .au-tag{margin-left:6px;font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-weight:400}
 
 /* 弹窗底栏的次要出口（新建客户）贴左，主操作仍然在右。 */
-.au-ft-left{margin-right:auto}

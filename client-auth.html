@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
 <link rel="stylesheet" href="assets/sys.css?v=ed346b89">
-<link rel="stylesheet" href="assets/client-auth.css?v=0e05ae47">
+<link rel="stylesheet" href="assets/client-auth.css?v=f19fefa2">
   <meta name="robots" content="noindex,nofollow">
 </head>
 <body>
@@ -91,10 +91,6 @@
   </div>
 </div>
 
-<!-- 新增授权（2026-11-02 重做）：选应用 + 多选客户 + 有效期。
-     版本不给选 —— 用户口径「新增授权和升级版本时，默认都指向当前应用的最新版本」。
-     一次可以选多家客户（真实系统的 tenantIds 也是多选）：同一应用下各家客户
-     从此各有一条自己的授权记录，各自记着自己那一版。 -->
 <!-- 新增/编辑客户：名字 + 租户 ID。两个都必填且唯一 —— 重名会让"这家有几个应用"永远算错。 -->
 <div class="mask" id="cl-mask" data-open="false">
   <div class="panel au-dlg" role="dialog" aria-modal="true" aria-labelledby="cl-title">
@@ -123,6 +119,11 @@
   </div>
 </div>
 
+<!-- 新增客户授权（2026-11-05 照真源重做）：
+     真源弹窗 520×202，只有「选择客户」一个字段 + 取消/确定。
+     原来这里有「授权版本」「有效期」两行 —— 真源没有，是我自己发明的，已删。
+     「应用」这一行只在一级页面（授权总览）出现，进了某个应用就隐藏（上下文已定）。
+     一次可选多家客户：同一应用下各家各有一条授权记录。 -->
 <div class="mask" id="mask" data-open="false">
   <div class="panel au-dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
     <div class="p-hd">
@@ -137,35 +138,27 @@
           <label for="fm-app">应用</label>
           <select id="fm-app"></select>
         </div>
+        <!-- 真源是一个可展开的「选择客户」下拉（弹窗常态 202 高）。
+             这里用同一个形态：触发器说得清选了几家，点开才出列表。 -->
         <div class="fm-row">
-          <span class="fm-label">选择客户</span>
-          <!-- 勾选列表而不是下拉：一屏能看见「谁已经授权过」，不用点开才知道。
-               已授权的置灰勾不上；显示「已取消」的那条再勾 = 恢复并升到最新。 -->
-          <div class="fm-clients" id="fm-clients" role="group" aria-label="选择客户"></div>
+          <span class="fm-label" id="fm-pick-lb">选择客户</span>
+          <button class="field" type="button" id="fm-trigger" aria-expanded="false" aria-controls="fm-list-wrap">
+            <span id="fm-picked">请选择客户</span>
+          </button>
+          <div class="fm-row" id="fm-list-wrap" hidden>
+            <label class="field"><input id="fm-kw" type="text" placeholder="搜客户名称或租户 ID" autocomplete="off"></label>
+            <div class="fm-clients" id="fm-clients" role="group" aria-label="选择客户"></div>
+          </div>
         </div>
-        <div class="fm-row">
-          <span class="fm-label">授权版本</span>
-          <p class="fm-note" id="fm-ver-note">—</p>
-        </div>
-        <div class="fm-row">
-          <label for="fm-exp">有效期</label>
-          <select id="fm-exp">
-            <option value="6">6 个月</option>
-            <option value="12" selected>12 个月</option>
-            <option value="24">24 个月</option>
-            <option value="36">36 个月</option>
-            <!-- ★2026-11-02：真实系统用 9999-12-31 表示长期，原来这里没有这一项 -->
-            <option value="0">长期（不设到期）</option>
-          </select>
+        <!-- 数据层要一个有效期，但真源新增时不问它（到期在行内「配置」里设），默认 12 个月 -->
+        <div class="fm-row" hidden>
+          <select id="fm-exp"><option value="12" selected>12 个月</option></select>
         </div>
       </div>
     </div>
     <div class="p-ft au-ft">
-      <!-- 2026-11-04：工具条上原来并排两个"新增"（新增授权 / 新增客户），真源这一页只有一个。
-           新建客户挪到底栏左侧 —— 它是个次要出口，不该和主操作抢位置。 -->
-      <button class="btn ghost au-ft-left" type="button" id="fm-add-client">新建客户</button>
       <button class="btn ghost" type="button" id="dlg-cancel">取消</button>
-      <button class="btn primary" type="button" id="dlg-ok">确定授权</button>
+      <button class="btn primary" type="button" id="dlg-ok">确定</button>
     </div>
   </div>
 </div>
@@ -176,6 +169,6 @@
 <script src="assets/spec.js?v=837054ad"></script>
 <script src="assets/list.js?v=99cbc618"></script>
 <script src="assets/shell.js?v=1736883e"></script>
-<script src="assets/client-auth.js?v=75711531"></script>
+<script src="assets/client-auth.js?v=74eec255"></script>
 </body>
 </html>

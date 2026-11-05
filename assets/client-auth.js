@@ -570,7 +570,9 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       });
     }
     mask.setAttribute('data-open', 'true');
-    setTimeout(function () { selApp.focus(); }, 30);
+    togglePick(false);
+    syncPickLabel();
+    setTimeout(function () { var t = $('#fm-trigger'); if (t) t.focus(); }, 30);
   }
   /* 客户多选：一次可以授给多家（真实系统就是 tenantIds 多选）。
      已经授权过的置灰勾不上；已取消的那条再授 = 恢复并升到最新。 */
@@ -579,25 +581,29 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     var box = $('#fm-clients');
     if (!box) return;
     var latest = DB.latestVer(appId);
-    var note = $('#fm-ver-note');
-    /* 2026-11-04：原来是「本次授权记 v5（当前最新版本）—— 版本不在这里选，升级也默认取最新」，
-       半句都是解释。改成只报那个值：授权记的是哪一版。没有版本时才说要先存一版。 */
-    if (note) note.innerHTML = latest
-      ? '<b>v' + latest + '</b>'
-      : '这个应用还没有版本，先去画布存一版';
+    /* 真源的新增授权不问版本，所以这里不再渲染「授权版本」那一行；
+       没有版本时仍然要拦住（授权必须有可指向的版本）。 */
+    if (!latest) {
+      box.innerHTML = '<p class="fm-hint">这个应用还没有版本，先在配置页存一版。</p>';
+      return;
+    }
     /* ★2026-11-04（用户：「列表里边都是已经配置好授权的客户」）：
        已经授权的客户在这一页的列表里，不该在弹窗里再出现一次（原来会出现、只是置灰勾不上）——
        弹窗只回答"还能授给谁"。一家都没有可选时，直接说清楚。 */
+    var kw = (($('#fm-kw') || {}).value || '').trim().toLowerCase();
     var clients = (DB.clients() || []).filter(function (c) {
       var rec = DB.authOf(appId, c.id);
-      return !(rec && rec.status === '已授权');
+      if (rec && rec.status === '已授权') return false;
+      if (!kw) return true;
+      return (c.name + ' ' + (c.tenantId || '')).toLowerCase().indexOf(kw) >= 0;
     });
     if (!(DB.clients() || []).length) {
       box.innerHTML = '<p class="fm-hint">还没有客户，先新增一家。</p>';
       return;
     }
     if (!clients.length) {
-      box.innerHTML = '<p class="fm-hint">这个应用的客户都已授权，没有可新增的了。</p>';
+      box.innerHTML = '<p class="fm-hint">' + (kw ? '没有匹配的客户' : '这个应用的客户都已授权，没有可新增的了。') + '</p>';
+      syncPickLabel();
       return;
     }
     box.innerHTML = clients.map(function (c) {
@@ -610,7 +616,23 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       '</label>';
     }).join('');
   }
-  function closeDlg() { if (mask) mask.setAttribute('data-open', 'false'); }
+  /* 「选择客户」触发器：说得清选了几家，点开才出列表（与真源同一形态） */
+  function syncPickLabel() {
+    var n = document.querySelectorAll('#fm-clients input:checked').length;
+    var el = $('#fm-picked');
+    if (el) el.textContent = n ? ('已选 ' + n + ' 家') : '请选择客户';
+    var t = $('#fm-trigger');
+    if (t) t.setAttribute('data-on', n ? '1' : '0');
+  }
+  function togglePick(open) {
+    var w = $('#fm-list-wrap'), t = $('#fm-trigger');
+    if (!w || !t) return;
+    var on = (open == null) ? w.hidden : !!open;
+    w.hidden = !on;
+    t.setAttribute('aria-expanded', on ? 'true' : 'false');
+    if (on) { var k = $('#fm-kw'); if (k) k.focus(); }
+  }
+  function closeDlg() { togglePick(false); if (mask) mask.setAttribute('data-open', 'false'); }
   function submitDlg() {
     var appId = $('#fm-app').value;
     var ids = Array.prototype.slice.call(document.querySelectorAll('#fm-clients input:checked')).map(function (x) { return x.value; });
@@ -696,8 +718,13 @@ if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; PG 
       add.addEventListener('click', openDlg);
     }
     /* 弹窗底栏的「新建客户」：关掉授权弹窗，打开客户弹窗；存完重新 paint 会带回这里的数据。 */
-    var nc = $('#fm-add-client');
-    if (nc) nc.addEventListener('click', function () { closeDlg(); openClient(''); });
+    /* 真源的新增授权只有 取消/确定，没有「新建客户」；客户管理在「编辑客户」那一侧。 */
+    var kwEl2 = $('#fm-kw');
+    if (kwEl2) kwEl2.addEventListener('input', paintClientPick);
+    var trig = $('#fm-trigger');
+    if (trig) trig.addEventListener('click', function () { togglePick(); });
+    var pickBox = $('#fm-clients');
+    if (pickBox) pickBox.addEventListener('change', syncPickLabel);
     var x = $('#dlg-x'), c = $('#dlg-cancel'), ok = $('#dlg-ok');
     if (x) x.addEventListener('click', closeDlg);
     if (c) c.addEventListener('click', closeDlg);
