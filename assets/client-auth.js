@@ -143,7 +143,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     paintVerOptions();
     var pgTitle = $('#pg-title'), latestBox = $('#au-latest');
     var crumbApp = $('#crumb-app'), crumbPage = $('#crumb-page'), crumbSep2 = $('#crumb-sep2');
-    var addBtn = $('#act-add'), addC = $('#act-add-client'), kwEl = $('#kw');
+    var addBtn = $('#act-add'), kwEl = $('#kw');
     var tbl = document.querySelector('.au-table');
     if (tbl) tbl.classList.toggle('is-sub', !!APP_ID);
     /* ★2026-11-02（独立走查 P0-2 / P1-3）：不带 id 的页面不是"另一个客户授权页"，是**全部授权** ——

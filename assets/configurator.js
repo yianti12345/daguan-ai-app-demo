@@ -1127,7 +1127,7 @@
   function boot() {
     var bar = document.getElementById('cfg-bar');
     if (!bar) return;
-    var shellEl = document.getElementById('canvas-inner');
+    var shellEl = document.getElementById('canvas-inner') || document.getElementById('canvas');
     if (!shellEl) return;
 
     var q = {};
