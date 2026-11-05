@@ -119,9 +119,12 @@
     var parts = /\n\s*---+\s*\n/.test(raw) ? raw.split(/\n\s*---+\s*\n/) : raw.split(/\n\s*\n/);
     return parts.filter(function (b) { return b.trim(); }).map(function (b) {
       var mp = CAP.pickMethodPath(b);
-      var first = b.split('\n').map(function (l) { return l.trim(); }).filter(Boolean)[0] || '';
+      var lines = b.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+      var first = lines[0] || '';
       var nm = first.replace(/^(curl\s+)?(-X\s+)?(GET|POST|PUT|PATCH|DELETE)\s+/i, '')
         .replace(/^(https?:\/\/\S+|\/\S*)\s*/, '').trim();
+      /* 第一行只有「方法 路径」时（客户最常这么贴），名字取第二行，别拿路径当名字。 */
+      if (!nm && lines[1]) nm = lines[1];
       return {
         name: nm.slice(0, 24) || (mp.method + ' ' + mp.path),
         method: mp.method, path: mp.path, host: '', project: '未标注',
@@ -151,21 +154,29 @@
       $('#imp-ok').addEventListener('click', function () {
         var list = parseDoc($('#imp-raw').value.trim());
         if (!list.length) { toast('没解析出接口', 'error'); return; }
-        var added = 0;
+        var ids = [], added = 0;
         list.forEach(function (x) {
           var id = CAP.fingerprint(x.method, x.path, x.host);
-          if (CAP.apiById(id)) return;
+          if (CAP.apiById(id)) { if (ids.indexOf(id) < 0) ids.push(id); return; }
           CAP.addApi({
             id: id, name: x.name, desc: x.summary, summary: x.summary,
             method: x.method, path: x.path, project: x.project,
             source: x.project, raw: x.raw, doc: '', state: 'ok', on: true, at: ''
           });
-          added++;
+          ids.push(id); added++;
         });
         $('#imp-mask').hidden = true;
         $('#imp-raw').value = ''; $('#imp-ok').disabled = true;
-        paint();
-        toast(added ? ('已导入 ' + added + ' 个接口，去「新建能力」把它们装进去') : '这些接口都已经在池子里了');
+        if (!ids.length) { paint(); toast('没解析出新接口'); return; }
+        /* 拆出来的接口要有归属：直接落成一条能力，进去命名、删掉不要的，一保存就出 MD。
+           否则接口躺在池子里，没有第二个入口能捡回来。 */
+        var proj = (list[0] && list[0].project) || '';
+        var b = CAP.addAbility({
+          /* 有项目名就用项目名；纯文本贴进来的没有项目名，留空当草稿，等人在详情页命名。 */
+          name: proj === '未标注' ? '' : proj,
+          intro: '', apiIds: ids, project: proj
+        });
+        location.href = 'ability.html?id=' + encodeURIComponent(b.id);
       });
     }
     /* 第一次点：上面刚把节点插进 DOM，局部变量 m 还是 null，必须重新取，

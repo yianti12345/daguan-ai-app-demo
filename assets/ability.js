@@ -128,7 +128,7 @@
     $('#api-title').textContent = '接口清单（' + rows.length + '）';
     var box = $('#api-list');
     if (!rows.length) {
-      box.innerHTML = '<div class="abt-row" style="grid-template-columns:1fr;color:var(--color-text-tertiary)">还没有接口，从「添加接口」里挑</div>';
+      box.innerHTML = '<div class="abt-row" style="grid-template-columns:1fr;color:var(--color-text-tertiary)">还没有接口，点「添加接口」填一条</div>';
       return;
     }
     box.innerHTML = rows.map(function (x) {
@@ -201,55 +201,74 @@
     toast('已移除');
   });
 
-  /* ── 添加接口：从一个面板里勾。只勾，不填任何字段。 ── */
-  function openPicker() {
-    var cur = CAP.abilityById(ID).apiIds || [];
-    var avail = CAP.apis().filter(function (a) { return cur.indexOf(a.id) < 0; });
-    if (!avail.length) { toast('池子里没有可加的接口，先「导入项目」'); return; }
-    var pick = {};
+  /* ── 添加接口：手动填一条接口的信息。 ────────────────────────────────
+     接口不是"勾"出来的。客户现场常常只有一个接口文档、一段 curl、或者口头一句
+     "他们有个查询接口"——得照着填。填完这条接口就归这个能力，保存时一起写进 MD。 */
+  function openAdd() {
     document.body.insertAdjacentHTML('beforeend',
       '<div class="nf-mask" id="pk-mask"><div class="nf" role="dialog" aria-modal="true" aria-labelledby="pk-t">'
       + '<div class="nf-hd"><b id="pk-t">添加接口</b>'
       + '<button type="button" class="icon-btn" id="pk-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
-      + '<div class="nf-bd" id="pk-list"></div>'
-      + '<div class="nf-ft"><span class="it-sp"></span>'
+      + '<div class="nf-bd">'
+      +   '<div class="nf-row"><label for="fa-name">接口名称<span class="nf-req">*</span></label><input id="fa-name" placeholder="这个接口叫什么"></div>'
+      +   '<div class="nf-row" style="flex-direction:row;gap:var(--space-8)">'
+      +     '<div style="flex:0 0 108px;display:flex;flex-direction:column;gap:var(--space-8)"><label for="fa-m">方法</label><select id="fa-m"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select></div>'
+      +     '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:var(--space-8)"><label for="fa-path">路径<span class="nf-req">*</span></label><input id="fa-path" placeholder="/api/v1/…"></div>'
+      +   '</div>'
+      +   '<div class="nf-row"><label for="fa-desc">说明</label><input id="fa-desc" placeholder="干什么用，一句话"></div>'
+      +   '<div class="nf-row"><label for="fa-in">入参</label><textarea id="fa-in" style="min-height:56px" placeholder="要传什么，没有就不写"></textarea></div>'
+      +   '<div class="nf-row"><label for="fa-out">返回</label><textarea id="fa-out" style="min-height:56px" placeholder="返回什么，没有就不写"></textarea></div>'
+      + '</div>'
+      + '<div class="nf-ft">'
       + '<button type="button" class="btn ghost" id="pk-cancel">取消</button>'
       + '<button type="button" class="btn primary" id="pk-ok" disabled>添加</button></div>'
       + '</div></div>');
-    $('#pk-list').innerHTML = avail.map(function (a) {
-      return '<label style="display:grid;grid-template-columns:20px minmax(0,1fr) 56px 160px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--color-border-hairline);font-size:var(--font-size-body);cursor:pointer">'
-        + '<input type="checkbox" data-pick="' + esc(a.id) + '">'
-        + '<span>' + esc(a.name) + '</span>'
-        + '<span class="abt-m">' + esc(a.method || 'GET') + '</span>'
-        + '<span class="abt-p">' + esc(a.path || '—') + '</span></label>';
-    }).join('');
-    function sync() {
-      var n = Object.keys(pick).length;
-      $('#pk-ok').disabled = !n;
-      $('#pk-ok').textContent = n ? ('添加 ' + n + ' 个') : '添加';
-    }
-    $('#pk-list').addEventListener('change', function (e) {
-      var c = e.target.closest('[data-pick]'); if (!c) return;
-      if (c.checked) pick[c.getAttribute('data-pick')] = 1; else delete pick[c.getAttribute('data-pick')];
-      sync();
-    });
     function close() { var m = $('#pk-mask'); if (m) m.remove(); }
+    function vals() {
+      return {
+        name: $('#fa-name').value.trim(), method: $('#fa-m').value, path: $('#fa-path').value.trim(),
+        desc: $('#fa-desc').value.trim(), params: $('#fa-in').value.trim(), returns: $('#fa-out').value.trim()
+      };
+    }
+    function sync() { var v = vals(); $('#pk-ok').disabled = !(v.name && v.path); }
+    $('#fa-name').addEventListener('input', sync);
+    $('#fa-path').addEventListener('input', sync);
     $('#pk-x').addEventListener('click', close);
     $('#pk-cancel').addEventListener('click', close);
     $('#pk-ok').addEventListener('click', function () {
-      var ids = (CAP.abilityById(ID).apiIds || []).concat(Object.keys(pick));
+      var v = vals();
+      if (!v.name || !v.path) return;
+      /* 指纹 = 方法 + 路径：同一个接口填第二遍不会长出两条。 */
+      var id = CAP.fingerprint(v.method, v.path, '');
+      /* 不写「调用」这一行：MD 里每个接口的小标题下已经印了「方法 路径」，
+         同一句话印两遍只是噪声。 */
+      var doc = '### ' + v.name + '\n\n**用途**：' + (v.desc || v.name)
+        + (v.params ? '\n\n**入参**：' + v.params : '')
+        + (v.returns ? '\n\n**返回**：' + v.returns : '');
+      if (!CAP.apiById(id)) {
+        CAP.addApi({
+          id: id, name: v.name, desc: v.desc, summary: v.desc, method: v.method, path: v.path,
+          host: '', project: (B && B.project) || '未标注', source: (B && B.project) || '未标注',
+          params: v.params, returns: v.returns,
+          raw: v.method + ' ' + v.path + (v.desc ? '\n' + v.desc : ''),
+          doc: doc, state: 'ok', on: true, at: ''
+        });
+      }
+      var ids = (CAP.abilityById(ID).apiIds || []);
+      if (ids.indexOf(id) < 0) ids = ids.concat([id]);
       CAP.updateAbility(ID, { apiIds: ids });
       CHANGED = true;
       B = CAP.abilityById(ID);
       close(); paintApis(); paintState(); syncBar();
-      toast('已添加 ' + Object.keys(pick).length + ' 个接口');
+      toast('已添加接口');
     });
+    setTimeout(function () { $('#fa-name').focus(); }, 0);
   }
 
   var sec = $('#api-title') ? $('#api-title').parentNode : null;
   if (sec) {
     sec.insertAdjacentHTML('beforeend', '<button type="button" class="abt-op" id="act-add" style="margin-left:auto">＋ 添加接口</button>');
-    $('#act-add').addEventListener('click', openPicker);
+    $('#act-add').addEventListener('click', openAdd);
   }
 
   if (boot()) paint();
