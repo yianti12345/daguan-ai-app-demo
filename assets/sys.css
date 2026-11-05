@@ -632,7 +632,11 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      容器 = 视口 − 238（侧栏 200 + 左 16 + 右 22）⇒ 视口 ≥1722，取 1720。
      低于此值一律 3 列 —— 旧卡就是被"277 宽塞不下四件事"逼成上下两截的（§2.4 P2）。
      ⚠ 1536–1719 这一档会得到 411–472 的偏宽卡；该档不在验收宽内（1280/1440/1920），见 §9.1 未量项。 */
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-8);align-content:start;
+  /* ★2026-11-05（用户）：「卡片太挤了，视觉压迫太强，要么 3 个，要么改高度」。
+     原来按视口断点定 4 列（>1245 就 4 列），可内容宽只有 1030 时也照样 4 列 ⇒ 每张 208 宽，
+     标题+描述+状态+版本四件事挤在一条 208 的卡里。
+     改成按**卡最小宽**自适应：≥280 就多放一列，放不下就 3 列。1440 仍是 4 列（289），1280 变 3 列（约 330）。 */
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-8);align-content:start;
   background:none;box-shadow:none;border-radius:0;padding:0;overflow:visible;
 }
 /* ★2026-11-01 断点与应用页对齐：1720 → **1536**。
@@ -2108,10 +2112,10 @@ body[data-drawer="on"] .hint{
 /* ② 两页同一套降列（2026-11-04 按真源统一 4 列基线）：≤1245 三列、≤989 两列。
    真源只在 1440 量过；更窄两档是照栅格下限推的，未实机复核。 */
 @media (max-width:1245px){
-  .grid,.page-components #grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:989px){
-  .grid,.page-components #grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 /* ══════════════════════════════════════════════════════════════════

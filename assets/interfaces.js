@@ -252,11 +252,6 @@
   /* ── 批量导入 ── */
   var PARSED = [];
 
-  $('#act-batch').addEventListener('click', function () {
-    $('#braw').value = ''; PARSED = []; $('#bres').innerHTML = ''; $('#bd-do').disabled = true; $('#bstat').textContent = '';
-    $('#bd').hidden = false;
-  });
-
   /* 导入项目：先认 OpenAPI / Swagger（paths 是真结构，能一条条拆准），
      认不出来再按空行 / --- 切纯文本。项目级导入就是把整份 spec 或整份文档贴进来。 */
   function parseProject(raw) {
