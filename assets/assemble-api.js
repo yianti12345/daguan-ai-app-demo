@@ -29,7 +29,7 @@
       + '<div class="mask" id="api-mask" data-open="false" role="dialog" aria-modal="true" aria-labelledby="api-title">'
       +   '<div class="panel">'
       +     '<div class="p-hd">'
-      +       '<b id="api-title">引用能力</b>'
+      +       '<b id="api-title">装配能力</b>'
       +       '<div class="p-search"><input id="api-search" type="text" placeholder="搜能力，或说要做什么" aria-label="搜索能力" autocomplete="off">'
       +         '<button type="button" class="p-ai" id="api-ai" aria-pressed="false" title="让模型按你的描述找能力"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.7 5.3L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.7z"/><path d="M19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI 搜索</button></div>'
       +       '<button type="button" class="p-x" id="api-close" aria-label="关闭">'
