@@ -23,10 +23,10 @@
       ['应用管理', 'apps.html', 'apps'],
       ['组件库', 'components.html', 'components'],
       /* ★2026-11-05（用户）：「不要叫能力管理（当一级组），放到 AI 应用方案里，
-         然后叫能力管理，下面再加 2 个菜单：接口注册、小智技能」。
-         层级：AI 应用方案 → 能力管理 → 接口注册 / 小智技能。 */
+         然后叫能力管理，下面再加 2 个菜单：能力注册、小智技能」。
+         层级：AI 应用方案 → 能力管理 → 能力注册 / 小智技能。 */
       ['能力管理', '', 'cap', [
-        ['接口注册', 'interfaces.html', 'cap-apis'],
+        ['能力注册', 'interfaces.html', 'cap-apis'],
         ['小智技能', 'skills.html', 'cap-skills'],
         ['能力配置', 'config.html', 'cap-config']
       ]]

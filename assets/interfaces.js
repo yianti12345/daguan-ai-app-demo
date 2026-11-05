@@ -1,4 +1,4 @@
-/* interfaces.js —— 接口注册列表 + 新增/编辑 + 批量导入
+/* interfaces.js —— 能力注册列表 + 新增/编辑 + 批量导入
    列表骨架、列宽、空态全部交给 List（assets/list.js），这一页只说每格画什么。 */
 (function () {
   'use strict';
@@ -73,7 +73,7 @@
       },
       empty: function () {
         return '<div class="empty"><div>'
-          + (S.kw || S.state || S.on || S.src ? '没有匹配的接口' : '还没有接口')
+          + (S.kw || S.state || S.on || S.src ? '没有匹配的能力' : '还没有能力')
           + '</div></div>';
       }
     });
@@ -95,8 +95,8 @@
     var url = (text.match(/https?:\/\/[^\s'"]+/) || [])[0] || '';
     var method = (text.match(/-X\s+([A-Z]+)/) || [])[1] || (/curl/i.test(text) ? 'POST' : 'GET');
     var firstLine = (text.split(/\n/).filter(function (l) { return l.trim(); })[0] || '').replace(/^#+\s*/, '').trim();
-    var name = firstLine.slice(0, 24) || (url ? url.split('/').filter(Boolean).pop() : '') || '未命名接口';
-    var desc = firstLine.length > 24 ? firstLine.slice(0, 60) : (src ? src + ' 的能力接口' : '外部接口');
+    var name = firstLine.slice(0, 24) || (url ? url.split('/').filter(Boolean).pop() : '') || '未命名能力';
+    var desc = firstLine.length > 24 ? firstLine.slice(0, 60) : (src ? src + ' 的能力' : '外部能力');
     var lines = [];
     lines.push('### ' + name);
     lines.push('');
@@ -135,7 +135,7 @@
   function openDlg(id) {
     EDIT_ID = id || null;
     var it = id ? CAP.apiById(id) : null;
-    $('#dlg-t').textContent = it ? '编辑接口' : '新增接口';
+    $('#dlg-t').textContent = it ? '编辑能力' : '新增能力';
     $('#raw').value = it ? (it.raw || '') : '';
     $('#src').value = it ? (it.source || '') : '';
     $('#cnt').textContent = ($('#raw').value.length) + ' 字';
@@ -311,7 +311,7 @@
     if (act === 'del') {
       var it = CAP.apiById(id); if (!it) return;
       ask({
-        title: '删除接口',
+        title: '删除能力',
         body: '删除「' + it.name + '」后，组件装配时不再可选。已生成的组件不受影响。',
         ok: '删除', danger: true,
         onOk: function () { CAP.removeApi(id); paint(); toast('已删除'); }

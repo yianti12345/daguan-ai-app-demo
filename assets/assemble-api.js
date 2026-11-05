@@ -1,6 +1,6 @@
-/* assemble-api.js —— 组件配置页的「装配接口」面板
+/* assemble-api.js —— 组件配置页的「装配能力」面板
    形态照应用配置页的「装配组件」：同一个 .mask/.panel/.p-hd/.p-tabs/.p-batch/.p-list/.row。
-   装配关系存在 CAP 的 compApis 里；接口只是生成时的知识，不做运行时绑定。 */
+   装配关系存在 CAP 的 compApis 里；能力只是生成时的知识，不做运行时绑定。 */
 (function () {
   'use strict';
 
@@ -29,14 +29,14 @@
       + '<div class="mask" id="api-mask" data-open="false" role="dialog" aria-modal="true" aria-labelledby="api-title">'
       +   '<div class="panel">'
       +     '<div class="p-hd">'
-      +       '<b id="api-title">装配接口</b>'
-      +       '<div class="p-search"><input id="api-search" type="text" placeholder="搜接口，或说要做什么" aria-label="搜索接口" autocomplete="off">'
-      +         '<button type="button" class="p-ai" id="api-ai" aria-pressed="false" title="让模型按你的描述找接口"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.7 5.3L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.7z"/><path d="M19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI 搜索</button></div>'
+      +       '<b id="api-title">装配能力</b>'
+      +       '<div class="p-search"><input id="api-search" type="text" placeholder="搜能力，或说要做什么" aria-label="搜索能力" autocomplete="off">'
+      +         '<button type="button" class="p-ai" id="api-ai" aria-pressed="false" title="让模型按你的描述找能力"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.7 5.3L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.7z"/><path d="M19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI 搜索</button></div>'
       +       '<button type="button" class="p-x" id="api-close" aria-label="关闭">'
       +         '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
       +       '</button>'
       +     '</div>'
-      +     '<div class="p-tabs" role="tablist" aria-label="接口范围">'
+      +     '<div class="p-tabs" role="tablist" aria-label="能力范围">'
       +       '<button type="button" role="tab" class="p-tab" data-tab="avail" aria-selected="true">可装配 <span id="api-n-avail">0</span></button>'
       +       '<button type="button" role="tab" class="p-tab" data-tab="on" aria-selected="false">已装配 <span id="api-n-on">0</span></button>'
       +     '</div>'
@@ -136,7 +136,7 @@
 
   function installed() { return CAP.compApis(COMP); }
 
-  /* 已装配里可能有接口被删掉的旧编号：照样列出来，给一键移除，不静默吞掉。 */
+  /* 已装配里可能有能力被删掉的旧编号：照样列出来，给一键移除，不静默吞掉。 */
   function rows() {
     var on = installed();
     var alive = [], gone = [];
@@ -164,13 +164,13 @@
 
   function rowHtml(x, isOn) {
     var a = x.api;
-    var pick = '<input type="checkbox" class="p-pick" aria-label="选择' + esc(a ? a.name : '已失效接口') + '"'
+    var pick = '<input type="checkbox" class="p-pick" aria-label="选择' + esc(a ? a.name : '已失效能力') + '"'
       + (PICK[x.id] ? ' checked' : '') + '>';
     if (!a) {
       return '<div class="row is-gone" data-id="' + esc(x.id) + '">'
-        + '<div class="row-hd">' + pick + '<b>接口已删除</b><div class="act">'
+        + '<div class="row-hd">' + pick + '<b>能力已删除</b><div class="act">'
         + '<button class="btn-uninstall" type="button" data-do="rm">移除</button></div></div>'
-        + '<p class="row-desc">这条接口已从能力管理里删除，组件里只留了一个旧编号。</p>'
+        + '<p class="row-desc">这条能力已从能力管理里删除，组件里只留了一个旧编号。</p>'
         + '<p class="row-meta">' + esc(x.id) + '</p></div>';
     }
     return '<div class="row" data-id="' + esc(a.id) + '">'
@@ -205,8 +205,8 @@
          这一步比在头部再摆一颗「搜索」按钮有用得多。 */
       var tryAi = KW && !AI_IDS && TAB === 'avail';
       list.innerHTML = '<div class="p-empty">'
-        + (KW ? '没有匹配的接口'
-              : (TAB === 'on' ? '还没装配任何接口' : '能装的都装上了。去能力管理登记更多接口。'))
+        + (KW ? '没有匹配的能力'
+              : (TAB === 'on' ? '还没装配任何能力' : '能装的都装上了。去能力管理登记更多能力。'))
         + (tryAi ? '<button type="button" class="p-ai-try" data-ai-try>用 AI 搜这句话</button>' : '')
         + '</div>';
       syncBatch();

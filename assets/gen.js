@@ -299,7 +299,7 @@ window.Gen = (function () {
       ] });
     }
 
-    /* 2026-11-05：本机没有模型代理时，装配的接口不能白装 —— 用既有的 cards 块
+    /* 2026-11-05：本机没有模型代理时，装配的能力不能白装 —— 用既有的 cards 块
        出一块「可用能力」，人看得见这个组件能调什么。块类型没变，渲染契约没动。 */
     if (typeof window !== 'undefined' && window.CAP && ctx.compId) {
       var caps = CAP.compApis(ctx.compId).map(function (id) {
@@ -318,8 +318,8 @@ window.Gen = (function () {
     GEN_SCENE = 'component';
     /* 先探活再决定谁来搭：探到模型就用模型，探不到就用上面的确定性结构器。
        这一分支是"跑不通"的正面回答 —— 没有模型代理也不再是死键。 */
-    /* 2026-11-05：装配接口的用途在这里落地——组件生成时，把已装接口的说明书
-       作为上下文交给模型。接口是知识，不是运行时绑定；没装的接口不许编。 */
+    /* 2026-11-05：装配能力的用途在这里落地——组件生成时，把已装能力的说明书
+       作为上下文交给模型。能力是知识，不是运行时绑定；没装的能力不许编。 */
     var apiDocs = '';
     if (typeof window !== 'undefined' && window.CAP && ctx.compId) {
       var ids = CAP.compApis(ctx.compId);
@@ -328,7 +328,7 @@ window.Gen = (function () {
         return a ? ('### ' + a.name + '\n' + String(a.doc || a.desc || '')) : '';
       }).filter(Boolean);
       if (docs.length) {
-        apiDocs = '\n可用接口（这个组件装配的能力，需要时按说明书调用；没列出的不许编）：\n' + docs.join('\n\n');
+        apiDocs = '\n可用能力（这个组件装配的能力，需要时按说明书调用；没列出的不许编）：\n' + docs.join('\n\n');
       }
     }
     var facts = [
