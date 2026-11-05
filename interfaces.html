@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>能力配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
-<link rel="stylesheet" href="assets/sys.css?v=ca449cdf">
+<link rel="stylesheet" href="assets/tokens.css?v=cdd3efbb">
+<link rel="stylesheet" href="assets/sys.css?v=37711fe0">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
 <style>
 /* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
@@ -14,10 +14,10 @@
 .page-hd h1{margin:0;font-size:var(--font-size-display);font-weight:600;line-height:var(--leading-display);color:var(--color-text-primary)}
 .page-hd .ops{margin-left:auto;display:flex;align-items:center;gap:var(--space-8)}
 .it-bar{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap;padding:0 0 var(--space-12)}
-.it-table .gtable-foot{display:flex;align-items:center;gap:var(--space-12);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
 /* 8 列在 1280 视口下放不进内容区：照真源允许表格横向滚动，不硬压列宽。 */
 .it-table{overflow-x:auto}
-.it-table .gtable-head,.it-table .gtable-row{min-width:1060px}
+/* 8 列在窄屏放不下：只设最小宽变量，表格自己的规则留在共享层，页内不重写组件 */
+.it-table{--gt-min-w:1060px}
 .it-pager{display:inline-flex;align-items:center;gap:var(--space-4);margin-left:auto}
 .it-pn{min-width:24px;height:24px;padding:0 6px;border:0;border-radius:var(--radius-sm);background:none;font-family:inherit;font-size:var(--font-size-caption);color:var(--color-text-secondary);cursor:pointer}
 .it-pn:hover{background:var(--color-state-hover)}

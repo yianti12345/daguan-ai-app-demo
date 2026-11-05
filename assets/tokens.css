@@ -1,3 +1,8 @@
+/* ⚠⚠ 新增令牌必须同时写进这份模板！
+   原因：token-source --build 是用「模板 + 台账」重新渲染 tokens.css 的，
+   模板里没有插值的令牌会被**直接从 tokens.css 删掉**，页面样式随即静默失效。
+   2026-11-04 踩过一次（表头/字段 6 条），2026-11-05 又踩两次（sider-indent / shadow-knob / gt-min-w）。
+   加令牌的正确顺序：先在本模板加插值 → 再在 tokens.css 写值 → --extract → --check → --build。 */
 /* ─────────────────────────────────────────────────────────────
    tokens.css —— 全站唯一的取值来源。
    三层结构（2026-10-28 立，D3「令牌唯一真源」）：
@@ -80,7 +85,7 @@
   --p-size-05:.5px;                                   /* 按压位移：与 sys.css `.btn:active` 同值 */
   --p-size-1:1px;  --p-size-2:2px;   --p-size-6:6px;   --p-size-10:10px;
   --p-size-16:16px; --p-size-20:20px;
-  --p-size-24:24px; --p-size-32:32px; --p-size-36:36px; --p-size-52:52px; --p-size-66:66px;
+  --p-size-24:24px; --p-size-32:32px; --p-size-36:36px; --p-size-44:44px; --p-size-52:52px; --p-size-66:66px;
   --p-size-168:168px; --p-size-200:200px; --p-size-220:220px; --p-size-236:236px;
   --p-size-480:480px;  /* 2026-10-29：表格行高 52 / 弹窗最大宽 480，均为现盘已在用的尺寸，不是新刻度 */
 
@@ -213,6 +218,12 @@
 
   /* 尺寸 */
   --size-sider:var(--p-size-200);
+  /* ★2026-11-05：侧栏缩进阶梯。三级菜单加过一次，裸 px 每次都要重算，所以做成令牌。
+     ⚠ 新增令牌必须同时写进这份模板，否则 token-source --build 会把它从 tokens.css 里删掉
+     （同一个坑 11-04 踩过一次、11-05 又踩一次）。 */
+  --sider-indent-1:22px;
+  --sider-indent-2:54px;
+  --sider-indent-3:86px;
   --size-control-h:var(--p-size-32);
   --size-border-w:var(--p-size-1);
   --size-focus-ring-w:var(--p-size-2);
@@ -228,6 +239,7 @@
   --shadow-card:0 2px 4px var(--p-shadow-10), 0 4px 10px var(--p-shadow-06), 0 8px 22px var(--p-shadow-07);
   --shadow-card-hover:0 2px 6px var(--p-shadow-08), 0 10px 28px var(--p-shadow-12);
   --shadow-card-soft:0 3px 9.7px 0 var(--p-shadow-lav-22);
+  --shadow-knob:0 1px 2px var(--p-shadow-12);
   --shadow-card-ring:0 0 0 var(--size-border-w) var(--shadow-color-1), var(--shadow-card);
   --shadow-card-ring-hover:0 0 0 var(--size-border-w) var(--shadow-color-1), var(--shadow-card-hover);
   --shadow-btn:0 2px 8px -2px var(--color-brand-glow);
@@ -247,9 +259,9 @@
 /* ═══ L3 · component（语义层表达不了才加；每条写明服务对象）═══ */
 :root{
   --switch-status-w:var(--p-size-66);   /* 组件卡三态开关定宽：启用/禁用/未发布同宽 */
-  --switch-track-w:var(--p-size-36);    /* 布尔开关轨道 */
-  --switch-track-h:var(--p-size-20);
-  --switch-knob:var(--p-size-16);
+  --switch-track-w:var(--p-size-44);    /* 布尔开关轨道 */
+  --switch-track-h:var(--p-size-24);
+  --switch-knob:var(--p-size-20);
   --switch-status-dot:var(--p-size-6);  /* 状态开关左侧小点 */
   --popover-w:var(--p-size-220);        /* 「被 N 个应用使用」浮层 */
   --tooltip-max-width:var(--p-size-236);/* 组件卡浮层宽上限 */
@@ -410,6 +422,7 @@
   /* 网格表 GTable（1）：行内距。行内通栏块用 calc(-1 * var(--gt-pad-x)) 抵边（versions.html），
      两处同源。原来默认值写在 .gtable 上，页面引用它＝跨文件引用一条定义源看不见的值。 */
   --gt-pad-x:var(--space-inline-lg);
+  --gt-min-w:0;
 }
 
 /* ═══ L0 · 兼容层（2026-10-28 之前的旧名，一个不删；迁移完成前页面仍引用）═══ */
