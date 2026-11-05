@@ -48,7 +48,7 @@
       rows: rows,
       rowClass: 'gtable-row',
       cell: function (key, r) {
-        if (key === 'name') return '<a class="sk-name" href="#" data-act="view" data-id="' + esc(r.id) + '">' + esc(r.name) + '</a>';
+        if (key === 'name') return '<span class="sk-name">' + esc(r.name) + '</span>';
         if (key === 'desc') return '<span class="sk-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
         if (key === 'on') return '<button class="sw" type="button" role="switch" aria-checked="' + (r.on ? 'true' : 'false') + '" aria-label="启用' + esc(r.name) + '" data-act="toggle" data-id="' + esc(r.id) + '"></button>';
         if (key === 'at') return '<span class="sk-at">' + esc(r.at || '—') + '</span>';

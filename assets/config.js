@@ -44,7 +44,7 @@
       rowClass: 'gtable-row',
       cell: function (key, r) {
         if (key === 'name') {
-          return '<a class="m-name" href="#" data-act="edit" data-id="' + esc(r.id) + '">' + esc(r.label || r.name) + '</a>';
+          return '<span class="m-name">' + esc(r.label || r.name) + '</span>';
         }
         if (key === 'vendor') return esc(r.vendor || '—');
         if (key === 'temp') return r.kind === 'chat' ? String(r.temp) : '—';

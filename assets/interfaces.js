@@ -52,7 +52,7 @@
       rows: rows,
       rowClass: 'gtable-row',
       cell: function (key, r) {
-        if (key === 'name') return '<a class="it-name" href="#" data-act="view" data-id="' + esc(r.id) + '">' + esc(r.name) + '</a>';
+        if (key === 'name') return '<span class="it-name">' + esc(r.name) + '</span>';
         if (key === 'desc') return '<span class="it-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
         if (key === 'source') return esc(r.source || '—');
         if (key === 'at') return '<span class="it-at">' + esc(r.at || '—') + '</span>';

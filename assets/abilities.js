@@ -16,7 +16,7 @@
 
   /* MD 三态：只读、不可手改。没有 MD 的能力在装配面板里勾不上，所以这里必须一眼看出来。 */
   var MD = {
-    ready: { t: '已就绪', c: 'var(--color-brand-ink)' },
+    ready: { t: '已就绪', c: 'var(--color-text-body)' },
     run:   { t: '生成中', c: 'var(--color-text-tertiary)' },
     fail:  { t: '生成失败', c: 'var(--color-danger)' },
     none:  { t: '未生成', c: 'var(--color-text-tertiary)' }
@@ -40,7 +40,8 @@
       rowClass: 'gtable-row',
       cell: function (key, r) {
         if (key === 'name') {
-          return '<a class="ab-name" href="ability.html?id=' + esc(r.id) + '">' + esc(r.name) + '</a>';
+          /* 名字是纯文字：这一行的"编辑"已经是唯一入口，再来一个可点的蓝字就是两个入口。 */
+          return '<span class="ab-name">' + esc(r.name) + '</span>';
         }
         if (key === 'desc') {
           var d = r.intro || '—';
