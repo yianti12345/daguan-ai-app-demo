@@ -1333,6 +1333,32 @@ button.cc-meta:focus-visible{
   pointer-events:none;
 }
 
+/* ── .fchip 可点筛选标签（2026-11-06）────────────────────────────
+   和上面 .chip 只差一个语义：.chip 是"状态"，只读；.fchip 是"筛选条件"，必须可点、
+   必须有选中态。真源 SaaS 的「行业类型 / 公司类型 / 业务场景」三行就是这个东西
+   （32 高、圆角 6、选中浅蓝底 + 蓝字）。
+   没有复用 .chip：它的 pointer-events 明确写着 none，改它就把 26 处只读胶囊一起变成可点了。 */
+.fchip{
+  display:inline-flex;align-items:center;
+  height:32px;padding:0 var(--space-12);
+  border:1px solid var(--color-border-control);
+  border-radius:var(--radius-sm);
+  background:var(--surface-page);
+  color:var(--color-text-primary);
+  font-family:inherit;font-size:var(--font-size-body);line-height:1;
+  cursor:pointer;white-space:nowrap;
+  transition:border-color .14s ease, color .14s ease, background .14s ease;
+}
+.fchip:hover{border-color:var(--color-brand);color:var(--color-brand-ink)}
+.fchip[aria-pressed="true"]{
+  background:var(--color-brand-surface);
+  border-color:var(--color-brand);
+  color:var(--color-brand-ink);
+  font-weight:var(--font-weight-medium);
+}
+.fchip:focus-visible{outline:2px solid var(--color-brand);outline-offset:1px}
+.fchip:disabled{color:var(--color-text-muted);border-color:var(--color-border-card);cursor:not-allowed}
+
 /* 行内紧凑态：同一枚胶囊降一档高（16 = 12 号字的行高），内距跟着收一档 */
 .chip-sm{height:var(--leading-caption-meta);padding:0 var(--space-4)}
 /* 2026-10-29 结构债第一批：app.html 里那三条 .chip{height:22px…} / .chip[data-s=on|off]

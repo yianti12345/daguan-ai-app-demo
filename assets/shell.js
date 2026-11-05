@@ -31,6 +31,21 @@
     ]]
   ];
 
+  /* ★2026-11-06（用户：saas 端客户登录后「去我的应用里面，点击任意应用就是咱们授权的 AI 应用」）
+     ── SaaS 端（客户侧）的导航。真源是三项：应用市场 / 我的应用 / 系统设置。
+     这里**只放「我的应用」**，不是漏了：
+       · 应用市场在真源里是"挑选并购买/开通"，demo 没有交易链路，放上去点了没用；
+       · 系统设置下挂员工/角色/部门/素材/操作日志五个页面，一个都没做。
+     没有落地页的入口不放 —— 点了是 404 的入口比没有入口更差（这条是本文件自己的规矩，
+     ★2026-10-28 那次删掉 21 个空入口就是照它办的）。要做就把落地页连入口一起加。 */
+  var NAV_SAAS = [
+    ['我的应用', 'my-apps.html', 'my-apps']
+  ];
+
+  /* 页面用 <nav class="sider" data-nav="saas" data-active="my-apps"> 选另一套。
+     data-nav 缺省按 admin —— 12 个后台页面一个都不用改。 */
+  var NAVS = { admin: NAV, saas: NAV_SAAS };
+
 
   /* ★2026-10-22：图标换成**真源 sprite 里的 symbol 原样 path**（不是我看图重画的）。
      取法：bsk 接真源 → document.getElementById('icon-menu-xxx').innerHTML。
@@ -38,6 +53,9 @@
      混用两套线条粗细，是"图标不统一"最直接的原因。
      ★2026-10-28：只剩「AI 应用方案」一组，其余 7 组的图标随组一起删除（无任何地方引用）。 */
   var GROUP_ICON = {
+    /* ★2026-11-06：SaaS 端「我的应用」——四宫格。真源侧栏这一项是 Element Plus 的四格图标，
+       形状是四个圆角方块；这里按同形重画（不是从 sprite 取的，取不到；形状一致即可）。 */
+    '我的应用': { vb:'0 0 24 24', d:'<rect x="3" y="3" width="7.6" height="7.6" rx="1.6" fill="currentColor"></rect><rect x="13.4" y="3" width="7.6" height="7.6" rx="1.6" fill="currentColor"></rect><rect x="3" y="13.4" width="7.6" height="7.6" rx="1.6" fill="currentColor"></rect><rect x="13.4" y="13.4" width="7.6" height="7.6" rx="1.6" fill="currentColor"></rect>' },
     'AI 应用方案': { vb:'0 0 24 24', d:'<path d="m16.442 9.908-.067-.157-.614-1.626-1.774-.56c-1.607-.516-1.82-2.187-.614-2.983l-.96-.46a3.443 3.443 0 0 0-2.969 0l-5.77 2.792C2.647 7.419 2 8.394 2 9.448v6.133c0 1.054.636 2.03 1.663 2.534l5.77 2.826c.938.46 2.054.46 2.991 0l5.77-2.826c1.027-.504 1.663-1.468 1.663-2.534V9.986c-.725 1.39-2.734 1.368-3.415-.078Zm-1.685 3.51-2.132 1.255a3.396 3.396 0 0 1-3.393 0L7.1 13.417c-.022-.01-.033-.022-.055-.033-.402-.258-.503-.763-.224-1.133.28-.37.837-.46 1.24-.202l2.131 1.256a1.457 1.457 0 0 0 1.45 0l2.133-1.256c.401-.213.915-.112 1.183.236.3.37.212.874-.201 1.132Z" fill="currentColor"></path><path d="M18.267 2.26c-.123-.347-.313-.347-.425 0l-.661 1.95c-.112.347-.493.716-.84.84l-1.938.66c-.347.112-.347.314 0 .426l1.927.672c.347.123.717.493.84.84l.672 1.949c.123.347.313.347.425 0l.661-1.938c.112-.347.493-.728.84-.84l1.972-.672c.347-.112.347-.314 0-.426l-1.938-.65a1.544 1.544 0 0 1-.84-.84l-.695-1.97Z" fill="currentColor"></path>' },
   };
 
@@ -61,11 +79,11 @@
      读屏不报"链接"、点了也不改地址栏 —— 那等于给用户一个点了没反应的入口。
      ★2026-10-28：原来 21 项没有落地页，只在右侧补一行小字说明。用户已明确
        只要这个模块，于是那些项连同占位分支一起删除，不留"承诺了走不到"的入口。 ── */
-  function build(active) {
+  function build(active, nav) {
     var html = '<div class="logo"><i>达</i><b>达观智能审核平台</b></div>'
       + '<div class="menu">';
-    for (var g = 0; g < NAV.length; g++) {
-      var group = NAV[g];
+    for (var g = 0; g < nav.length; g++) {
+      var group = nav[g];
       /* 一级项如果是单页（应用管理 / 组件库），组头就是入口，不展开、不挂子项。 */
       if (typeof group[1] === 'string') {
         html += '<div class="grp" data-open="false" data-leaf="1">'
@@ -127,7 +145,8 @@
     var navs = document.querySelectorAll('.sider[data-active]');
     for (var i = 0; i < navs.length; i++) {
       if (navs[i].dataset.filled === '1') continue;
-      navs[i].innerHTML = build(navs[i].getAttribute('data-active'));
+      var set = NAVS[navs[i].getAttribute('data-nav') || 'admin'] || NAV;
+      navs[i].innerHTML = build(navs[i].getAttribute('data-active'), set);
       navs[i].dataset.filled = '1';
       /* 事件委托绑在 sider 上：render 只在首绘发生一次，
          但委托写法让以后"重画侧栏"也不用重新绑。 */
@@ -140,5 +159,5 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   else mount();
-  window.Shell = { mount: mount, NAV: NAV };
+  window.Shell = { mount: mount, NAV: NAV, NAVS: NAVS };
 })();

@@ -130,11 +130,14 @@
 
   if (VIEW_MODE) {
     document.body.setAttribute('data-mode', 'view');
-    document.title = (app ? app.name : '应用');
-    /* 2026-11-06：客户视图的「返回」不该回到配置台（apps.html 是管理后台）。
-       真实 SaaS 回到的是「我的应用」，这一版没有那一屏，先回到落地汇总页。 */
+    /* 标题同样去前缀：客户在浏览器标签上看到自己的公司名两次是没有意义的 */
+    document.title = viewName(app ? app.name : '应用');
+    /* 2026-11-06：客户视图的「返回」回到「我的应用」（SaaS 端客户首页），
+       不是配置台 apps.html。返回链条：我的应用 → 应用 → 返回我的应用。
+       ★2026-11-06 下午补上 my-apps.html 之后，这条链才真正闭合；
+       在那之前这一屏不存在，只能先退回落地汇总页。 */
     var vBack = document.getElementById('act-back');
-    if (vBack) { vBack.setAttribute('href', 'index.html'); vBack.setAttribute('aria-label', '返回概览'); }
+    if (vBack) { vBack.setAttribute('href', 'my-apps.html'); vBack.setAttribute('aria-label', '返回我的应用'); }
   }
 
   if (!app) {
@@ -276,8 +279,19 @@
   }
 
   /* ══ 2. 应用名铺到页面（左上浮标 + 画布标题），没有一处写死 ══════ */
+  /* 客户视图的名字口径（2026-11-06）：去掉「客户 · 」前缀。
+     后台列表是平台方看所有客户，「华信证券 · 债承审核」里的前缀回答的是"这是谁的"；
+     客户登录后看的就是自己的应用，每处都挂一遍自己公司名等于重复他自己。
+     真源 SaaS 里也只有场景名（研究报告审核 / 基金代销合同审核）。 */
+  function viewName(n) {
+    var s = String(n || '');
+    if (!VIEW_MODE) return s;
+    var i = s.indexOf(' · ');
+    return i > 0 ? s.slice(i + 3) : s;
+  }
+
   function paintApp() {
-    var shownName = (VIEW_SNAP && VIEW_SNAP.name) ? VIEW_SNAP.name : app.name;
+    var shownName = viewName((VIEW_SNAP && VIEW_SNAP.name) ? VIEW_SNAP.name : app.name);
     $$('[data-bind="app-name"]').forEach(function (n) { n.textContent = shownName; });
     /* ★2026-11-04（用户：「应用配置详情左上角也加一行介绍，太长能点开看全部」）。 */
     var hdDesc = $('#app-desc');
@@ -1604,6 +1618,11 @@
           （versApply 的 keepActive）。 */
     var backBtn = $('#act-back');
     if (backBtn) on(backBtn, 'click', function (e) {
+      /* ★2026-11-06：客户视图直接放行。
+         下面这套"保存并发布 / 不保存直接走"是配置者的收尾动作 —— 客户进来只看内容，
+         没有任何改动可存，问他"要不要发布一版"既不成立，两个分支又都跳去配置台
+         apps.html（客户会被扔进后台）。客户点返回就回「我的应用」。 */
+      if (VIEW_MODE) return;
       var pend = 0;
       try {
         /* ★2026-11-02：按内容判，不按流水条数 —— 改回原样再离开，不该问"要存一版吗" */
