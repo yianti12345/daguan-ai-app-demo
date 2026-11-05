@@ -179,6 +179,18 @@
     var stale = false;
     (cache.abilities || []).forEach(function (b) {
       if (b.docState === 'run') { b.docState = 'fail'; b.docErr = '上次生成没跑完'; stale = true; }
+      /* 老存档迁移出来的空壳：只有一个接口时，接口自己的文档就是这份能力的说明书
+         （内容是真的，不是编的）。补上，别让清单里一直挂着"生成失败"。 */
+      if (!b.doc && (b.apiIds || []).length === 1) {
+        var only = cache.apis.filter(function (x) { return x.id === b.apiIds[0]; })[0];
+        if (only && only.doc) {
+          b.doc = only.doc; b.docState = 'ready'; b.docFrom = ''; b.docErr = '';
+          if (!b.docAt) b.docAt = b.at || '';
+          stale = true;
+        }
+      }
+      /* 既没内容也没原因的「失败」，其实是"还没生成"—— 状态要说实话。 */
+      if (b.docState === 'fail' && !b.doc && !b.docErr) { b.docState = 'none'; stale = true; }
     });
     if (stale) save();
     return cache;
