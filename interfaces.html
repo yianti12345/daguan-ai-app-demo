@@ -52,6 +52,7 @@
 .it-rn:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 .it-res li > span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .it-pv-hd{display:flex;align-items:center;gap:var(--space-8)}
+.it-lb .req{font-style:normal;color:var(--color-danger);margin-right:2px}
 .it-name-in{flex:1 1 auto;min-width:0;height:28px;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:0 var(--space-8);font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);background:var(--surface-page)}
 .it-name-in:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 .it-sp{flex:1 1 auto}
@@ -114,8 +115,9 @@
           <label class="it-lb" for="raw">原文</label>
           <textarea class="it-raw" id="raw" placeholder="贴 URL、cURL，或者一段大白话"></textarea>
           <span class="it-cnt" id="cnt">0 字</span>
-          <label class="it-lb" for="src">来源项目</label>
-          <input class="it-raw" id="src" style="min-height:0;height:32px" placeholder="例如：华信证券">
+          <!-- 2026-11-05（用户）：来源由模型从原文里分析，不该让用户填；这里只留一个选填的介绍。 -->
+          <label class="it-lb" for="intro">介绍</label>
+          <input class="it-raw" id="intro" style="min-height:0;height:32px" placeholder="选填">
           <div class="it-file">
             <button type="button" class="btn ghost" id="bfile-btn">选文件</button>
             <input type="file" id="bfile" accept=".json,.yaml,.yml,.txt,.md" hidden>
@@ -132,18 +134,15 @@
             <ul class="it-res" id="bres"></ul>
           </div>
           <div id="single">
-          <div class="it-pv-hd">
-            <label class="it-lb" for="pv-name">名称</label>
-            <input class="it-name-in" id="pv-name" placeholder="生成后可改">
-          </div>
-          <!-- 2026-11-05（用户）：「名称这个组件的样式不就是已经编辑了吗？右面的编辑按钮有毛意义」。
-               编辑的作用对象是**说明书**，不是名称。所以按钮移到说明书这一行的行尾，并把词改准。 -->
-          <div class="it-pv-hd" style="margin-top:var(--space-12)">
-            <span class="it-lb">说明书</span>
-            <button type="button" class="it-op" id="pv-edit">改说明书</button>
-          </div>
-          <div class="it-pv" id="pv"><span class="it-hint">生成后在这里看结果</span></div>
-          <textarea class="it-raw" id="pv-md" hidden placeholder="直接改 Markdown"></textarea>
+            <div class="it-pv-hd">
+              <label class="it-lb" for="pv-name"><i class="req">*</i>能力名称</label>
+            </div>
+            <input class="it-name-in" id="pv-name" placeholder="必填" style="width:100%">
+            <div class="it-pv-hd" style="margin-top:var(--space-12)">
+              <span class="it-lb">说明书</span>
+            </div>
+            <textarea class="it-raw" id="pv-md" placeholder="生成后可以直接改"></textarea>
+            <div class="it-pv" id="pv" hidden></div>
           </div>
         </div>
       </div>
@@ -180,6 +179,6 @@
 <script src="assets/spec.js?v=c9f505f0"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=573b1f60"></script>
-<script src="assets/interfaces.js?v=af64dd33"></script>
+<script src="assets/interfaces.js?v=fdb0d7ac"></script>
 </body>
 </html>

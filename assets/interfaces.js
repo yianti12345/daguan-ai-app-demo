@@ -132,14 +132,10 @@
     $('#dlg-t').textContent = it ? '编辑' : '接入';
     PARSED = []; $('#bres').innerHTML = ''; showMulti(false); $('#dlg-save').textContent = '接入';
     $('#raw').value = it ? (it.raw || '') : '';
-    $('#src').value = it ? (it.source || '') : '';
+    $('#intro').value = it ? (it.desc && it.desc !== '—' ? it.desc : '') : '';
     $('#cnt').textContent = ($('#raw').value.length) + ' 字';
-    $('#pv').innerHTML = it && it.doc ? mdToHtml(it.doc) : '<span class="it-hint">生成后在这里看结果</span>';
     $('#pv-name').value = it ? (it.name || '') : '';
     $('#pv-md').value = it ? (it.doc || '') : '';
-    $('#pv-md').hidden = true;
-    $('#pv').hidden = false;
-    $('#pv-edit').textContent = '改说明书';
     $('#dlg-save').disabled = !(it && it.doc);
     $('#dlg').hidden = false;
     setTimeout(function () { $('#raw').focus(); }, 0);
@@ -150,19 +146,6 @@
     $('#cnt').textContent = this.value.length + ' 字';
   });
 
-  /* 生成结果可改：模型可能理解错，人得能直接修，不能只能重贴原文。 */
-  $('#pv-edit').addEventListener('click', function () {
-    var md = $('#pv-md'), pv = $('#pv');
-    if (md.hidden) {
-      if (!pv.getAttribute('data-md')) return;   /* 还没生成，没有可改的东西 */
-      md.value = pv.getAttribute('data-md');
-      md.hidden = false; pv.hidden = true; this.textContent = '看效果';
-    } else {
-      pv.innerHTML = mdToHtml(md.value);
-      pv.setAttribute('data-md', md.value);
-      md.hidden = true; pv.hidden = false; this.textContent = '改说明书';
-    }
-  });
 
   function doGen() {
     var raw = $('#raw').value.trim();
@@ -176,16 +159,13 @@
     }
     showMulti(false);
     var pv = $('#pv');
-    pv.innerHTML = '<p class="it-hint">正在生成…</p>';
+    $('#pv-md').value = '正在生成…';
     setTimeout(function () {
-      var d = makeDoc(raw, $('#src').value.trim());
-      pv.innerHTML = mdToHtml(d.md);
-      pv.setAttribute('data-name', d.name);
-      pv.setAttribute('data-desc', d.desc);
-      pv.setAttribute('data-md', d.md);
-      $('#pv-name').value = d.name;
+      var d = makeDoc(raw, '');
+      /* 说明书直接写进可编辑框：这里是新增/编辑页，两栏都能改，不再多一步「改说明书」。 */
       $('#pv-md').value = d.md;
-      $('#pv-md').hidden = true; pv.hidden = false; $('#pv-edit').textContent = '改说明书';
+      pv.setAttribute('data-desc', d.desc);
+      if (!$('#pv-name').value.trim()) $('#pv-name').value = d.name;
       $('#dlg-save').disabled = false;
     }, 600);
   }
@@ -209,12 +189,15 @@
       return;
     }
     var pv = $('#pv');
-    var md = $('#pv-md').hidden ? pv.getAttribute('data-md') : $('#pv-md').value;
+    var name = $('#pv-name').value.trim();
+    if (!name) { toast('填能力名称', 'error'); $('#pv-name').focus(); return; }
+    var md = $('#pv-md').value.trim();
     if (!md) { toast('先生成说明书', 'error'); return; }
+    var old = EDIT_ID ? CAP.apiById(EDIT_ID) : null;
     var v = {
-      name: ($('#pv-name').value.trim() || pv.getAttribute('data-name')),
-      desc: pv.getAttribute('data-desc'),
-      source: $('#src').value.trim() || '未标注',
+      name: name,
+      desc: $('#intro').value.trim() || pv.getAttribute('data-desc') || '—',
+      source: (old && old.source) || pv.getAttribute('data-src') || '未标注',
       raw: $('#raw').value.trim(),
       doc: md,
       state: 'ok'
