@@ -139,8 +139,6 @@ a:hover{color:var(--color-brand-active)}
   /* ★ 2026-10-23：去掉 135° 渐变。它违反 DESIGN §1.3「不许渐变」，而且是那种
      "一眼看出是 2018 年的按钮"的渐变。主按钮的层级感靠纯色 + 一档投影，
      不靠两个蓝之间过渡 —— 后者只是把颜色做花了，没增加任何信息。 */
-  /* 2026-11-05（体检 P1）：白字压在 #587FFF 上只有 3.56，14px 正文号不达 AA。
-     底色改深一档（blue-700 #3D63E0，白字 5.21），图形与选中态仍用 --color-brand。 */
   background:var(--color-brand-active);
   color:var(--color-text-inverse);
   /* ★2026-11-05（用户）：「谁教你这么设计按钮样式的，这么大的阴影不丑吗」。真源主按钮
@@ -148,7 +146,7 @@ a:hover{color:var(--color-brand-active)}
      看不见晕。我方原来是 0 2px 8px -2px 的蓝色辉光，比真源糊一圈。改成平按钮。 */
   box-shadow:none;
 }
-.btn.primary:hover{background:var(--color-brand-strong); box-shadow:none}
+.btn.primary:hover{background:var(--color-brand-hover); box-shadow:none}
 /* 次要按钮：真源「导出」类按钮是白底 + 1px 描边 #D9D9D9 + 2% 实心 2px 投影（看不见），
    不是我方原来那张卡片级的三层阴影（2/4/10/22）。这一条改的是全站 `.btn.ghost`。 */
 .btn.ghost{background:var(--surface-page); border:1px solid var(--color-border-control); color:var(--color-text-body); box-shadow:none}
