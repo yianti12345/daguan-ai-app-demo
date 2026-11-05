@@ -53,7 +53,16 @@ window.Gen = (function () {
        30s 会把本来会成功的慢请求砍掉，然后重试又砍 —— 慢被放大了三倍。 */
   var ASK_TRIES = 2;
   var ASK_TIMEOUT = 75000;
+  /* 当前这次生成是哪个场景（app / component / skill）。用来在通用配置里
+     取对应场景绑定的模型。演示站一次只跑一个生成，不做并发隔离。 */
+  var GEN_SCENE = 'app';
+
   function ask(messages, opt) {
+    opt = opt || {};
+    if (!opt.model && typeof window !== 'undefined' && window.CAP && CAP.sceneModel) {
+      var mm = CAP.sceneModel(GEN_SCENE);
+      if (mm) opt.model = mm;
+    }
     var tries = 0;
     function once() {
       tries++;
@@ -74,6 +83,8 @@ window.Gen = (function () {
       temperature: opt.temperature == null ? 0.2 : opt.temperature,
       max_tokens: opt.maxTokens || 5000
     };
+    /* 代理实测接受 model 字段（三种请求只报上游 429，没有参数错），按场景带上。 */
+    if (opt.model) body.model = opt.model;
     var t0 = Date.now();
     /* 单次调用超时。为什么要：deepseek-flash 的响应时间从 2 秒到 60 秒都有，
        实测一次"改这一块"能拖到 121 秒 —— 用户看到的是一句话说完没反应。
@@ -304,6 +315,7 @@ window.Gen = (function () {
 
   function componentSpec(text, ctx) {
     ctx = ctx || {};
+    GEN_SCENE = 'component';
     /* 先探活再决定谁来搭：探到模型就用模型，探不到就用上面的确定性结构器。
        这一分支是"跑不通"的正面回答 —— 没有模型代理也不再是死键。 */
     /* 2026-11-05：装配接口的用途在这里落地——组件生成时，把已装接口的说明书
@@ -665,6 +677,7 @@ window.Gen = (function () {
 
   function appPlan(text, ctx) {
     ctx = ctx || {};
+    GEN_SCENE = 'app';
     /* 已装的和能装的分两段列。原来是一个清单加"已装配"标记 ——
        实测用户说"任务列表"，模型 edit 指到了"任务详情"（两个名字里都有"任务"）；
        分两段之后 edit 的目标只在"现在装着的"里面挑，可选集合小一半。 */

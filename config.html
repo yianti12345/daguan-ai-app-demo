@@ -71,6 +71,14 @@
           <div class="gtable-foot"><span id="total"></span><span class="m-pg">15 条/页</span></div>
         </div>
       </section>
+      <section class="cfg-sec" aria-labelledby="sec-data">
+        <div class="cfg-sec-hd"><b id="sec-data">数据</b></div>
+        <div style="display:flex;align-items:center;gap:var(--space-8)">
+          <button type="button" class="btn" id="act-export">导出 JSON</button>
+          <button type="button" class="btn ghost" id="act-import">导入 JSON</button>
+          <input type="file" id="imp-file" accept=".json,application/json" hidden>
+        </div>
+      </section>
     </main>
     <div id="toast" class="toast" data-on="false" role="status" aria-live="polite"></div>
   </div>
@@ -109,7 +117,7 @@
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/spec.js?v=20fe5265"></script>
 <script src="assets/list.js?v=51a688c6"></script>
-<script src="assets/capability.js?v=13ca19ec"></script>
-<script src="assets/config.js?v=d7953483"></script>
+<script src="assets/capability.js?v=de8a6130"></script>
+<script src="assets/config.js?v=8345b8ba"></script>
 </body>
 </html>

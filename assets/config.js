@@ -151,6 +151,37 @@
     }
   });
 
+  $('#act-export').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(CAP.exportAll(), null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'capability-' + Date.now() + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    toast('已导出');
+  });
+  $('#act-import').addEventListener('click', function () { $('#imp-file').click(); });
+  $('#imp-file').addEventListener('change', function () {
+    var f = this.files && this.files[0]; if (!f) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      var obj;
+      try { obj = JSON.parse(fr.result); } catch (e) { toast('不是有效的 JSON', 'error'); return; }
+      ask({
+        title: '导入数据',
+        body: '导入会覆盖这台机器上的接口、技能、模型和装配关系。',
+        ok: '导入', danger: true,
+        onOk: function () {
+          var r = CAP.importAll(obj);
+          if (r && r.error) { toast(r.error, 'error'); return; }
+          paintScenes(); paintModels(); toast('已导入');
+        }
+      });
+    };
+    fr.readAsText(f);
+    this.value = '';
+  });
+
   paintScenes();
   paintModels();
 })();

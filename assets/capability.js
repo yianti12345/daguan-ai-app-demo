@@ -207,11 +207,28 @@
     return m ? m.name : '';
   }
 
+  /* 整包导出/导入：接后端前，至少让数据能跟着人走。 */
+  function exportAll() {
+    return { v: 1, at: now(), apis: load().apis, skills: load().skills,
+             models: load().models, scenes: load().scenes, compApis: compMap() };
+  }
+  function importAll(obj) {
+    if (!obj || typeof obj !== 'object') return { error: '不是有效的 JSON' };
+    var d = load();
+    if (Array.isArray(obj.apis)) d.apis = obj.apis;
+    if (Array.isArray(obj.skills)) d.skills = obj.skills;
+    if (Array.isArray(obj.models)) d.models = obj.models;
+    if (Array.isArray(obj.scenes)) d.scenes = obj.scenes;
+    save();
+    if (obj.compApis && typeof obj.compApis === 'object') saveCompMap(obj.compApis);
+    return { ok: true };
+  }
+
   window.CAP = {
     load: load, save: save,
     apis: apis, apiById: apiById, addApi: addApi, updateApi: updateApi, removeApi: removeApi, toggleApi: toggleApi,
     skills: skills, skillById: skillById, addSkill: addSkill, updateSkill: updateSkill, removeSkill: removeSkill, toggleSkill: toggleSkill,
-    compApis: compApis, setCompApis: setCompApis,
+    compApis: compApis, setCompApis: setCompApis, exportAll: exportAll, importAll: importAll,
     models: models, modelById: modelById, addModel: addModel, updateModel: updateModel,
     removeModel: removeModel, toggleModel: toggleModel,
     scenes: scenes, setSceneModel: setSceneModel, sceneModel: sceneModel,
