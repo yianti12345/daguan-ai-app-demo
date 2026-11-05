@@ -456,6 +456,10 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
    `width:100%` 满宽保护**，然后靠 inline style 一个个补，补一处漏一处。
    拦截：弹窗内容区里的字段一律满宽，不管外面套的是 .nf-row 还是别的什么容器。
    显式定宽类（.w120 / .w150 这类）仍然优先，因为它们自己写死了 width。 */
+/* 2026-11-06：勾选框此前没有任何基础尺寸，吃浏览器默认 13×13 —— 批量选择时要精准点中很难（实测 13×13）。
+   16 是 B 端常用尺寸；accent-color 让选中态跟品牌色，不用各页各调。 */
+input[type="checkbox"]{width:16px;height:16px;accent-color:var(--color-brand);cursor:pointer}
+
 .nf-bd input:not([type="checkbox"]):not([type="radio"]),
 .nf-bd textarea,
 .nf-bd select{width:100%;max-width:100%;box-sizing:border-box}

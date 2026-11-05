@@ -598,6 +598,9 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       paintClientPick();
     }
     mask.setAttribute('data-open', 'true');
+    /* 2026-11-06：弹窗开着时背景没有 inert（实测 bgInert=0）—— Tab 能跑到弹窗后的表格与分页，
+       读屏也能念到后面那一屏。复用 confirm.js 的全站唯一实现，不另写一份。 */
+    if (window.Confirm && Confirm.inertBg) Confirm.inertBg(mask, true);
     syncPickLabel();
     setTimeout(function () { var k = $('#fm-kw'); if (k) k.focus(); }, 30);
   }
@@ -662,7 +665,13 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     }
     if (noneBtn) noneBtn.hidden = boxes <= 5 || n === 0;
   }
-  function closeDlg() { if (mask) mask.setAttribute('data-open', 'false'); }
+  function closeDlg() {
+    if (!mask) return;
+    mask.setAttribute('data-open', 'false');
+    if (window.Confirm && Confirm.inertBg) Confirm.inertBg(mask, false);
+    /* 关闭把焦点还给触发它的那颗按钮 —— 否则焦点掉回 body，键盘用户从页首要重新 Tab 一遍。 */
+    var back = $('#act-add'); if (back) back.focus();
+  }
   function submitDlg() {
     var appId = $('#fm-app').value;
     var ids = Object.keys(PICKED);
