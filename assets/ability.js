@@ -231,9 +231,11 @@
       '<div class="nf-mask" id="pk-mask"><div class="nf" role="dialog" aria-modal="true" aria-labelledby="pk-t" style="width:660px;max-width:calc(100vw - 48px)">'
       + '<div class="nf-hd"><b id="pk-t">添加接口</b>'
       + '<button type="button" class="icon-btn" id="pk-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
-      + '<div class="p-tabs" id="pk-tabs" role="tablist" style="padding:0;margin:0 0 var(--space-8)">'
-      +   '<button type="button" role="tab" class="p-tab" data-mode="bulk">贴内容自动拆</button>'
-      +   '<button type="button" role="tab" class="p-tab" data-mode="form">手动填一条</button>'
+      /* 页签用现成的 .p-tabs / .p-tab（装配能力面板同一套），间距一行都不许在这里改；
+         上一版给它加了 padding:0 和负 margin，等于把现成组件的样式改掉了 —— 那就是另搞一套。 */
+      + '<div class="p-tabs" id="pk-tabs" role="tablist" aria-label="添加方式">'
+      +   '<button type="button" role="tab" class="p-tab" data-mode="bulk" aria-selected="true">贴内容自动拆</button>'
+      +   '<button type="button" role="tab" class="p-tab" data-mode="form" aria-selected="false">手动填一条</button>'
       + '</div>'
       + '<div class="nf-bd" id="pk-bd"></div>'
       + '<div class="nf-ft"><span id="pk-left" style="margin-right:auto"></span>'
