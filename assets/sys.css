@@ -410,6 +410,9 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
   font-weight: 600;
 }
 .gtable-body{border-bottom: 1px solid var(--color-border-hairline)}
+/* 空态时 body 里只有一句提示，底下再挂一条边框线，看着像"表格有内容但显示不出来"。
+   一处管所有用 .gtable-body 的页面（2026-11-05，客户授权空态截图发现）。 */
+.gtable-body:has(> .empty){border-bottom:0}
 .gtable-row{min-height: var(--table-row-h); border-bottom: 1px solid var(--color-border-hairline)}
 .gtable-row:last-child{border-bottom: 0}
 .gtable-row:hover{background: var(--color-state-hover)}

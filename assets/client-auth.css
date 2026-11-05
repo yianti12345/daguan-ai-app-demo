@@ -18,7 +18,7 @@
 /* 从某个应用进来时应用是锁定的：去掉下拉箭头，否则看起来还能选、点开却没反应 */
 #fm-app.is-locked{appearance:none;-webkit-appearance:none;background-image:none;cursor:default}
 .au-card{margin-top:0}/* 2026-11-02：没有页内大标题后，工具条要与 apps.html 的第一行对齐（去掉 12px 偏移） */
-.au-bar{display:flex;align-items:center;gap:12px;padding:4px 0 12px}
+.au-bar{display:flex;align-items:center;gap:12px;padding:0 0 12px}
 /* display:flex 会盖掉 [hidden]：空态时收起的是右侧筛选，不是整条工具栏 */
 .au-bar .right[hidden]{display:none}
 .au-foot[hidden]{display:none}
@@ -85,10 +85,6 @@
   color:var(--surface-page);font-size:var(--font-size-caption);display:inline-flex;align-items:center;justify-content:center}
 .au-pager .pg-size{height:24px;padding:0 8px;border:1px solid var(--color-border-card);border-radius:var(--radius-sm);
   display:inline-flex;align-items:center}
-.au-empty{padding:56px 16px;text-align:center;color:var(--color-text-tertiary);font-size:var(--font-size-body)}
-/* 空态要有出口：一句标题 + 一句怎么开始 + 一个按钮（2026-11-05） */
-.au-empty-t{margin:0 0 6px;font-size:var(--font-size-body);font-weight:600;color:var(--color-text-primary)}
-.au-empty-d{margin:0 0 16px;font-size:var(--font-size-body);color:var(--color-text-tertiary)}
 /* 应用不存在：工具栏与表头一起收掉 —— 留着两个点了只会报错的按钮，等于骗用户点。
    只留一句说明和回列表的入口。 */
 .au-card.is-missing .au-bar,.au-card.is-missing .au-head,.au-card.is-missing .au-foot{display:none}

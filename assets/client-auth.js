@@ -226,16 +226,16 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     /* 空态要有出口（2026-11-05）：原来只有一句灰字"还没有客户授权"，
        底下还跟着一句"共 0 条" —— 说了两遍"没有"，但没说"怎么开始"。
        现在：一句标题 + 一句怎么开始 + 一个按钮（搜不到时给"清空搜索"）。 */
+    /* ★2026-11-05：空态改用平台的共享件 .empty（其它 13 页都用它：一行文案、无按钮）。
+       我之前自造了 .au-empty + 两个子类，结果这一页的空态长得和全站不一样 ——
+       用户看出来的"没规范"就是这个。文案按平台习惯写成"还没有 X，先做什么"。 */
     var emptyHtml = !list.length ? (KW
-      ? '<div class="au-empty"><p class="au-empty-t">没有匹配「' + esc(KW) + '」的客户</p>'
-        + '<p class="au-empty-d">换个关键词，或者清空搜索看全部。</p>'
-        + '<button class="btn ghost" type="button" data-act="empty-clear">清空搜索</button></div>'
-      : '<div class="au-empty"><p class="au-empty-t">'
-        + (APP_ID ? '还没有客户授权' : '还没有任何授权')
-        + '</p><p class="au-empty-d">'
-        + (APP_ID ? '把「' + esc((DB.appById(APP_ID) || {}).name || '这个应用') + '」授权给客户，他们登录后就能用这一版。'
-                  : '选一个应用和客户，建立第一条授权。')
-        + '</p></div>') : '';
+      ? '<div class="empty"><div>没有匹配「' + esc(KW) + '」的客户，换个关键词或清空搜索</div></div>'
+      : '<div class="empty"><div>'
+        + (APP_ID
+            ? '还没有客户授权，点左上「新增客户授权」把「' + esc((DB.appById(APP_ID) || {}).name || '这个应用') + '」授权给客户'
+            : '还没有任何授权，点左上「新增客户授权」选应用和客户')
+        + '</div></div>') : '';
 
     function clientOps(r) {
       /* ★2026-11-04（用户：「取消授权，如果客户不是最新版本，还有个升级版本操作」）：
