@@ -203,6 +203,12 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     var slice = list.slice(start, start + PGSZ);
     if (!box) return;
 
+    /* ★2026-11-05（用户截图）：同一屏出现两个「新增客户授权」—— 工具栏一个、空态一个，
+       文案和动作都一样。0 条且没在搜索时，工具栏（含版本筛选）本来也没有可操作对象，
+       整条收掉，只留空态里那一个入口。 */
+    var bar = document.querySelector('.au-bar');
+    if (bar) bar.hidden = (!list.length && !KW);
+
     var card = document.querySelector('.au-card');
     if (card) card.classList.toggle('is-missing', missing);
     if (missing) {

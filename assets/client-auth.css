@@ -22,6 +22,8 @@
 #fm-app.is-locked{appearance:none;-webkit-appearance:none;background-image:none;cursor:default}
 .au-card{margin-top:0}/* 2026-11-02：没有页内大标题后，工具条要与 apps.html 的第一行对齐（去掉 12px 偏移） */
 .au-bar{display:flex;align-items:center;gap:12px;padding:4px 0 12px}
+/* display:flex 会盖掉 [hidden]，空态要整条收掉就得显式关 */
+.au-bar[hidden]{display:none}
 .au-bar .right{margin-left:auto;display:flex;align-items:center;gap:16px}
 /* 进了某个应用之后，「应用」这一列和标题是同一句话（标题就是应用名）—— 整列隐藏。 */
 /* ★2026-11-01：授权时间列 108 → 150。时间格式升级成「2026-10-20 14:32:08」（19 字符）之后
