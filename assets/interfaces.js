@@ -83,14 +83,22 @@
     }
   }
 
-  /* ── 生成说明书：本地按原文抽取，失败也给可编辑的草稿 ── */
+  /* ── 生成 MD 文档：本地按内容抽取，失败也给可编辑的草稿 ── */
   function makeDoc(raw, src) {
     var text = String(raw || '').trim();
     var url = (text.match(/https?:\/\/[^\s'"]+/) || [])[0] || '';
     var method = (text.match(/-X\s+([A-Z]+)/) || [])[1] || (/curl/i.test(text) ? 'POST' : 'GET');
     var firstLine = (text.split(/\n/).filter(function (l) { return l.trim(); })[0] || '').replace(/^#+\s*/, '').trim();
-    var name = firstLine.slice(0, 24) || (url ? url.split('/').filter(Boolean).pop() : '') || '未命名能力';
-    var desc = firstLine.length > 24 ? firstLine.slice(0, 60) : (src ? src + ' 的能力' : '外部能力');
+    /* ★2026-11-05：原来直接取第一行前 24 字，贴一条 cURL 就会把名字填成 "GET /api/v1/audit/tasks?" ——
+       地址不是名字。规则：先剥掉方法/curl 前缀；剩下的如果是地址或路径，就取地址后面那段人话；
+       连人话都没有就**留空**（名称是必填，交给人填），绝不拿一串路径冒充名字。 */
+    var rest = firstLine
+      .replace(/^(curl\s+)?(-X\s+)?(GET|POST|PUT|PATCH|DELETE|HEAD)\s+/i, '')
+      .replace(/^(https?:\/\/\S+|\/\S*)\s*/, '')
+      .replace(/^["']+|["']+$/g, '')
+      .trim();
+    var name = rest.length >= 2 ? rest.slice(0, 24) : '';
+    var desc = rest.length > 2 ? rest.slice(0, 60) : (src ? src + ' 的能力' : '');
     var lines = [];
     lines.push('### ' + name);
     lines.push('');
@@ -103,7 +111,7 @@
     lines.push('**返回**：JSON；字段含义以原文为准。');
     if (text) {
       lines.push('');
-      lines.push('**原文**：');
+      lines.push('**内容**：');
       lines.push('');
       lines.push('```');
       lines.push(text.slice(0, 1200));
@@ -136,6 +144,7 @@
     $('#cnt').textContent = ($('#raw').value.length) + ' 字';
     $('#pv-name').value = it ? (it.name || '') : '';
     $('#pv-md').value = it ? (it.doc || '') : '';
+    $('#cnt').textContent = ($('#raw').value || '').length + ' 字';
     $('#dlg-save').disabled = !(it && it.doc);
     $('#dlg').hidden = false;
     setTimeout(function () { $('#raw').focus(); }, 0);
@@ -149,6 +158,7 @@
 
   function doGen() {
     var raw = $('#raw').value.trim();
+    $('#cnt').textContent = ($('#raw').value || '').length + ' 字';
     if (!raw) { toast('先贴点东西', 'error'); $('#raw').focus(); return; }
     /* 2026-11-05（用户）：入口合并成一个 —— 贴一条走单条编辑，贴一整份就自动切到列表。 */
     var many = parseProject(raw);
@@ -162,7 +172,7 @@
     $('#pv-md').value = '正在生成…';
     setTimeout(function () {
       var d = makeDoc(raw, '');
-      /* 说明书直接写进可编辑框：这里是新增/编辑页，两栏都能改，不再多一步「改说明书」。 */
+      /* MD 文档直接写进可编辑框：这里是新增/编辑页，两栏都能改，不再多一步「先点编辑」。 */
       $('#pv-md').value = d.md;
       pv.setAttribute('data-desc', d.desc);
       if (!$('#pv-name').value.trim()) $('#pv-name').value = d.name;
@@ -192,7 +202,7 @@
     var name = $('#pv-name').value.trim();
     if (!name) { toast('填能力名称', 'error'); $('#pv-name').focus(); return; }
     var md = $('#pv-md').value.trim();
-    if (!md) { toast('先生成说明书', 'error'); return; }
+    if (!md) { toast('先生成 MD 文档', 'error'); return; }
     var old = EDIT_ID ? CAP.apiById(EDIT_ID) : null;
     var v = {
       name: name,
@@ -215,7 +225,7 @@
     $('#det-bd').innerHTML = ''
       + '<p class="it-hint">' + esc(it.source || '未标注') + ' · ' + st.t + ' · ' + (it.on ? '已启用' : '已停用') + ' · ' + esc(it.at || '') + '</p>'
       + '<div class="it-pv" style="min-height:0;max-height:320px;margin-top:12px">'
-      +   (it.doc ? mdToHtml(it.doc) : '<span class="it-hint">还没有说明书</span>')
+      +   (it.doc ? mdToHtml(it.doc) : '<span class="it-hint">还没有 MD 文档</span>')
       + '</div>'
       + (it.raw ? '<details style="margin-top:12px"><summary class="it-lb">内容</summary><pre class="it-pv" style="white-space:pre-wrap;max-height:200px;margin-top:8px">' + esc(it.raw) + '</pre></details>' : '');
     DET = id;

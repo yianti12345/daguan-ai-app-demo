@@ -20,7 +20,7 @@
   'use strict';
   return {
     'interfaces.html': {
-      object: '能力（登记进来的外部 API 及其说明书，模型写组件时读的就是它）',
+      object: '能力（登记进来的外部 API 与它的 MD 文档，模型写组件时读的就是这份 MD）',
       source: '真源 /Expert/Management/SkillsLibrary 的列表形态（8 列 / 表头 39 / 行 69 / 分页 15 条）',
       truth: '能力管理下新增第 8 项；列与技能页同一套',
       states: ['无能力', '有数据', '搜索无结果', '生成失败', '已停用'],

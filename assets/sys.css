@@ -427,7 +427,17 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 .nf-hd b{font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
 .nf-hd .nf-x{margin-left:auto;width:28px;height:28px;border-radius:var(--radius-xs);display:grid;place-items:center;color:var(--color-text-tertiary);border:0;background:none;cursor:pointer}
 .nf-hd .nf-x:hover{background:var(--color-state-hover);color:var(--color-text-body)}
-.nf-bd{flex:1 1 auto;min-height:0;overflow:auto;padding:var(--dialog-pad);display:flex;flex-direction:column;gap:var(--space-16)}/* 2026-10-29 接 L3：--dialog-pad=--space-24，同值零变化 */
+.nf-bd{flex:1 1 auto;min-height:0;overflow:auto;padding:var(--dialog-pad);display:flex;flex-direction:column;gap:var(--space-16)}
+/* ★2026-11-05 根治（用户：「从源头上根治掉，以后不要再犯」）。
+   事故：接入弹窗里能力名称宽 408、说明书宽 185 —— 同一栏两个字段两种宽度。
+   根因不是漏改，是**我给这个弹窗另造了 `.it-col` 容器，绕开了 `.nf-row` 里已经写好的
+   `width:100%` 满宽保护**，然后靠 inline style 一个个补，补一处漏一处。
+   拦截：弹窗内容区里的字段一律满宽，不管外面套的是 .nf-row 还是别的什么容器。
+   显式定宽类（.w120 / .w150 这类）仍然优先，因为它们自己写死了 width。 */
+.nf-bd input:not([type="checkbox"]):not([type="radio"]),
+.nf-bd textarea,
+.nf-bd select{width:100%;max-width:100%;box-sizing:border-box}
+/* 2026-10-29 接 L3：--dialog-pad=--space-24，同值零变化 */
 .nf-row{display:flex;flex-direction:column;gap:var(--space-8)}
 .nf-row label{font-size:var(--font-size-body);color:var(--color-text-secondary)}/* ★2026-10-24：输入框原来是无框白底 —— 截图上三个字段跟旁边的标签文字长得一样，
    看不出"这里能敲字"。改成 1px 描边 + 聚焦时描边转品牌色。

@@ -6,7 +6,7 @@
 <title>能力配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
-<link rel="stylesheet" href="assets/sys.css?v=ef726fd3">
+<link rel="stylesheet" href="assets/sys.css?v=ca449cdf">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
 <style>
 /* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
@@ -31,15 +31,20 @@
 .it-op{height:24px;padding:0;border:0;background:none;font-family:inherit;font-size:var(--font-size-body);color:var(--color-brand-ink);cursor:pointer;white-space:nowrap}
 .it-op:hover{text-decoration:underline}
 .it-op.is-danger{color:var(--color-danger)}
-/* 新增/编辑：左（介绍 + 内容）、右（能力名称 + 说明书）。宽弹窗 880，两栏各一半。 */
-.it-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-16);flex:1 1 auto;min-height:0}
+/* 新增/编辑：左（介绍 + 内容）、右（能力名称 + MD 文档内容）。宽弹窗 880，两栏各一半。 */
+.it-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-16);flex:1 1 auto;min-height:0;align-items:stretch}
 .it-col{display:flex;flex-direction:column;gap:var(--space-8);min-height:0}
 .it-lb{font-size:var(--font-size-caption);color:var(--color-text-secondary)}
-.it-raw{flex:1 1 auto;min-height:300px;resize:vertical;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:var(--space-12);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
+.it-raw{flex:1 1 auto;min-height:180px;resize:vertical;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:var(--space-12);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
 .it-raw:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 /* 介绍：2–3 行（约 72），固定高度不跟下面的内容框抢；想写更多仍可拉高。 */
 .it-intro{flex:0 0 auto;min-height:72px;resize:vertical;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:var(--space-12);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
 .it-intro:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
+/* 标签行：左边标签、右边贴着它作用对象的行内动作（选文件）。 */
+.it-lb-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8)}
+.it-pick{padding:0;border:0;background:none;font-family:inherit;font-size:var(--font-size-caption);color:var(--color-brand-ink);cursor:pointer}
+.it-pick:hover{text-decoration:underline}
+.it-pick:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px;border-radius:var(--radius-xs)}
 .it-cnt{font-size:var(--font-size-caption);color:var(--color-text-tertiary);text-align:right}
 .it-pv{flex:1 1 auto;min-height:300px;overflow:auto;border:1px solid var(--color-border-hairline);border-radius:var(--radius-control);padding:var(--space-16);background:var(--surface-subtle);font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)}
 .it-pv h4{margin:0 0 var(--space-8);font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
@@ -119,14 +124,15 @@
                「原文」这个词也换掉——用户贴进来的不只原文，也可能是一份文档。 -->
           <label class="it-lb" for="intro">介绍</label>
           <textarea class="it-intro" id="intro" placeholder="选填"></textarea>
-          <label class="it-lb" for="raw">内容</label>
+          <div class="it-lb-row">
+            <label class="it-lb" for="raw">内容</label>
+            <!-- 选文件跟"内容"是同一个对象上的两种输入方式，所以贴着它放，不放栏底：
+                 栏底一滚就看不见，入口等于没有。 -->
+            <button type="button" class="it-pick" id="bfile-btn">选文件<span id="bstat"></span></button>
+            <input type="file" id="bfile" accept=".json,.yaml,.yml,.txt,.md" hidden>
+          </div>
           <textarea class="it-raw" id="raw" placeholder="贴 URL、cURL，或者一段大白话"></textarea>
           <span class="it-cnt" id="cnt">0 字</span>
-          <div class="it-file">
-            <button type="button" class="btn ghost" id="bfile-btn">选文件</button>
-            <input type="file" id="bfile" accept=".json,.yaml,.yml,.txt,.md" hidden>
-            <span class="it-hint" id="bstat"></span>
-          </div>
         </div>
         <div class="it-col">
           <!-- 多条：贴整份文档 / OpenAPI 时自动切到这块 -->
@@ -141,9 +147,9 @@
             <div class="it-pv-hd">
               <label class="it-lb" for="pv-name"><i class="req">*</i>能力名称</label>
             </div>
-            <input class="it-name-in" id="pv-name" placeholder="必填" style="width:100%">
+            <input class="it-name-in" id="pv-name" placeholder="必填">
             <div class="it-pv-hd" style="margin-top:var(--space-12)">
-              <span class="it-lb">说明书</span>
+              <span class="it-lb">MD 文档内容</span>
             </div>
             <textarea class="it-raw" id="pv-md" placeholder="生成后可以直接改"></textarea>
             <div class="it-pv" id="pv" hidden></div>
@@ -160,7 +166,7 @@
   </div>
 </div>
 
-<!-- 详情：只读看原文与说明书；要改再进编辑 -->
+<!-- 详情：只读看 MD 文档与原始内容；要改再进编辑 -->
 <div class="nf-mask" id="det" hidden>
   <div class="nf" style="width:min(720px,calc(100vw - 32px))" role="dialog" aria-modal="true" aria-labelledby="det-t">
     <div class="nf-hd">
@@ -180,9 +186,9 @@
 <script src="assets/shell.js?v=c386afac"></script>
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
-<script src="assets/spec.js?v=c9f505f0"></script>
+<script src="assets/spec.js?v=3bee1acc"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=573b1f60"></script>
-<script src="assets/interfaces.js?v=0d342cb8"></script>
+<script src="assets/interfaces.js?v=1ff11ee8"></script>
 </body>
 </html>
