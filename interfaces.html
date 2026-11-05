@@ -84,7 +84,6 @@
         <label class="field w220"><input id="kw" placeholder="搜名称、描述、来源" autocomplete="off"></label>
         <label class="field w120"><select id="f-state"><option value="">状态</option><option value="ok">生成成功</option><option value="run">生成中</option><option value="fail">生成失败</option></select></label>
         <label class="field w120"><select id="f-on"><option value="">是否启用</option><option value="1">已启用</option><option value="0">已停用</option></select></label>
-        <label class="field w150"><select id="f-src"><option value="">来源项目</option></select></label>
       </div>
 
       <div class="it-table gtable">
@@ -127,7 +126,7 @@
       </div>
     </div>
     <div class="nf-ft">
-      <button type="button" class="btn" id="gen">生成说明书</button>
+      <button type="button" class="btn ghost" id="gen">重新生成</button>
       <span class="it-sp"></span>
       <button type="button" class="btn ghost" id="dlg-cancel">取消</button>
       <button type="button" class="btn primary" id="dlg-save" disabled>保存</button>
@@ -155,7 +154,7 @@
     <div class="nf-ft">
       <span class="it-sp"></span>
       <button type="button" class="btn ghost" id="bd-cancel">取消</button>
-      <button type="button" class="btn primary" id="bd-do" disabled>全部导入</button>
+      <button type="button" class="btn primary" id="bd-do" disabled>导入</button>
     </div>
   </div>
 </div>
@@ -184,6 +183,6 @@
 <script src="assets/spec.js?v=20fe5265"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=de8a6130"></script>
-<script src="assets/interfaces.js?v=4c2a1218"></script>
+<script src="assets/interfaces.js?v=0ee1ebf9"></script>
 </body>
 </html>

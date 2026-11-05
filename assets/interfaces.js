@@ -169,7 +169,7 @@
     }
   });
 
-  $('#gen').addEventListener('click', function () {
+  function doGen() {
     var raw = $('#raw').value.trim();
     if (!raw) { toast('先贴点东西', 'error'); $('#raw').focus(); return; }
     var pv = $('#pv');
@@ -185,7 +185,16 @@
       $('#pv-md').hidden = true; pv.hidden = false; $('#pv-edit').textContent = '编辑';
       $('#dlg-save').disabled = false;
     }, 600);
+  }
+  /* 贴完就生成，不用先点按钮。停顿 0.9 秒再跑，打字过程不打断。 */
+  var genTimer = null;
+  $('#raw').addEventListener('input', function () {
+    clearTimeout(genTimer);
+    var v = this.value.trim();
+    if (v.length < 20) return;
+    genTimer = setTimeout(doGen, 900);
   });
+  $('#gen').addEventListener('click', function () { clearTimeout(genTimer); doGen(); });
 
   $('#dlg-save').addEventListener('click', function () {
     var pv = $('#pv');
@@ -239,7 +248,7 @@
     $('#bd').hidden = false;
   });
 
-  $('#parse').addEventListener('click', function () {
+  function doParse() {
     var raw = $('#braw').value.trim();
     if (!raw) { toast('先贴点东西', 'error'); return; }
     var parts = /\n\s*---+\s*\n/.test(raw) ? raw.split(/\n\s*---+\s*\n/) : raw.split(/\n\s*\n/);
@@ -254,7 +263,15 @@
     }).join('');
     $('#bstat').textContent = '解析出 ' + PARSED.length + ' 条';
     $('#bd-do').disabled = !PARSED.length;
+  }
+  var parseTimer = null;
+  $('#braw').addEventListener('input', function () {
+    clearTimeout(parseTimer);
+    var v = this.value.trim();
+    if (v.length < 20) return;
+    parseTimer = setTimeout(doParse, 900);
   });
+  $('#parse').addEventListener('click', function () { clearTimeout(parseTimer); doParse(); });
 
   $('#bres').addEventListener('click', function (e) {
     var b = e.target.closest('[data-i]'); if (!b) return;
@@ -309,15 +326,6 @@
   $('#kw').addEventListener('input', function () { S.kw = this.value.trim(); PG = 1; paint(); });
   $('#f-state').addEventListener('change', function () { S.state = this.value; PG = 1; paint(); });
   $('#f-on').addEventListener('change', function () { S.on = this.value; PG = 1; paint(); });
-  $('#f-src').addEventListener('change', function () { S.src = this.value; PG = 1; paint(); });
-  (function fillSrc() {
-    var sel = $('#f-src'), seen = {};
-    CAP.apis().forEach(function (a) {
-      var s = a.source || '未标注';
-      if (seen[s]) return; seen[s] = 1;
-      var o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
-    });
-  })();
 
   paint();
 })();
