@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>编辑 skill</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
+<link rel="stylesheet" href="assets/sys.css?v=ef726fd3">
+<style>
+/* 2026-11-05（用户）：真源点「编辑」进的是 Skill 编辑器（文件树 + 代码区），不是弹窗。
+   这里照它的形态：上方一条工具条（取消/确认），下面左边文件、右边内容。 */
+.se-main{display:grid;grid-template-columns:220px minmax(0,1fr);gap:0;border:1px solid var(--color-border-card);border-radius:var(--radius-xs);overflow:hidden;height:calc(100vh - 210px);min-height:420px}
+.se-tree{border-right:1px solid var(--color-border-hairline);background:var(--surface-page);overflow:auto;padding:var(--space-8) 0}
+.se-tree-hd{display:flex;align-items:center;gap:var(--space-8);padding:0 var(--space-12) var(--space-8)}
+.se-folder,.se-file{display:flex;align-items:center;gap:var(--space-8);width:100%;height:32px;padding:0 var(--space-12);border:0;background:none;font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-body);text-align:left;cursor:pointer}
+.se-file.is-on{background:var(--color-brand-surface);color:var(--color-brand-ink);font-weight:500}
+.se-file:hover{background:var(--color-state-hover)}
+.se-editor{display:flex;flex-direction:column;min-width:0;background:var(--surface-page)}
+.se-editor-hd{display:flex;align-items:center;gap:var(--space-8);height:40px;padding:0 var(--space-12);border-bottom:1px solid var(--color-border-hairline);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+.se-code{flex:1 1 auto;width:100%;box-sizing:border-box;border:0;padding:var(--space-12);resize:none;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:var(--color-text-body);background:var(--surface-page);outline:0}
+.se-form{display:flex;gap:var(--space-16);margin:0 0 var(--space-12)}
+.se-form label{display:flex;flex-direction:column;gap:var(--space-4);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+.se-form input{height:32px;border:1px solid var(--color-border-control);border-radius:var(--radius-xs);padding:0 var(--space-8);font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);background:var(--surface-page)}
+.se-form input:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
+</style>
+  <meta name="robots" content="noindex,nofollow">
+</head>
+<body>
+
+<div class="app">
+  <nav class="sider" data-active="cfg-xz"></nav>
+  <div class="workspace">
+    <header class="hdr">
+      <nav class="crumb">
+        <b>配置管理</b>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <b>小智配置</b>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <b id="crumb-name">编辑 skill</b>
+      </nav>
+      <div class="me"><span>admin</span><u>ad</u></div>
+    </header>
+
+    <main class="main">
+      <div class="cfg-bar">
+        <button type="button" class="btn ghost" id="se-cancel">取消</button>
+        <button type="button" class="btn primary" id="se-save">确认</button>
+        <span class="bar-sp"></span>
+        <span class="it-hint" id="se-state"></span>
+      </div>
+
+      <div class="se-form">
+        <label for="se-name">skills名称<input id="se-name" style="width:240px"></label>
+        <label for="se-desc">skills描述<input id="se-desc" style="width:420px"></label>
+      </div>
+
+      <div class="se-main">
+        <div class="se-tree">
+          <div class="se-tree-hd">
+            <button type="button" class="btn ghost" style="height:24px;padding:0 8px" id="se-add">新增文件</button>
+          </div>
+          <div id="se-files"></div>
+        </div>
+        <div class="se-editor">
+          <div class="se-editor-hd"><span id="se-fname">SKILL.md</span></div>
+          <textarea class="se-code" id="se-code" spellcheck="false" aria-label="技能内容"></textarea>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="assets/shell.js"></script>
+<script src="assets/capability.js"></script>
+<script src="assets/skills.js"></script>
+<script>
+/* Skill 编辑器：真源里点「编辑」进的是这个页面 —— 左边文件、右边内容。
+   一个技能包至少有一个文件（SKILL.md）；内容按文件存进 skill.files。 */
+(function () {
+  var q = new URLSearchParams(location.search);
+  var id = q.get('id');
+  var it = id && window.CAP ? CAP.skillById(id) : null;
+  if (!it) { location.replace('xz-config.html'); return; }
+
+  var files = it.files && it.files.length ? it.files : [{ name: 'SKILL.md', code: it.content || '' }];
+  var cur = 0;
+
+  document.getElementById('crumb-name').textContent = it.name || '编辑 skill';
+  document.getElementById('se-name').value = it.name || '';
+  document.getElementById('se-desc').value = (it.desc && it.desc !== '—') ? it.desc : '';
+
+  function paintTree() {
+    var box = document.getElementById('se-files');
+    box.innerHTML = files.map(function (f, i) {
+      return '<button type="button" class="se-file' + (i === cur ? ' is-on' : '') + '" data-i="' + i + '">' + f.name + '</button>';
+    }).join('');
+    document.getElementById('se-fname').textContent = files[cur].name;
+    document.getElementById('se-code').value = files[cur].code || '';
+  }
+
+  document.getElementById('se-files').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-i]'); if (!b) return;
+    files[cur].code = document.getElementById('se-code').value;
+    cur = Number(b.getAttribute('data-i'));
+    paintTree();
+  });
+
+  document.getElementById('se-code').addEventListener('input', function () {
+    files[cur].code = this.value;
+  });
+
+  /* 不用 prompt：原生弹框在演示里又丑又会被浏览器拦。直接加一个默认文件，名字可以在下面改。 */
+  document.getElementById('se-add').addEventListener('click', function () {
+    files[cur].code = document.getElementById('se-code').value;
+    var n = files.length + 1;
+    files.push({ name: 'file' + n + '.md', code: '' });
+    cur = files.length - 1;
+    paintTree();
+    document.getElementById('se-fname').textContent = files[cur].name;
+  });
+
+  document.getElementById('se-cancel').addEventListener('click', function () {
+    location.href = 'xz-config.html';
+  });
+
+  document.getElementById('se-save').addEventListener('click', function () {
+    files[cur].code = document.getElementById('se-code').value;
+    var name = document.getElementById('se-name').value.trim();
+    if (!name) { document.getElementById('se-name').focus(); return; }
+    CAP.updateSkill(id, {
+      name: name,
+      desc: document.getElementById('se-desc').value.trim() || '—',
+      files: files,
+      content: files[0].code || ''
+    });
+    location.href = 'xz-config.html';
+  });
+
+  paintTree();
+})();
+</script>
+</body>
+</html>

@@ -1,3 +1,10 @@
+  /* 2026-11-05（用户）：真源里「编辑」进的是 Skill 编辑器（文件树 + 代码区），不是弹窗。
+     新增才是弹窗，只有名称和描述两个字段。 */
+  /* 2026-11-05（用户）：真源里「编辑」进的是 Skill 编辑器（文件树 + 代码区），不是弹窗。
+     新增才是弹窗，且只有名称和描述两个字段。 */
+  function openEdit(id) {
+    location.href = 'skill-edit.html?id=' + encodeURIComponent(id);
+  }
 /* skills.js —— 小智技能列表 + 新建 + 导入
    列与真源 /Expert/Management/SkillsLibrary 一致，骨架交给 List。 */
 (function () {
@@ -73,16 +80,6 @@
   }
   function closeNew() { $('#dlg').hidden = true; EDIT = null; }
   /* 有「最近更新时间」就必然有编辑：改名、改描述都从这一行进。 */
-  function openEdit(id) {
-    var it = CAP.skillById(id); if (!it) return;
-    EDIT = id;
-    $('#dlg-t').textContent = '编辑 skill';
-    $('#f-name').value = it.name || '';
-    $('#f-desc').value = (it.desc && it.desc !== '—') ? it.desc : '';
-    if ($('#f-content')) $('#f-content').value = it.content || '';
-    $('#dlg').hidden = false;
-    setTimeout(function () { $('#f-name').focus(); }, 0);
-  }
 
   function openDetail(id) {
     var it = CAP.skillById(id); if (!it) return;
@@ -116,10 +113,10 @@
     var name = $('#f-name').value.trim();
     if (!name) { toast('先填名称', 'error'); $('#f-name').focus(); return; }
     if (EDIT) {
-      CAP.updateSkill(EDIT, { name: name, desc: $('#f-desc').value.trim() || '—', content: ($('#f-content') || {}).value || '' });
+      CAP.updateSkill(EDIT, { name: name, desc: $('#f-desc').value.trim() || '—' });
       closeNew(); paint(); toast('已保存'); return;
     }
-    var it = CAP.addSkill({ name: name, desc: $('#f-desc').value.trim() || '—', content: ($('#f-content') || {}).value || '', state: 'ok' });
+    var it = CAP.addSkill({ name: name, desc: $('#f-desc').value.trim() || '—', state: 'ok' });
     closeNew(); paint(); toast('已新建');
   });
 
