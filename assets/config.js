@@ -44,9 +44,7 @@
       rowClass: 'gtable-row',
       cell: function (key, r) {
         if (key === 'name') {
-          return '<a class="m-name" href="#" data-act="edit" data-id="' + esc(r.id) + '">' + esc(r.label || r.name) + '</a>'
-
-            + '<div class="m-dim" style="font-size:var(--font-size-caption)">' + esc(r.name) + '</div>';
+          return '<a class="m-name" href="#" data-act="edit" data-id="' + esc(r.id) + '">' + esc(r.label || r.name) + '</a>';
         }
         if (key === 'vendor') return esc(r.vendor || '—');
         if (key === 'temp') return r.kind === 'chat' ? String(r.temp) : '—';
@@ -80,7 +78,6 @@
     $('#f-vendor').value = m ? (m.vendor || '') : '';
     $('#f-url').value = m ? (m.url || '') : '';
     $('#f-key').value = m ? (m.key || '') : '';
-    $('#f-kind').value = m ? m.kind : 'chat';
     $('#f-temp').value = m ? m.temp : 0.2;
     $('#f-react').value = m ? m.react : 10;
     $('#f-out').value = m ? m.outMax : 32768;
