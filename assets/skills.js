@@ -16,6 +16,7 @@
   };
 
   var S = { kw: '', state: '', on: '' };
+  var DET = null;
   var ST = {
     ok:   { t: '生成成功', c: 'var(--color-success-ink)' },
     fail: { t: '生成失败', c: 'var(--color-danger)' }
@@ -41,7 +42,7 @@
       rows: rows,
       rowClass: 'gtable-row',
       cell: function (key, r) {
-        if (key === 'name') return '<span class="sk-name">' + esc(r.name) + '</span>';
+        if (key === 'name') return '<a class="sk-name" href="#" data-act="view" data-id="' + esc(r.id) + '">' + esc(r.name) + '</a>';
         if (key === 'scope') return esc(r.scope || '—');
         if (key === 'desc') return '<span class="sk-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
         if (key === 'state') {
@@ -75,6 +76,31 @@
     setTimeout(function () { $('#f-name').focus(); }, 0);
   }
   function closeNew() { $('#dlg').hidden = true; }
+
+  function openDetail(id) {
+    var it = CAP.skillById(id); if (!it) return;
+    $('#det-t').textContent = it.name;
+    var st = it.state === 'fail' ? { t: '生成失败', c: 'var(--color-danger)' } : { t: '生成成功', c: 'var(--color-success-ink)' };
+    $('#det-bd').innerHTML = ''
+      + '<p class="sk-hint">' + esc(it.scope || '仅自己') + ' · <span style="color:' + st.c + '">' + st.t + '</span> · ' + (it.on ? '已启用' : '已停用') + ' · ' + esc(it.at || '') + '</p>'
+      + '<p style="margin:12px 0 0;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)">' + esc(it.desc || '—') + '</p>'
+      + '<p class="sk-hint" style="margin-top:12px">创建人 ' + esc(it.by || '—') + '</p>';
+    DET = id;
+    $('#det-toggle').textContent = it.on ? '停用' : '启用';
+    $('#det').hidden = false;
+  }
+  function closeDetail() { $('#det').hidden = true; DET = null; }
+  $('#det-x').addEventListener('click', closeDetail);
+  $('#det-close').addEventListener('click', closeDetail);
+  $('#det').addEventListener('mousedown', function (e) { if (e.target === this) closeDetail(); });
+  $('#det-toggle').addEventListener('click', function () {
+    if (!DET) return;
+    var r = CAP.toggleSkill(DET); paint(); openDetail(DET);
+    toast(r && r.on ? '已启用' : '已停用');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('#det').hidden) closeDetail();
+  });
 
   $('#act-new').addEventListener('click', openNew);
   $('#dlg-x').addEventListener('click', closeNew);
@@ -135,6 +161,8 @@
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-act]'); if (!a) return;
     var id = a.getAttribute('data-id'), act = a.getAttribute('data-act');
+    if (a.tagName === 'A') e.preventDefault();
+    if (act === 'view') { openDetail(id); return; }
     if (act === 'toggle') {
       var r = CAP.skillById(id); if (!r) return;
       CAP.toggleSkill(id); paint(); toast(r.on ? '已启用' : '已停用');

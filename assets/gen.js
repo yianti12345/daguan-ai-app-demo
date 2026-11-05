@@ -288,6 +288,16 @@ window.Gen = (function () {
       ] });
     }
 
+    /* 2026-11-05：本机没有模型代理时，装配的接口不能白装 —— 用既有的 cards 块
+       出一块「可用能力」，人看得见这个组件能调什么。块类型没变，渲染契约没动。 */
+    if (typeof window !== 'undefined' && window.CAP && ctx.compId) {
+      var caps = CAP.compApis(ctx.compId).map(function (id) {
+        var a = CAP.apiById(id);
+        return a ? { t: a.name, d: a.desc || '', s: a.source || '' } : null;
+      }).filter(Boolean);
+      if (caps.length) blocks.push({ type: 'cards', title: '可用能力', items: caps.slice(0, 6) });
+    }
+
     return validate({ title: title, blocks: blocks },
       { model: '本地结构器（本机无模型代理）', ms: 0 }, q);
   }

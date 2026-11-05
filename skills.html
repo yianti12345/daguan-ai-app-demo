@@ -127,12 +127,30 @@
   </div>
 </div>
 
+<!-- 详情：只读看这一条技能 -->
+<div class="nf-mask" id="det" hidden>
+  <div class="nf" role="dialog" aria-modal="true" aria-labelledby="det-t">
+    <div class="nf-hd">
+      <b id="det-t">技能详情</b>
+      <button type="button" class="icon-btn" id="det-x" aria-label="关闭">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="nf-bd" id="det-bd"></div>
+    <div class="nf-ft">
+      <span class="sk-sp"></span>
+      <button type="button" class="btn ghost" id="det-close">关闭</button>
+      <button type="button" class="btn primary" id="det-toggle">停用</button>
+    </div>
+  </div>
+</div>
+
 <script src="assets/shell.js?v=cbeb16d7"></script>
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/spec.js?v=c7914df8"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=6877aa4c"></script>
-<script src="assets/skills.js?v=a31f9146"></script>
+<script src="assets/skills.js?v=6d81f991"></script>
 </body>
 </html>

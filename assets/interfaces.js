@@ -17,6 +17,7 @@
 
   var S = { kw: '', state: '', on: '', src: '' };
   var DET = null;
+  var PAGE = 15, PG = 1;
   var EDIT_ID = null;
 
   var ST = {
@@ -41,7 +42,11 @@
   }
 
   function paint() {
-    var rows = list();
+    var all = list();
+    var pages = Math.max(1, Math.ceil(all.length / PAGE));
+    if (PG > pages) PG = pages;
+    var start = (PG - 1) * PAGE;
+    var rows = all.slice(start, start + PAGE);
     List.render(SPEC['interfaces.html'], {
       table: '.it-table', head: '#head', body: '#list', total: '#total',
       rows: rows,
@@ -73,7 +78,15 @@
       }
     });
     var total = $('#total');
-    if (total) total.textContent = '共 ' + rows.length + ' 条数据';
+    if (total) total.textContent = '第 ' + (all.length ? start + 1 : 0) + '-' + (start + rows.length) + ' 条 / 共 ' + all.length + ' 条';
+    var pager = $('#pager');
+    if (pager) {
+      var h = '';
+      for (var i = 1; i <= pages; i++) {
+        h += '<button type="button" class="it-pn" data-pg="' + i + '"' + (i === PG ? ' aria-current="true"' : '') + '>' + i + '</button>';
+      }
+      pager.innerHTML = h;
+    }
   }
 
   /* ── 生成说明书：本地按原文抽取，失败也给可编辑的草稿 ── */
@@ -267,10 +280,14 @@
     }
   });
 
-  $('#kw').addEventListener('input', function () { S.kw = this.value.trim(); paint(); });
-  $('#f-state').addEventListener('change', function () { S.state = this.value; paint(); });
-  $('#f-on').addEventListener('change', function () { S.on = this.value; paint(); });
-  $('#f-src').addEventListener('change', function () { S.src = this.value; paint(); });
+  $('#pager').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pg]'); if (!b) return;
+    PG = Number(b.getAttribute('data-pg')); paint();
+  });
+  $('#kw').addEventListener('input', function () { S.kw = this.value.trim(); PG = 1; paint(); });
+  $('#f-state').addEventListener('change', function () { S.state = this.value; PG = 1; paint(); });
+  $('#f-on').addEventListener('change', function () { S.on = this.value; PG = 1; paint(); });
+  $('#f-src').addEventListener('change', function () { S.src = this.value; PG = 1; paint(); });
   (function fillSrc() {
     var sel = $('#f-src'), seen = {};
     CAP.apis().forEach(function (a) {

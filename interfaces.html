@@ -18,7 +18,11 @@
 /* 8 列在 1280 视口下放不进内容区：照真源允许表格横向滚动，不硬压列宽。 */
 .it-table{overflow-x:auto}
 .it-table .gtable-head,.it-table .gtable-row{min-width:1060px}
-.it-pg{margin-left:auto;color:var(--color-text-tertiary)}
+.it-pager{display:inline-flex;align-items:center;gap:var(--space-4);margin-left:auto}
+.it-pn{min-width:24px;height:24px;padding:0 6px;border:0;border-radius:var(--radius-sm);background:none;font-family:inherit;font-size:var(--font-size-caption);color:var(--color-text-secondary);cursor:pointer}
+.it-pn:hover{background:var(--color-state-hover)}
+.it-pn[aria-current="true"]{background:var(--color-brand);color:var(--color-text-inverse)}
+.it-pg{color:var(--color-text-tertiary)}
 .it-name{color:var(--color-brand-ink);text-decoration:none}
 .it-name:hover{text-decoration:underline;text-underline-offset:2px}
 .it-desc{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-secondary)}
@@ -83,7 +87,7 @@
       <div class="it-table gtable">
         <div class="gtable-head" id="head" aria-hidden="true"></div>
         <div class="gtable-body" id="list" role="list" aria-label="接口列表"></div>
-        <div class="gtable-foot"><span id="total"></span><span class="it-pg">15 条/页</span></div>
+        <div class="gtable-foot"><span id="total"></span><span class="it-pager" id="pager"></span><span class="it-pg">15 条/页</span></div>
       </div>
     </main>
     <div id="toast" class="toast" data-on="false" role="status" aria-live="polite"></div>
@@ -172,6 +176,6 @@
 <script src="assets/spec.js?v=c7914df8"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=6877aa4c"></script>
-<script src="assets/interfaces.js?v=39bb990f"></script>
+<script src="assets/interfaces.js?v=9db98daa"></script>
 </body>
 </html>
