@@ -15,7 +15,7 @@
     else if (window.confirm(o.body || '')) o.onOk && o.onOk();
   };
 
-  var S = { kw: '', state: '', on: '' };
+  var S = { kw: '', on: '' };
   var DET = null;
   var ST = {
     ok:   { t: '生成成功', c: 'var(--color-success-ink)' },
@@ -24,11 +24,10 @@
 
   function list() {
     return CAP.skills().filter(function (x) {
-      if (S.state && x.state !== S.state) return false;
       if (S.on === '1' && !x.on) return false;
       if (S.on === '0' && x.on) return false;
       if (S.kw) {
-        var h = (x.name + ' ' + x.desc + ' ' + x.scope).toLowerCase();
+        var h = (x.name + ' ' + x.desc).toLowerCase();
         if (h.indexOf(S.kw.toLowerCase()) < 0) return false;
       }
       return true;
@@ -43,12 +42,7 @@
       rowClass: 'gtable-row',
       cell: function (key, r) {
         if (key === 'name') return '<a class="sk-name" href="#" data-act="view" data-id="' + esc(r.id) + '">' + esc(r.name) + '</a>';
-        if (key === 'scope') return esc(r.scope || '—');
         if (key === 'desc') return '<span class="sk-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
-        if (key === 'state') {
-          var s = ST[r.state] || ST.ok;
-          return '<span style="color:' + s.c + '">' + s.t + '</span>';
-        }
         if (key === 'on') return '<span style="color:' + (r.on ? 'var(--color-success-ink)' : 'var(--color-text-tertiary)') + '">' + (r.on ? '已启用' : '已停用') + '</span>';
         if (key === 'at') return '<span class="sk-at">' + esc(r.at || '—') + '</span>';
         if (key === 'by') return esc(r.by || '—');
@@ -62,7 +56,7 @@
       },
       empty: function () {
         return '<div class="empty"><div>'
-          + (S.kw || S.state || S.on ? '没有匹配的 skill' : '还没有导入技能')
+          + (S.kw || S.on ? '没有匹配的 skill' : '还没有导入技能')
           + '</div></div>';
       }
     });
@@ -71,7 +65,7 @@
   }
 
   function openNew() {
-    $('#f-name').value = ''; $('#f-desc').value = ''; $('#f-scope').value = '仅自己';
+    $('#f-name').value = ''; $('#f-desc').value = '';
     $('#dlg').hidden = false;
     setTimeout(function () { $('#f-name').focus(); }, 0);
   }
@@ -80,9 +74,8 @@
   function openDetail(id) {
     var it = CAP.skillById(id); if (!it) return;
     $('#det-t').textContent = it.name;
-    var st = it.state === 'fail' ? { t: '生成失败', c: 'var(--color-danger)' } : { t: '生成成功', c: 'var(--color-success-ink)' };
     $('#det-bd').innerHTML = ''
-      + '<p class="sk-hint">' + esc(it.scope || '仅自己') + ' · <span style="color:' + st.c + '">' + st.t + '</span> · ' + (it.on ? '已启用' : '已停用') + ' · ' + esc(it.at || '') + '</p>'
+      + '<p class="sk-hint">' + (it.on ? '已启用' : '已停用') + ' · ' + esc(it.at || '') + '</p>'
       + '<p style="margin:12px 0 0;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)">' + esc(it.desc || '—') + '</p>'
       + '<p class="sk-hint" style="margin-top:12px">创建人 ' + esc(it.by || '—') + '</p>';
     DET = id;
@@ -110,7 +103,6 @@
     if (!name) { toast('先填名称', 'error'); $('#f-name').focus(); return; }
     var it = CAP.addSkill({
       name: name,
-      scope: $('#f-scope').value,
       desc: $('#f-desc').value.trim() || '—',
       state: 'run'
     });
@@ -147,7 +139,6 @@
     var doAdd = function () {
       CAP.addSkill({
         name: name,
-        scope: $('#i-scope').value,
         desc: '来自 ' + FILE.name,
         state: 'ok'
       });
@@ -180,7 +171,6 @@
   });
 
   $('#kw').addEventListener('input', function () { S.kw = this.value.trim(); paint(); });
-  $('#f-state').addEventListener('change', function () { S.state = this.value; paint(); });
   $('#f-on').addEventListener('change', function () { S.on = this.value; paint(); });
 
   paint();

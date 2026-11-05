@@ -42,7 +42,6 @@
       headCols: [
         { key: 'name', label: '模型' },
         { key: 'vendor', label: '供应商' },
-        { key: 'kind', label: '类型' },
         { key: 'temp', label: '温度' },
         { key: 'react', label: '最大迭代' },
         { key: 'outMax', label: '输出上限' },
@@ -50,24 +49,22 @@
         { key: 'on', label: '状态' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '220px 100px 80px 70px 100px 110px 110px 90px 150px'
+      cols: '240px 120px 80px 110px 120px 110px 90px 150px'
     },
     'skills.html': {
-      object: '技能（小智的专属技能包）',
+      object: '技能（直接装给小智的技能包，只有一个归属：小智）',
       source: '真源 /Expert/Management/SkillsLibrary（skill名称/可用范围/skill描述/状态/是否启用/最近更新时间/创建人/操作）',
       truth: '真源实测：表头 39 / #F2F3F5 / 600，行 69，主按钮 106.7×32 r2',
-      states: ['无技能', '有数据', '搜索无结果', '生成失败', '已停用'],
+      states: ['无技能', '有数据', '搜索无结果', '已停用'],
       headCols: [
         { key: 'name', label: 'skill名称' },
-        { key: 'scope', label: '可用范围' },
         { key: 'desc', label: 'skill描述' },
-        { key: 'state', label: '状态' },
         { key: 'on', label: '是否启用' },
         { key: 'at', label: '最近更新时间' },
         { key: 'by', label: '创建人' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '160px 100px minmax(180px,1fr) 90px 90px 150px 130px 140px'
+      cols: '220px minmax(240px,1fr) 100px 160px 130px 120px'
     },
     'versions.html': {
       object: '版本（应用或组件的版本存档）',
