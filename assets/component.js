@@ -1007,7 +1007,7 @@
 
   function generate(text) {
     if (!text) return;
-    if (busy) { pending = text; toast('正在生成，这句排在后面'); return; }
+    if (busy) { pending = text; toast('前面还有一句在生成'); return; }
     /* 另起一条：这一页已经落过库，而这句话是"做一个 Y" ⇒ 换一条，
        Y 写进新 id，X 原样留在库里（组件库件数 +1，不是把 X 顶掉）。 */
     if (!IS_EDIT && COMP.id && DB && DB.compById && DB.compById(COMP.id) && wantsNewComp(text)) {
@@ -1169,8 +1169,8 @@
        ①现在是什么状态（未发布）②不能装到什么程度（装配面板里选不到）
        ③那一步在哪（右上角「保存」，按钮上印的就是这两个字，不另造词）。
      只说**这次生成**：重新打开一条已上架的组件不该看到这句（见 pruneDraftNotice）。 */
-  var DRAFT_NOTICE = '这一版现在是「未发布」，装配面板里还选不到它。'
-    + '点右上角「保存」发布后，它才会出现在装配面板里，那时才能装配。';
+  /* 2026-11-05：原来三句话把同一件事说了两遍（"选不到" / "才会出现" / "那时才能装配"）。 */
+  var DRAFT_NOTICE = '这一版还没发布，装配面板里选不到它；点右上角「保存」发布。';
   /* 同一页连续说几句（迭代）只提示一次：这件事没变，重复播报等于噪音。
      另起一条（newCompSession）时重新计。 */
   var noticeShown = false;
@@ -1268,7 +1268,7 @@
       title: '保存为 ' + bump + '？',
       body: n
         ? '装了它的 <b>' + n + '</b> 个应用会跟着换成 ' + bump + '。客户要等各自的应用重新发布后才看到 —— 组件变了不等于应用已发布。'
-        : '启用后，其它应用在装配面板里就能选到它。',
+        : '当前没有应用装配它。',
       ok: '保存 ' + bump,
       onOk: function () { commitPublish(bump); }
     });
@@ -1279,7 +1279,7 @@
     var snap = { spec: COMP.spec || null, fields: (COMP.fields || []).slice(), desc: COMP.desc, name: COMP.name };
     var v = null;
     try { if (COMP.id) v = DB.pushCompVer(COMP.id, bump, snap); } catch (e) { v = null; }
-    if (!v) { toast('没保存上：这台电脑写不进去，当前内容还在'); return; }
+    if (!v) { toast('没保存上，内容还在'); return; }
     COMP.ver = 'v' + v;
     upsert('已上架');
     setCompName();
@@ -1549,7 +1549,7 @@
       if (!t || !t.closest || !t.closest('#canvas')) return;
       /* 预览里的页头按钮不是真动作：给一句明确反馈，别让它点了像坏了 */
       var pa = t.closest('.page-act');
-      if (pa) { toast('这是预览示意，不会真的新建；要改内容，用上面的配置区。'); return; }
+      if (pa) { toast('预览示意，不会真的新建'); return; }
       if (t.id === 'ck-all') return pickAll(t);
       if (t.getAttribute('data-ck')) return pickRow(t);
       if (t.id === 'tb-assign') return openPicker();

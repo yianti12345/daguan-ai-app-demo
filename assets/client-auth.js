@@ -332,7 +332,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     var hiddenPicked = Math.max(0, picked.length - pagePicked.length);
     if (btn) {
       btn.title = hiddenPicked
-        ? ('共勾选 ' + picked.length + ' 家，其中 ' + hiddenPicked + ' 家不在当前页（换页/搜索后勾选不丢）')
+        ? ('共勾选 ' + picked.length + ' 家，其中 ' + hiddenPicked + ' 家不在当前页')
         : (picked.length ? ('只升勾选的这 ' + picked.length + ' 家') : '');
     }
 
@@ -518,7 +518,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     mask = mask || $('#mask');
     var selApp = $('#fm-app');
     var apps = (DB.APPS || []).filter(function (a) { return DB.latestVer(a.id) > 0; });
-    if (!apps.length) { toast('还没有可授权的应用：先去应用配置页存一版', 'err'); return; }
+    if (!apps.length) { toast('还没有可授权的应用，先去存一版', 'err'); return; }
     selApp.innerHTML = apps.map(function (a) {
       return '<option value="' + esc(a.id) + '"' + (a.id === APP_ID ? ' selected' : '') + '>' + esc(a.name) + '</option>';
     }).join('');
@@ -562,7 +562,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       return !(rec && rec.status === '已授权');
     });
     if (!(DB.clients() || []).length) {
-      box.innerHTML = '<p class="fm-hint">还没有客户，先在列表上方「编辑客户」里新增。</p>';
+      box.innerHTML = '<p class="fm-hint">还没有客户，先新增一家。</p>';
       return;
     }
     if (!clients.length) {

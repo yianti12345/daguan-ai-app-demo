@@ -2374,7 +2374,7 @@ function xzOp(on){
     foot = document.createElement('div');
     foot.id = 'xzOpFoot';
     foot.className = 'xz-opfoot';
-    foot.innerHTML = '<span class="xz-opdot"></span><span class="xz-optext">小智正在操作这个页面</span>'
+    foot.innerHTML = '<span class="xz-opdot"></span><span class="xz-optext">小智正在操作</span>'
       + '<button type="button" class="xz-opstop" data-act="xzStop">停止</button>';
     document.body.appendChild(foot);
     /* 单独绑一次：页面的事件代理绑在 #root 上，而这个胶囊挂在 body 下，
@@ -2402,7 +2402,7 @@ function xzOp(on){
     });
     foot.appendChild(sp2);
     var tx0 = foot.querySelector('.xz-optext');
-    if (tx0) tx0.textContent = '小智正在操作这个页面';
+    if (tx0) tx0.textContent = '小智正在操作';
     foot.classList.remove('is-done');
   }
   if (on){ vig.classList.add('is-on'); }
@@ -2431,7 +2431,7 @@ function xzFootSet(foot, on){
     foot.classList.remove('is-on', 'is-done');
     foot.style.pointerEvents = 'none';     /* 隐藏时必须让开 */
     var tx = foot.querySelector('.xz-optext');
-    if (tx) tx.textContent = '小智正在操作这个页面';
+    if (tx) tx.textContent = '小智正在操作';
   }
 }
 /* 完成态：光晕先收，胶囊留 5 秒说"做完了"，再自己退。
@@ -2447,7 +2447,7 @@ function xzOpDone(){
   var sp = foot.querySelector('.xz-opstop');
   if (sp) sp.remove();
   var tx = foot.querySelector('.xz-optext');
-  if (tx) tx.textContent = '做完了，你可以接手了';
+  if (tx) tx.textContent = '交接完成';
   /* 2.4 秒太短 —— 人可能刚把视线从页面挪回来，它已经没了。给 5 秒。 */
   setTimeout(function(){ xzFootSet(foot, false); }, 5200);
 }
@@ -3067,7 +3067,7 @@ function xzHtml(mode){
           + '<button class="xz-mic" data-act="xzMic" aria-label="按下说话" aria-pressed="false" title="按下说话">' + sv('mic') + '</button>'
           + '<button class="xz-send" data-act="xzSend" aria-label="发送">' + sv('right') + '</button>'
           + '</div></div></div>'
-          + '<p class="xz-note">推荐与回答由 AI 生成，请核对 · 小智会直接操作这个页面</p>')
+          + '<p class="xz-note">AI 生成，请核对</p>')
         + '</section>'
       : '');
 }

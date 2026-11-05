@@ -639,7 +639,7 @@
           /* 降级必须看得见（SOP 第 17 条）：否则用户会以为这就是设计 */
           var hint = el('span', 'cfg-hint');
           hint.setAttribute('data-cfg-block', 'hint');
-          hint.textContent = '候选项未提供，暂以顿号分隔的文本编辑';
+          hint.textContent = '按文本编辑，顿号分隔';
           box.appendChild(hint);
         }
       } else {
@@ -855,7 +855,7 @@
         var snap = { spec: entity.spec || null, fields: (entity.fields || []).slice(), desc: entity.desc, name: entity.name };
         var v = null;
         try { v = DB.pushCompVer(entity.id, 'v' + next, snap); } catch (e) { v = null; }
-        if (!v) { memo('没保存上：这台电脑写不进去'); return; }
+        if (!v) { memo('没保存上'); return; }
         persist('已上架', '已保存 v' + v);
       } else if (key === 'cancel') {
         var back = mergeState(entity.config, null, state.rec.manifest);
@@ -912,7 +912,7 @@
       bSave.addEventListener('click', function () {
         if (!persist('', '已保存')) {        /* 保存失败 ⇒ 不切换，并说出原因 */
           state.ui.actions(actionsOf(state.rec.manifest));
-          memo('保存失败，所以没有切换：本地存储写不进去');
+          memo('保存失败，没有切换');
           renderBar(bar, bindsTo, state.rec.manifest.id, switchTo, manifestOf(state.rec.manifest.id), opts);
           return;
         }
@@ -1024,7 +1024,7 @@
         if (setDefault(curId)) {
           dft.disabled = true;
           dft.textContent = '已是默认';
-          note('已设为默认：以后打开这条记录就是这套界面');
+          note('已设为默认');
           renderBar(bar, bindsTo, curId, onSwitch, manifestOf(curId), opts);
         }
       });
@@ -1073,7 +1073,7 @@
       setDefault(id);
       renderBar(bar, bindsTo, id, onSwitch, manifestOf(id), opts);
       var mm = document.getElementById('cfg-bar-memo');
-      if (mm) mm.textContent = '已设为默认：以后打开这条记录就是这套界面';
+      if (mm) mm.textContent = '已设为默认';
     });
     strip.appendChild(tryBtn);
     strip.appendChild(defBtn);

@@ -162,12 +162,12 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=3bea7087"></script>
+<script src="assets/data.js?v=80ca53d9"></script>
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
 <script src="assets/transfer.js?v=6ef877f1"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/popover.js?v=7f96155d"></script>
-<script src="assets/scope.js?v=69520925"></script>
+<script src="assets/scope.js?v=5826944c"></script>
 <script>
 (function () {
   'use strict';
@@ -352,7 +352,7 @@
       return;
     }
     if (act === 'off') {
-      if (pubState(a) === '未上架') { toast('还没上架，不用下架'); return; }
+      if (pubState(a) === '未上架') { toast('还没上架，不能下架'); return; }
       Confirm.ask({
         /* ★2026-11-04 平台标准件（用户 2026-11-02 裁决）：标题统一「操作确认」，对象与后果写进正文。
            这里原来标题是动作名「下架」，与平台口径不一致（CONFIRM A2b 判红）。 */
@@ -1143,7 +1143,7 @@
 <div id="xz-host"></div>
 <script src="assets/shell.js?v=1736883e"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
-<script src="assets/xiaozhi.js?v=d7b1dc62"></script>
+<script src="assets/xiaozhi.js?v=e26a3c1d"></script>
 <script>
 /* ── 下载客户端浮层（2026-11-01）──────────────────────────────────
    用户口径：放在应用管理右上，图标按钮，悬停显示「下载客户端」，点开分 Mac / Windows。

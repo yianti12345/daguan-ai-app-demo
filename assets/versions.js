@@ -69,7 +69,7 @@ window.Versions = (function () {
     if (idx < 0) { toast('这一步已经不在了', 'error'); return; }
     var run = function () {
       var r = DB.changeUndo('app', S.id, uid);
-      if (!r) { toast('退回失败：这台电脑写不进去，内容没动', 'error'); return; }
+      if (!r) { toast('退回失败，内容没动', 'error'); return; }
       paint();
       toast(idx ? '已退回 · 之后 ' + idx + ' 步一起退掉' : '已退回上一步');
     };
@@ -170,7 +170,7 @@ window.Versions = (function () {
       /* 三种失败分开说：版本没了 / 没存内容 / 写不进去 */
       toast(out.error === 'gone' ? '这一版已经不在了'
         : out.error === 'no-snap' ? '这一版当时没有存内容，生成不了新版本'
-        : '没生成新版本：这台电脑写不进去，改动只在这次会话里', 'error');
+        : '没生成新版本，改动只在这次会话里', 'error');
       return;
     }
     toast('已按 v' + out.from + ' 生成 v' + out.to + ' · 客户授权版本未动');

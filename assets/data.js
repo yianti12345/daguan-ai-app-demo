@@ -98,7 +98,7 @@
            「通用 AI 应用搭建平台……可以是审核、合同、CRM，甚至 AI 游戏，没有预设的行业分类」。
            只换两条**空装配**的未发布项，不动已上架的六个真实客户案例，也不动条数（10 条＝5 列×2 行）。 */
         { id: 'gf-xm',   name: '星野科技 · 客户线索跟进',   client: '星野科技', status: '未发布', updated: '2026-10-05 10:12:35', version: 0,
-          desc: '尚未装配组件，向小智描述业务场景即可装配出应用。' },
+          desc: '还没装配组件。' },
         { id: 'zxjt-yy', name: '中信建投 · 用印申请审核', client: '中信建投', status: '已上架', updated: '2026-11-01 09:18:44', version: 2,
           tenantId: '5e2c8f1a9d7b6403', authAt: '2026-11-01 09:18:44', expireAt: '2027-11-01',
           desc: '用印申请逐条比对授权表与合同金额，超标转人工。' },
@@ -1099,7 +1099,7 @@
       a.updated = DB.now();
       if (DB.save() === false) {
         if (old) a.compVer[compId] = old; else delete a.compVer[compId];
-        out.failed.push({ id: r.id, name: r.name, reason: '这台电脑写不进去，这一条没有升级' });
+        out.failed.push({ id: r.id, name: r.name, reason: '这一条没升级' });
         return;
       }
       out.ok.push({ id: r.id, name: r.name, from: r.have, to: c.ver });

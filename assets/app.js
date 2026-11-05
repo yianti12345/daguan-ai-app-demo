@@ -173,9 +173,9 @@
     };
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(snap));
-      hint('草稿已保存 · 下次进来还是这份内容', { ms: 5000 });
+      hint('草稿已保存', { ms: 5000 });
     } catch (e) {
-      hint('草稿没存上：这台电脑写不进去', { kind: 'err', ms: 9000 });
+      hint('草稿没存上', { kind: 'err', ms: 9000 });
     }
   }
   if (!VIEW_MODE) {
@@ -364,7 +364,7 @@
     if (DB.lastSaveOk === false) {
       ed.textContent = '保存失败';
       ed.setAttribute('data-err', '1');
-      ed.title = '本机存储写不进去（隐私模式或空间满了）。别关页；换个浏览器或清出空间后再改。';
+      ed.title = '存不进去：隐私模式或空间满了。别关页，换个浏览器或清出空间再试。';
       return;
     }
     ed.removeAttribute('data-err');
@@ -986,10 +986,10 @@
     var i = ids.indexOf(id), j = i + dir;
     if (i < 0 || j < 0 || j >= ids.length) return;
     if (ids[i] === 'app-header' && dir > 0) {
-      hint('应用头是页面顶栏，固定在最上面，不能往下挪', { ms: 4000 }); return;
+      hint('应用头固定在最上面', { ms: 4000 }); return;
     }
     if (ids[j] === 'app-header' && dir < 0) {
-      hint('应用头是页面顶栏，别的块不能挪到它上面', { ms: 4000 }); return;
+      hint('不能挪到应用头上面', { ms: 4000 }); return;
     }
     ids.splice(j, 0, ids.splice(i, 1)[0]);
     app.comps.length = 0;
@@ -1453,12 +1453,12 @@
        客户的版本只由「客户授权」页的那一个升级动作改（见 00e-版本与授权模型）。 */
     var v = DB.versSave('app', appId, snap, today());
     if (!v) {
-      hint('没保存上：这台电脑写不进去，当前内容还在', { kind: 'err', ms: 9000 });
+      hint('没保存上，内容还在', { kind: 'err', ms: 9000 });
       return;
     }
     var published = DB.versActivate('app', appId, v);
     if (!published) {
-      hint('版本存下了，但没能发布；去「客户授权」页手动启用 v' + v, { kind: 'err', ms: 9000 });
+      hint('版本存下了但没发布；去「客户授权」启用 v' + v, { kind: 'err', ms: 9000 });
       return;
     }
     app.updated = today();
@@ -1522,7 +1522,7 @@
       onOk: function () {
         var r = DB.versApply('app', appId, want, true);   /* keepActive：不换客户版本 */
         if (!r) {
-          hint('没换成：这台电脑写不进去，当前内容没动', { kind: 'err', ms: 9000 });
+          hint('没换成，内容没动', { kind: 'err', ms: 9000 });
           return;
         }
         paintApp();
@@ -1623,7 +1623,7 @@
           };
           snap.summary = summarizeSnap(prevRec ? prevRec.snap : null, snap);
           var v = DB.versSave('app', appId, snap, today());
-          if (!v) { hint('没存上：这台电脑写不进去，所以没有离开页面', { kind: 'err', ms: 9000 }); return; }
+          if (!v) { hint('没存上，没有离开页面', { kind: 'err', ms: 9000 }); return; }
           DB.versActivate('app', appId, v);
           app.updated = today();
           DB.save();
@@ -1794,7 +1794,7 @@
       ok: '全部升级（' + ups.length + '）',
       onOk: function () {
         var r = ups.length < total ? DB.upgradeSome(app.id, ids) : DB.upgradeAll(app.id);
-        if (!r || !r.n) { hint('没升成功：这台电脑写不进去', { kind: 'err', ms: 9000 }); return; }
+        if (!r || !r.n) { hint('没升成功', { kind: 'err', ms: 9000 }); return; }
         batchSel = {};
         renderList(); paintCounts(); paintApp(); renderCanvas();
         hint('已升级 ' + r.n + ' 个组件到最新版 · 记得「保存新版本并发布」', { ms: 9000 });
@@ -1893,7 +1893,7 @@
       ok: '批量升级',
       onOk: function () {
         var r = DB.upgradeSome(app.id, ups.map(function (u) { return u.id; }));
-        if (!r || !r.n) { hint('没升成功：这台电脑写不进去', { kind: 'err', ms: 9000 }); return; }
+        if (!r || !r.n) { hint('没升成功', { kind: 'err', ms: 9000 }); return; }
         batchSel = {};
         renderList(); paintCounts(); paintApp(); renderCanvas();
         hint('已升级 ' + r.n + ' 个组件到最新版 · 记得「保存新版本并发布」', { ms: 9000 });
@@ -2317,7 +2317,7 @@
     if (dn.content && app.content) app.content[id] = JSON.parse(JSON.stringify(dn.content));
     delete justUpd[id];
     if (app.updUndo) delete app.updUndo[id];
-    if (DB.save() === false) { hint('没退成功：这台电脑写不进去', { kind: 'err', ms: 9000 }); return; }
+    if (DB.save() === false) { hint('没退成功，内容没动', { kind: 'err', ms: 9000 }); return; }
     renderList(); renderCanvas();
     hint('已退回 ' + dn.from, { ms: 6000 });
   }
@@ -2346,7 +2346,7 @@
         renderList();
         var retry = $('.row[data-comp="' + id + '"] [data-do="retry"]');
         if (retry) retry.focus();
-        hint('更新失败：这一版没写进去（浏览器存储写满或被禁用）', { kind: 'err', ms: 8000 });
+        hint('更新失败，这一版没保存', { kind: 'err', ms: 8000 });
         return;
       }
       justUpd[id] = { from: prevVer, to: c.ver, content: prevContent };

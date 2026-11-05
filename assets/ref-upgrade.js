@@ -166,7 +166,10 @@
     st.refs = DB.compRefs(st.id);
     var s = DB.compUpgradeStats(st.id);
     dlg.querySelector('#ru-title').textContent = '引用管理 · ' + compName();
-    dlg.querySelector('#ru-sub').textContent = '只看谁落后了；升级只换装配版本，不改应用内容，也不动客户授权版本。';
+    /* 2026-11-05：原来这里挂着一句"只看谁落后了；升级只换装配版本…" —— 统计条和确认框
+       各说了一遍，这是第三遍。留空并隐藏，不再占一行高度。 */
+    var sub = dlg.querySelector('#ru-sub');
+    if (sub) { sub.textContent = ''; sub.hidden = true; }
     dlg.querySelector('#ru-stats').innerHTML =
       '<span class="ru-stat"><b>' + s.total + '</b> 个应用在用</span>' +
       '<span class="ru-stat warn"><b>' + s.behind + '</b> 个待升级</span>' +
@@ -197,7 +200,7 @@
        常驻一颗「批量升级（0）」等于在页面上摆一个永远点不动的东西。 */
     b.hidden = pn === 0;
     /* 勾选跨页保留：括号里是勾选总数，说清"有几页之外"的。 */
-    b.title = pn ? ('只升勾选的 ' + pn + ' 个（跨页勾选也算）') : '';
+    b.title = pn ? ('只升勾选的 ' + pn + ' 个') : '';
     dlg.querySelectorAll('.ru-tab').forEach(function (t) {
       t.classList.toggle('on', t.getAttribute('data-tab') === st.tab);
       t.setAttribute('aria-selected', t.getAttribute('data-tab') === st.tab ? 'true' : 'false');

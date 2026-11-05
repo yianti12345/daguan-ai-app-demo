@@ -146,7 +146,7 @@
       paint(isHtml ? formatHtml(lines.join('\n')) : lines, p + ' · ' + lines.length + ' 行');
     }).catch(function (err) {
       var tip = location.protocol === 'file:'
-        ? '当前是本地文件方式打开，浏览器禁止读取同目录源码。用 http 打开（如 WorkBuddy 应用或本地服务）即可看到文件树内容。'
+        ? '本地文件方式读不到源码，用 http 打开（WorkBuddy 预览或本地服务）。'
         : '读取失败：' + err.message;
       paint([tip], p + ' · 未读到');
     });

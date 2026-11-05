@@ -181,7 +181,7 @@
       return '<div class="row is-gone" data-id="' + esc(x.id) + '">'
         + '<div class="row-hd">' + pick + '<b>能力已删除</b><div class="act">'
         + '<button class="btn-uninstall" type="button" data-do="rm">移除</button></div></div>'
-        + '<p class="row-desc">这条能力已从能力配置里删除，组件里只留了一个旧编号。</p>'
+        + '<p class="row-desc">能力已删除，只剩旧编号</p>'
         + '<p class="row-meta">' + esc(x.id) + '</p></div>';
     }
     var n = (b.apiIds || []).length;

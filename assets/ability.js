@@ -274,7 +274,7 @@
     if (ADD.mode === 'bulk') {
       bd.innerHTML = ''
         + '<div class="nf-row"><label for="fb-raw">把接口文档或说明贴进来</label>'
-        + '<textarea id="fb-raw" rows="9" placeholder="OpenAPI / Swagger 的 JSON 或 YAML；也可以是一段段接口说明，空行分开。贴完点「解析」。"></textarea></div>'
+        + '<textarea id="fb-raw" rows="9" placeholder="OpenAPI / Swagger 的 JSON 或 YAML；也能贴一段段接口说明。"></textarea></div>'
         + '<div class="abt-hint" id="fb-tip" hidden></div>';
       $('#fb-raw').value = ADD.text || '';
       paintFoot(ADD.busy ? '解析中…' : '解析', ADD.busy);
