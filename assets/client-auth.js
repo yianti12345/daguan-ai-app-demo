@@ -106,7 +106,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     var c = clEditing ? DB.clientById(clEditing) : null;
     $('#cl-name').value = c ? c.name : '';
     $('#cl-tenant').value = c ? c.tenantId : '';
-    $('#cl-title').textContent = c ? '编辑客户' : '新增客户';
+    $('#cl-title').textContent = c ? '编辑客户' : '新建客户';
     clMask.setAttribute('data-open', 'true');
     setTimeout(function () { $('#cl-name').focus(); }, 30);
   }
@@ -117,7 +117,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     if (!r.ok) { toast(r.msg, 'err'); return; }
     closeClient();
     paint();
-    toast(clEditing ? '已保存「' + r.client.name + '」' : '已新增客户「' + r.client.name + '」');
+    toast(clEditing ? '已保存「' + r.client.name + '」' : '已新建客户「' + r.client.name + '」');
   }
 
   /* ★2026-11-04：版本下拉的选项按"最新版本"现填，不写死在 HTML 里 ——

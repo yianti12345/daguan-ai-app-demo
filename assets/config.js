@@ -72,7 +72,7 @@
   function openDlg(id) {
     EDIT_ID = id || null;
     var m = id ? CAP.modelById(id) : null;
-    $('#dlg-t').textContent = m ? '编辑模型' : '新增模型';
+    $('#dlg-t').textContent = m ? '编辑模型' : '新建模型';
     $('#f-name').value = m ? m.name : '';
     $('#f-label').value = m ? (m.label || '') : '';
     $('#f-vendor').value = m ? (m.vendor || '') : '';
