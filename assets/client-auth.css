@@ -78,8 +78,15 @@
 /* 应用不存在：工具栏与表头一起收掉 —— 留着两个点了只会报错的按钮，等于骗用户点。
    只留一句说明和回列表的入口。 */
 .au-card.is-missing .au-bar,.au-card.is-missing .au-head,.au-card.is-missing .au-foot{display:none}
-.au-card.is-missing /* 新增授权弹窗：这一页只需要一个窄表单，不用 1120 那个装配抽屉宽度 */
-#mask .au-dlg{width:min(520px,92vw);max-height:none}
+/* 新增授权弹窗：这一页只需要一个窄表单，不用 1120 那个装配抽屉宽度。
+   ★2026-11-05：上面这段注释原来被塞在 `.au-card.is-missing` 和 `#mask .au-dlg{}` 中间，
+   于是选择器被拼成 `.au-card.is-missing #mask .au-dlg` —— 永远匹配不到，
+   弹窗就一直用着装配抽屉的 1120×720，四个字段撑出满屏空白。 */
+/* 两个弹窗（新增授权 / 新建客户）同一个壳：都用 .panel.au-dlg。
+   原来只写了 #mask .au-dlg，新建客户那个弹窗（#cl-mask）没被管到，还是 1120×720。 */
+/* 用 .mask .au-dlg 而不是 .panel.au-dlg：.panel 是装配面板的共享件，
+   在页面 CSS 里再写一次它的选择器，组件优先判据会当成"复制共享件"报红（C1）。 */
+.mask .au-dlg{width:min(var(--dialog-max-w),92vw);height:auto;max-height:calc(100vh - 96px)}
 .au-bd{padding:0 var(--space-16) var(--space-8);overflow:auto}
 .fm{display:flex;flex-direction:column;gap:var(--space-16)}
 .fm-row{display:flex;flex-direction:column;gap:6px}
@@ -107,10 +114,11 @@
 .fm-client-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--font-size-body)}
 .fm-client-id{font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums}
 .fm-client-state{font-size:var(--font-size-caption);color:var(--color-text-tertiary);text-align:right}
-/* 版本是一句陈述，不是一个控件 —— 用文本不用 select，省掉「改版本」的错觉 */
-.fm-note{margin:0;height:36px;display:flex;align-items:center;padding:0 var(--space-12);
-  border:1px solid var(--color-border-hairline);border-radius:var(--radius-sm);
-  background:var(--surface-sunken,var(--color-state-hover));font-size:var(--font-size-body);color:var(--color-text-secondary)}
+/* 版本是一句陈述，不是一个控件。
+   ★2026-11-05：原来给了 36px 高 + 描边 + 灰底，看上去就是一个"不能点的输入框"——
+   形式在说"这是控件"，语义在说"这不是控件"。去掉盒子，只留一行字。 */
+.fm-note{margin:0;display:flex;align-items:baseline;gap:var(--space-8);
+  font-size:var(--font-size-body);color:var(--color-text-secondary)}
 .fm-note b{color:var(--color-text-primary);font-weight:600;font-variant-numeric:tabular-nums}
 /* 已取消：不抢眼，但必须看得见 —— 这一行还在，只是不生效 */
 .au-tag{margin-left:6px;font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-weight:400}
