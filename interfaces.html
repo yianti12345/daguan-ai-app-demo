@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>接口注册</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
+<link rel="stylesheet" href="assets/sys.css?v=50819bba">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
+<style>
+/* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
+.page-hd{display:flex;align-items:flex-start;gap:var(--space-12);margin:0 0 var(--space-12)}
+.page-hd h1{margin:0;font-size:var(--font-size-display);font-weight:600;line-height:var(--leading-display);color:var(--color-text-primary)}
+.page-hd .ops{margin-left:auto;display:flex;align-items:center;gap:var(--space-8)}
+.it-bar{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap;padding:0 0 var(--space-12)}
+.it-table .gtable-foot{display:flex;align-items:center;gap:var(--space-12);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+.it-pg{margin-left:auto;color:var(--color-text-tertiary)}
+.it-name{color:var(--color-brand-ink);text-decoration:none}
+.it-name:hover{text-decoration:underline;text-underline-offset:2px}
+.it-desc{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-secondary)}
+.it-at{color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
+.it-ops{display:flex;align-items:center;gap:var(--space-12);justify-content:flex-end}
+.it-op{height:24px;padding:0;border:0;background:none;font-family:inherit;font-size:var(--font-size-body);color:var(--color-brand-ink);cursor:pointer;white-space:nowrap}
+.it-op:hover{text-decoration:underline}
+.it-op.is-danger{color:var(--color-danger)}
+/* 新增/编辑：左原文、右说明书。宽弹窗 880，两栏各一半。 */
+.it-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-16);flex:1 1 auto;min-height:0}
+.it-col{display:flex;flex-direction:column;gap:var(--space-8);min-height:0}
+.it-lb{font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+.it-raw{flex:1 1 auto;min-height:300px;resize:vertical;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:var(--space-12);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
+.it-raw:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
+.it-cnt{font-size:var(--font-size-caption);color:var(--color-text-tertiary);text-align:right}
+.it-pv{flex:1 1 auto;min-height:300px;overflow:auto;border:1px solid var(--color-border-hairline);border-radius:var(--radius-control);padding:var(--space-16);background:var(--surface-subtle);font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)}
+.it-pv h4{margin:0 0 var(--space-8);font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
+.it-pv p{margin:0 0 var(--space-8)}
+.it-pv code{font-family:var(--font-family-mono);font-size:var(--font-size-caption);background:var(--surface-sunken-2);border-radius:var(--radius-xs);padding:1px 4px}
+.it-pv pre{margin:0 0 var(--space-8);padding:var(--space-12);background:var(--surface-page);border-radius:var(--radius-tag);overflow:auto}
+.it-pv pre code{background:none;padding:0}
+.it-hint{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.it-sp{flex:1 1 auto}
+.it-res{margin:var(--space-12) 0 0;padding:0;list-style:none;max-height:260px;overflow:auto}
+.it-res li{display:flex;align-items:center;gap:var(--space-8);padding:var(--space-8) 0;border-bottom:1px solid var(--color-border-hairline);font-size:var(--font-size-body)}
+.it-res li b{font-weight:500;color:var(--color-text-primary)}
+.it-res li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-secondary)}
+.it-res li button{margin-left:auto}
+</style>
+  <meta name="robots" content="noindex,nofollow">
+</head>
+<body>
+
+<div class="app">
+  <nav class="sider" data-active="cap-apis"></nav>
+  <div class="workspace">
+    <header class="hdr">
+      <nav class="crumb">
+        <b>能力管理</b>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <b>接口注册</b>
+      </nav>
+      <div class="me"><span>admin</span><u>ad</u></div>
+    </header>
+
+    <main class="main">
+      <div class="page-hd">
+        <h1>接口注册</h1>
+        <div class="ops">
+          <button type="button" class="btn ghost" id="act-batch">批量导入</button>
+          <button type="button" class="btn primary" id="act-new">新增接口</button>
+        </div>
+      </div>
+
+      <div class="it-bar">
+        <label class="field w220"><input id="kw" placeholder="搜名称、描述、来源" autocomplete="off"></label>
+        <label class="field w120"><select id="f-state"><option value="">状态</option><option value="ok">生成成功</option><option value="run">生成中</option><option value="fail">生成失败</option></select></label>
+        <label class="field w120"><select id="f-on"><option value="">是否启用</option><option value="1">已启用</option><option value="0">已停用</option></select></label>
+      </div>
+
+      <div class="it-table gtable">
+        <div class="gtable-head" id="head" aria-hidden="true"></div>
+        <div class="gtable-body" id="list" role="list" aria-label="接口列表"></div>
+        <div class="gtable-foot"><span id="total"></span><span class="it-pg">15 条/页</span></div>
+      </div>
+    </main>
+    <div id="toast" class="toast" data-on="false" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- 新增 / 编辑 -->
+<div class="nf-mask" id="dlg" hidden>
+  <div class="nf nf-wide" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
+    <div class="nf-hd">
+      <b id="dlg-t">新增接口</b>
+      <button type="button" class="icon-btn" id="dlg-x" aria-label="关闭">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="nf-bd">
+      <div class="it-two">
+        <div class="it-col">
+          <label class="it-lb" for="raw">原文</label>
+          <textarea class="it-raw" id="raw" placeholder="贴 URL、cURL，或者一段大白话"></textarea>
+          <span class="it-cnt" id="cnt">0 字</span>
+          <label class="it-lb" for="src">来源项目</label>
+          <input class="it-raw" id="src" style="min-height:0;height:32px" placeholder="例如：华信证券">
+        </div>
+        <div class="it-col">
+          <span class="it-lb">说明书</span>
+          <div class="it-pv" id="pv"><span class="it-hint">生成后在这里看结果</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="nf-ft">
+      <button type="button" class="btn" id="gen">生成说明书</button>
+      <span class="it-sp"></span>
+      <button type="button" class="btn ghost" id="dlg-cancel">取消</button>
+      <button type="button" class="btn primary" id="dlg-save" disabled>保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 批量导入 -->
+<div class="nf-mask" id="bd" hidden>
+  <div class="nf" role="dialog" aria-modal="true" aria-labelledby="bd-t">
+    <div class="nf-hd">
+      <b id="bd-t">批量导入</b>
+      <button type="button" class="icon-btn" id="bd-x" aria-label="关闭">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="nf-bd">
+      <textarea class="it-raw" id="braw" placeholder="把一份接口文档整段贴进来，空行分隔每一条"></textarea>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" class="btn" id="parse">解析</button>
+        <span class="it-hint" id="bstat"></span>
+      </div>
+      <ul class="it-res" id="bres"></ul>
+    </div>
+    <div class="nf-ft">
+      <span class="it-sp"></span>
+      <button type="button" class="btn ghost" id="bd-cancel">取消</button>
+      <button type="button" class="btn primary" id="bd-do" disabled>全部导入</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/shell.js?v=2b51fc38"></script>
+<script src="assets/ui-kit.js?v=bc773bc9"></script>
+<script src="assets/confirm.js?v=ad0ffde9"></script>
+<script src="assets/spec.js?v=c7914df8"></script>
+<script src="assets/list.js?v=51a688c6"></script>
+<script src="assets/capability.js?v=84aad4fa"></script>
+<script src="assets/interfaces.js?v=25ce30c0"></script>
+</body>
+</html>

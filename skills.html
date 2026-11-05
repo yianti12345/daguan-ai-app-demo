@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小智技能</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
+<link rel="stylesheet" href="assets/sys.css?v=50819bba">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
+<style>
+/* 列与真源 /Expert/Management/SkillsLibrary 一致：8 列、表头 39、行 69。取值全来自令牌。 */
+.page-hd{display:flex;align-items:flex-start;gap:var(--space-12);margin:0 0 var(--space-12)}
+.page-hd h1{margin:0;font-size:var(--font-size-display);font-weight:600;line-height:var(--leading-display);color:var(--color-text-primary)}
+.page-hd .ops{margin-left:auto;display:flex;align-items:center;gap:var(--space-8)}
+.sk-bar{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap;padding:0 0 var(--space-12)}
+.sk-table .gtable-foot{display:flex;align-items:center;gap:var(--space-12);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+.sk-pg{margin-left:auto;color:var(--color-text-tertiary)}
+.sk-name{color:var(--color-text-primary);font-weight:500}
+.sk-desc{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-secondary)}
+.sk-at{color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
+.sk-ops{display:flex;align-items:center;gap:var(--space-12);justify-content:flex-end}
+.sk-op{height:24px;padding:0;border:0;background:none;font-family:inherit;font-size:var(--font-size-body);color:var(--color-brand-ink);cursor:pointer;white-space:nowrap}
+.sk-op:hover{text-decoration:underline}
+.sk-op.is-danger{color:var(--color-danger)}
+.sk-form{display:flex;flex-direction:column;gap:var(--space-12)}
+.sk-form label{display:flex;flex-direction:column;gap:var(--space-8);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+.sk-form input,.sk-form textarea,.sk-form select{height:32px;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:0 var(--space-12);font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);background:var(--surface-page)}
+.sk-form textarea{height:88px;padding:var(--space-8) var(--space-12);line-height:1.6;resize:vertical}
+.sk-form input:focus,.sk-form textarea:focus,.sk-form select:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
+.sk-drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-8);height:120px;border:1px dashed var(--color-border-control);border-radius:var(--radius-tag);color:var(--color-text-tertiary);font-size:var(--font-size-body);cursor:pointer}
+.sk-drop:hover{border-color:var(--color-brand);color:var(--color-brand-ink)}
+.sk-drop input{display:none}
+.sk-hint{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.sk-sp{flex:1 1 auto}
+</style>
+  <meta name="robots" content="noindex,nofollow">
+</head>
+<body>
+
+<div class="app">
+  <nav class="sider" data-active="cap-skills"></nav>
+  <div class="workspace">
+    <header class="hdr">
+      <nav class="crumb">
+        <b>能力管理</b>
+        <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
+        <b>小智技能</b>
+      </nav>
+      <div class="me"><span>admin</span><u>ad</u></div>
+    </header>
+
+    <main class="main">
+      <div class="page-hd">
+        <h1>小智技能</h1>
+        <div class="ops">
+          <button type="button" class="btn ghost" id="act-import">导入</button>
+          <button type="button" class="btn primary" id="act-new">新建 skill</button>
+        </div>
+      </div>
+
+      <div class="sk-bar">
+        <label class="field w220"><input id="kw" placeholder="搜 skill 名称或描述" autocomplete="off"></label>
+        <label class="field w120"><select id="f-state"><option value="">状态</option><option value="ok">生成成功</option><option value="fail">生成失败</option></select></label>
+        <label class="field w120"><select id="f-on"><option value="">是否启用</option><option value="1">已启用</option><option value="0">已停用</option></select></label>
+      </div>
+
+      <div class="sk-table gtable">
+        <div class="gtable-head" id="head" aria-hidden="true"></div>
+        <div class="gtable-body" id="list" role="list" aria-label="技能列表"></div>
+        <div class="gtable-foot"><span id="total"></span><span class="sk-pg">15 条/页</span></div>
+      </div>
+    </main>
+    <div id="toast" class="toast" data-on="false" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- 新建 skill -->
+<div class="nf-mask" id="dlg" hidden>
+  <div class="nf" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
+    <div class="nf-hd">
+      <b id="dlg-t">新建 skill</b>
+      <button type="button" class="icon-btn" id="dlg-x" aria-label="关闭">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="nf-bd">
+      <div class="sk-form">
+        <label for="f-name">skill 名称<input id="f-name" placeholder="例如：财报三表勾稽"></label>
+        <label for="f-scope">可用范围<select id="f-scope"><option>仅自己</option><option>全平台</option></select></label>
+        <label for="f-desc">skill 描述<textarea id="f-desc" placeholder="它能做什么"></textarea></label>
+      </div>
+    </div>
+    <div class="nf-ft">
+      <span class="sk-sp"></span>
+      <button type="button" class="btn ghost" id="dlg-cancel">取消</button>
+      <button type="button" class="btn primary" id="dlg-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导入 skill -->
+<div class="nf-mask" id="imp" hidden>
+  <div class="nf" role="dialog" aria-modal="true" aria-labelledby="imp-t">
+    <div class="nf-hd">
+      <b id="imp-t">导入 Skill</b>
+      <button type="button" class="icon-btn" id="imp-x" aria-label="关闭">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="nf-bd">
+      <label class="sk-drop" for="file">
+        <input type="file" id="file" accept=".zip,.md,.json,.txt">
+        <span id="drop-t">点击选择技能包</span>
+        <span class="sk-hint">.zip / .md / .json / .txt</span>
+      </label>
+      <div class="sk-form" style="margin-top:12px">
+        <label for="i-name">skill 名称<input id="i-name" placeholder="从文件名带出，可改"></label>
+        <label for="i-scope">可用范围<select id="i-scope"><option>仅自己</option><option>全平台</option></select></label>
+      </div>
+    </div>
+    <div class="nf-ft">
+      <span class="sk-sp"></span>
+      <button type="button" class="btn ghost" id="imp-cancel">取消</button>
+      <button type="button" class="btn primary" id="imp-do" disabled>导入</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/shell.js?v=2b51fc38"></script>
+<script src="assets/ui-kit.js?v=bc773bc9"></script>
+<script src="assets/confirm.js?v=ad0ffde9"></script>
+<script src="assets/spec.js?v=c7914df8"></script>
+<script src="assets/list.js?v=51a688c6"></script>
+<script src="assets/capability.js?v=84aad4fa"></script>
+<script src="assets/skills.js?v=30343499"></script>
+</body>
+</html>

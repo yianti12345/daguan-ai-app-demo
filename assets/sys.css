@@ -1012,6 +1012,8 @@ button.cc-meta:focus-visible{
    为什么单独一档宽度：确认框里最长的东西是一句人话，480 的宽度会把这句话
    拉成一条一眼扫不到尾的长行，反而慢。 */
 .nf-confirm{width:min(420px,calc(100vw - 32px))}
+/* 2026-11-05：接口新增要左右对照（贴原文 / 看说明书），640 放不下。只加宽度，不改别处。 */
+.nf-wide{width:min(880px,calc(100vw - 32px))}
 .nf-confirm .nf-bd{padding:18px var(--space-24) 22px;gap:0}
 .cf-body{margin:0;font-size:var(--font-size-body);line-height:var(--leading-title);color:var(--color-text-secondary)}
 .cf-body b{color:var(--color-text-primary);font-weight:600}

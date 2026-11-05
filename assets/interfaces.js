@@ -1,0 +1,249 @@
+/* interfaces.js —— 接口注册列表 + 新增/编辑 + 批量导入
+   列表骨架、列宽、空态全部交给 List（assets/list.js），这一页只说每格画什么。 */
+(function () {
+  'use strict';
+
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+  var toast = function (m, k) { if (window.UIK && UIK.toast) UIK.toast(m, k); };
+  var ask = function (o) {
+    if (window.Confirm && Confirm.ask) Confirm.ask(o);
+    else if (window.confirm(o.body || '')) o.onOk && o.onOk();
+  };
+
+  var S = { kw: '', state: '', on: '' };
+  var EDIT_ID = null;
+
+  var ST = {
+    ok:   { t: '生成成功', c: 'var(--color-success-ink)' },
+    run:  { t: '生成中',   c: 'var(--color-text-secondary)' },
+    fail: { t: '生成失败', c: 'var(--color-danger)' }
+  };
+
+  function list() {
+    var all = CAP.apis();
+    return all.filter(function (x) {
+      if (S.state && x.state !== S.state) return false;
+      if (S.on === '1' && !x.on) return false;
+      if (S.on === '0' && x.on) return false;
+      if (S.kw) {
+        var h = (x.name + ' ' + x.desc + ' ' + x.source + ' ' + (x.raw || '')).toLowerCase();
+        if (h.indexOf(S.kw.toLowerCase()) < 0) return false;
+      }
+      return true;
+    });
+  }
+
+  function paint() {
+    var rows = list();
+    List.render(SPEC['interfaces.html'], {
+      table: '.it-table', head: '#head', body: '#list', total: '#total',
+      rows: rows,
+      rowClass: 'gtable-row',
+      cell: function (key, r) {
+        if (key === 'name') return '<a class="it-name" href="#" data-act="edit" data-id="' + esc(r.id) + '">' + esc(r.name) + '</a>';
+        if (key === 'desc') return '<span class="it-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
+        if (key === 'source') return esc(r.source || '—');
+        if (key === 'state') {
+          var s = ST[r.state] || ST.ok;
+          return '<span style="color:' + s.c + '">' + s.t + '</span>';
+        }
+        if (key === 'on') return '<span style="color:' + (r.on ? 'var(--color-success-ink)' : 'var(--color-text-tertiary)') + '">' + (r.on ? '已启用' : '已停用') + '</span>';
+        if (key === 'at') return '<span class="it-at">' + esc(r.at || '—') + '</span>';
+        if (key === 'by') return esc(r.by || '—');
+        if (key === 'ops') {
+          return '<div class="it-ops">'
+            + '<button class="it-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">编辑</button>'
+            + '<button class="it-op" type="button" data-act="toggle" data-id="' + esc(r.id) + '">' + (r.on ? '停用' : '启用') + '</button>'
+            + '<button class="it-op is-danger" type="button" data-act="del" data-id="' + esc(r.id) + '">删除</button>'
+            + '</div>';
+        }
+        return '';
+      },
+      empty: function () {
+        return '<div class="empty"><div>'
+          + (S.kw || S.state || S.on ? '没有匹配的接口' : '还没有接口')
+          + '</div></div>';
+      }
+    });
+    var total = $('#total');
+    if (total) total.textContent = '共 ' + rows.length + ' 条数据';
+  }
+
+  /* ── 生成说明书：本地按原文抽取，失败也给可编辑的草稿 ── */
+  function makeDoc(raw, src) {
+    var text = String(raw || '').trim();
+    var url = (text.match(/https?:\/\/[^\s'"]+/) || [])[0] || '';
+    var method = (text.match(/-X\s+([A-Z]+)/) || [])[1] || (/curl/i.test(text) ? 'POST' : 'GET');
+    var firstLine = (text.split(/\n/).filter(function (l) { return l.trim(); })[0] || '').replace(/^#+\s*/, '').trim();
+    var name = firstLine.slice(0, 24) || (url ? url.split('/').filter(Boolean).pop() : '') || '未命名接口';
+    var desc = firstLine.length > 24 ? firstLine.slice(0, 60) : (src ? src + ' 的能力接口' : '外部接口');
+    var lines = [];
+    lines.push('### ' + name);
+    lines.push('');
+    lines.push('**用途**：' + desc);
+    lines.push('');
+    lines.push('**调用**：`' + method + (url ? ' ' + url : '（原文未给地址）') + '`');
+    lines.push('');
+    lines.push('**入参**：按原文描述组装，未写的字段不传。');
+    lines.push('');
+    lines.push('**返回**：JSON；字段含义以原文为准。');
+    if (text) {
+      lines.push('');
+      lines.push('**原文**：');
+      lines.push('');
+      lines.push('```');
+      lines.push(text.slice(0, 1200));
+      lines.push('```');
+    }
+    return { name: name, desc: desc, md: lines.join('\n') };
+  }
+
+  function mdToHtml(md) {
+    var out = [], inCode = false;
+    String(md).split(/\n/).forEach(function (l) {
+      if (/^```/.test(l)) { out.push(inCode ? '</code></pre>' : '<pre><code>'); inCode = !inCode; return; }
+      if (inCode) { out.push(esc(l)); return; }
+      if (/^###\s+/.test(l)) { out.push('<h4>' + esc(l.replace(/^###\s+/, '')) + '</h4>'); return; }
+      if (!l.trim()) { out.push(''); return; }
+      out.push('<p>' + esc(l).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>') + '</p>');
+    });
+    if (inCode) out.push('</code></pre>');
+    return out.join('\n').replace(/\n{2,}/g, '\n');
+  }
+
+  /* ── 新增 / 编辑弹窗 ── */
+  function openDlg(id) {
+    EDIT_ID = id || null;
+    var it = id ? CAP.apiById(id) : null;
+    $('#dlg-t').textContent = it ? '编辑接口' : '新增接口';
+    $('#raw').value = it ? (it.raw || '') : '';
+    $('#src').value = it ? (it.source || '') : '';
+    $('#cnt').textContent = ($('#raw').value.length) + ' 字';
+    $('#pv').innerHTML = it && it.doc ? mdToHtml(it.doc) : '<span class="it-hint">生成后在这里看结果</span>';
+    $('#dlg-save').disabled = !(it && it.doc);
+    $('#dlg').hidden = false;
+    setTimeout(function () { $('#raw').focus(); }, 0);
+  }
+  function closeDlg() { $('#dlg').hidden = true; EDIT_ID = null; }
+
+  $('#raw').addEventListener('input', function () {
+    $('#cnt').textContent = this.value.length + ' 字';
+  });
+
+  $('#gen').addEventListener('click', function () {
+    var raw = $('#raw').value.trim();
+    if (!raw) { toast('先贴点东西', 'error'); $('#raw').focus(); return; }
+    var pv = $('#pv');
+    pv.innerHTML = '<p class="it-hint">正在生成…</p>';
+    setTimeout(function () {
+      var d = makeDoc(raw, $('#src').value.trim());
+      pv.innerHTML = mdToHtml(d.md);
+      pv.setAttribute('data-name', d.name);
+      pv.setAttribute('data-desc', d.desc);
+      pv.setAttribute('data-md', d.md);
+      $('#dlg-save').disabled = false;
+    }, 600);
+  });
+
+  $('#dlg-save').addEventListener('click', function () {
+    var pv = $('#pv');
+    var md = pv.getAttribute('data-md');
+    if (!md) { toast('先生成说明书', 'error'); return; }
+    var v = {
+      name: pv.getAttribute('data-name'),
+      desc: pv.getAttribute('data-desc'),
+      source: $('#src').value.trim() || '未标注',
+      raw: $('#raw').value.trim(),
+      doc: md,
+      state: 'ok'
+    };
+    if (EDIT_ID) CAP.updateApi(EDIT_ID, v);
+    else CAP.addApi(v);
+    closeDlg(); paint();
+    toast(EDIT_ID ? '已更新' : '已注册');
+  });
+
+  $('#dlg-x').addEventListener('click', closeDlg);
+  $('#dlg-cancel').addEventListener('click', closeDlg);
+
+  /* ── 批量导入 ── */
+  var PARSED = [];
+  function closeBd() { $('#bd').hidden = true; PARSED = []; $('#bres').innerHTML = ''; $('#bd-do').disabled = true; $('#bstat').textContent = ''; }
+
+  $('#act-batch').addEventListener('click', function () {
+    $('#braw').value = ''; PARSED = []; $('#bres').innerHTML = ''; $('#bd-do').disabled = true; $('#bstat').textContent = '';
+    $('#bd').hidden = false;
+  });
+
+  $('#parse').addEventListener('click', function () {
+    var raw = $('#braw').value.trim();
+    if (!raw) { toast('先贴点东西', 'error'); return; }
+    var blocks = raw.split(/\n\s*\n/).filter(function (b) { return b.trim(); });
+    PARSED = blocks.map(function (b) {
+      var d = makeDoc(b, '');
+      return { name: d.name, desc: d.desc, raw: b.trim(), doc: d.md, source: '未标注', state: 'ok' };
+    });
+    $('#bres').innerHTML = PARSED.map(function (p, i) {
+      return '<li><b>' + esc(p.name) + '</b><span>' + esc(p.desc) + '</span>'
+        + '<button class="it-op is-danger" type="button" data-i="' + i + '">移除</button></li>';
+    }).join('');
+    $('#bstat').textContent = '解析出 ' + PARSED.length + ' 条';
+    $('#bd-do').disabled = !PARSED.length;
+  });
+
+  $('#bres').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-i]'); if (!b) return;
+    PARSED.splice(Number(b.getAttribute('data-i')), 1);
+    $('#bres').innerHTML = PARSED.map(function (p, i) {
+      return '<li><b>' + esc(p.name) + '</b><span>' + esc(p.desc) + '</span>'
+        + '<button class="it-op is-danger" type="button" data-i="' + i + '">移除</button></li>';
+    }).join('');
+    $('#bstat').textContent = '解析出 ' + PARSED.length + ' 条';
+    $('#bd-do').disabled = !PARSED.length;
+  });
+
+  $('#bd-do').addEventListener('click', function () {
+    if (!PARSED.length) return;
+    PARSED.forEach(function (p) { CAP.addApi(p); });
+    var n = PARSED.length;
+    closeBd(); paint(); toast('已导入 ' + n + ' 条');
+  });
+
+  $('#bd-x').addEventListener('click', closeBd);
+  $('#bd-cancel').addEventListener('click', closeBd);
+
+  $('#act-new').addEventListener('click', function () { openDlg(null); });
+
+  /* ── 行内动作 ── */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-act]'); if (!a) return;
+    var id = a.getAttribute('data-id'), act = a.getAttribute('data-act');
+    if (a.tagName === 'A') e.preventDefault();
+    if (act === 'edit') { openDlg(id); return; }
+    if (act === 'toggle') {
+      var r = CAP.apiById(id); if (!r) return;
+      CAP.toggleApi(id); paint(); toast(r.on ? '已启用' : '已停用');
+      return;
+    }
+    if (act === 'del') {
+      var it = CAP.apiById(id); if (!it) return;
+      ask({
+        title: '删除接口',
+        body: '删除「' + it.name + '」后，组件装配时不再可选。已生成的组件不受影响。',
+        ok: '删除', danger: true,
+        onOk: function () { CAP.removeApi(id); paint(); toast('已删除'); }
+      });
+    }
+  });
+
+  $('#kw').addEventListener('input', function () { S.kw = this.value.trim(); paint(); });
+  $('#f-state').addEventListener('change', function () { S.state = this.value; paint(); });
+  $('#f-on').addEventListener('change', function () { S.on = this.value; paint(); });
+
+  paint();
+})();

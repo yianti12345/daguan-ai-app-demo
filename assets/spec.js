@@ -19,6 +19,40 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
   return {
+    'interfaces.html': {
+      object: '接口（能力中枢登记的外部 API 及其说明书）',
+      source: '真源 /Expert/Management/SkillsLibrary 的列表形态（8 列 / 表头 39 / 行 69 / 分页 15 条）',
+      truth: '能力管理下新增第 8 项；列与技能页同一套',
+      states: ['无接口', '有数据', '搜索无结果', '生成失败', '已停用'],
+      headCols: [
+        { key: 'name', label: '接口名称' },
+        { key: 'desc', label: '描述' },
+        { key: 'source', label: '来源项目' },
+        { key: 'state', label: '状态' },
+        { key: 'on', label: '是否启用' },
+        { key: 'at', label: '最近更新时间' },
+        { key: 'by', label: '创建人' },
+        { key: 'ops', label: '操作' }
+      ],
+      cols: '180px minmax(180px,1fr) 110px 90px 90px 150px 130px 150px'
+    },
+    'skills.html': {
+      object: '技能（小智的专属技能包）',
+      source: '真源 /Expert/Management/SkillsLibrary（skill名称/可用范围/skill描述/状态/是否启用/最近更新时间/创建人/操作）',
+      truth: '真源实测：表头 39 / #F2F3F5 / 600，行 69，主按钮 106.7×32 r2',
+      states: ['无技能', '有数据', '搜索无结果', '生成失败', '已停用'],
+      headCols: [
+        { key: 'name', label: 'skill名称' },
+        { key: 'scope', label: '可用范围' },
+        { key: 'desc', label: 'skill描述' },
+        { key: 'state', label: '状态' },
+        { key: 'on', label: '是否启用' },
+        { key: 'at', label: '最近更新时间' },
+        { key: 'by', label: '创建人' },
+        { key: 'ops', label: '操作' }
+      ],
+      cols: '160px 100px minmax(180px,1fr) 90px 90px 150px 130px 140px'
+    },
     'versions.html': {
       object: '版本（应用或组件的版本存档）',
       source: '_docs/基线-版本管理.md',
