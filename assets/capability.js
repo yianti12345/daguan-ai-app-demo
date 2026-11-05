@@ -153,16 +153,27 @@
     if (!cache.scenes || !cache.scenes.some(function (x) { return x.key === 'config'; })) {
       cache.scenes = JSON.parse(JSON.stringify(SCENE_SEED));
     }
+    /* ★顺序有讲究：必须**先补文档再迁移**。
+       迁移要从 raw 里解析方法与路径，而种子的 apis 里根本没有 raw —— 先迁移的话
+       每个接口都解析成 "GET + 空路径"，界面上「接口清单」的方法路径整列是「—」，
+       新浏览器第一次打开就是这样（2026-11-05 在发布站上实测发现）。 */
+    var fixed = false;
+    cache.apis.forEach(function (a) {
+      var d = DOCS[a.id];
+      if (d) {
+        if (!a.doc) { a.doc = d.doc; fixed = true; }
+        if (!a.raw) { a.raw = d.raw; fixed = true; }
+      }
+      /* 已经迁移过、路径却还是空的老存档，这里补一次（幂等）。 */
+      if (!a.path) {
+        var mp = pickMethodPath(a.raw);
+        if (mp.path) { a.path = mp.path; if (!a.method) a.method = mp.method; fixed = true; }
+      }
+    });
+    if (fixed) save();
     /* ★2026-11-05：数据分两层。老存档（一条记录=一个接口）在这里自动变成
        「能力 + 接口池」，装配关系一并换 id。跑一次写 schemaVersion=2，之后不再跑。 */
     if (!cache.schemaVersion || cache.schemaVersion < 2) migrateV2(cache);
-    /* 老存档里没有说明书：按 id 从种子补一次，不覆盖用户自己写过的。 */
-    cache.apis.forEach(function (a) {
-      var d = DOCS[a.id];
-      if (!d) return;
-      if (!a.doc) a.doc = d.doc;
-      if (!a.raw) a.raw = d.raw;
-    });
     /* 「生成中」只在页面开着的时候成立。刷新或关页之后还挂着 run，
        说明那次生成没跑完 —— 记账成失败，别让清单里永远转圈。 */
     var stale = false;
