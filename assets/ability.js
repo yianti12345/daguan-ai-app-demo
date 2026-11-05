@@ -6,6 +6,7 @@
   'use strict';
 
   var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -230,6 +231,10 @@
       '<div class="nf-mask" id="pk-mask"><div class="nf" role="dialog" aria-modal="true" aria-labelledby="pk-t" style="width:660px;max-width:calc(100vw - 48px)">'
       + '<div class="nf-hd"><b id="pk-t">添加接口</b>'
       + '<button type="button" class="icon-btn" id="pk-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
+      + '<div class="p-tabs" id="pk-tabs" role="tablist" style="padding:0;margin:0 0 var(--space-8)">'
+      +   '<button type="button" role="tab" class="p-tab" data-mode="bulk">贴内容自动拆</button>'
+      +   '<button type="button" role="tab" class="p-tab" data-mode="form">手动填一条</button>'
+      + '</div>'
       + '<div class="nf-bd" id="pk-bd"></div>'
       + '<div class="nf-ft"><span id="pk-left" style="margin-right:auto"></span>'
       + '<button type="button" class="btn ghost" id="pk-cancel">取消</button>'
@@ -238,34 +243,41 @@
     $('#pk-x').addEventListener('click', function () { $('#pk-mask').remove(); });
     $('#pk-cancel').addEventListener('click', function () { $('#pk-mask').remove(); });
     $('#pk-ok').addEventListener('click', onAddOk);
+    $$('#pk-tabs .p-tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        var ta = $('#fb-raw'); if (ta) ADD.text = ta.value;   /* 切页签不丢已贴的内容 */
+        ADD.mode = t.getAttribute('data-mode'); ADD.parsed = null; paintAdd();
+      });
+    });
     paintAdd();
   }
 
+  function paintTabs() {
+    var act = ADD.mode === 'list' ? 'bulk' : ADD.mode;
+    $$('#pk-tabs .p-tab').forEach(function (t) {
+      t.setAttribute('aria-selected', String(t.getAttribute('data-mode') === act));
+    });
+  }
+
   function paintFoot(leftHtml, okText, okOff) {
-    $('#pk-left').innerHTML = leftHtml;
+    $('#pk-left').innerHTML = leftHtml || '';
     var ok = $('#pk-ok');
     ok.textContent = okText; ok.disabled = !!okOff;
     var l = $('#pk-left').firstChild;
-    if (l && l.id === 'pk-to-form') l.addEventListener('click', function () { ADD.mode = 'form'; paintAdd(); });
-    if (l && l.id === 'pk-to-bulk') l.addEventListener('click', function () { ADD.mode = 'bulk'; paintAdd(); });
-    if (l && l.id === 'pk-back') l.addEventListener('click', function () { ADD.mode = 'bulk'; paintAdd(); });
+    if (l && l.id === 'pk-back') l.addEventListener('click', function () { ADD.mode = 'bulk'; ADD.parsed = null; paintAdd(); });
   }
 
   function paintAdd() {
     var bd = $('#pk-bd');
+    paintTabs();
     if (ADD.mode === 'bulk') {
-      var cur = CAP.abilityById(ID).apiIds || [];
       bd.innerHTML = ''
         + '<div class="nf-row"><label for="fb-raw">把接口文档或说明贴进来</label>'
-        + '<textarea id="fb-raw" style="min-height:210px" placeholder="OpenAPI / Swagger 的 JSON 或 YAML；也可以是一段段接口说明，空行分开。贴完点「解析」。"></textarea></div>'
-        + '<div class="nf-row" style="flex-direction:row;align-items:center;gap:var(--space-12)">'
-        + '<label for="fb-file" class="abt-op" style="margin:0">或者选一个文件</label>'
-        + '<input type="file" id="fb-file" accept=".json,.yaml,.yml,.txt,.md" style="font-size:var(--font-size-caption);max-width:260px">'
+        + '<textarea id="fb-raw" style="min-height:230px" placeholder="OpenAPI / Swagger 的 JSON 或 YAML；也可以是一段段接口说明，空行分开。贴完点「解析」。"></textarea></div>'
+        + '<div class="nf-row" style="flex-direction:row;align-items:center;gap:var(--space-8)">'
         + '<span class="abt-hint" id="fb-tip" style="margin-left:auto"></span></div>';
       $('#fb-raw').value = ADD.text || '';
-      $('#fb-file').addEventListener('change', onAddFile);
-      paintFoot('<button type="button" class="abt-op" id="pk-to-form">手动填一条</button>',
-        ADD.busy ? '解析中…' : '解析', ADD.busy);
+      paintFoot('', ADD.busy ? '解析中…' : '解析', ADD.busy);
       return;
     }
     if (ADD.mode === 'form') {
@@ -276,14 +288,14 @@
         +   '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:var(--space-8)"><label for="fa-path">路径<span class="nf-req">*</span></label><input id="fa-path" placeholder="/api/v1/…"></div>'
         + '</div>'
         + '<div class="nf-row"><label for="fa-desc">说明</label><input id="fa-desc" placeholder="干什么用，一句话"></div>'
-        + '<div class="nf-row"><label for="fa-in">入参</label><textarea id="fa-in" style="min-height:80px;font-family:var(--font-family-mono);font-size:var(--font-size-caption)" placeholder="{&quot;page&quot;: 1, &quot;status&quot;: &quot;done&quot;}"></textarea></div>'
-        + '<div class="nf-row"><label for="fa-out">返回</label><textarea id="fa-out" style="min-height:80px;font-family:var(--font-family-mono);font-size:var(--font-size-caption)" placeholder="{&quot;total&quot;: 0, &quot;items&quot;: []}"></textarea></div>';
+        + '<div class="nf-row"><label for="fa-in">入参（JSON）</label><textarea id="fa-in" style="min-height:80px;font-family:var(--font-family-mono);font-size:var(--font-size-caption)" placeholder="{&quot;page&quot;: 1, &quot;status&quot;: &quot;done&quot;}"></textarea></div>'
+        + '<div class="nf-row"><label for="fa-out">返回（JSON）</label><textarea id="fa-out" style="min-height:80px;font-family:var(--font-family-mono);font-size:var(--font-size-caption)" placeholder="{&quot;total&quot;: 0, &quot;items&quot;: []}"></textarea></div>';
       ['#fa-name', '#fa-path'].forEach(function (sel) {
         $(sel).addEventListener('input', function () {
           $('#pk-ok').disabled = !($('#fa-name').value.trim() && $('#fa-path').value.trim());
         });
       });
-      paintFoot('<button type="button" class="abt-op" id="pk-to-bulk">贴一段内容，一次拆多条</button>', '添加', true);
+      paintFoot('', '添加', true);
       return;
     }
     /* list：拆出来的先给人看一眼 */
@@ -303,17 +315,6 @@
       + '<div class="abt-list" style="max-height:320px;overflow:auto">' + rows + '</div>';
     paintFoot('<button type="button" class="abt-op" id="pk-back">重新贴</button>',
       '加入 ' + (items.length - dup) + ' 个', items.length - dup === 0);
-  }
-
-  function onAddFile(e) {
-    var f = (e.target.files || [])[0]; if (!f) return;
-    var r = new FileReader();
-    r.onload = function () {
-      ADD.text = String(r.result || '').slice(0, 20000);
-      var ta = $('#fb-raw'); if (ta) ta.value = ADD.text;
-      var tp = $('#fb-tip'); if (tp) tp.textContent = '已读入 ' + f.name;
-    };
-    r.readAsText(f);
   }
 
   function onAddOk() {
