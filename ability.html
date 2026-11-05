@@ -13,6 +13,7 @@
    两栏等高，各自内部滚动；字段一律满宽（共享层已兜底）。 */
 .abt-bar{display:flex;align-items:center;gap:var(--space-8);padding:0 0 var(--space-12)}
 .abt-state{margin-left:auto;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.abt-state.is-danger{color:var(--color-danger)}
 .abt-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-24);align-items:start}
 .abt-lb{display:block;margin:0 0 var(--space-4);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
 .abt-lb i{font-style:normal;color:var(--color-danger);margin-right:2px}
@@ -46,7 +47,7 @@
       <nav class="crumb">
         <b>配置管理</b>
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
-        <b><a href="abilities.html" style="color:inherit;text-decoration:none">能力配置</a></b>
+        <b><a href="abilities.html">能力配置</a></b>
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
         <b id="crumb-name">新建能力</b>
       </nav>
@@ -86,6 +87,6 @@
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/capability.js?v=089bd664"></script>
 <script src="assets/gen.js?v=741d5dc2"></script>
-<script src="assets/ability.js?v=9e144a97"></script>
+<script src="assets/ability.js?v=05e005ef"></script>
 </body>
 </html>

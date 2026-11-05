@@ -72,16 +72,18 @@
     var moved = (B.apiIds || []).join(',') !== String(B.docApis || '');
     if (BUSY || st === 'run') {
       el.textContent = '生成中…';
-      el.style.color = 'var(--color-text-tertiary)';
+      el.classList.remove('is-danger');
     } else if (st === 'fail') {
       el.textContent = '这次没生成出来：' + (B.docErr || '模型没返回');
-      el.style.color = 'var(--color-danger)';
+      el.classList.add('is-danger');
     } else if (st === 'ready') {
-      if (B.doc && moved) { el.textContent = '接口有变动，说明书要重新生成'; el.style.color = 'var(--color-warn-ink, var(--color-text-secondary))'; }
-      else { el.textContent = '已就绪' + (B.docAt ? ' · ' + B.docAt : ''); el.style.color = 'var(--color-text-tertiary)'; }
+      el.classList.remove('is-danger');
+      el.textContent = (B.doc && moved)
+        ? '接口有变动，说明书要重新生成'
+        : ('已就绪' + (B.docAt ? ' · ' + B.docAt : ''));
     } else {
       el.textContent = '还没生成';
-      el.style.color = 'var(--color-text-tertiary)';
+      el.classList.remove('is-danger');
     }
   }
 
