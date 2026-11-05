@@ -47,6 +47,10 @@ var VER = '';
 function byVer(r) { return !VER || String(r.version) === VER; }
   /* 批量升级的选中态：按 authId 记，重画不丢；筛选/升级后自动剔除失效项。 */
   var sel = {};
+  /* ★2026-11-05：一页 20 家。原来把全部客户铺在一屏（1000 家就是 1000 行 DOM），
+     底部却写着「10 条/页」—— 数字是假的，翻页也是假的。现在真分页，勾选跨页保留。 */
+  var PGSZ = 10, PG = 0;
+  var VIEW = [];            /* 当前筛选后的整份列表（不分页），「全部升级」按它算 */
 
   /* 2026-11-02 第二次整改：进了某个应用之后，一行＝一家客户（不再按授权记录出行）——
      没授权的客户也要出现，否则「还有谁没给」这件事在页面上根本看不到。
@@ -192,6 +196,12 @@ function byVer(r) { return !VER || String(r.version) === VER; }
 
     var list = rows();
     var box = $('#list'), total = $('#total');
+    VIEW = list;
+    var pages = Math.max(1, Math.ceil(list.length / PGSZ));
+    if (PG > pages - 1) PG = pages - 1;
+    if (PG < 0) PG = 0;
+    var start = PG * PGSZ;
+    var slice = list.slice(start, start + PGSZ);
     if (!box) return;
 
     var card = document.querySelector('.au-card');
@@ -218,10 +228,9 @@ function byVer(r) { return !VER || String(r.version) === VER; }
         '<button class="au-btn" type="button" data-act="revoke" data-id="' + esc(r.authId) + '">取消授权</button>';
     }
 
-    /* 只保留当前可见、且仍可升级的选中项，避免筛选后计数与批量动作对不上。 */
-    var live = {};
-    list.forEach(function (r) { if (r.behind) live[r.authId] = 1; });
-    Object.keys(sel).forEach(function (id) { if (!live[id]) delete sel[id]; });
+    /* ★2026-11-05：勾选不再跟着筛选/翻页丢。原来这里按「当前可见」裁选中项 ——
+       先勾 5 家、再换个版本筛选，那 5 家就悄悄出列了，批量升级少升几家人也不会说一声。
+       现在只在「这条授权真的不可升级了」时出列（见 pickedRows）。 */
 
     /* ★2026-11-04 根治 C 类（_reports/根因分析-20261104.md）：
        表头、列宽、行骨架、空态不再在这一页拼 —— 交给 List（assets/list.js）一处定义。
@@ -236,7 +245,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
 
     List.render(viewSpec, {
       table: '.au-table', head: '#head', body: '#list', total: '#total',
-      rows: list,
+      rows: slice,
       empty: function () { return emptyHtml || '<p class="au-empty">还没有客户授权</p>'; },
       rowClass: 'au-row gtable-row',
       rowExtra: function (r) { return (r.behind && sel[r.authId]) ? 'is-selected' : ''; },
@@ -246,7 +255,11 @@ function byVer(r) { return !VER || String(r.version) === VER; }
           ' data-status="' + esc(r.status) + '"';
       },
       cellAttr: function (key, r) {
-        return (key === 'exp' && r.expireAt && r.expireAt < today()) ? ' data-expired="1"' : '';
+        var a = (key === 'exp' && r.expireAt && r.expireAt < today()) ? ' data-expired="1"' : '';
+        /* 这两列会按列宽截断：截断时必须能把全文调出来，否则「海通证券 · 债承复核」看不全也没处问。 */
+        if (key === 'app') a += ' title="' + esc(r.appName) + '"';
+        if (key === 'client') a += ' title="' + esc(r.clientName) + '"';
+        return a;
       },
       cell: function (key, r) {
         if (key === 'pick') return r.behind
@@ -264,57 +277,131 @@ function byVer(r) { return !VER || String(r.version) === VER; }
           '<button class="au-btn" type="button" data-act="edit-client" data-cid="' + esc(r.clientId) + '">编辑客户</button>';
         return '';
       },
-      foot: function (rs) { return '第 1-' + rs.length + ' 条/共 ' + rs.length + ' 条'; },
+      foot: function (rs) {
+        return rs.length
+          ? ('第 ' + (start + 1) + '-' + (start + rs.length) + ' 条/共 ' + list.length + ' 条')
+          : ('共 ' + list.length + ' 条');
+      },
       after: function () {
         syncBatch();
-        var pg = $('#pager');
-        if (pg) pg.innerHTML = '<span class="pg-cur">1</span><span class="pg-size">10 条/页</span>';
+        paintPager(pages);
       }
     });
   }
 
-  /* ── 批量选择 ────────────────────────────────────────────────
-     只有「授权中且落后最新版」的行有勾选框：当前唯一的批量动作是升级，
-     让不可升级的行也能勾，只会制造「选了 3 个却只升 1 个」的误解。 */
+  /* ── 批量升级 ────────────────────────────────────────────────
+     三个数各说一件事，不许混：
+       · 表头全选框   = 本页里有勾选框的行
+       · 批量升级（N）= 勾了几个（跨页、跨筛选都算）
+       · 全部升级（N）= 当前筛选结果里所有落后最新版的客户（不看勾选）
+     ★2026-11-05：原来只有「一键升级（N）」—— 想升 1000 家得先翻 50 页去勾，
+       而翻页时勾选还会被"当前可见"裁掉。现在这两条都改了。 */
   function pickedRows() {
-    return rows().filter(function (r) { return r.behind && sel[r.authId]; });
+    var out = [];
+    Object.keys(sel).forEach(function (id) {
+      var rec = recOf(id);
+      if (!rec) { delete sel[id]; return; }
+      var top = DB.latestVer(rec.appId);
+      /* 已经升到最新的自动出列：计数永远等于"真能升的"，不用人自己对账。 */
+      if ((rec.version || 0) >= top) { delete sel[id]; return; }
+      var c = DB.clientById(rec.clientId);
+      var a = DB.appById(rec.appId) || {};
+      out.push({ authId: id, clientName: c ? c.name : '（客户已删）', appName: a.name || '', from: rec.version || 0, to: top });
+    });
+    return out;
   }
+  function behindInView() { return VIEW.filter(function (r) { return r.behind; }); }
+
   function syncBatch() {
-    var btn = $('#act-batch'), nEl = $('#batch-n'), all = $('#au-all');
-    var can = rows().filter(function (r) { return r.behind; });
+    var btn = $('#act-batch'), nEl = $('#batch-n'), allBtn = $('#act-all'), allN = $('#all-n');
     var picked = pickedRows();
+    var pageBoxes = $$('#list [data-pick]');
+    var pagePicked = pageBoxes.filter(function (c) { return c.checked; });
+
     if (nEl) nEl.textContent = String(picked.length);
-    /* ★2026-11-04（用户：「狗屎没意义的提示」）：0 家可升级时这颗按钮整颗不出现，
-       原来常驻一个禁用的「一键升级（0）」，等于在页面上摆一个永远点不动的东西。 */
-    if (btn) { btn.disabled = !picked.length; btn.hidden = !can.length; }
-    var nWrap = $('#batch-n-wrap');
-    if (nWrap) nWrap.hidden = !picked.length;
-    if (all) {
-      /* 没有可升级的行时，表头那颗全选框没有任何作用 —— 藏掉，不要让一列空勾选框占着 40px。 */
-      if (all.parentNode) all.parentNode.hidden = !can.length;
-      all.disabled = !can.length;
-      all.checked = !!can.length && picked.length === can.length;
-      all.indeterminate = picked.length > 0 && picked.length < can.length;
+    /* 0 个勾选时整颗不出现（用户 2026-11-04：「没意义的提示」）；勾了就带着数出现。 */
+    if (btn) { btn.disabled = !picked.length; btn.hidden = !picked.length; }
+
+    /* 全部升级常驻在可升级时：它是"1000 家一次升完"的唯一入口。 */
+    var all = behindInView();
+    if (allBtn) { allBtn.disabled = !all.length; allBtn.hidden = !all.length; }
+    if (allN) allN.textContent = String(all.length);
+
+    /* 勾选里有一部分不在这一页：括号里的数永远是勾选总数，但鼠标停上去要说清
+       "其中 N 家不在当前页"，否则"选了 12 只看到 3 个勾"很像出错。 */
+    var hiddenPicked = Math.max(0, picked.length - pagePicked.length);
+    if (btn) {
+      btn.title = hiddenPicked
+        ? ('共勾选 ' + picked.length + ' 家，其中 ' + hiddenPicked + ' 家不在当前页（换页/搜索后勾选不丢）')
+        : (picked.length ? ('只升勾选的这 ' + picked.length + ' 家') : '');
+    }
+
+    var selAll = $('#au-all');
+    if (selAll) {
+      if (selAll.parentNode) selAll.parentNode.hidden = !pageBoxes.length;
+      selAll.disabled = !pageBoxes.length;
+      selAll.checked = pageBoxes.length > 0 && pagePicked.length === pageBoxes.length;
+      selAll.indeterminate = pagePicked.length > 0 && pagePicked.length < pageBoxes.length;
+      selAll.setAttribute('aria-label', '全选本页 ' + pageBoxes.length + ' 家可升级客户');
     }
   }
+
+  function paintPager(pages) {
+    var pg = $('#pager');
+    if (!pg) return;
+    if (pages <= 1) { pg.innerHTML = '<span class="pg-size">每页 ' + PGSZ + ' 家</span>'; return; }
+    pg.innerHTML =
+      '<button class="au-btn" type="button" data-pg="-1"' + (PG === 0 ? ' disabled' : '') + '>上一页</button>' +
+      '<span class="pg-cur">' + (PG + 1) + '</span>' +
+      '<span class="pg-size">共 ' + pages + ' 页</span>' +
+      '<button class="au-btn" type="button" data-pg="1"' + (PG >= pages - 1 ? ' disabled' : '') + '>下一页</button>';
+  }
+
+  /* 勾了谁就升谁。确认框里把数量再报一次 —— 和按钮上的括号是同一个数。 */
   function batchUpgrade() {
     var picked = pickedRows();
     if (!picked.length) return;
     Confirm.ask({
       title: '批量升级',
-      body: '将选中的 ' + picked.length + ' 家客户升级到各自应用的最新版本？升级后立刻生效。',
-      ok: '确定升级',
+      body: '将把勾选的 <b>' + picked.length + '</b> 家客户升到各自应用的最新版本，升级后立刻生效。',
+      ok: '升级这 ' + picked.length + ' 家',
+      onOk: function () { run(picked, '批量'); }
+    });
+  }
+
+  /* 全部升级 = 当前筛选内的所有落后客户，不看勾选。1000 家客户的主路径。 */
+  function upgradeAll() {
+    var targets = behindInView();
+    if (!targets.length) return;
+    var scope = [];
+    if (VER) scope.push('版本 v' + VER);
+    if (KW) scope.push('搜索「' + KW + '」');
+    Confirm.ask({
+      title: '全部升级',
+      body: '将把 <b>' + targets.length + '</b> 家客户升到各自应用的最新版本，升级后立刻生效。'
+        + (scope.length ? '<br>范围：当前筛选（' + scope.join(' · ') + '），筛选外的客户不动。' : ''),
+      ok: '全部升级（' + targets.length + ' 家）',
       onOk: function () {
-        var ok = 0, fail = 0;
-        picked.forEach(function (r) {
-          var x = DB.authUpgrade(r.authId);
-          if (x && x.ok) ok++; else fail++;
-        });
-        sel = {};
-        paint();
-        toast(fail ? '已升级 ' + ok + ' 家，' + fail + ' 家失败' : '已升级 ' + ok + ' 家客户');
+        run(targets.map(function (r) { return { authId: r.authId, clientName: r.clientName }; }), '全部');
       }
     });
+  }
+
+  /* 一次跑完：本地数据，没有网络等待，所以不假装"逐条 500ms 推进"。
+     有失败就把名字说出来，不吞成一句"部分失败"。 */
+  function run(list, word) {
+    var ok = 0, fail = [];
+    list.forEach(function (r) {
+      var x = DB.authUpgrade(r.authId);
+      if (x && x.ok) ok++; else fail.push(r.clientName + (x && x.msg ? '（' + x.msg + '）' : ''));
+    });
+    sel = {};
+    paint();
+    if (fail.length) {
+      toast(word + '升级：成功 ' + ok + ' 家，失败 ' + fail.length + ' 家 · ' + fail.slice(0, 2).join('；'), 'err');
+    } else {
+      toast(word + '升级：' + ok + ' 家已升到最新版本');
+    }
   }
 
   /* ── 升级 / 取消 / 恢复 / 删除 ─────────────────────────────── */
@@ -505,12 +592,21 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     });
 
     var kw = $('#kw');
-    if (kw) kw.addEventListener('input', function () { KW = kw.value.trim(); paint(); });
+    if (kw) kw.addEventListener('input', function () { KW = kw.value.trim(); PG = 0; paint(); });
 var verEl = $('#f-ver');
-if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; paint(); });
+if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; PG = 0; paint(); });
 
     var batch = $('#act-batch');
     if (batch) batch.addEventListener('click', batchUpgrade);
+    var allUp = $('#act-all');
+    if (allUp) allUp.addEventListener('click', upgradeAll);
+    var pager = $('#pager');
+    if (pager) pager.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-pg]');
+      if (!b || b.disabled) return;
+      PG += Number(b.getAttribute('data-pg'));
+      paint();
+    });
     var all = $('#au-all');
     if (all) all.addEventListener('change', function () {
       var on = all.checked;

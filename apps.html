@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
 <link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
-<link rel="stylesheet" href="assets/sys.css?v=9a6e8db6">
+<link rel="stylesheet" href="assets/sys.css?v=9623ce6f">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=3e223187">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -39,6 +39,7 @@
       <div class="me"><span>admin</span><u>ad</u></div>
     </header>
     <main class="main">
+      <h1 class="sr-only">应用管理</h1>
       <!-- ★2026-10-24：删掉这里的大标题「应用管理」。
            面包屑已经是「AI 应用方案 › 应用管理」，同一屏写两遍同一句话是重复；
            而且组件库页没有这个 h1，两页并排看结构就不一致了（用户要的是 1:1 同一套）。
@@ -673,7 +674,7 @@
             /* ★2026-11-02（两个升级别混）：这一个是**装配组件**的可升级数，上面那个 kc-stale 是
                **客户授权版本**落后的家数。原来写「2 个可升级」「3 家待升级」—— 同一张卡两个"升级"，
                用户分不出点哪个。这里补主语"组件"。 */
-            (upd ? '<span class="kc-upd-flag" title="' + esc(UIK.badgeLabel(upd)) + '，点卡片进去一键升级">' +
+            (upd ? '<span class="kc-upd-flag" title="' + esc(UIK.badgeLabel(upd)) + '，点卡片进去升级组件">' +
               esc(upd + ' 个组件可升级') + '</span>' : '') +
           '</span>' +
           '<span class="kc-info">' +

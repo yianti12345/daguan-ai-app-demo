@@ -6,7 +6,7 @@
 <title>能力配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
-<link rel="stylesheet" href="assets/sys.css?v=9a6e8db6">
+<link rel="stylesheet" href="assets/sys.css?v=9623ce6f">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=3e223187">
 <style>
 /* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
@@ -21,7 +21,7 @@
 .it-pager{display:inline-flex;align-items:center;gap:var(--space-4);margin-left:auto}
 .it-pn{min-width:24px;height:24px;padding:0 6px;border:0;border-radius:var(--radius-sm);background:none;font-family:inherit;font-size:var(--font-size-caption);color:var(--color-text-secondary);cursor:pointer}
 .it-pn:hover{background:var(--color-state-hover)}
-.it-pn[aria-current="true"]{background:var(--color-brand);color:var(--color-text-inverse)}
+.it-pn[aria-current="true"]{background:var(--color-brand-active);color:var(--color-text-inverse)}
 .it-pg{color:var(--color-text-tertiary)}
 .it-name{color:var(--color-text-primary)}
 .it-desc{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-secondary)}
@@ -82,6 +82,7 @@
     </header>
 
     <main class="main">
+      <h1 class="sr-only">接口清单</h1>
 
       <!-- 真源形态：面包屑下紧跟一条工具条（左操作、右筛选），然后直接是表格。 -->
       <div class="it-bar">
@@ -141,7 +142,7 @@
             <div class="it-pv-hd" style="margin-top:var(--space-12)">
               <span class="it-lb">能力说明书</span>
             </div>
-            <textarea class="it-raw" id="pv-md" placeholder="生成后可以直接改"></textarea>
+            <textarea class="it-raw" id="pv-md" aria-label="能力说明书内容" placeholder="生成后可以直接改"></textarea>
             <div class="it-pv" id="pv" hidden></div>
           </div>
         </div>
@@ -176,7 +177,7 @@
 <script src="assets/shell.js?v=1736883e"></script>
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
-<script src="assets/spec.js?v=20361bb0"></script>
+<script src="assets/spec.js?v=837054ad"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=089bd664"></script>
 <script src="assets/interfaces.js?v=33dc6183"></script>

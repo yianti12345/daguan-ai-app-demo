@@ -29,7 +29,11 @@
     return '已上架';
   }
   function compName() { return st.comp ? st.comp.name : ''; }
-  function behindAll() { return st.refs.filter(function (r) { return r.behind; }); }
+  /* 当前视图（按页签+搜索筛过）里落后的那些。「全部升级（N）」的 N 就是它的长度 ——
+     屏幕上有几个待升级，按钮就说几个；不拿"库里的总数"冒充，否则筛选后会出现
+     「我只看到 3 个，它却说要升 37 个」。 */
+  function behindAll() { return view().filter(function (r) { return r.behind; }); }
+  function behindEvery() { return st.refs.filter(function (r) { return r.behind; }); }
   /* ★2026-11-04（用户：「没有所谓的需手动和已自定义！给我移除掉」）：
      引用管理只讲一件事 —— 谁落后了、升到最新。没有第三种状态。 */
   function selectable() { return st.refs.filter(function (r) { return r.behind; }); }
@@ -169,12 +173,22 @@
 
   function renderTools() {
     var n = behindAll().length, pn = picked().length;
+    var every = behindEvery().length;
     var allBtn = dlg.querySelector('#ru-all');
     allBtn.textContent = n ? '全部升级（' + n + '）' : '全部升级';
     allBtn.disabled = st.busy || n === 0;
+    /* 筛过的时候，全部升级只管筛出来的那些 —— 鼠标停上去把这件事说清楚。 */
+    allBtn.title = (st.q || st.tab === 'behind')
+      ? ('把当前筛选里的 ' + n + ' 个应用升到 ' + fmt(st.comp.ver) + '（库里共 ' + every + ' 个待升级）')
+      : ('把 ' + n + ' 个待升级应用一次升到 ' + fmt(st.comp.ver));
     var b = dlg.querySelector('#ru-batch');
     b.textContent = '批量升级（' + pn + '）';
     b.disabled = st.busy || pn === 0;
+    /* 0 个勾选时整颗不出现 —— 与装配面板、客户授权同一口径：
+       常驻一颗「批量升级（0）」等于在页面上摆一个永远点不动的东西。 */
+    b.hidden = pn === 0;
+    /* 勾选跨页保留：括号里是勾选总数，说清"有几页之外"的。 */
+    b.title = pn ? ('只升勾选的 ' + pn + ' 个（跨页勾选也算）') : '';
     dlg.querySelectorAll('.ru-tab').forEach(function (t) {
       t.classList.toggle('on', t.getAttribute('data-tab') === st.tab);
       t.setAttribute('aria-selected', t.getAttribute('data-tab') === st.tab ? 'true' : 'false');
@@ -231,7 +245,15 @@
     dlg.querySelector('#ru-next').disabled = cur >= pages() - 1;
   }
   function countLine(total) {
-    dlg.querySelector('#ru-count').textContent = '共 ' + total + ' 个引用';
+    /* 勾选跨页、跨筛选都保留：这里把"勾了几个"白纸黑字写在页脚，
+       否则筛完之后屏幕上没有勾、按钮却写着批量升级（2），看着像出错。 */
+    var pn = picked().length;
+    /* 只有"勾的里面有一部分不在这张表上"时才补那句括号，否则是废话。 */
+    var onView = picked().filter(function (r) {
+      return view().some(function (x) { return x.id === r.id; });
+    }).length;
+    dlg.querySelector('#ru-count').textContent = '共 ' + total + ' 个引用'
+      + (pn ? ' · 已勾选 ' + pn + ' 个' + (pn > onView ? '（另有 ' + (pn - onView) + ' 个在筛选外）' : '') : '');
   }
 
   function askRun(ids) {
@@ -239,6 +261,9 @@
     var targets = ids ? st.refs.filter(function (r) { return ids.indexOf(r.id) >= 0 && r.behind; }) : behindAll();
     if (!targets.length) { UIK.toast(ids ? '选中的应用都已经是最新版' : '没有需要升级的应用'); return; }
     var body = '<p>将把 <b class="num">' + targets.length + '</b> 个应用对「' + esc(compName()) + '」的装配版本升到 <b class="num">' + fmt(st.comp.ver) + '</b>。</p>' +
+      ((!ids && (st.q || st.tab === 'behind'))
+        ? '<p class="ru-cf-quiet">范围：当前筛选里的 ' + targets.length + ' 个（库里共 ' + behindEvery().length + ' 个待升级）。</p>'
+        : '') +
       '<p class="ru-cf-quiet">只改装配版本；应用内容与客户授权版本都不动。</p>';
     Confirm.ask({
       title: ids && ids.length === 1 ? '升级这个应用？' : '升级「' + compName() + '」的引用',
@@ -257,20 +282,24 @@
     st.progress = { total: ids.length, done: 0, ok: [], skipped: [], failed: [] };
     dlg.querySelector('#ru-prog').hidden = false;
     renderTools(); renderRows();
-    var i = 0;
+    /* ★2026-11-05：原来 500ms/条 —— 37 个要 18 秒，1000 个要 8 分钟，中间还只能干看着。
+       改成每拍 10 个（80ms），1000 个约 8 秒；进度条照样能看见在走。 */
+    var i = 0, BATCH = 10;
     function step() {
       if (i >= ids.length) return finish();
-      var id = ids[i++];
-      var res = DB.upgradeCompRefs(st.id, [id]);
-      st.progress.ok = st.progress.ok.concat(res.ok);
-      st.progress.skipped = st.progress.skipped.concat(res.skipped);
-      st.progress.failed = st.progress.failed.concat(res.failed);
-      st.progress.done++;
+      var end = Math.min(ids.length, i + BATCH);
+      while (i < end) {
+        var res = DB.upgradeCompRefs(st.id, [ids[i]]);
+        st.progress.ok = st.progress.ok.concat(res.ok);
+        st.progress.skipped = st.progress.skipped.concat(res.skipped);
+        st.progress.failed = st.progress.failed.concat(res.failed);
+        i++; st.progress.done++;
+      }
       paintProgress();
-      st.timer = setTimeout(step, 500);
+      st.timer = setTimeout(step, 80);
     }
     paintProgress();
-    st.timer = setTimeout(step, 120);
+    st.timer = setTimeout(step, 80);
   }
 
   function paintProgress() {

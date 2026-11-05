@@ -42,6 +42,9 @@
   }
 
   function paint() {
+    /* 2026-11-05 体检：这个文件也被 skill-edit.html 引用，那页只有编辑器、没有列表，
+       也没引 list.js/spec.js。原来无条件调 List.render → ReferenceError，整页交互停摆。 */
+    if (!document.querySelector('.sk-table') || typeof List === 'undefined') return;
     var rows = list();
     List.render(SPEC['skills.html'], {
       table: '.sk-table', head: '#head', body: '#list', total: '#total',

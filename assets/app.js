@@ -1735,6 +1735,14 @@
     });
   }
 
+  /* 当前视图（搜索/AI 结果、页签都算过）里的行 ——「全部升级（N）」的 N 按它算，
+     做到"屏幕上看到几个可升级，按钮就说几个"。 */
+  var CUR_ROWS = [];
+  function viewUpgradeIds() {
+    return CUR_ROWS.filter(function (c) { return isOn(c.id) && !!updNow[c.id]; })
+      .map(function (c) { return c.id; });
+  }
+
   /* 能进批量动作的行：可装配页签＝当前可安装；已装配页签＝当前有更新。
      不可升级的已装行不给勾选 —— 否则会出现「选了 3 个只升 1 个」的计数谎话。 */
   function canBatch(c) {
@@ -1753,17 +1761,25 @@
 
   /* ★2026-11-04（用户）：「一个是批量升级，然后一个是全部升级」。
      口径与组件引用管理一致：批量只认勾选，全部不看勾选、直接升完所有落后件。 */
+  /* ★2026-11-05：范围改成"当前视图"。
+     原来它拿 DB.updatesOf(app.id) = 全库落后件，搜索过之后会出现
+     「屏幕里只有 2 个可升级，按钮写着全部升级（8）」—— 一点下去升了 6 个看不到的。 */
   function upgradeAllNow() {
-    var ups = DB.updatesOf(app.id);
+    var ids = viewUpgradeIds();
+    var idsMap = {};
+    ids.forEach(function (id) { idsMap[id] = 1; });
+    var ups = DB.updatesOf(app.id).filter(function (u) { return idsMap[u.id]; });
     if (!ups.length) { hint('没有要升级的组件', { ms: 4000 }); return; }
+    var total = DB.updatesOf(app.id).length;
     var names = ups.slice(0, 5).map(function (u) { return u.name + ' ' + u.from + '→' + u.to; }).join('、');
     Confirm.ask({
       title: '把 ' + ups.length + ' 个组件升到最新版？',
       body: (ups.length > 5 ? names + ' 等 ' + ups.length + ' 个' : names) +
-            '<br>只改装配版本；客户那边不会立刻变，要生效还得去「客户授权」页升级。',
-      ok: '全部升级',
+            '<br>只改装配版本；客户那边不会立刻变，要生效还得去「客户授权」页升级。' +
+            (ups.length < total ? '<br>范围：当前搜索出来的 ' + ups.length + ' 个（共 ' + total + ' 个待升级）。' : ''),
+      ok: '全部升级（' + ups.length + '）',
       onOk: function () {
-        var r = DB.upgradeAll(app.id);
+        var r = ups.length < total ? DB.upgradeSome(app.id, ids) : DB.upgradeAll(app.id);
         if (!r || !r.n) { hint('没升成功：这台电脑写不进去', { kind: 'err', ms: 9000 }); return; }
         batchSel = {};
         renderList(); paintCounts(); paintApp(); renderCanvas();
@@ -1785,7 +1801,7 @@
     var allNow = $('#p-upgrade-allnow'), selall = $('#p-selall');
     var boxes = batchBoxes();
     var n = boxes.filter(function (c) { return c.checked; }).length;
-    var nAll = Object.keys(updNow || {}).length;
+    var nAll = viewUpgradeIds().length;
     /* 没有可操作的行走就别留一条「装配（0）」的空工具条：它既不可点，也占一行。 */
     if (bar) bar.hidden = !show || !boxes.length;
     if (selall) {
@@ -1806,6 +1822,11 @@
       allNow.hidden = tab !== 'on';
       allNow.textContent = '全部升级（' + nAll + '）';
       allNow.disabled = !nAll || !!updBusy;
+      /* 搜过之后它只覆盖搜出来的那些 —— 鼠标停上去说清楚，别让人以为升了全库。 */
+      var every = Object.keys(updNow || {}).length;
+      allNow.title = nAll < every
+        ? ('把当前列表里的 ' + nAll + ' 个升到最新（另有 ' + (every - nAll) + ' 个不在当前搜索里）')
+        : ('把 ' + nAll + ' 个待升级组件一次升到最新');
     }
   }
   /* 全选 = 一次性全勾/全不勾当前列表里可操作的行（引用管理里那颗表头勾选框的行为）。 */
@@ -2065,10 +2086,15 @@
       var hay = (c.name + c.id + (c.desc || '') + ' ' + (KEYWORDS[c.id] || '')).toLowerCase();
       return !kw || hay.indexOf(kw) >= 0;
     });
-    /* 选择表跟着当前列表收缩：切页签、搜索、升级完成后不留幽灵选中项。 */
+    /* ★2026-11-05：勾选不再跟着搜索丢。原来这里按「当前列表」裁选中项 ——
+       先勾 5 个、再改一下搜索词，那 5 个就悄悄没了。现在只在"它真的不需要升级了"时出列。
+       （切页签仍然清：可装配与已装配是两类动作，混着算必然出错。） */
+    CUR_ROWS = rows;
     var liveSel = {};
     rows.forEach(function (c) { if (canBatch(c)) liveSel[c.id] = 1; });
-    Object.keys(batchSel).forEach(function (id) { if (!liveSel[id]) delete batchSel[id]; });
+    Object.keys(batchSel).forEach(function (id) {
+      if (tab === 'on' ? !updNow[id] : !liveSel[id]) delete batchSel[id];
+    });
     paintUpdBar();
     if (!rows.length) {
       /* 筛选空态（§5.3）：只留一句事实。清除筛选的入口是上面那行「显示全部」，

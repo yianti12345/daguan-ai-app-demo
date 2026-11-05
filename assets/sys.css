@@ -1254,11 +1254,10 @@ button.cc-meta:focus-visible{
 .kcard .kc-tag{
   display:inline-flex;align-items:center;height:20px;padding:0 7px;
   font-size:var(--font-size-caption);line-height:var(--leading-body);font-weight:400;border-radius:var(--radius-tag);
-  /* 对比度 3.56:1（白字压真源蓝 #587FFF）—— 与主按钮 `.btn.primary` 是同一笔债：
-     用户 2026-10-22 三次要求「跟真源一致」，单把这支蓝加深就会出现同屏两个蓝
-     （角标 #2F55C0 / 主按钮 #587FFF），比看不清更难解释。
-     所以一起进 tools/lint-allow.tsv，同一到期日 2026-12-31 一起处置。 */
-  color:var(--color-text-inverse);background:var(--color-brand);
+  /* 2026-11-05 还清这笔债：白字压 #587FFF 只有 3.56:1（12px 小字读不清）。
+     与主按钮同一档一起改 --color-brand-active（#3D63E0，白字 5.21:1），
+     同屏不会出现两个蓝；本条已从 tools/lint-allow.tsv 撤出。 */
+  color:var(--color-text-inverse);background:var(--color-brand-active);
 }
 .kcard .kc-tag.is-off{background:var(--color-text-muted);color:var(--color-text-inverse)}
 .kcard .kc-tag.is-trial{background:var(--color-warning);color:var(--color-text-inverse)}

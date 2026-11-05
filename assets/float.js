@@ -117,7 +117,7 @@
            用户分不清哪个是干什么，而且它占的是整条里最贵的视觉位置。
            拖动是次要操作：保留手势区（光标 grab）、不画图形，左侧只留历史一个入口。 */
 
-        var ta = el('textarea', 'fk-ta', { id: 'fk-input', rows: '1', placeholder: dlg.placeholder || '说要改什么' });
+        var ta = el('textarea', 'fk-ta', { id: 'fk-input', rows: '1', 'aria-label': dlg.placeholder || '说要改什么', placeholder: dlg.placeholder || '说要改什么' });
         var send = el('button', 'fk-send', { id: 'fk-send', type: 'button', 'aria-label': '发送', 'data-ready': 'false' });
         send.innerHTML = ICON.send;
         /* 2026-11-04 用户判定语音模式切换不好用，整颗按钮撤掉：
