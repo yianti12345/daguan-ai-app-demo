@@ -124,7 +124,12 @@
           <div class="it-pv-hd">
             <label class="it-lb" for="pv-name">名称</label>
             <input class="it-name-in" id="pv-name" placeholder="生成后可改">
-            <button type="button" class="it-op" id="pv-edit">编辑</button>
+          </div>
+          <!-- 2026-11-05（用户）：「名称这个组件的样式不就是已经编辑了吗？右面的编辑按钮有毛意义」。
+               编辑的作用对象是**说明书**，不是名称。所以按钮移到说明书这一行的行尾，并把词改准。 -->
+          <div class="it-pv-hd" style="margin-top:var(--space-12)">
+            <span class="it-lb">说明书</span>
+            <button type="button" class="it-op" id="pv-edit">改说明书</button>
           </div>
           <div class="it-pv" id="pv"><span class="it-hint">生成后在这里看结果</span></div>
           <textarea class="it-raw" id="pv-md" hidden placeholder="直接改 Markdown"></textarea>
@@ -181,7 +186,6 @@
     <div class="nf-ft">
       <span class="it-sp"></span>
       <button type="button" class="btn ghost" id="det-close">关闭</button>
-      <button type="button" class="btn primary" id="det-edit">编辑</button>
     </div>
   </div>
 </div>
@@ -192,6 +196,6 @@
 <script src="assets/spec.js?v=8fc8aad9"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=de8a6130"></script>
-<script src="assets/interfaces.js?v=9da53a8d"></script>
+<script src="assets/interfaces.js?v=cb3f4293"></script>
 </body>
 </html>

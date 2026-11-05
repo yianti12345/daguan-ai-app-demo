@@ -144,7 +144,7 @@
     $('#pv-md').value = it ? (it.doc || '') : '';
     $('#pv-md').hidden = true;
     $('#pv').hidden = false;
-    $('#pv-edit').textContent = '编辑';
+    $('#pv-edit').textContent = '改说明书';
     $('#dlg-save').disabled = !(it && it.doc);
     $('#dlg').hidden = false;
     setTimeout(function () { $('#raw').focus(); }, 0);
@@ -161,11 +161,11 @@
     if (md.hidden) {
       if (!pv.getAttribute('data-md')) return;   /* 还没生成，没有可改的东西 */
       md.value = pv.getAttribute('data-md');
-      md.hidden = false; pv.hidden = true; this.textContent = '预览';
+      md.hidden = false; pv.hidden = true; this.textContent = '看效果';
     } else {
       pv.innerHTML = mdToHtml(md.value);
       pv.setAttribute('data-md', md.value);
-      md.hidden = true; pv.hidden = false; this.textContent = '编辑';
+      md.hidden = true; pv.hidden = false; this.textContent = '改说明书';
     }
   });
 
@@ -182,7 +182,7 @@
       pv.setAttribute('data-md', d.md);
       $('#pv-name').value = d.name;
       $('#pv-md').value = d.md;
-      $('#pv-md').hidden = true; pv.hidden = false; $('#pv-edit').textContent = '编辑';
+      $('#pv-md').hidden = true; pv.hidden = false; $('#pv-edit').textContent = '改说明书';
       $('#dlg-save').disabled = false;
     }, 600);
   }
@@ -231,7 +231,6 @@
   $('#det-x').addEventListener('click', closeDetail);
   $('#det-close').addEventListener('click', closeDetail);
   $('#det').addEventListener('mousedown', function (e) { if (e.target === this) closeDetail(); });
-  $('#det-edit').addEventListener('click', function () { var id = DET; closeDetail(); if (id) openDlg(id); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !$('#det').hidden) closeDetail();
   });
