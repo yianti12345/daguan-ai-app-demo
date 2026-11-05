@@ -55,7 +55,7 @@ window.Gen = (function () {
   var ASK_TIMEOUT = 75000;
   /* 当前这次生成是哪个场景（app / component / skill）。用来在通用配置里
      取对应场景绑定的模型。演示站一次只跑一个生成，不做并发隔离。 */
-  var GEN_SCENE = 'app';
+  var GEN_SCENE = 'config';
 
   function ask(messages, opt) {
     opt = opt || {};
@@ -315,7 +315,7 @@ window.Gen = (function () {
 
   function componentSpec(text, ctx) {
     ctx = ctx || {};
-    GEN_SCENE = 'component';
+    GEN_SCENE = 'config';
     /* 先探活再决定谁来搭：探到模型就用模型，探不到就用上面的确定性结构器。
        这一分支是"跑不通"的正面回答 —— 没有模型代理也不再是死键。 */
     /* 2026-11-05：装配能力的用途在这里落地——组件生成时，把已装能力的说明书
@@ -677,7 +677,7 @@ window.Gen = (function () {
 
   function appPlan(text, ctx) {
     ctx = ctx || {};
-    GEN_SCENE = 'app';
+    GEN_SCENE = 'config';
     /* 已装的和能装的分两段列。原来是一个清单加"已装配"标记 ——
        实测用户说"任务列表"，模型 edit 指到了"任务详情"（两个名字里都有"任务"）；
        分两段之后 edit 的目标只在"现在装着的"里面挑，可选集合小一半。 */

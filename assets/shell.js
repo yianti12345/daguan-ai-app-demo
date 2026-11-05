@@ -19,32 +19,18 @@
    ───────────────────────────────────────────────────────────── */
 (function () {
   var NAV = [
-    ['AI 应用方案', [
-      ['应用管理', 'apps.html', 'apps'],
-      ['组件库', 'components.html', 'components'],
-      /* ★2026-11-05（用户）：「不要叫能力管理（当一级组），放到 AI 应用方案里，
-         然后叫能力管理，下面再加 2 个菜单。
-         2026-11-05（用户）：「都是能力管理，然后下面又是能力XX，太诡异了，不要带能力」——
-         所以子项一律不带「能力」：接入清单 / 小智技能 / 模型配置。
-         层级：AI 应用方案 → 能力管理 → 接入清单 / 小智技能 / 模型配置。
-         改名理由（用户 2026-11-05）：「能力注册」也怪、「接口注册」更怪——后续可能整个项目拉进来，
-         不只是单个接口，所以用「接入」：单个接口和整个项目都能接。 */
-      ['能力管理', '', 'cap', [
-        ['接入清单', 'interfaces.html', 'cap-apis'],
-        ['小智技能', 'skills.html', 'cap-skills'],
-        ['模型配置', 'config.html', 'cap-config']
-      ]]
-      /* ★2026-11-01（用户原话：「左侧只有两个模块，一个是应用管理，一个是 AI 组件库」）：
-         这里**只许有两项**。
-         上一版我擅自在中间加了「客户授权」，在末尾挂着「下载客户端」——两个都错了：
-           · 客户授权是**某个应用的属性**（这个应用给谁用、客户看到哪一版），
-             它该从应用卡片进去，是子页面，不配占一级导航；
-           · 导航从 7 组 21 项砍到 2 项是用户定过的决定（"入口承诺了走不到的地方，
-             比没有入口更差"），我加项等于把这条决定推翻了，而且没问。
-         加项之前必须先问：这个东西是"跨应用的模块"，还是"某个应用身上的属性"？
-         属后者，一律进页面，不进导航。 */
+    /* ★2026-11-05（用户定稿）：「整个平台的顶层架构变成极其经典的三足鼎立：
+       应用管理、组件库、配置管理」。一级**只有这三项**，配置管理下面再挂三项。
+       这是用户给的最终版结构，不再加第四项；加之前先读这段注释。 */
+    ['应用管理', 'apps.html', 'apps'],
+    ['组件库', 'components.html', 'components'],
+    ['配置管理', [
+      ['小智配置', 'xz-config.html', 'cfg-xz'],
+      ['能力配置', 'interfaces.html', 'cap-apis'],
+      ['基础配置', 'config.html', 'cfg-base']
     ]]
   ];
+
 
   /* ★2026-10-22：图标换成**真源 sprite 里的 symbol 原样 path**（不是我看图重画的）。
      取法：bsk 接真源 → document.getElementById('icon-menu-xxx').innerHTML。
@@ -79,7 +65,18 @@
     var html = '<div class="logo"><i>达</i><b>达观智能审核平台</b></div>'
       + '<div class="menu">';
     for (var g = 0; g < NAV.length; g++) {
-      var group = NAV[g], items = group[1], cur = false;
+      var group = NAV[g];
+      /* 一级项如果是单页（应用管理 / 组件库），组头就是入口，不展开、不挂子项。 */
+      if (typeof group[1] === 'string') {
+        html += '<div class="grp" data-open="false" data-leaf="1">'
+          + '<a class="gt" href="' + group[1] + '"'
+            + (group[2] === active ? ' aria-current="page"' : '') + '>'
+            + '<span class="gi">' + ic(GROUP_ICON[group[0]] || GROUP_ICON['AI 应用方案']) + '</span>'
+            + '<span class="gn">' + group[0] + '</span>'
+          + '</a></div>';
+        continue;
+      }
+      var items = group[1], cur = false;
       for (var k = 0; k < items.length; k++) {
         if (items[k][2] && items[k][2] === active) cur = true;
         var kids0 = items[k][3];

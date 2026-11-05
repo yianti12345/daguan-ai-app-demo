@@ -53,7 +53,12 @@ a:hover{color:var(--color-brand-hover)}
 .sider .grp[data-open="true"] > .gt .gi,
 .sider .grp[data-open="true"] > .gt .gv{color:var(--color-brand-nav-active)}
 .sider .grp[data-open="true"] > .gt .gi{color:var(--color-brand-nav-active)}
-.sider .gt:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:-2px}/* 二级块右留 8：线上选中块宽 177（9→186），不是通栏 185。
+.sider .gt:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:-2px}
+/* 2026-11-05：一级项可以是"直接进页面"的链接（应用管理 / 组件库），
+   它长得跟可展开的组头一模一样，只是没有箭头、点下去跳转。 */
+.sider a.gt{text-decoration:none;box-sizing:border-box}
+.sider a.gt[aria-current="page"]{background:var(--surface-page);color:var(--color-brand-nav-active)}
+.sider a.gt[aria-current="page"] .gi{color:var(--color-brand-nav-active)}/* 二级块右留 8：线上选中块宽 177（9→186），不是通栏 185。
    展开/收起要有过渡 —— 线上 antd 的 submenu 是高度动画，我原来是 display:none 硬切，
    点下去"啪"一下出现，这就是"展开交互不一样"。用 max-height 过渡，5 项 × 48 = 240，给 320 余量。 */
 .sider .gs{padding-right:var(--space-8);max-height:0;overflow:hidden;transition:max-height .2s ease}

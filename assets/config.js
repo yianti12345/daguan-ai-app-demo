@@ -45,7 +45,7 @@
       cell: function (key, r) {
         if (key === 'name') {
           return '<a class="m-name" href="#" data-act="edit" data-id="' + esc(r.id) + '">' + esc(r.label || r.name) + '</a>'
-            + (r.isDefault ? ' <span class="m-dim">默认</span>' : '')
+
             + '<div class="m-dim" style="font-size:var(--font-size-caption)">' + esc(r.name) + '</div>';
         }
         if (key === 'vendor') return esc(r.vendor || '—');
@@ -80,6 +80,8 @@
     $('#f-name').value = m ? m.name : '';
     $('#f-label').value = m ? (m.label || '') : '';
     $('#f-vendor').value = m ? (m.vendor || '') : '';
+    $('#f-url').value = m ? (m.url || '') : '';
+    $('#f-key').value = m ? (m.key || '') : '';
     $('#f-kind').value = m ? m.kind : 'chat';
     $('#f-temp').value = m ? m.temp : 0.2;
     $('#f-react').value = m ? m.react : 10;
@@ -105,6 +107,8 @@
       name: name,
       label: $('#f-label').value.trim() || name,
       vendor: $('#f-vendor').value.trim() || '未标注',
+      url: $('#f-url').value.trim(),
+      key: $('#f-key').value.trim(),
       kind: $('#f-kind').value,
       temp: Number($('#f-temp').value) || 0,
       react: Number($('#f-react').value) || 0,
@@ -136,7 +140,6 @@
     }
     if (act === 'del') {
       var m = CAP.modelById(id); if (!m) return;
-      if (m.isDefault) { toast('默认模型不可删除', 'error'); return; }
       ask({
         title: '删除模型',
         body: '删除「' + (m.label || m.name) + '」后，绑定它的场景会回到列表里的第一个模型。',

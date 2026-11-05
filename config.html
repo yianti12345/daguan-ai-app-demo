@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>模型配置</title>
+<title>基础配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
-<link rel="stylesheet" href="assets/sys.css?v=ea5cb6bb">
+<link rel="stylesheet" href="assets/sys.css?v=3ba9e362">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
 <style>
 /* 只作用于本页，取值全来自令牌。 */
@@ -45,21 +45,21 @@
 <body>
 
 <div class="app">
-  <nav class="sider" data-active="cap-config"></nav>
+  <nav class="sider" data-active="cfg-base"></nav>
   <div class="workspace">
     <header class="hdr">
       <nav class="crumb">
         <b>AI 应用方案</b>
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
-        <b>能力管理</b>
+        <b>配置管理</b>
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
-        <b>模型配置</b>
+        <b>基础配置</b>
       </nav>
       <div class="me"><span>admin</span><u>ad</u></div>
     </header>
 
     <main class="main">
-      <div class="page-hd"><h1>模型配置</h1></div>
+      <div class="page-hd"><h1>基础配置</h1></div>
 
       <section class="cfg-sec" aria-labelledby="sec-scene">
         <div class="cfg-sec-hd"><b id="sec-scene">对话模型</b><span>按场景选</span></div>
@@ -99,7 +99,10 @@
       <div class="m-form">
         <label for="f-name">模型标识<input id="f-name" placeholder="例如 deepseek-flash"></label>
         <label for="f-label">显示名<input id="f-label" placeholder="例如 DeepSeek Flash"></label>
-        <label for="f-vendor">供应商<input id="f-vendor" placeholder="例如 DeepSeek"></label>
+        <label for="f-vendor">模型厂商<input id="f-vendor" list="vendor-list" placeholder="选或填，例如 DeepSeek"></label>
+        <datalist id="vendor-list"><option value="DeepSeek"></option><option value="阿里云"></option><option value="OpenAI"></option><option value="自建"></option></datalist>
+        <label for="f-url">API 地址<input id="f-url" placeholder="https://api.example.com/v1"></label>
+        <label for="f-key">API Key<input id="f-key" type="password" placeholder="sk-..."></label>
         <label for="f-kind">类型<select id="f-kind"><option value="chat">对话</option><option value="vision">视觉</option><option value="embed">向量</option><option value="rerank">重排</option></select></label>
         <label for="f-temp">温度<input id="f-temp" type="number" step="0.1" min="0" max="2" value="0.2"></label>
         <label for="f-react">最大迭代次数<input id="f-react" type="number" min="0" value="10"></label>
@@ -115,12 +118,12 @@
   </div>
 </div>
 
-<script src="assets/shell.js?v=2a0df120"></script>
+<script src="assets/shell.js?v=c386afac"></script>
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/spec.js?v=8fc8aad9"></script>
 <script src="assets/list.js?v=51a688c6"></script>
-<script src="assets/capability.js?v=de8a6130"></script>
-<script src="assets/config.js?v=ab657722"></script>
+<script src="assets/capability.js?v=573b1f60"></script>
+<script src="assets/config.js?v=80fec9f4"></script>
 </body>
 </html>

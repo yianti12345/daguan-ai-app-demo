@@ -81,7 +81,9 @@
     if (!cache.apis) cache.apis = [];
     if (!cache.skills) cache.skills = [];
     if (!cache.models) cache.models = JSON.parse(JSON.stringify(MODEL_SEED));
-    if (!cache.scenes) cache.scenes = JSON.parse(JSON.stringify(SCENE_SEED));
+    if (!cache.scenes || !cache.scenes.some(function (x) { return x.key === 'config'; })) {
+      cache.scenes = JSON.parse(JSON.stringify(SCENE_SEED));
+    }
     /* 老存档里没有说明书：按 id 从种子补一次，不覆盖用户自己写过的。 */
     cache.apis.forEach(function (a) {
       var d = DOCS[a.id];
@@ -165,11 +167,14 @@
     { id: 'm-embed', name: 'text-embedding-v4', label: 'Embedding v4', vendor: '阿里云', kind: 'embed', temp: 0, react: 0, outMax: 0, ctx: 8192, isDefault: false, on: true },
     { id: 'm-rerank', name: 'qwen3-rerank', label: 'Rerank', vendor: '阿里云', kind: 'rerank', temp: 0, react: 0, outMax: 0, ctx: 8192, isDefault: false, on: true }
   ];
+  /* 2026-11-05（用户定稿）：「只需要一个就行，不需要多选切换，所以也就没有默认了」。
+     场景只有两条：小智用哪个模型、配置页（应用/组件配置的对话）用哪个模型。
+     一条场景一个模型，没有默认这回事，也就不需要"默认不可删"。 */
   var SCENE_SEED = [
-    { key: 'app', name: '应用配置对话', desc: '在小智里说一句改这个应用', model: 'm-ds-flash' },
-    { key: 'component', name: '组件配置对话', desc: '在小智里说一句改这个组件', model: 'm-ds-flash' },
-    { key: 'skill', name: '技能生成', desc: '新建或导入 skill 时生成内容', model: 'm-qwen-max' }
+    { key: 'xz', name: '小智使用模型', desc: '客户在应用里跟小智对话时用', model: 'm-ds-flash' },
+    { key: 'config', name: '配置页使用模型', desc: '应用配置、组件配置的对话用', model: 'm-ds-flash' }
   ];
+
 
   function models() { return load().models || []; }
   function modelById(id) { return models().filter(function (x) { return x.id === id; })[0] || null; }
@@ -183,7 +188,7 @@
   }
   function removeModel(id) {
     var it = modelById(id);
-    if (!it || it.isDefault) return { error: '默认模型不可删除' };
+    if (!it) return { error: '没有这个模型' };
     var d = load();
     d.models = d.models.filter(function (x) { return x.id !== id; });
     d.scenes.forEach(function (s) { if (s.model === id) s.model = (models()[0] || {}).id || ''; });
@@ -192,7 +197,6 @@
   function toggleModel(id) {
     var it = modelById(id);
     if (!it) return { error: '没有这个模型' };
-    if (it.isDefault && it.on) return { error: '默认模型不可下线' };
     it.on = !it.on; save(); return { ok: true };
   }
   function scenes() { return load().scenes || []; }
@@ -224,11 +228,15 @@
     return { ok: true };
   }
 
+  /* 小智的系统提示词（人设）。跟接口、技能存在同一份数据里，一起导出导入。 */
+  function prompt() { return load().prompt || ''; }
+  function setPrompt(v) { load().prompt = String(v == null ? '' : v); save(); return prompt(); }
+
   window.CAP = {
     load: load, save: save,
     apis: apis, apiById: apiById, addApi: addApi, updateApi: updateApi, removeApi: removeApi, toggleApi: toggleApi,
     skills: skills, skillById: skillById, addSkill: addSkill, updateSkill: updateSkill, removeSkill: removeSkill, toggleSkill: toggleSkill,
-    compApis: compApis, setCompApis: setCompApis, exportAll: exportAll, importAll: importAll,
+    compApis: compApis, setCompApis: setCompApis, prompt: prompt, setPrompt: setPrompt, exportAll: exportAll, importAll: importAll,
     models: models, modelById: modelById, addModel: addModel, updateModel: updateModel,
     removeModel: removeModel, toggleModel: toggleModel,
     scenes: scenes, setSceneModel: setSceneModel, sceneModel: sceneModel,
