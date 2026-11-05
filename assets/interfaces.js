@@ -1,4 +1,4 @@
-/* interfaces.js —— 能力注册列表 + 新增/编辑 + 批量导入
+/* interfaces.js —— 能力接入列表 + 新增/编辑 + 批量导入
    列表骨架、列宽、空态全部交给 List（assets/list.js），这一页只说每格画什么。 */
 (function () {
   'use strict';
@@ -135,7 +135,7 @@
   function openDlg(id) {
     EDIT_ID = id || null;
     var it = id ? CAP.apiById(id) : null;
-    $('#dlg-t').textContent = it ? '编辑能力' : '新增能力';
+    $('#dlg-t').textContent = it ? '编辑能力' : '接入能力';
     $('#raw').value = it ? (it.raw || '') : '';
     $('#src').value = it ? (it.source || '') : '';
     $('#cnt').textContent = ($('#raw').value.length) + ' 字';
