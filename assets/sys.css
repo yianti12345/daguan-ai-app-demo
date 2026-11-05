@@ -135,12 +135,16 @@ a:hover{color:var(--color-brand-hover)}
      不靠两个蓝之间过渡 —— 后者只是把颜色做花了，没增加任何信息。 */
   background:var(--color-brand);
   color:var(--color-text-inverse);
-  box-shadow:var(--shadow-btn);
+  /* ★2026-11-05（用户）：「谁教你这么设计按钮样式的，这么大的阴影不丑吗」。真源主按钮
+     `新增核心专家` 实测 138×32 / r2 / 投影 rgba(5,105,255,.06) 0 2px 0 —— 2% 的实心 2px，
+     看不见晕。我方原来是 0 2px 8px -2px 的蓝色辉光，比真源糊一圈。改成平按钮。 */
+  box-shadow:none;
 }
-.btn.primary:hover{box-shadow:var(--shadow-btn-hover)}/* 次要按钮：白底 + 轻投影。只用描边的话，在浅灰画布上边界几乎是断的
-   （--ctl-line 与 --canvas 明度只差几个点），按上去像"一块白斑"。加 1px 投影把它托起来。 */
-.btn.ghost{background:var(--surface-page); border:0; color:var(--color-text-body); box-shadow:var(--shadow-card)}
-.btn.ghost:hover{background:var(--surface-page); color:var(--color-brand-ink); box-shadow:var(--shadow-card-hover)}
+.btn.primary:hover{background:var(--color-brand-hover, var(--color-brand)); box-shadow:none}
+/* 次要按钮：真源「导出」类按钮是白底 + 1px 描边 #D9D9D9 + 2% 实心 2px 投影（看不见），
+   不是我方原来那张卡片级的三层阴影（2/4/10/22）。这一条改的是全站 `.btn.ghost`。 */
+.btn.ghost{background:var(--surface-page); border:1px solid var(--color-border-control); color:var(--color-text-body); box-shadow:none}
+.btn.ghost:hover{background:var(--surface-page); border-color:var(--color-brand); color:var(--color-brand-ink); box-shadow:none}
 /* ★2026-11-04（用户）：「顶部的操作，都有背景条了，还加上阴影卡片真的好看吗？直接框框出来不行吗」。
    配置页顶栏的次要按钮＝描边，不填底、不带阴影：顶栏本身就是白条，白底再叠阴影是多一层白。 */
 .topbar .btn.ghost{background:transparent; border:var(--size-border-w) solid var(--line-2); box-shadow:none}
@@ -1981,6 +1985,9 @@ body[data-drawer="on"] .hint{
 }
 .btn.ghost[disabled], .btn.ghost[aria-disabled="true"], .btn.ghost.is-disabled{
   background:var(--surface-page);
+  /* 2026-11-05：禁用不等于"变成一行灰字"。描边钮禁用后仍要有框，只是框和字一起退后，
+     否则一排按钮里第三颗像漏画了。 */
+  border-color:var(--color-border-control);
 }
 /* 文字 / 图标类禁用件：不加按钮面，只降字色与光标 —— 同一个状态、同两个字色令牌。 */
 .cv-op[disabled], .cv-op[aria-disabled="true"], .cv-op.is-disabled,
