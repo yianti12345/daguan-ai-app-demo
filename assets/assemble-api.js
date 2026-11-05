@@ -45,7 +45,7 @@
       +       '<button type="button" class="btn-text" id="api-batch" disabled>装配（0）</button>'
       +     '</div>'
       +     '<div class="p-list" id="api-list" role="tabpanel"></div>'
-      +     '<p class="p-note">装配＝把这个能力复制一份给模型参考（现在登记的是接口，以后 Skill 之类也会走这里）。之后改或删能力，已生成的组件不受影响；要用上新的，走「升级」重新生成。</p>'
+      +     '<p class="p-note">装配＝把能力复制给模型参考。之后改或删能力，已生成的组件不受影响。</p>'
       +   '</div>'
       + '</div>');
 
