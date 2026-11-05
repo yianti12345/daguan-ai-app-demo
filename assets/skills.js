@@ -94,10 +94,11 @@
     $('#det').hidden = false;
   }
   function closeDetail() { $('#det').hidden = true; DET = null; }
-  $('#det-x').addEventListener('click', closeDetail);
-  $('#det-close').addEventListener('click', closeDetail);
-  $('#det').addEventListener('mousedown', function (e) { if (e.target === this) closeDetail(); });
-  $('#det-toggle').addEventListener('click', function () {
+  /* 2026-11-05 体检：这个文件被 skills.html 与 skill-edit.html 共用，两页元素不一样。
+     原来直接 $('#x').addEventListener，缺一个元素就抛 TypeError，
+     同一文件后面所有绑定都不再执行（页面看着在、点哪儿都没反应）。统一改用 on()。 */
+  const on = (sel, ev, fn) => { const el = $(sel); if (el) el.addEventListener(ev, fn); };
+  on('#det-toggle', 'click', function () {
     if (!DET) return;
     var r = CAP.toggleSkill(DET); paint(); openDetail(DET);
     toast(r && r.on ? '已启用' : '已停用');
@@ -106,10 +107,10 @@
     if (e.key === 'Escape' && !$('#det').hidden) closeDetail();
   });
 
-  $('#act-new').addEventListener('click', openNew);
-  $('#dlg-x').addEventListener('click', closeNew);
-  $('#dlg-cancel').addEventListener('click', closeNew);
-  $('#dlg-save').addEventListener('click', function () {
+  on('#act-new', 'click', openNew);
+  on('#dlg-x', 'click', closeNew);
+  on('#dlg-cancel', 'click', closeNew);
+  on('#dlg-save', 'click', function () {
     var name = $('#f-name').value.trim();
     if (!name) { toast('先填名称', 'error'); $('#f-name').focus(); return; }
     if (EDIT) {
@@ -128,11 +129,11 @@
   }
   function closeImp() { $('#imp').hidden = true; FILE = null; }
 
-  $('#act-import').addEventListener('click', openImp);
-  $('#imp-x').addEventListener('click', closeImp);
-  $('#imp-cancel').addEventListener('click', closeImp);
+  on('#act-import', 'click', openImp);
+  on('#imp-x', 'click', closeImp);
+  on('#imp-cancel', 'click', closeImp);
 
-  $('#file').addEventListener('change', function () {
+  on('#file', 'change', function () {
     var f = this.files && this.files[0];
     if (!f) return;
     FILE = f;
@@ -141,7 +142,7 @@
     $('#imp-do').disabled = false;
   });
 
-  $('#imp-do').addEventListener('click', function () {
+  on('#imp-do', 'click', function () {
     if (!FILE) { toast('先选文件', 'error'); return; }
     var name = $('#i-name').value.trim();
     if (!name) { toast('先填名称', 'error'); $('#i-name').focus(); return; }
@@ -181,8 +182,8 @@
     }
   });
 
-  $('#kw').addEventListener('input', function () { S.kw = this.value.trim(); paint(); });
-  $('#f-on').addEventListener('change', function () { S.on = this.value; paint(); });
+  on('#kw', 'input', function () { S.kw = this.value.trim(); paint(); });
+  on('#f-on', 'change', function () { S.on = this.value; paint(); });
 
   paint();
 })();

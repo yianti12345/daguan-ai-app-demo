@@ -214,12 +214,14 @@ window.Versions = (function () {
       /* 2026-11-01（体检 C12）：原来是四句话在说同一件事
          （标题「这一项已经不在了」+ 副标题「链接过期或被删除了」+ 空态标题「没有可显示的版本」
           + 空态正文「回到…重新选一项」）。合成一句。 */
-      $('#owner').textContent = S.badScope ? '链接参数不对' : '这一项已经不在了';
-      $('#owner-sub').textContent = '';
-      $('#now-t').textContent = '';
+      /* 2026-11-05 体检：这两行原来直接赋值，而 versions.html 里没有 #owner-sub / #now-t，
+         boot 在这里抛 TypeError，后面的绑定全部不执行（页面看着在、点是死的）。 */
+      var _o = $('#owner'); if (_o) _o.textContent = S.badScope ? '链接参数不对' : '这一项已经不在了';
+      var _s = $('#owner-sub'); if (_s) _s.textContent = '';
+      var _n = $('#now-t'); if (_n) _n.textContent = '';
       var hd = $('#head'); if (hd) hd.hidden = true;
       $('#list').innerHTML = '<div class="vl-empty">回' + (S.scope === 'app' ? '应用管理' : '组件库') + '重新选一项。</div>';
-      $('#total').textContent = '';
+      var _t = $('#total'); if (_t) _t.textContent = '';
       /* 2026-11-04：原来这里还要把右上那颗按钮改成「回到应用管理」。
          按钮已删，回列表只剩空态里那一句 + 面包屑，两个入口都指向真实列表页。 */
       return;
