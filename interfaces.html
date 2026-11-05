@@ -6,7 +6,7 @@
 <title>能力配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
-<link rel="stylesheet" href="assets/sys.css?v=3ba9e362">
+<link rel="stylesheet" href="assets/sys.css?v=fd121388">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
 <style>
 /* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
@@ -55,6 +55,7 @@
 .it-name-in{flex:1 1 auto;min-width:0;height:28px;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:0 var(--space-8);font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);background:var(--surface-page)}
 .it-name-in:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 .it-sp{flex:1 1 auto}
+.it-file{display:flex;align-items:center;gap:var(--space-8);margin-top:var(--space-8)}
 .it-res{margin:var(--space-12) 0 0;padding:0;list-style:none;max-height:260px;overflow:auto}
 .it-res li{display:flex;align-items:center;gap:var(--space-8);padding:var(--space-8) 0;border-bottom:1px solid var(--color-border-hairline);font-size:var(--font-size-body)}
 .it-res li b{font-weight:500;color:var(--color-text-primary)}
@@ -81,7 +82,6 @@
       <div class="page-hd">
         <h1>能力配置</h1>
         <div class="ops">
-          <button type="button" class="btn ghost" id="act-batch">导入项目</button>
           <button type="button" class="btn primary" id="act-new">接入</button>
         </div>
       </div>
@@ -119,8 +119,22 @@
           <span class="it-cnt" id="cnt">0 字</span>
           <label class="it-lb" for="src">来源项目</label>
           <input class="it-raw" id="src" style="min-height:0;height:32px" placeholder="例如：华信证券">
+          <div class="it-file">
+            <button type="button" class="btn ghost" id="bfile-btn">选文件</button>
+            <input type="file" id="bfile" accept=".json,.yaml,.yml,.txt,.md" hidden>
+            <span class="it-hint" id="bstat"></span>
+          </div>
         </div>
         <div class="it-col">
+          <!-- 多条：贴整份文档 / OpenAPI 时自动切到这块 -->
+          <div id="multi" hidden>
+            <div class="it-pv-hd">
+              <span class="it-lb">解析出多条，逐条确认</span>
+              <button type="button" class="it-op" id="bd-merge" disabled>合并所选</button>
+            </div>
+            <ul class="it-res" id="bres"></ul>
+          </div>
+          <div id="single">
           <div class="it-pv-hd">
             <label class="it-lb" for="pv-name">名称</label>
             <input class="it-name-in" id="pv-name" placeholder="生成后可改">
@@ -133,6 +147,7 @@
           </div>
           <div class="it-pv" id="pv"><span class="it-hint">生成后在这里看结果</span></div>
           <textarea class="it-raw" id="pv-md" hidden placeholder="直接改 Markdown"></textarea>
+          </div>
         </div>
       </div>
     </div>
@@ -141,34 +156,6 @@
       <span class="it-sp"></span>
       <button type="button" class="btn ghost" id="dlg-cancel">取消</button>
       <button type="button" class="btn primary" id="dlg-save" disabled>保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- 导入项目 -->
-<div class="nf-mask" id="bd" hidden>
-  <div class="nf" role="dialog" aria-modal="true" aria-labelledby="bd-t">
-    <div class="nf-hd">
-      <b id="bd-t">导入项目</b>
-      <button type="button" class="icon-btn" id="bd-x" aria-label="关闭">
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-    <div class="nf-bd">
-      <textarea class="it-raw" id="braw" placeholder="整份项目文档贴进来：OpenAPI / Swagger 的 JSON 会按 paths 一条条拆开；普通文本按空行或 --- 分隔。也可以直接选文件。"></textarea>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <button type="button" class="btn ghost" id="bfile-btn">选文件</button>
-        <input type="file" id="bfile" accept=".json,.yaml,.yml,.txt,.md" hidden>
-        <button type="button" class="btn ghost" id="parse">重新解析</button>
-        <button type="button" class="btn ghost" id="bd-merge" disabled>合并所选</button>
-        <span class="it-hint" id="bstat"></span>
-      </div>
-      <ul class="it-res" id="bres"></ul>
-    </div>
-    <div class="nf-ft">
-      <span class="it-sp"></span>
-      <button type="button" class="btn ghost" id="bd-cancel">取消</button>
-      <button type="button" class="btn primary" id="bd-do" disabled>导入</button>
     </div>
   </div>
 </div>
@@ -193,9 +180,9 @@
 <script src="assets/shell.js?v=c386afac"></script>
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
-<script src="assets/spec.js?v=8fc8aad9"></script>
+<script src="assets/spec.js?v=599b2a67"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=573b1f60"></script>
-<script src="assets/interfaces.js?v=cb3f4293"></script>
+<script src="assets/interfaces.js?v=5ff372a7"></script>
 </body>
 </html>

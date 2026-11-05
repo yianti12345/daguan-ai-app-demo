@@ -1768,6 +1768,10 @@ body[data-app] .canvas{transition:padding-right .18s ease}
 .p-ai-try:hover{text-decoration:underline}
 .p-ai.is-busy{opacity:.6;cursor:progress}
 .p-ai svg{display:block}
+/* 面板底部的事实说明（装配能力 / 装配组件各一条）：不是营销文案，是"复制不是绑定"这句事实，
+   不给它，排障时会往错方向查。 */
+.p-note{margin:0;padding:var(--space-8) var(--space-16) var(--space-12);border-top:1px solid var(--color-border-hairline);
+  font-size:var(--font-size-caption);line-height:1.6;color:var(--color-text-tertiary)}
 .p-search input::placeholder{color:var(--color-text-tertiary)}
 .p-search input:focus{border-color:var(--color-brand);outline:2px solid var(--color-brand);outline-offset:-1px}
 /* 2026-11-04（用户）：「这个 tab 就不能做的大气一些，好看一些吗」。

@@ -45,6 +45,7 @@
       +       '<button type="button" class="btn-text" id="api-batch" disabled>装配（0）</button>'
       +     '</div>'
       +     '<div class="p-list" id="api-list" role="tabpanel"></div>'
+      +     '<p class="p-note">装配只是把接口和说明书复制一份给模型写组件时参考；之后改接口、删接口，都不影响已经生成好的组件。</p>'
       +   '</div>'
       + '</div>');
 

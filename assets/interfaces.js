@@ -55,17 +55,11 @@
         if (key === 'name') return '<a class="it-name" href="#" data-act="view" data-id="' + esc(r.id) + '">' + esc(r.name) + '</a>';
         if (key === 'desc') return '<span class="it-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
         if (key === 'source') return esc(r.source || '—');
-        if (key === 'state') {
-          var s = ST[r.state] || ST.ok;
-          return '<span style="color:' + s.c + '">' + s.t + '</span>';
-        }
-        if (key === 'on') return '<span style="color:' + (r.on ? 'var(--color-success-ink)' : 'var(--color-text-tertiary)') + '">' + (r.on ? '已启用' : '已停用') + '</span>';
         if (key === 'at') return '<span class="it-at">' + esc(r.at || '—') + '</span>';
         if (key === 'by') return esc(r.by || '—');
         if (key === 'ops') {
           return '<div class="it-ops">'
             + '<button class="it-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">编辑</button>'
-            + '<button class="it-op" type="button" data-act="toggle" data-id="' + esc(r.id) + '">' + (r.on ? '停用' : '启用') + '</button>'
             + '<button class="it-op is-danger" type="button" data-act="del" data-id="' + esc(r.id) + '">删除</button>'
             + '</div>';
         }
@@ -136,6 +130,7 @@
     EDIT_ID = id || null;
     var it = id ? CAP.apiById(id) : null;
     $('#dlg-t').textContent = it ? '编辑' : '接入';
+    PARSED = []; $('#bres').innerHTML = ''; showMulti(false); $('#dlg-save').textContent = '接入';
     $('#raw').value = it ? (it.raw || '') : '';
     $('#src').value = it ? (it.source || '') : '';
     $('#cnt').textContent = ($('#raw').value.length) + ' 字';
@@ -172,6 +167,14 @@
   function doGen() {
     var raw = $('#raw').value.trim();
     if (!raw) { toast('先贴点东西', 'error'); $('#raw').focus(); return; }
+    /* 2026-11-05（用户）：入口合并成一个 —— 贴一条走单条编辑，贴一整份就自动切到列表。 */
+    var many = parseProject(raw);
+    if (many.length > 1) {
+      PARSED = many; renderParsed(); showMulti(true);
+      $('#dlg-save').disabled = false;
+      return;
+    }
+    showMulti(false);
     var pv = $('#pv');
     pv.innerHTML = '<p class="it-hint">正在生成…</p>';
     setTimeout(function () {
@@ -197,6 +200,14 @@
   $('#gen').addEventListener('click', function () { clearTimeout(genTimer); doGen(); });
 
   $('#dlg-save').addEventListener('click', function () {
+    if (!$('#multi').hidden) {
+      if (!PARSED.length) return;
+      var src0 = $('#src').value.trim() || '未标注';
+      PARSED.forEach(function (x) { x.source = src0; CAP.addApi(x); });
+      var n0 = PARSED.length;
+      closeDlg(); paint(); toast('已接入 ' + n0 + ' 条');
+      return;
+    }
     var pv = $('#pv');
     var md = $('#pv-md').hidden ? pv.getAttribute('data-md') : $('#pv-md').value;
     if (!md) { toast('先生成说明书', 'error'); return; }
@@ -240,7 +251,6 @@
 
   /* ── 批量导入 ── */
   var PARSED = [];
-  function closeBd() { $('#bd').hidden = true; PARSED = []; $('#bres').innerHTML = ''; $('#bd-do').disabled = true; $('#bstat').textContent = ''; }
 
   $('#act-batch').addEventListener('click', function () {
     $('#braw').value = ''; PARSED = []; $('#bres').innerHTML = ''; $('#bd-do').disabled = true; $('#bstat').textContent = '';
@@ -280,6 +290,14 @@
     });
   }
 
+  function showMulti(on) {
+    var m = $('#multi'), one = $('#single'), b = $('#dlg-save');
+    if (!m || !one) return;
+    m.hidden = !on; one.hidden = on;
+    b.textContent = on ? ('导入 ' + PARSED.length + ' 条') : '接入';
+    b.disabled = on ? !PARSED.length : b.disabled;
+  }
+
   function picked() {
     return [].slice.call(document.querySelectorAll('#bres [data-mk]'))
       .filter(function (x) { return x.checked; })
@@ -294,24 +312,16 @@
         + '<button class="it-op is-danger" type="button" data-i="' + i + '">移除</button></li>';
     }).join('');
     $('#bstat').textContent = PARSED.length ? ('解析出 ' + PARSED.length + ' 条') : '没解析出东西';
-    $('#bd-do').disabled = !PARSED.length;
     $('#bd-merge').disabled = picked().length < 2;
   }
 
   function doParse() {
-    var raw = $('#braw').value.trim();
+    var raw = $('#raw').value.trim();
     if (!raw) { toast('先贴点东西', 'error'); return; }
     PARSED = parseProject(raw);
     renderParsed();
+    showMulti(PARSED.length > 1);
   }
-  var parseTimer = null;
-  $('#braw').addEventListener('input', function () {
-    clearTimeout(parseTimer);
-    var v = this.value.trim();
-    if (v.length < 20) return;
-    parseTimer = setTimeout(doParse, 900);
-  });
-  $('#parse').addEventListener('click', function () { clearTimeout(parseTimer); doParse(); });
 
   $('#bres').addEventListener('click', function (e) {
     var b = e.target.closest('[data-i]'); if (!b) return;
@@ -350,7 +360,8 @@
     var f = this.files && this.files[0]; if (!f) return;
     var fr = new FileReader();
     fr.onload = function () {
-      $('#braw').value = String(fr.result || '');
+      $('#raw').value = String(fr.result || '');
+      doGen();
       doParse();
       $('#bstat').textContent = f.name + ' ｜ ' + $('#bstat').textContent;
     };
@@ -358,15 +369,7 @@
     this.value = '';
   });
 
-  $('#bd-do').addEventListener('click', function () {
-    if (!PARSED.length) return;
-    PARSED.forEach(function (p) { CAP.addApi(p); });
-    var n = PARSED.length;
-    closeBd(); paint(); toast('已导入 ' + n + ' 条');
-  });
 
-  $('#bd-x').addEventListener('click', closeBd);
-  $('#bd-cancel').addEventListener('click', closeBd);
 
   $('#act-new').addEventListener('click', function () { openDlg(null); });
 

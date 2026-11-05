@@ -27,14 +27,12 @@
       headCols: [
         { key: 'name', label: '名称' },
         { key: 'desc', label: '描述' },
-        { key: 'source', label: '来源项目' },
-        { key: 'state', label: '状态' },
-        { key: 'on', label: '是否启用' },
+        { key: 'source', label: '来源' },
         { key: 'at', label: '最近更新时间' },
         { key: 'by', label: '创建人' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '180px minmax(180px,1fr) 110px 90px 90px 150px 130px 150px'
+      cols: '200px minmax(240px,1fr) 140px 150px 130px 120px'
     },
     'config.html': {
       object: '模型（对话/视觉/向量/重排）以及各场景绑定哪一个',
