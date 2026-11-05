@@ -68,6 +68,75 @@
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
+  /* ── 从一段原始材料里抽出方法 / 路径：老数据只有 id 和一段文本 ── */
+  function pickMethodPath(raw) {
+    var t = String(raw || '');
+    var m = (t.match(/\b(GET|POST|PUT|PATCH|DELETE|HEAD)\b/) || [])[1] || 'GET';
+    /* 先摘出完整地址再取路径。之前的正则会让「https://host/a/b/c」只剩下 /c ——
+       因为协议段是贪婪匹配，回头只吐出最短的尾段。 */
+    var u = (t.match(/https?:\/\/[^\s'"]+/) || [])[0];
+    var path = '';
+    if (u) {
+      path = u.replace(/^https?:\/\/[^/]+/, '').split(/[?#]/)[0];
+    } else {
+      var m2 = t.match(/(?:^|\s)(\/[A-Za-z0-9_\-./{}:]+)/);
+      path = m2 ? m2[1].split(/[?#]/)[0] : '';
+    }
+    return { method: m, path: path };
+  }
+
+  /* 接口指纹：同一份文档贴两次不会长出两条。老数据保留原 id，新导入才用指纹。 */
+  function fingerprint(method, path, host) {
+    var str = (method || '').toUpperCase() + ' ' + (host || '') + (path || '');
+    var h = 5381, i;
+    for (i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) & 0xffffffff;
+    return 'api-' + (h >>> 0).toString(36);
+  }
+
+  /* ── v1 → v2：一条记录=一个接口  变成  能力(容器) + 接口(原子)
+     迁移原则：老 id 一律保留（装配关系不断），每个老接口都变成一个「只含自己的」能力。 */
+  function migrateV2(c) {
+    c.apis = c.apis || [];
+    c.apis.forEach(function (a) {
+      if (!a.summary) a.summary = a.desc || '';
+      if (!a.project) a.project = a.source || '未标注';
+      if (!a.method || !a.path) {
+        var mp = pickMethodPath(a.raw);
+        if (!a.method) a.method = mp.method;
+        if (!a.path) a.path = mp.path;
+      }
+    });
+    if (!c.abilities) {
+      c.abilities = c.apis.map(function (a) {
+        return {
+          id: 'ab-' + String(a.id).replace(/^api-/, ''),
+          name: a.name || '未命名能力',
+          intro: a.desc || '',
+          apiIds: [a.id],
+          doc: a.doc || '',
+          docState: a.doc ? 'ready' : 'fail',
+          docAt: a.at || '',
+          project: a.project || '未标注',
+          at: a.at || now()
+        };
+      });
+    }
+    /* 装配关系：老的是 apiId，新的是 abilityId，按「能力里只有一个接口」反查 */
+    var map = {}, nx = {}, m = compMap(), known = {};
+    c.abilities.forEach(function (b) {
+      known[b.id] = 1;
+      (b.apiIds || []).forEach(function (aid) { if (!map[aid]) map[aid] = b.id; });
+    });
+    Object.keys(m || {}).forEach(function (k) {
+      nx[k] = (m[k] || []).map(function (aid) { return map[aid]; })
+        .filter(function (bid) { return bid && known[bid]; })
+        .filter(function (v, i, arr) { return arr.indexOf(v) === i; });
+    });
+    saveCompMap(nx);
+    c.schemaVersion = 2;
+    save();
+  }
+
   function load() {
     if (cache) return cache;
     var raw = null;
@@ -84,6 +153,9 @@
     if (!cache.scenes || !cache.scenes.some(function (x) { return x.key === 'config'; })) {
       cache.scenes = JSON.parse(JSON.stringify(SCENE_SEED));
     }
+    /* ★2026-11-05：数据分两层。老存档（一条记录=一个接口）在这里自动变成
+       「能力 + 接口池」，装配关系一并换 id。跑一次写 schemaVersion=2，之后不再跑。 */
+    if (!cache.schemaVersion || cache.schemaVersion < 2) migrateV2(cache);
     /* 老存档里没有说明书：按 id 从种子补一次，不覆盖用户自己写过的。 */
     cache.apis.forEach(function (a) {
       var d = DOCS[a.id];
@@ -232,11 +304,55 @@
   function prompt() { return load().prompt || ''; }
   function setPrompt(v) { load().prompt = String(v == null ? '' : v); save(); return prompt(); }
 
+  /* ── 能力：容器。序列只表示添加顺序，不是"步骤"；顺序说明由 MD 的文字承担。 ── */
+  function abilities() { return load().abilities || []; }
+  function abilityById(id) {
+    return abilities().filter(function (x) { return x.id === id; })[0] || null;
+  }
+  function addAbility(v) {
+    var it = Object.assign({
+      id: uid('ab'), name: '未命名能力', intro: '', apiIds: [],
+      doc: '', docState: 'none', docAt: '', project: '', at: now()
+    }, v);
+    load().abilities.push(it); save(); return it;
+  }
+  function updateAbility(id, patch) {
+    var it = abilityById(id); if (!it) return null;
+    Object.assign(it, patch, { at: now() }); save(); return it;
+  }
+  function removeAbility(id) {
+    var d = load();
+    d.abilities = d.abilities.filter(function (x) { return x.id !== id; });
+    save();
+    var m = compMap();
+    Object.keys(m).forEach(function (k) { m[k] = m[k].filter(function (x) { return x !== id; }); });
+    saveCompMap(m);
+    return { ok: true };
+  }
+  /* 能力里的接口明细（按 apiIds 顺序展开，找不到的给占位，界面显示「已失效」） */
+  function abilityApis(id) {
+    var b = abilityById(id); if (!b) return [];
+    return (b.apiIds || []).map(function (aid) {
+      var a = apiById(aid);
+      return a ? { id: aid, api: a, missing: false } : { id: aid, api: null, missing: true };
+    });
+  }
+  function compAbilities(compId) { return (compMap()[compId] || []).slice(); }
+  function setCompAbilities(compId, ids) {
+    var m = compMap();
+    m[compId] = (ids || []).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    saveCompMap(m);
+  }
+
   window.CAP = {
     load: load, save: save,
     apis: apis, apiById: apiById, addApi: addApi, updateApi: updateApi, removeApi: removeApi, toggleApi: toggleApi,
     skills: skills, skillById: skillById, addSkill: addSkill, updateSkill: updateSkill, removeSkill: removeSkill, toggleSkill: toggleSkill,
     compApis: compApis, setCompApis: setCompApis, prompt: prompt, setPrompt: setPrompt, exportAll: exportAll, importAll: importAll,
+    abilities: abilities, abilityById: abilityById, addAbility: addAbility,
+    updateAbility: updateAbility, removeAbility: removeAbility, abilityApis: abilityApis,
+    compAbilities: compAbilities, setCompAbilities: setCompAbilities,
+    fingerprint: fingerprint, pickMethodPath: pickMethodPath,
     models: models, modelById: modelById, addModel: addModel, updateModel: updateModel,
     removeModel: removeModel, toggleModel: toggleModel,
     scenes: scenes, setSceneModel: setSceneModel, sceneModel: sceneModel,

@@ -19,6 +19,22 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
   return {
+    'abilities.html': {
+      object: '能力（一个独立任务：由一到多个接口组成，产出一份 MD 给模型读）',
+      source: '真源 /Expert/Management/SkillsLibrary 的列表形态；分组模型对齐 Coze「插件=工具集」与 MCP「server 含多个 tool」',
+      truth: '一条记录 = 一个能力。接口是池子里的原子，能力只记 apiIds，不复制接口字段',
+      states: ['无能力', '有数据', '搜索无结果', 'MD 生成中', 'MD 生成失败'],
+      headCols: [
+        { key: 'name', label: '能力名称' },
+        { key: 'desc', label: '说明' },
+        { key: 'cnt', label: '接口数' },
+        { key: 'md', label: 'MD' },
+        { key: 'project', label: '来源' },
+        { key: 'at', label: '更新时间' },
+        { key: 'ops', label: '操作' }
+      ],
+      cols: '200px minmax(220px,1fr) 80px 90px 120px 150px 130px'
+    },
     'interfaces.html': {
       object: '能力（登记进来的外部 API 与它的 MD 文档，模型写组件时读的就是这份 MD）',
       source: '真源 /Expert/Management/SkillsLibrary 的列表形态（8 列 / 表头 39 / 行 69 / 分页 15 条）',

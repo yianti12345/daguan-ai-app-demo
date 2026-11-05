@@ -26,7 +26,7 @@
     ['组件库', 'components.html', 'components'],
     ['配置管理', [
       ['小智配置', 'xz-config.html', 'cfg-xz'],
-      ['能力配置', 'interfaces.html', 'cap-apis'],
+      ['能力配置', 'abilities.html', 'cap-abilities'],
       ['基础配置', 'config.html', 'cfg-base']
     ]]
   ];
