@@ -89,13 +89,15 @@
      客户给的东西就三种：OpenAPI/Swagger 的 JSON、OpenAPI 的 YAML、一段段接口说明（含 curl）。
      前两种能精确拆；第三种按空行/--- 分块，块里找方法+路径。全都拆不出来就返回空数组，
      由调用方决定要不要交给模型 —— 这里绝不猜。 */
-  function paramText(ps) {
+  /* 入参、返回一律按 JSON 写（用户 2026-11-05 定）：参数名做键，描述做示例值。 */
+  function paramJson(ps) {
     if (!Array.isArray(ps) || !ps.length) return '';
-    return ps.map(function (p) {
-      if (!p || !p.name) return '';
-      var t = p.name + (p.description ? ' ' + String(p.description).replace(/\s+/g, ' ') : '');
-      return t;
-    }).filter(Boolean).join('；').slice(0, 120);
+    var o = {};
+    ps.forEach(function (p) {
+      if (!p || !p.name) return;
+      o[p.name] = p.description ? String(p.description).replace(/\s+/g, ' ') : '';
+    });
+    return Object.keys(o).length ? JSON.stringify(o, null, 2) : '';
   }
 
   function parseApis(text) {
@@ -116,7 +118,7 @@
             name: op.summary || op.operationId || (m.toUpperCase() + ' ' + p),
             method: m.toUpperCase(), path: p, project: proj,
             summary: String(op.description || op.summary || p).replace(/\s+/g, ' ').slice(0, 60),
-            params: paramText(op.parameters), returns: '',
+            params: paramJson(op.parameters), returns: '',
             raw: m.toUpperCase() + ' ' + p + (op.summary ? '\n' + op.summary : '')
           });
         });

@@ -1,7 +1,7 @@
-/* ability.js —— 一个能力：名称 + 说明 + 接口清单 + MD 文档
+/* ability.js —— 一个能力：名称 + 说明 + 接口清单 + 能力说明书
    能力只是容器：apiIds 引用池子，界面不复制接口字段。
-   ★ MD 才是产物：装配到组件里的是这份文档，所以保存即生成，不给手改
-     （改了就说不清是谁写的，也让"装配的是 MD"这句话落不了地）。 */
+   ★ 说明书才是产物：装配到组件里的是这份文本。它由按钮生成，也可以由人直接改
+     （改完就是人写的版本，docFrom 记成 manual，机器不再覆盖它）。 */
 (function () {
   'use strict';
 
@@ -12,27 +12,6 @@
     });
   };
   var toast = function (m, k) { if (window.UIK && UIK.toast) UIK.toast(m, k); };
-
-  /* MD 是给模型的，但人也要能读：只做最小渲染（标题/加粗/行内代码），
-     不引第三方库、不搞完整 markdown。 */
-  /* 「## 用途」和它下面那句话常在同一块里（中间只有一个换行），
-     按块整体判断是不是标题会把正文一起吞掉 —— 必须逐行看。 */
-  function mdHtml(md) {
-    var e = esc;
-    function inline(s) {
-      return e(s).replace(/\*\*([^*]+)\*\*/g, '<b style="font-weight:600">$1</b>')
-        .replace(/`([^`]+)`/g, '<code style="font-family:var(--font-family-mono);font-size:var(--font-size-caption);background:var(--surface-sunken-2);border-radius:var(--radius-xs);padding:0 4px">$1</code>')
-        .replace(/\n/g, '<br>');
-    }
-    return String(md || '').split(/\n{2,}/).map(function (blk) {
-      var lines = blk.split('\n'), out = [];
-      var h = lines[0].match(/^#{1,4}\s+(.+)$/);
-      if (h) { out.push('<p style="margin:0 0 8px;font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)">' + e(h[1]) + '</p>'); lines.shift(); }
-      var rest = lines.join('\n').trim();
-      if (rest) out.push('<p style="margin:0 0 10px">' + inline(rest) + '</p>');
-      return out.join('');
-    }).join('');
-  }
 
   var ID = '';
   var B = null;
@@ -63,12 +42,12 @@
 
   function formDirty() {
     return $('#f-name').value.trim() !== (B.name || '')
-      || $('#f-intro').value.trim() !== (B.intro || '');
+      || $('#f-intro').value.trim() !== (B.intro || '')
+      || $('#doc').value.trim() !== String(B.doc || '').trim();
   }
+  /* 说明是选填（用户 2026-11-05 明确）。必填只有名称和至少一个接口。 */
   function filled() {
-    return $('#f-name').value.trim()
-      && $('#f-intro').value.trim()
-      && (CAP.abilityById(ID).apiIds || []).length;
+    return $('#f-name').value.trim() && (CAP.abilityById(ID).apiIds || []).length;
   }
 
   function paint() {
@@ -84,43 +63,29 @@
     syncBar();
   }
 
-  /* 状态只描述事实：在生成、已就绪、失败（带原因）、还没生成、改了没重生成。 */
+  /* 状态只描述事实：在生成、已就绪、这次没生成出来（带原因）、还没生成、
+     接口变了说明书没跟上。 */
   function paintState() {
     var st = B.docState || 'none';
-    var el = $('#md-state'), rt = $('#act-retry');
-    if (st === 'run') {
-      el.textContent = 'MD 生成中…';
+    var el = $('#md-state');
+    var moved = (B.apiIds || []).join(',') !== String(B.docApis || '');
+    if (BUSY || st === 'run') {
+      el.textContent = '生成中…';
       el.style.color = 'var(--color-text-tertiary)';
     } else if (st === 'fail') {
-      el.textContent = 'MD 生成失败：' + (B.docErr || '模型没返回');
+      el.textContent = '这次没生成出来：' + (B.docErr || '模型没返回');
       el.style.color = 'var(--color-danger)';
     } else if (st === 'ready') {
-      var moved = CHANGED || formDirty();
-      el.textContent = moved ? '有改动，保存后重新生成' : ('MD 已就绪' + (B.docAt ? ' · ' + B.docAt : ''));
-      el.style.color = moved ? 'var(--color-text-tertiary)' : '';
+      if (B.doc && moved) { el.textContent = '接口有变动，说明书要重新生成'; el.style.color = 'var(--color-warn-ink, var(--color-text-secondary))'; }
+      else { el.textContent = '已就绪' + (B.docAt ? ' · ' + B.docAt : ''); el.style.color = 'var(--color-text-tertiary)'; }
     } else {
-      el.textContent = 'MD 还没生成';
+      el.textContent = '还没生成';
       el.style.color = 'var(--color-text-tertiary)';
     }
-    /* 重试只在"本来该由模型写、但模型没写成"时出现：真失败，或者退成了按文档拼。 */
-    var canRetry = st === 'fail' || (st === 'ready' && B.docFrom === 'local' && !!B.docErr);
-    if (rt) rt.hidden = !(canRetry && !BUSY);
   }
 
   function paintDoc() {
-    var body = B.doc
-      ? mdHtml(B.doc)
-      : '<span class="abt-hint">保存后按这些接口写出来</span>';
-    var old = (B.docState === 'fail' && B.doc)
-      ? '<div class="abt-hint" style="margin:0 0 8px;color:var(--color-danger)">下面是上一次生成的</div>'
-      : '';
-    $('#doc').innerHTML = old + body;
-    /* 来源照实写：模型写的和按接口文档拼的，不是一回事，界面上得分得开。 */
-    var src = $('#doc-src');
-    if (src) {
-      src.textContent = '只读 · ' + (B.docFrom === 'model' ? '模型生成' : (B.doc ? '按接口文档拼的' : '还没生成'));
-      src.title = B.docErr || '';
-    }
+    $('#doc').value = B.doc || '';
   }
 
   function paintApis() {
@@ -146,49 +111,67 @@
     }).join('');
   }
 
-  /* 保存键：没改过就是灰的；名称、说明、至少一个接口三样齐了才算填完。 */
+  /* 保存键：没改过就是灰的；名称 + 至少一个接口是必须的，说明选填。 */
   function syncBar() {
     var btn = $('#act-save');
     var ok = filled();
     btn.disabled = BUSY || !(ok && (CHANGED || formDirty()));
-    btn.title = ok ? '' : '要填名称和说明，再加至少一个接口';
+    btn.title = ok ? '' : '要填能力名称，再加至少一个接口';
   }
 
-  $('#f-name').addEventListener('input', function () { paintState(); syncBar(); });
-  $('#f-intro').addEventListener('input', function () { paintState(); syncBar(); });
+  ['#f-name', '#f-intro', '#doc'].forEach(function (sel) {
+    $(sel).addEventListener('input', function () { paintState(); syncBar(); });
+  });
 
-  /* ── 保存 = 落库 + 生成 MD。生成失败就记失败，不拿旧内容冒充新的。 ── */
+  /* ── 生成说明书：点了才生成。手改过的内容要覆盖，先说一声。 ── */
   function regenerate() {
-    if (!window.Gen || !Gen.abilityDoc) {
-      CAP.updateAbility(ID, { docState: 'fail', docErr: '生成脚本没加载' });
-      paint(); return;
-    }
-    BUSY = true; CHANGED = false;
+    if (BUSY) return;
+    if (!window.Gen || !Gen.abilityDoc) { toast('生成脚本没加载', 'error'); return; }
+    if (!(CAP.abilityById(ID).apiIds || []).length) { toast('先加接口', 'error'); return; }
+    BUSY = true;
     CAP.updateAbility(ID, { docState: 'run', docErr: '' });
     B = CAP.abilityById(ID);
-    paintState(); paintDoc(); syncBar();
+    paintState(); syncBar();
     Gen.abilityDoc(CAP.abilityById(ID)).then(function (r) {
       CAP.updateAbility(ID, {
-        doc: r.text, docState: 'ready', docAt: CAP.now(),
+        doc: r.text, docState: 'ready', docAt: CAP.now(), docApis: (B.apiIds || []).join(','),
         docFrom: r.from || 'model', docErr: r.from === 'local' ? (r.why || '') : ''
       });
-      BUSY = false; paint(); toast('MD 已生成');
+      BUSY = false; B = CAP.abilityById(ID);
+      paintDoc(); paintState(); syncBar();
+      toast('说明书已生成');
     }).catch(function (e) {
       CAP.updateAbility(ID, { docState: 'fail', docErr: String((e && e.message) || e) });
-      BUSY = false; paint(); toast('MD 没生成出来', 'error');
+      BUSY = false; B = CAP.abilityById(ID);
+      paintState(); syncBar();
+      toast('没生成出来', 'error');
     });
   }
 
-  $('#act-save').addEventListener('click', function () {
-    var n = $('#f-name').value.trim(), i = $('#f-intro').value.trim();
-    if (!n) { toast('填能力名称', 'error'); $('#f-name').focus(); return; }
-    if (!i) { toast('填说明', 'error'); $('#f-intro').focus(); return; }
-    if (!(CAP.abilityById(ID).apiIds || []).length) { toast('先加一个接口', 'error'); return; }
-    CAP.updateAbility(ID, { name: n, intro: i });
-    regenerate();
+  $('#act-gen').addEventListener('click', function () {
+    var cur = $('#doc').value.trim();
+    if (!cur || cur === String(B.doc || '').trim()) { regenerate(); return; }
+    Confirm.ask({
+      title: '重新生成', body: '右边现在的内容会被覆盖。', ok: '重新生成',
+      onOk: regenerate
+    });
   });
 
-  $('#act-retry').addEventListener('click', function () { regenerate(); });
+  /* 保存只落库，不偷偷生成 —— 生成是按钮上的事，什么时候写由人决定。 */
+  $('#act-save').addEventListener('click', function () {
+    var n = $('#f-name').value.trim(), i = $('#f-intro').value.trim(), d = $('#doc').value.trim();
+    if (!n) { toast('填能力名称', 'error'); $('#f-name').focus(); return; }
+    if (!(CAP.abilityById(ID).apiIds || []).length) { toast('先加接口', 'error'); return; }
+    var old = String(B.doc || '');
+    var patch = { name: n, intro: i, doc: d };
+    if (d !== old.trim()) { patch.docFrom = 'manual'; patch.docErr = ''; patch.docAt = CAP.now(); }
+    if (d) patch.docState = 'ready';
+    else { patch.docState = 'none'; patch.docAt = ''; }
+    CAP.updateAbility(ID, patch);
+    CHANGED = false; B = CAP.abilityById(ID);
+    paintDoc(); paintState(); paintApis(); syncBar();
+    toast('已保存');
+  });
 
   $('#api-list').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act="rm"]'); if (!b) return;
@@ -209,10 +192,12 @@
      手填一条留在旁边：客户只口头说了一个接口时用它。 */
   var ADD = { mode: 'bulk', parsed: null, busy: false, text: '' };
 
+  /* 入参和返回都是 JSON（用户 2026-11-05 定），写进文档时用代码块，模型照着好读。 */
   function apiDoc(v) {
-    return '### ' + v.name + '\n\n**用途**：' + (v.summary || v.desc || v.name)
-      + (v.params ? '\n\n**入参**：' + v.params : '')
-      + (v.returns ? '\n\n**返回**：' + v.returns : '');
+    var s = '### ' + v.name + '\n\n**用途**：' + (v.summary || v.desc || v.name);
+    if (v.params) s += '\n\n**入参**：\n\n```json\n' + v.params + '\n```';
+    if (v.returns) s += '\n\n**返回**：\n\n```json\n' + v.returns + '\n```';
+    return s;
   }
 
   /* 加入接口：同一个方法+路径只存一条；已经在这个能力里的不重复加。 */
@@ -291,8 +276,8 @@
         +   '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:var(--space-8)"><label for="fa-path">路径<span class="nf-req">*</span></label><input id="fa-path" placeholder="/api/v1/…"></div>'
         + '</div>'
         + '<div class="nf-row"><label for="fa-desc">说明</label><input id="fa-desc" placeholder="干什么用，一句话"></div>'
-        + '<div class="nf-row"><label for="fa-in">入参</label><textarea id="fa-in" style="min-height:56px" placeholder="要传什么，没有就不写"></textarea></div>'
-        + '<div class="nf-row"><label for="fa-out">返回</label><textarea id="fa-out" style="min-height:56px" placeholder="返回什么，没有就不写"></textarea></div>';
+        + '<div class="nf-row"><label for="fa-in">入参</label><textarea id="fa-in" style="min-height:80px;font-family:var(--font-family-mono);font-size:var(--font-size-caption)" placeholder="{&quot;page&quot;: 1, &quot;status&quot;: &quot;done&quot;}"></textarea></div>'
+        + '<div class="nf-row"><label for="fa-out">返回</label><textarea id="fa-out" style="min-height:80px;font-family:var(--font-family-mono);font-size:var(--font-size-caption)" placeholder="{&quot;total&quot;: 0, &quot;items&quot;: []}"></textarea></div>';
       ['#fa-name', '#fa-path'].forEach(function (sel) {
         $(sel).addEventListener('input', function () {
           $('#pk-ok').disabled = !($('#fa-name').value.trim() && $('#fa-path').value.trim());

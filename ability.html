@@ -30,8 +30,10 @@
 .abt-p{color:var(--color-text-secondary);font-family:var(--font-family-mono);font-size:var(--font-size-caption);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .abt-op{height:24px;padding:0;border:0;background:none;font-family:inherit;font-size:var(--font-size-caption);color:var(--color-brand-ink);cursor:pointer;white-space:nowrap}
 .abt-op.is-danger{color:var(--color-danger)}
-.abt-doc{background:var(--surface-subtle);border:1px solid var(--color-border-hairline);border-radius:var(--radius-xs);padding:var(--space-16);min-height:420px}
-.abt-doc pre{margin:0;white-space:pre-wrap;font-family:inherit;font-size:var(--font-size-body);line-height:1.8;color:var(--color-text-body)}
+/* 说明书是给模型读的文本，人能改：直接给一个满宽文本域，不做渲染态（渲染了就没法编辑，
+   还会让人以为不能动）。 */
+.abt-doc-ta{width:100%;min-height:520px;box-sizing:border-box;resize:vertical;padding:var(--space-16);border:1px solid var(--color-border-hairline);border-radius:var(--radius-xs);background:var(--surface-page);font-family:var(--font-family-mono);font-size:var(--font-size-body);line-height:1.8;color:var(--color-text-body)}
+.abt-doc-ta:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 .abt-hint{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 </style>
   <meta name="robots" content="noindex,nofollow">
@@ -60,7 +62,7 @@
         <div>
           <label class="abt-lb" for="f-name"><i aria-hidden="true">*</i>能力名称</label>
           <input class="abt-in" id="f-name" placeholder="这个能力叫什么">
-          <label class="abt-lb" for="f-intro" style="margin-top:var(--space-12)"><i aria-hidden="true">*</i>说明</label>
+          <label class="abt-lb" for="f-intro" style="margin-top:var(--space-12)">说明</label>
           <textarea class="abt-ta" id="f-intro" placeholder="什么时候该用它，一句话"></textarea>
 
           <div class="abt-sec"><b id="api-title">接口清单（0）</b></div>
@@ -68,8 +70,10 @@
         </div>
 
         <div>
-          <div class="abt-sec" style="margin-top:0"><b>MD 文档</b><span class="abt-hint" id="doc-src" style="margin-left:auto">只读</span><button type="button" class="abt-op" id="act-retry" hidden style="margin-left:var(--space-8)">重试</button></div>
-          <div class="abt-doc" id="doc"></div>
+          <div class="abt-sec" style="margin-top:0"><b>能力说明书</b>
+            <button type="button" class="btn ghost" id="act-gen" style="margin-left:auto;height:28px">生成</button>
+          </div>
+          <textarea class="abt-doc-ta" id="doc" spellcheck="false" placeholder="点右上「生成」，按左边的接口写成一份说明书；也可以直接在这里写。"></textarea>
         </div>
       </div>
     </main>
@@ -80,8 +84,8 @@
 <script src="assets/shell.js?v=1736883e"></script>
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
-<script src="assets/capability.js?v=70287a54"></script>
-<script src="assets/gen.js?v=0a75f8db"></script>
-<script src="assets/ability.js?v=2e0d0e44"></script>
+<script src="assets/capability.js?v=089bd664"></script>
+<script src="assets/gen.js?v=1b052064"></script>
+<script src="assets/ability.js?v=73c88a09"></script>
 </body>
 </html>
