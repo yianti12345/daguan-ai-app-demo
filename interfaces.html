@@ -31,12 +31,15 @@
 .it-op{height:24px;padding:0;border:0;background:none;font-family:inherit;font-size:var(--font-size-body);color:var(--color-brand-ink);cursor:pointer;white-space:nowrap}
 .it-op:hover{text-decoration:underline}
 .it-op.is-danger{color:var(--color-danger)}
-/* 新增/编辑：左原文、右说明书。宽弹窗 880，两栏各一半。 */
+/* 新增/编辑：左（介绍 + 内容）、右（能力名称 + 说明书）。宽弹窗 880，两栏各一半。 */
 .it-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-16);flex:1 1 auto;min-height:0}
 .it-col{display:flex;flex-direction:column;gap:var(--space-8);min-height:0}
 .it-lb{font-size:var(--font-size-caption);color:var(--color-text-secondary)}
 .it-raw{flex:1 1 auto;min-height:300px;resize:vertical;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:var(--space-12);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
 .it-raw:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
+/* 介绍：2–3 行（约 72），固定高度不跟下面的内容框抢；想写更多仍可拉高。 */
+.it-intro{flex:0 0 auto;min-height:72px;resize:vertical;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:var(--space-12);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
+.it-intro:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 .it-cnt{font-size:var(--font-size-caption);color:var(--color-text-tertiary);text-align:right}
 .it-pv{flex:1 1 auto;min-height:300px;overflow:auto;border:1px solid var(--color-border-hairline);border-radius:var(--radius-control);padding:var(--space-16);background:var(--surface-subtle);font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)}
 .it-pv h4{margin:0 0 var(--space-8);font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
@@ -112,12 +115,13 @@
     <div class="nf-bd">
       <div class="it-two">
         <div class="it-col">
-          <label class="it-lb" for="raw">原文</label>
+          <!-- 2026-11-05（用户）：介绍放最上、给到 2–3 行；来源由模型从内容里分析，不让用户填。
+               「原文」这个词也换掉——用户贴进来的不只原文，也可能是一份文档。 -->
+          <label class="it-lb" for="intro">介绍</label>
+          <textarea class="it-intro" id="intro" placeholder="选填"></textarea>
+          <label class="it-lb" for="raw">内容</label>
           <textarea class="it-raw" id="raw" placeholder="贴 URL、cURL，或者一段大白话"></textarea>
           <span class="it-cnt" id="cnt">0 字</span>
-          <!-- 2026-11-05（用户）：来源由模型从原文里分析，不该让用户填；这里只留一个选填的介绍。 -->
-          <label class="it-lb" for="intro">介绍</label>
-          <input class="it-raw" id="intro" style="min-height:0;height:32px" placeholder="选填">
           <div class="it-file">
             <button type="button" class="btn ghost" id="bfile-btn">选文件</button>
             <input type="file" id="bfile" accept=".json,.yaml,.yml,.txt,.md" hidden>
@@ -148,7 +152,7 @@
       </div>
     </div>
     <div class="nf-ft">
-      <button type="button" class="btn ghost" id="gen">重新生成</button>
+      <button type="button" class="btn ghost" id="gen">生成 MD 文档</button>
       <span class="it-sp"></span>
       <button type="button" class="btn ghost" id="dlg-cancel">取消</button>
       <button type="button" class="btn primary" id="dlg-save" disabled>保存</button>
@@ -179,6 +183,6 @@
 <script src="assets/spec.js?v=c9f505f0"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=573b1f60"></script>
-<script src="assets/interfaces.js?v=fdb0d7ac"></script>
+<script src="assets/interfaces.js?v=0d342cb8"></script>
 </body>
 </html>
