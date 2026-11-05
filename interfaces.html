@@ -45,6 +45,9 @@
 .it-pv pre{margin:0 0 var(--space-8);padding:var(--space-12);background:var(--surface-page);border-radius:var(--radius-tag);overflow:auto}
 .it-pv pre code{background:none;padding:0}
 .it-hint{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.it-pv-hd{display:flex;align-items:center;gap:var(--space-8)}
+.it-name-in{flex:1 1 auto;min-width:0;height:28px;border:1px solid var(--color-border-control);border-radius:var(--radius-control);padding:0 var(--space-8);font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);background:var(--surface-page)}
+.it-name-in:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 .it-sp{flex:1 1 auto}
 .it-res{margin:var(--space-12) 0 0;padding:0;list-style:none;max-height:260px;overflow:auto}
 .it-res li{display:flex;align-items:center;gap:var(--space-8);padding:var(--space-8) 0;border-bottom:1px solid var(--color-border-hairline);font-size:var(--font-size-body)}
@@ -113,8 +116,13 @@
           <input class="it-raw" id="src" style="min-height:0;height:32px" placeholder="例如：华信证券">
         </div>
         <div class="it-col">
-          <span class="it-lb">说明书</span>
+          <div class="it-pv-hd">
+            <label class="it-lb" for="pv-name">名称</label>
+            <input class="it-name-in" id="pv-name" placeholder="生成后可改">
+            <button type="button" class="it-op" id="pv-edit">编辑</button>
+          </div>
           <div class="it-pv" id="pv"><span class="it-hint">生成后在这里看结果</span></div>
+          <textarea class="it-raw" id="pv-md" hidden placeholder="直接改 Markdown"></textarea>
         </div>
       </div>
     </div>
@@ -176,6 +184,6 @@
 <script src="assets/spec.js?v=c7914df8"></script>
 <script src="assets/list.js?v=51a688c6"></script>
 <script src="assets/capability.js?v=6877aa4c"></script>
-<script src="assets/interfaces.js?v=9db98daa"></script>
+<script src="assets/interfaces.js?v=4c2a1218"></script>
 </body>
 </html>

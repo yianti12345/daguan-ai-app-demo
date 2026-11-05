@@ -140,6 +140,11 @@
     $('#src').value = it ? (it.source || '') : '';
     $('#cnt').textContent = ($('#raw').value.length) + ' 字';
     $('#pv').innerHTML = it && it.doc ? mdToHtml(it.doc) : '<span class="it-hint">生成后在这里看结果</span>';
+    $('#pv-name').value = it ? (it.name || '') : '';
+    $('#pv-md').value = it ? (it.doc || '') : '';
+    $('#pv-md').hidden = true;
+    $('#pv').hidden = false;
+    $('#pv-edit').textContent = '编辑';
     $('#dlg-save').disabled = !(it && it.doc);
     $('#dlg').hidden = false;
     setTimeout(function () { $('#raw').focus(); }, 0);
@@ -148,6 +153,20 @@
 
   $('#raw').addEventListener('input', function () {
     $('#cnt').textContent = this.value.length + ' 字';
+  });
+
+  /* 生成结果可改：模型可能理解错，人得能直接修，不能只能重贴原文。 */
+  $('#pv-edit').addEventListener('click', function () {
+    var md = $('#pv-md'), pv = $('#pv');
+    if (md.hidden) {
+      if (!pv.getAttribute('data-md')) return;   /* 还没生成，没有可改的东西 */
+      md.value = pv.getAttribute('data-md');
+      md.hidden = false; pv.hidden = true; this.textContent = '预览';
+    } else {
+      pv.innerHTML = mdToHtml(md.value);
+      pv.setAttribute('data-md', md.value);
+      md.hidden = true; pv.hidden = false; this.textContent = '编辑';
+    }
   });
 
   $('#gen').addEventListener('click', function () {
@@ -161,16 +180,19 @@
       pv.setAttribute('data-name', d.name);
       pv.setAttribute('data-desc', d.desc);
       pv.setAttribute('data-md', d.md);
+      $('#pv-name').value = d.name;
+      $('#pv-md').value = d.md;
+      $('#pv-md').hidden = true; pv.hidden = false; $('#pv-edit').textContent = '编辑';
       $('#dlg-save').disabled = false;
     }, 600);
   });
 
   $('#dlg-save').addEventListener('click', function () {
     var pv = $('#pv');
-    var md = pv.getAttribute('data-md');
+    var md = $('#pv-md').hidden ? pv.getAttribute('data-md') : $('#pv-md').value;
     if (!md) { toast('先生成说明书', 'error'); return; }
     var v = {
-      name: pv.getAttribute('data-name'),
+      name: ($('#pv-name').value.trim() || pv.getAttribute('data-name')),
       desc: pv.getAttribute('data-desc'),
       source: $('#src').value.trim() || '未标注',
       raw: $('#raw').value.trim(),
