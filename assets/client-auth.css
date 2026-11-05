@@ -5,7 +5,6 @@
    参考了线上「客户配置」页的表头形态（租户名称 / 租户 ID / 有效期 / 规则 / 管理方式 / 流程 / 操作），
    但新模块授权的是**某一版应用**，所以列换成：客户 / 租户 ID / 应用 / 授权版本 / 授权时间 / 有效期 / 操作。 */
 /* 读屏专用标题：可见标题已交给面包屑（平台标准件与 apps.html 都没有页内大标题）。 */
-.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;font-size:var(--font-size-heading);font-weight:600}
 /* 2026-11-02 第二次整改：卡片壳去掉（平台标准列表是通栏平铺的，员工管理页没有外框、没有阴影），
    只剩一条工具栏 + 通栏表格。 */
 /* 基准行：左边是「最新版本 vN」，右边是搜索与新增授权 */
