@@ -48,6 +48,7 @@
         if (key === 'by') return esc(r.by || '—');
         if (key === 'ops') {
           return '<div class="sk-ops">'
+            + '<button class="sk-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">编辑</button>'
             + '<button class="sk-op" type="button" data-act="toggle" data-id="' + esc(r.id) + '">' + (r.on ? '停用' : '启用') + '</button>'
             + '<button class="sk-op is-danger" type="button" data-act="del" data-id="' + esc(r.id) + '">删除</button>'
             + '</div>';
@@ -64,12 +65,24 @@
     if (total) total.textContent = '共 ' + rows.length + ' 条数据';
   }
 
+  var EDIT = null;
   function openNew() {
+    EDIT = null; $('#dlg-t').textContent = '新建 skill';
     $('#f-name').value = ''; $('#f-desc').value = '';
     $('#dlg').hidden = false;
     setTimeout(function () { $('#f-name').focus(); }, 0);
   }
-  function closeNew() { $('#dlg').hidden = true; }
+  function closeNew() { $('#dlg').hidden = true; EDIT = null; }
+  /* 有「最近更新时间」就必然有编辑：改名、改描述都从这一行进。 */
+  function openEdit(id) {
+    var it = CAP.skillById(id); if (!it) return;
+    EDIT = id;
+    $('#dlg-t').textContent = '编辑 skill';
+    $('#f-name').value = it.name || '';
+    $('#f-desc').value = (it.desc && it.desc !== '—') ? it.desc : '';
+    $('#dlg').hidden = false;
+    setTimeout(function () { $('#f-name').focus(); }, 0);
+  }
 
   function openDetail(id) {
     var it = CAP.skillById(id); if (!it) return;
@@ -101,13 +114,12 @@
   $('#dlg-save').addEventListener('click', function () {
     var name = $('#f-name').value.trim();
     if (!name) { toast('先填名称', 'error'); $('#f-name').focus(); return; }
-    var it = CAP.addSkill({
-      name: name,
-      desc: $('#f-desc').value.trim() || '—',
-      state: 'run'
-    });
-    closeNew(); paint();
-    setTimeout(function () { CAP.updateSkill(it.id, { state: 'ok' }); paint(); }, 900);
+    if (EDIT) {
+      CAP.updateSkill(EDIT, { name: name, desc: $('#f-desc').value.trim() || '—' });
+      closeNew(); paint(); toast('已保存'); return;
+    }
+    var it = CAP.addSkill({ name: name, desc: $('#f-desc').value.trim() || '—', state: 'ok' });
+    closeNew(); paint(); toast('已新建');
   });
 
   /* ── 导入 ── */
@@ -154,6 +166,7 @@
     var id = a.getAttribute('data-id'), act = a.getAttribute('data-act');
     if (a.tagName === 'A') e.preventDefault();
     if (act === 'view') { openDetail(id); return; }
+    if (act === 'edit') { openEdit(id); return; }
     if (act === 'toggle') {
       var r = CAP.skillById(id); if (!r) return;
       CAP.toggleSkill(id); paint(); toast(r.on ? '已启用' : '已停用');
