@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
 <link rel="stylesheet" href="assets/sys.css?v=5c7c9486">
-<link rel="stylesheet" href="assets/client-auth.css?v=bd6eb648">
+<link rel="stylesheet" href="assets/client-auth.css?v=4b9b0a15">
   <meta name="robots" content="noindex,nofollow">
 </head>
 <body>
@@ -56,8 +56,11 @@
                会被撑成「全部升级（ 3 ）」——括号里多出两道 8px 缝（2026-11-05 截图抓到的）。 -->
           <button class="btn ghost" type="button" id="act-all" hidden><span>全部升级（<span id="all-n">0</span>）</span></button>
           <button class="btn ghost" type="button" id="act-batch" hidden><span>批量升级（<span id="batch-n">0</span>）</span></button>
+          <!-- ★2026-11-05（用户截图：「筛选栏重叠」）：它原来是右侧第三个控件样子的东西，
+               灰底胶囊还被我加了一条竖线塞在 16px 缝里（实测竖线离胶囊 7px、离下拉 9px），
+               三样挤成一块。它不是筛选项，移到左边跟操作放一组，右边只留「全部版本 + 搜索」。 -->
+          <span class="au-latest" id="au-latest" hidden>最新版本 <b>—</b></span>
           <div class="right">
-            <span class="au-latest" id="au-latest" hidden>最新版本 <b>—</b></span>
             <label class="field w120">
               <!-- ★2026-11-04（用户）：按版本筛客户。选项由 client-auth.js 按最新版本现填。 -->
               <select id="f-ver" aria-label="按授权版本筛选">

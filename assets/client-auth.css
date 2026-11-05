@@ -8,15 +8,12 @@
 /* 2026-11-02 第二次整改：卡片壳去掉（平台标准列表是通栏平铺的，员工管理页没有外框、没有阴影），
    只剩一条工具栏 + 通栏表格。 */
 /* 基准行：左边是「最新版本 vN」，右边是搜索与新增授权 */
-/* ★2026-11-05：「最新版本 v1」是这张表的状态，不是筛选项，却和「全部版本」下拉、搜索框
-   同高同排、同一种长相 —— 看起来像三个可以一起调的控件。
-   改成标签：灰底胶囊 + 与筛选之间一条竖线，一眼分清"这是状态"。 */
-.au-latest{display:inline-flex;align-items:baseline;gap:6px;font-size:var(--font-size-caption);
-  color:var(--color-text-secondary);padding:4px 10px;border-radius:999px;
-  background:var(--surface-sunken);white-space:nowrap}
-.au-bar .right .au-latest + *{position:relative}
-.au-bar .right .au-latest + *::before{content:"";position:absolute;left:-9px;top:50%;
-  width:1px;height:16px;margin-top:-8px;background:var(--color-border-hairline)}
+/* ★2026-11-05：「最新版本 v1」是这张表的状态，不是筛选项。
+   上一版把它做成灰底胶囊 + 一条竖线塞在右侧筛选区，实测竖线离胶囊 7px、离下拉 9px ——
+   三样挤成一块，看着像两个控件压在一起（用户截图指出）。
+   现在：纯文字、靠左跟操作按钮一组；右侧只留「全部版本 + 搜索」两个真控件。 */
+.au-latest{display:inline-flex;align-items:baseline;gap:6px;margin-left:12px;
+  font-size:var(--font-size-caption);color:var(--color-text-tertiary);white-space:nowrap}
 .au-latest b{font-size:var(--font-size-body);font-weight:600;color:var(--color-text-primary);font-variant-numeric:tabular-nums}
 /* 从某个应用进来时应用是锁定的：去掉下拉箭头，否则看起来还能选、点开却没反应 */
 #fm-app.is-locked{appearance:none;-webkit-appearance:none;background-image:none;cursor:default}
