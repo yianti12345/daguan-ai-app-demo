@@ -636,7 +636,9 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      原来按视口断点定 4 列（>1245 就 4 列），可内容宽只有 1030 时也照样 4 列 ⇒ 每张 208 宽，
      标题+描述+状态+版本四件事挤在一条 208 的卡里。
      改成按**卡最小宽**自适应：≥280 就多放一列，放不下就 3 列。1440 仍是 4 列（289），1280 变 3 列（约 330）。 */
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-8);align-content:start;
+  /* ★2026-11-05（用户第二次）：「我看怎么一行还是四个，太挤了，信息太密，改成三个」。
+     上一版按卡宽自适应，1440 下仍算出 4 列。用户要的是**固定 3 列**，别再自适应。 */
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-16);align-content:start;
   background:none;box-shadow:none;border-radius:0;padding:0;overflow:visible;
 }
 /* ★2026-11-01 断点与应用页对齐：1720 → **1536**。
@@ -2116,6 +2118,7 @@ body[data-drawer="on"] .hint{
 }
 @media (max-width:989px){
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .page-components #grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 /* ══════════════════════════════════════════════════════════════════
