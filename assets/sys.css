@@ -211,7 +211,11 @@ input, select, textarea{font-family:inherit; font-size:inherit; color:inherit;}/
 /* ★2026-10-29（refparity：卡片 w 真源 273 / 我方 277）：真源 #grid 实测 1202 宽、
    padding 0 8px、轨道 272.5×4；我方 #grid 同为 1202 宽，但 padding 0 ⇒ 轨道 276.5。
    差的不是卡宽也不是 gap，是**栅格自己的 8px 内距**。补回内距，卡宽 276.5→272.5（取整 273）。 */
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-8);padding:0 var(--space-8)}
+/* ★2026-11-05（用户）：「卡片这么大，跟真源一点也不一样」。
+   根因：我把**知识库页**的 gap 8 套到了**应用管理页**。真源应用管理是
+   `<div class="grid lg:grid-cols-4 gap-8 px-[8px]">`，Tailwind gap-8 = 32px；
+   1440 下卡宽 (1190-16-96)/4 = 269.5，实测 269.5×299.4。gap 改回 32。 */
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-32);padding:0 var(--space-8)}
 /* ★2026-11-01 恢复线上断点（这条第三次翻烧饼，理由一次写全）：
    线上原文 `<div class="grid 2xl:grid-cols-5 lg:grid-cols-4 grid-cols-4 gap-8 px-[8px]">`
    —— Tailwind 的 2xl = 1536，**1536 起是 5 列**。
