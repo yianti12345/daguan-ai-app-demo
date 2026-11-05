@@ -51,6 +51,9 @@
    系统不知道客户用没用、几分钟前用没用，只有一条授权记录代表"已经给客户了"）。 */
 .au-ver{display:flex;align-items:baseline;gap:6px}
 .au-ver b{font-weight:500;color:var(--color-text-primary);font-variant-numeric:tabular-nums}
+/* 升级方向（v3 → v4）：说清"要从哪一版升到哪一版"，弱色 —— 它是信息不是入口，
+   能点的是操作列的「升级版本」，两者别用同一个颜色。 */
+.au-to{font-size:var(--font-size-caption);color:var(--color-text-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
 .au-at{font-size:var(--font-size-body);color:var(--color-text-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
 .au-exp{font-size:var(--font-size-body);color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
 .au-exp[data-expired="1"]{color:var(--color-danger)}
@@ -83,7 +86,7 @@
    于是选择器被拼成 `.au-card.is-missing #mask .au-dlg` —— 永远匹配不到，
    弹窗就一直用着装配抽屉的 1120×720，四个字段撑出满屏空白。 */
 /* 两个弹窗（新增授权 / 新建客户）同一个壳：都用 .panel.au-dlg。
-   原来只写了 #mask .au-dlg，新建客户那个弹窗（#cl-mask）没被管到，还是 1120×720。 */
+   原来只写了 #mask .au-dlg，作用域限死在一个容器上。 */
 /* 用 .mask .au-dlg 而不是 .panel.au-dlg：.panel 是装配面板的共享件，
    在页面 CSS 里再写一次它的选择器，组件优先判据会当成"复制共享件"报红（C1）。 */
 .mask .au-dlg{width:min(var(--dialog-max-w),92vw);height:auto;max-height:calc(100vh - 96px)}
@@ -99,6 +102,22 @@
 .fm-hint{margin:0;font-size:var(--font-size-caption);color:var(--color-text-tertiary);line-height:1.6}
 .fm-hint b{color:var(--color-text-secondary);font-weight:600}
 .au-ft{flex:0 0 auto;display:flex;justify-content:flex-end;gap:var(--space-8);padding:var(--space-12) var(--space-16) var(--space-16)}
+
+/* 客户选择器（2026-11-05 照真源形态）：点开是一层下拉浮层，不把弹窗撑高。
+   原来列表inline展开，弹窗从 195 撑到 480，触发器/搜索框/列表三层框叠在一起，
+   看着像三个输入框摞着。 */
+/* 客户选择器展开后是一整块面板（搜索 + 多选列表），不再是三个独立输入框摞着。
+   ★2026-11-05 试过做成下拉浮层：这个弹窗只有 195 高，触发器下面到弹窗底只剩 95px，
+   浮层必然盖住自己的「取消/确定」。所以改成弹窗内展开、列表自己限高滚动。 */
+#mask #fm-list-wrap{display:flex;flex-direction:column;gap:var(--space-8);
+  margin-top:var(--space-8);padding:var(--space-8);
+  border:1px solid var(--color-border-hairline);border-radius:var(--radius-sm);
+  background:var(--surface-sunken,var(--color-state-hover))}
+/* display:flex 会盖掉 [hidden] 的 UA 样式，必须显式关掉 */
+#mask #fm-list-wrap[hidden]{display:none}
+/* 滚动只发生在列表里（搜索框始终可见）；高度取 7 行的整倍，底部不会切出半行。
+   2026-11-05：原来限高的是整块面板，最后一行被弹窗边界裁成半截。 */
+#mask #fm-list-wrap .fm-clients{max-height:224px;overflow:auto;border:0;padding:0;background:none}
 /* ── 2026-11-02 多客户授权 ──────────────────────────────────── */
 /* 弹窗里的客户勾选列表：每家一行，名字在左、租户 ID 在右，状态在最右。
    列表限高，客户多了内部滚动，弹窗不会顶出屏幕。 */

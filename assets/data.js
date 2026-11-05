@@ -607,6 +607,22 @@
       if (x.clientName) ensureClient(x.clientName, x.tenantId, x.authAt);
     });
     sortClients();
+    /* 2026-11-05（用户：「客户配置页面要有租户名称、租户 ID 这些基本信息」）：
+       租户 ID 是这一页的基本信息，不能是空值。历史种子有几家没写，
+       这里按名字派生一个稳定的 16 位标识补齐；已有值一律不动。
+       （租户主数据本身归平台的「租户管理」，这里只补齐展示所需的标识。） */
+    (DB.CLIENTS || []).forEach(function (c) {
+      if (String(c.tenantId || '').trim()) return;
+      /* 两路混合：单用一个 hash 出来的后 8 位全是 0，一串 ID 都以 000 结尾，一看就是造的。 */
+      var s0 = String(c.name || c.id), h1 = 0x811c9dc5, h2 = 0x9e3779b9;
+      for (var i = 0; i < s0.length; i++) {
+        var ch = s0.charCodeAt(i);
+        h1 = ((h1 ^ ch) * 16777619) >>> 0;
+        h2 = ((h2 ^ ch) * 2654435761 + i) >>> 0;
+      }
+      var hex8 = function (n) { return ('00000000' + n.toString(16)).slice(-8); };
+      c.tenantId = hex8(h1) + hex8(h2);
+    });
     /* 授权表：一个应用 × 一个客户一条；版本是授权时的那一版（应用可再出新版，这条不动）。 */
     DB.AUTHS = loadAuths(rawApps, s.auths);
 

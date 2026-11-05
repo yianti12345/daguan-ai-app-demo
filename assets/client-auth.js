@@ -24,7 +24,15 @@
   }
   function today() { return iso(new Date()); }
   /* 授权时间到分就够（真源列表里也是分）——秒是数据库字段，摆给人看只会让列变宽。 */
-  function fmtAt(v) { return v ? String(v).replace(/:\d{2}$/, '') : '—'; }
+  /* 有效期 = 授权日 ~ 到期日（真源就是这个形态）。原来只印一个到期日，
+     起点在看板上另一列里，读起来要左右对两次。 */
+  function fmtRange(from, to) {
+    var a = from ? String(from).slice(0, 10) : '';
+    var b = to ? String(to).slice(0, 10) : '';
+    if (!a && !b) return '—';
+    if (!b) return a + ' 起';
+    return (a || '—') + ' ~ ' + b;
+  }
 
   var tTimer = null;
   function toast(msg, kind) {
@@ -61,7 +69,9 @@ function byVer(r) { return !VER || String(r.version) === VER; }
          「一行一家客户」同一套，渲染与动作只写一份，避免两套模板各改各的。 */
       var all = DB.authRows('').map(function (x) {
         return {
-          kind: 'record', clientId: x.clientId, clientName: x.clientName, tenantId: x.tenantId,
+          kind: 'record', clientId: x.clientId, clientName: x.clientName,
+          /* 授权记录上可能没记租户 ID，退回客户台账里的那一份 —— 这一列不允许空着。 */
+          tenantId: x.tenantId || (DB.clientById(x.clientId) || {}).tenantId || '',
           authId: x.id, rec: x, appName: x.appName, status: x.status || '已授权',
           canceled: (x.status || '已授权') !== '已授权', version: x.version || 0,
           latest: x.latest, behind: !!x.behind, authAt: x.authAt, expireAt: x.expireAt
@@ -101,28 +111,9 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     });
   }
 
-  /* 客户台账（2026-11-02 第二次整改）：原来自成一张表，现在并进主表 —— 一行一家客户，
-     编辑客户的入口也在那一行上。这里只剩「新增/编辑客户」的弹窗逻辑。 */
-  var clMask = null, clEditing = '';
-  function openClient(id) {
-    clMask = clMask || $('#cl-mask');
-    clEditing = id || '';
-    var c = clEditing ? DB.clientById(clEditing) : null;
-    $('#cl-name').value = c ? c.name : '';
-    $('#cl-tenant').value = c ? c.tenantId : '';
-    $('#cl-title').textContent = c ? '编辑客户' : '新建客户';
-    clMask.setAttribute('data-open', 'true');
-    setTimeout(function () { $('#cl-name').focus(); }, 30);
-  }
-  function closeClient() { if (clMask) clMask.setAttribute('data-open', 'false'); }
-  function submitClient() {
-    var nm = $('#cl-name').value.trim(), tid = $('#cl-tenant').value.trim();
-    var r = clEditing ? DB.updateClient(clEditing, nm, tid) : DB.addClient(nm, tid);
-    if (!r.ok) { toast(r.msg, 'err'); return; }
-    closeClient();
-    paint();
-    toast(clEditing ? '已保存「' + r.client.name + '」' : '已新建客户「' + r.client.name + '」');
-  }
+  /* 2026-11-05：租户（客户）主数据由平台的「租户管理」统一维护 ——
+     这一页只做授权关系：选已有租户、升级版本、取消授权。
+     原来这里的「新建客户 / 编辑客户」是自己造的第二套租户入口，已删。 */
 
   /* ★2026-11-04：版本下拉的选项按"最新版本"现填，不写死在 HTML 里 ——
      版本涨到 v9 时这里自动跟着变；当前选中项在重绘后保留。 */
@@ -292,11 +283,14 @@ function byVer(r) { return !VER || String(r.version) === VER; }
         if (key === 'client') return '<b title="' + esc(r.clientName) + '">' + esc(r.clientName) + '</b>';
         if (key === 'tenant') return esc(r.tenantId || '—');
         if (key === 'app') return esc(r.appName);
-        if (key === 'ver') return '<b>v' + r.version + '</b>';
-        if (key === 'at') return esc(fmtAt(r.authAt));
-        if (key === 'exp') return esc(r.expireAt || '—');
-        if (key === 'ops') return clientOps(r) +
-          '<button class="au-btn" type="button" data-act="edit-client" data-cid="' + esc(r.clientId) + '">编辑客户</button>';
+        /* 版本列承担「升级相关信息」：落后时直接写清从哪一版到哪一版，
+           不用点进去才知道要升到几。箭头用弱色，不占品牌色（品牌色只给能点的）。 */
+        if (key === 'ver') {
+          return '<b>v' + r.version + '</b>' + (r.behind
+            ? '<span class="au-to">→ v' + r.latest + '</span>' : '');
+        }
+        if (key === 'exp') return esc(fmtRange(r.authAt, r.expireAt));
+        if (key === 'ops') return clientOps(r);
         return '';
       },
       foot: function (rs) {
@@ -669,7 +663,6 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       var act = b.getAttribute('data-act'), id = b.getAttribute('data-id') || b.getAttribute('data-auth');
       var cid = b.getAttribute('data-cid');
       if (act === 'grant') return openDlg(cid);
-      if (act === 'edit-client') return openClient(cid);
       if (act === 'upgrade') return upgrade(id);
       if (act === 'revoke') return revoke(id);
       if (act === 'restore') return restore(id);
@@ -723,6 +716,15 @@ if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; PG 
     if (kwEl2) kwEl2.addEventListener('input', paintClientPick);
     var trig = $('#fm-trigger');
     if (trig) trig.addEventListener('click', function () { togglePick(); });
+    /* 点浮层外面收起（下拉的默认行为）。用一次性绑定避免每次开弹窗都多挂一个监听。 */
+    if (document.__auPickOff) document.removeEventListener('mousedown', document.__auPickOff);
+    document.__auPickOff = function (e) {
+      var w = $('#fm-list-wrap');
+      if (!w || w.hidden) return;
+      if (w.contains(e.target) || (e.target.closest && e.target.closest('#fm-trigger'))) return;
+      togglePick(false);
+    };
+    document.addEventListener('mousedown', document.__auPickOff);
     var pickBox = $('#fm-clients');
     if (pickBox) pickBox.addEventListener('change', syncPickLabel);
     var x = $('#dlg-x'), c = $('#dlg-cancel'), ok = $('#dlg-ok');
@@ -733,22 +735,11 @@ if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; PG 
     var appSel = $('#fm-app');
     if (appSel) appSel.addEventListener('change', paintClientPick);
 
-    var addC = $('#act-add-client');
-    if (addC) addC.addEventListener('click', function () { openClient(''); });
-    var clx = $('#cl-x'), clc = $('#cl-cancel'), clok = $('#cl-ok'), clm = $('#cl-mask');
-    if (clx) clx.addEventListener('click', closeClient);
-    if (clc) clc.addEventListener('click', closeClient);
-    if (clok) clok.addEventListener('click', submitClient);
-    if (clm) clm.addEventListener('click', function (e) { if (e.target === clm) closeClient(); });
-    [$('#cl-name'), $('#cl-tenant')].forEach(function (n) {
-      if (n) n.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submitClient(); } });
-    });
     var m = $('#mask');
     if (m) m.addEventListener('click', function (e) { if (e.target === m) closeDlg(); });
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       if (m && m.getAttribute('data-open') === 'true') closeDlg();
-      if (clm && clm.getAttribute('data-open') === 'true') closeClient();
     });
   }
 

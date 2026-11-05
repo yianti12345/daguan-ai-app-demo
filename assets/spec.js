@@ -139,11 +139,13 @@
             { key: 'tenant', label: '租户 ID', cls: 'au-id' },
             { key: 'app', label: '应用', cls: 'au-app' },
             { key: 'ver', label: '授权版本', cls: 'au-ver' },
-            { key: 'at', label: '授权时间', cls: 'au-at' },
             { key: 'exp', label: '有效期', cls: 'au-exp' },
             { key: 'ops', label: '操作', cls: 'au-o' }
           ],
-          cols: '40px 170px 190px minmax(0,1fr) 80px 150px 108px 240px'
+          /* ★2026-11-05（用户选 A：保留版本与升级，风格照真源）：
+             真源的「有效期」是区间（2026-11-05 ~ 2027-11-01），起点就是授权日 ——
+             所以原来单独的「授权时间」列是同一个数的第二次出现，删掉。 */
+          cols: '40px 170px 190px minmax(0,1fr) 96px 200px 210px'
         },
         sub: {
           headCols: [
@@ -151,11 +153,11 @@
             { key: 'client', label: '客户', cls: 'au-c' },
             { key: 'tenant', label: '租户 ID', cls: 'au-id' },
             { key: 'ver', label: '授权版本', cls: 'au-ver' },
-            { key: 'at', label: '授权时间', cls: 'au-at' },
             { key: 'exp', label: '有效期', cls: 'au-exp' },
             { key: 'ops', label: '操作', cls: 'au-o' }
           ],
-          cols: '40px minmax(0,1fr) 220px 80px 150px 108px 240px'
+          /* 列宽：客户吃掉剩余，其余按内容收口；操作列 210 放得下两颗按钮。 */
+          cols: '40px minmax(0,1fr) 220px 96px 200px 210px'
         }
       }
     }
