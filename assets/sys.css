@@ -1449,10 +1449,10 @@ button.cc-meta:focus-visible{
    （靠默认 static）。裸写 .canvas{position:fixed;inset:0} 会把那一页的正文整块变成铺满视口的浮层
    —— 实测 6 个字段变化（position/top/left/right/bottom/min-width），是跨页泄漏。
    body[data-app] 目前只有 app.html 有，等于"本页专属"的显式前缀。 */
-body[data-app] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gradient-stage),var(--surface-canvas);padding: calc(var(--space-16) + 48px + var(--space-8)) var(--space-24) var(--fk-clear-bottom)}
+body[data-app] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gradient-stage),var(--surface-canvas);padding: calc(48px + var(--space-8)) var(--space-24) var(--fk-clear-bottom)}
 /* 2026-11-04（用户 m01223）：组件配置页与应用配置页同一块画布 —— 同一渐变底、同一底距，
    只把前缀从 data-app 换成 data-comp（两页是两个对象，不共用 app 那个属性）。 */
-body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gradient-stage),var(--surface-canvas);padding: calc(var(--space-16) + 48px + var(--space-8)) var(--space-24) var(--fk-clear-bottom)}
+body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gradient-stage),var(--surface-canvas);padding: calc(48px + var(--space-8)) var(--space-24) var(--fk-clear-bottom)}
 /* ★ 2026-10-23 底部留白 148 → 172：输入条从 56 长到 60，加上呼吸，148 时卡片底边
    离输入条只剩 6px，滚到底看着像被咬住。2026-10-29 起这个值归对话区自己声明
    （assets/float.css 的 --fk-clear-bottom，例外账放行至 2026-11-15），本行只消费，不再就地写数。 */
@@ -1469,7 +1469,7 @@ body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gr
    所以跟标题同一行 —— 与 component.html 的顶栏同构。 */
 .topbar{
   position:fixed;top:0;left:0;right:0;z-index:20;
-  height:56px;padding:0 var(--space-16);
+  height:48px;padding:0 var(--space-16);
   display:flex;align-items:center;gap: var(--space-8);
   background:var(--surface-page);border-bottom:1px solid var(--color-border-card);
 }
@@ -1481,9 +1481,34 @@ body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gr
      一行内容靠 flex 垂直居中，所以改行数不改高度。 */
 .float-hd{
   display:flex;align-items:center;flex:1;gap: var(--space-8);
-  min-height:56px;padding: 0 var(--space-8) 0 0;
+  min-height:48px;padding: 0 var(--space-8) 0 0;
   background:transparent;border:0;box-shadow:none;border-radius:0;
 }
+/* ── 顶栏右上 · 当前账号（2026-11-06）────────────────────────────────────
+   来源：SaaS 真源应用内页实测 —— 顶条 48 高，右上角是「头像 + 账号 + 组织两行 + 下拉」。
+   为什么配置页也要有它：拼装出来的应用是全屏的，用户在里面看不到任何平台信息，
+   想回列表、想换账号、想看自己在哪个组织下，没有任何入口。 */
+.ab-user{
+  display:flex;align-items:center;gap:var(--space-8);
+  height:36px;padding:0 var(--space-8) 0 var(--space-12);margin-left:var(--space-12);
+  /* 左边一条竖线把「操作」和「账号」分开 —— 否则账号紧贴主按钮，
+     视觉上会把最后一颗「保存并发布」的收口抢走。 */
+  border:0;border-left:1px solid var(--color-border-hairline);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  background:transparent;cursor:pointer;font:inherit;text-align:left;
+}
+.ab-user:hover{background:var(--surface-subtle)}
+.ab-user:focus-visible{outline:2px solid var(--color-focus-halo);outline-offset:1px}
+.ab-av{
+  flex:none;width:24px;height:24px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--color-brand);color:var(--color-text-inverse);
+  font-size:var(--fs-xs);font-weight:600;line-height:1;
+}
+.ab-nm{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.ab-nm b{font-size:var(--font-size-caption);font-weight:600;color:var(--color-text-primary);white-space:nowrap}
+.ab-nm i{font-style:normal;font-size:var(--fs-xs);color:var(--color-text-tertiary);white-space:nowrap}
+.ab-user .ab-cv{flex:none;color:var(--color-text-tertiary)}
 .float-hd .app-name{flex:0 1 auto}
 /* ── 顶栏第二行：这一页东西的介绍（2026-11-04）─────────────────────
    用户：「组件和应用的配置详情，左上角的信息，再加上一行介绍，太长显示不全，

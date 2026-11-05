@@ -6,7 +6,7 @@
 <title>新建组件</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
-<link rel="stylesheet" href="assets/sys.css?v=138d4faa">
+<link rel="stylesheet" href="assets/sys.css?v=317dd3ac">
 <link rel="stylesheet" href="assets/float.css?v=5b5a44ff">
 <link rel="stylesheet" href="assets/viewmode.css?v=d7d2718f">
 <link rel="stylesheet" href="assets/generated.css?v=f89c421a">
@@ -197,6 +197,12 @@ mark{background:var(--color-brand-surface-2); color:var(--color-text-body); padd
       <button type="button" class="btn ghost" id="act-apis">装配能力 <span class="count-badge" id="api-count">已装 0</span></button>
       <button type="button" class="btn ghost" id="act-draft">保存草稿</button>
       <button type="button" class="btn primary" id="act-publish">保存并发布版本</button>
+      <!-- 2026-11-06：与 app.html 同一条账号块 —— 配置页同样是全屏的，用户在里面对平台一无所知。 -->
+      <button type="button" class="ab-user" id="ab-user" aria-label="当前账号 zheng，达观数据">
+        <span class="ab-av" aria-hidden="true">郑</span>
+        <span class="ab-nm"><b>zheng</b><i>达观数据</i></span>
+        <svg class="ab-cv" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
     </div>
   </div>
 

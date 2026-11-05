@@ -6,7 +6,7 @@
 <title>应用配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
-<link rel="stylesheet" href="assets/sys.css?v=138d4faa">
+<link rel="stylesheet" href="assets/sys.css?v=317dd3ac">
 <link rel="stylesheet" href="assets/float.css?v=5b5a44ff">
 <link rel="stylesheet" href="assets/viewmode.css?v=d7d2718f">
 <link rel="stylesheet" href="assets/generated.css?v=f89c421a">
@@ -80,6 +80,14 @@
          后者由 doPublish→commitPublish 一次完成：存快照 + 启用为当前客户可见版本。
          历史版本入口在 →apps.html 的卡片菜单。 -->
     <button type="button" class="btn primary" id="act-publish">保存新版本并发布</button>
+    <!-- 2026-11-06（用户）：「saas 端出现大问题了…最终拼装的应用几乎都是个性化的，那么没有返回和平台的相关信息及操作了」。
+         照 SaaS 真源应用内页实测补：头像 + 账号 + 组织两行 + 下拉，尺寸/层级与真源一致（条高 48）。
+         拼装出来的应用是全屏的，这里是唯一的"我在哪个平台、我是谁"的锚点。 -->
+    <button type="button" class="ab-user" id="ab-user" aria-label="当前账号 zheng，达观数据">
+      <span class="ab-av" aria-hidden="true">郑</span>
+      <span class="ab-nm"><b>zheng</b><i>达观数据</i></span>
+      <svg class="ab-cv" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
   </div>
 </div>
 
