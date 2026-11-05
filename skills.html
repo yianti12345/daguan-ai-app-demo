@@ -6,7 +6,7 @@
 <title>小智技能</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
-<link rel="stylesheet" href="assets/sys.css?v=aa861c2c">
+<link rel="stylesheet" href="assets/sys.css?v=8cd98c1c">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
 <style>
 /* 列与真源 /Expert/Management/SkillsLibrary 一致：8 列、表头 39、行 69。取值全来自令牌。 */
@@ -51,14 +51,15 @@
     </header>
 
     <main class="main">
-      <div class="page-hd">
+      
+
+      <div class="sk-bar">
+
         <div class="ops">
           <button type="button" class="btn ghost" id="act-import">导入</button>
           <button type="button" class="btn primary" id="act-new">新建 skill</button>
-        </div>
-      </div>
-
-      <div class="sk-bar">
+        
+        <span class="bar-sp"></span>
         <label class="field w220"><input id="kw" placeholder="搜 skill 名称或描述" autocomplete="off"></label>
         <label class="field w120"><select id="f-state"><option value="">状态</option><option value="ok">生成成功</option><option value="fail">生成失败</option></select></label>
         <label class="field w120"><select id="f-on"><option value="">是否启用</option><option value="1">已启用</option><option value="0">已停用</option></select></label>

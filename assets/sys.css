@@ -2716,3 +2716,11 @@ body[data-drawer="on"] .hint{
 /* ★2026-11-04 按真源改：真源字重只有 400/500/600。<b> 的 UA 规则是 bolder，
    在 600 的父级上会被算成 700/900（侧栏 logo 实测 14px/900）。一处统一到 600。 */
 b,strong{font-weight:600}
+
+/* 2026-11-05（用户）：页面形态照真源 —— 面包屑下面紧跟一条工具条，左边操作、右边筛选，
+   然后直接是表格。不再有页面大标题，也不再有飘在右上的独立按钮行。
+   .bar-sp 把右侧筛选推过去；没有筛选的页面只用左半边。 */
+.bar-sp{margin-left:auto}
+.cfg-bar{display:flex;align-items:center;gap:var(--space-8);padding:0 0 var(--space-12)}
+/* 版本管理：应用/组件名挪到工具条最左，和真源"面包屑下面就是工具条"一致 */
+.vl-owner{font-size:var(--font-size-body);font-weight:600;color:var(--color-text-primary);margin-right:var(--space-8)}

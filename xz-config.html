@@ -6,7 +6,7 @@
 <title>小智配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
-<link rel="stylesheet" href="assets/sys.css?v=aa861c2c">
+<link rel="stylesheet" href="assets/sys.css?v=8cd98c1c">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
 <style>
 /* 列与真源 /Expert/Management/SkillsLibrary 一致：8 列、表头 39、行 69。取值全来自令牌。 */
@@ -63,15 +63,6 @@
     </header>
 
     <main class="main">
-      <div class="page-hd">
-        <div class="ops">
-          <button type="button" class="btn ghost" id="act-import">导入</button>
-          <button type="button" class="btn ghost" id="act-new">新建 skill</button>
-          <!-- 2026-11-05（用户）：「整页保存」。保存只有一个，压在页头右上；
-               列表里的导入/新建/启停/删除是即时动作，不属于这张表单。 -->
-          <button type="button" class="btn primary" id="p-save" disabled>保存</button>
-        </div>
-      </div>
 
       <!-- 2026-11-05：照真源「能力配置 → 其他配置」的表单样式 —— 标签带红星、说明小字在下、
            白底描边大文本框、保存按钮压在表单右上。真源没有卡片框，所以这里也不套卡片。 -->
@@ -85,7 +76,12 @@
 
       <h2 class="sec-t">Skill 技能</h2>
 
+      <!-- 真源形态：面包屑下面紧跟一条工具条 —— 左边操作、右边筛选，然后直接是表格。 -->
       <div class="sk-bar">
+        <button type="button" class="btn ghost" id="act-import">导入</button>
+        <button type="button" class="btn ghost" id="act-new">新建 skill</button>
+        <button type="button" class="btn primary" id="p-save" disabled>保存</button>
+        <span class="bar-sp"></span>
         <label class="field w220"><input id="kw" placeholder="搜 skill 名称或描述" autocomplete="off"></label>
         <label class="field w120"><select id="f-on"><option value="">是否启用</option><option value="1">已启用</option><option value="0">已停用</option></select></label>
       </div>

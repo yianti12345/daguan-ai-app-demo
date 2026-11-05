@@ -6,7 +6,7 @@
 <title>能力配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
-<link rel="stylesheet" href="assets/sys.css?v=aa861c2c">
+<link rel="stylesheet" href="assets/sys.css?v=8cd98c1c">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
 <style>
 /* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
@@ -79,13 +79,11 @@
     </header>
 
     <main class="main">
-      <div class="page-hd">
-        <div class="ops">
-          <button type="button" class="btn primary" id="act-new">接入</button>
-        </div>
-      </div>
 
+      <!-- 真源形态：面包屑下紧跟一条工具条（左操作、右筛选），然后直接是表格。 -->
       <div class="it-bar">
+        <button type="button" class="btn primary" id="act-new">接入</button>
+        <span class="bar-sp"></span>
         <label class="field w220"><input id="kw" placeholder="搜名称、描述、来源" autocomplete="off"></label>
         <label class="field w120"><select id="f-state"><option value="">状态</option><option value="ok">生成成功</option><option value="run">生成中</option><option value="fail">生成失败</option></select></label>
         <label class="field w120"><select id="f-on"><option value="">是否启用</option><option value="1">已启用</option><option value="0">已停用</option></select></label>
