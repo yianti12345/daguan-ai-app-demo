@@ -1384,7 +1384,10 @@
        在这一颗按钮里完成，不再让用户存完再找授权页。 */
     Confirm.ask({
       title: '保存并发布 v' + next + '？',
-      body: '当前内容存为 v' + next + '，并设为客户可见版本；旧版本仍可回退。',
+      /* 2026-11-05：原来这句写「设为客户可见版本」—— 只对没有授权记录的访问者成立。
+         已授权的客户看的是自己授权上的版本，得去「客户授权」推送才会跟上。 */
+      body: '当前内容存为 v' + next + '，并设为这个应用当前的版本；'
+        + '已授权的客户要升到 v' + next + '，得在「客户授权」里推送。',
       ok: '保存并发布',
       onOk: commitPublish
     });
@@ -1468,7 +1471,15 @@
        画布刷新了，但顶栏那行 meta 还挂着「草稿」。DB 已经改了，界面没跟着改。 */
     paintApp();
     renderCanvas();
-    hint('已保存并发布 v' + v + ' · 客户现在看到的是这一版', { ms: 9000 });
+    /* ★2026-11-05：原来这里写「客户现在看到的是这一版」—— 不成立。
+       发布只换掉应用的启用版本；每家客户看到的是自己授权记录上的版本，
+       没在「客户授权」升级过的客户还停在旧版（这正是"前滚"要接上的那一环）。 */
+    var behindN = (DB.authsOfApp(appId) || []).filter(function (a) {
+      return (a.status || '已授权') === '已授权' && (a.version || 0) < v;
+    }).length;
+    hint(behindN
+      ? ('已发布 v' + v + ' · 还有 ' + behindN + ' 家客户在用旧版本，去「客户授权」推送')
+      : ('已保存并发布 v' + v + ' · ' + ((DB.authsOfApp(appId) || []).length ? '客户看到的都是这一版' : '还没有客户授权')), { ms: 9000 });
     /* 会话里留一张可回看的改动卡：版本号 + 一句人话 + 内容指纹 + 两个动作。
        这不是装饰 —— 没有它，用户发完就只剩一句 toast，过十分钟就找不到那一版。 */
     if (ui && ui.addCard) {
@@ -1477,7 +1488,10 @@
         viewHref: 'app.html?id=' + encodeURIComponent(appId) + '&v=' + v + '&mode=view',
         /* 客户地址：不是给本机看的相对路径，而是"复制到手机上能打开"的完整地址。
            发布后全站原来只有"已发布 vN"一句话 —— 用户拿不到要发给客户的链接。 */
-        url: new URL('app.html?id=' + encodeURIComponent(appId) + '&mode=view&v=' + v, location.href).href
+        url: new URL('app.html?id=' + encodeURIComponent(appId) + '&mode=view&v=' + v, location.href).href,
+        /* 前滚闭环的入口：发完就告诉你还有几家没跟上，点一下就到推送那一页。
+           没有这一行，"发布完等于完成"这个错觉会一直留着。 */
+        push: behindN ? { n: behindN, href: 'client-auth.html?id=' + encodeURIComponent(appId) } : null
       });
       if (ui.setCollapsed) ui.setCollapsed(false);
     } else if (ui && ui.addMsg) {

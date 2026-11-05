@@ -406,44 +406,34 @@ function byVer(r) { return !VER || String(r.version) === VER; }
   /* 一次跑完：本地数据，没有网络等待，所以不假装"逐条 500ms 推进"。
      跑完给一条回执（升了几家、谁失败），并且留 10 秒撤销窗口 ——
      一千家一次升完，点错了没有任何人工办法退回去，这窗口是唯一的安全网。 */
-  var UNDO = null, undoTimer = 0;
+  var resultTimer = 0;
   function run(list, word) {
-    var ok = 0, fail = [], undo = [];
+    var ok = 0, fail = [];
     list.forEach(function (r) {
       var x = DB.authUpgrade(r.authId);
-      if (x && x.ok) { ok++; undo.push({ authId: r.authId, from: x.from }); }
+      if (x && x.ok) { ok++; }
       else fail.push(r.clientName + (x && x.msg ? '（' + x.msg + '）' : ''));
     });
     sel = {};
     paint();
-    showResult(word, ok, fail, fail.length ? null : undo);
+    showResult(word, ok, fail);
   }
-  function showResult(word, ok, fail, undo) {
+  /* ★2026-11-05 二次定稿：**不做撤销**。
+     客户原来是 v1、升到 v4，撤回去等于把版本号往回写，既破坏"版本只增"这个前提，
+     也解释不清（这期间客户可能已经用过 v4）。真正该走的是**前滚**：
+     发现问题就发 v5，再点一次「全部升级」把所有人推到 v5 —— 全员到位，一步。
+     这里只留一条回执：升了几家、谁失败。 */
+  function showResult(word, ok, fail) {
     var box = $('#bulk-result');
     if (!box) return;
-    clearTimeout(undoTimer);
-    UNDO = undo && undo.length ? undo : null;
+    clearTimeout(resultTimer);
     box.hidden = false;
     box.setAttribute('data-kind', fail.length ? 'warn' : 'ok');
     $('#bulk-result-t').textContent = fail.length
       ? (word + '升级：成功 ' + ok + ' 家，失败 ' + fail.length + ' 家 · ' + fail.slice(0, 3).join('；')
          + (fail.length > 3 ? ' 等' : ''))
       : (word + '升级：' + ok + ' 家已升到最新版本');
-    var u = $('#bulk-undo');
-    if (u) u.hidden = !UNDO;
-    /* 只有"全成功"才给撤销：一半成功一半失败时，退回去等于把成功的也抹了，反而更乱。 */
-    if (UNDO) undoTimer = setTimeout(function () { UNDO = null; box.hidden = true; }, 10000);
-  }
-  function undoRun() {
-    if (!UNDO) return;
-    var n = 0;
-    UNDO.forEach(function (x) { if (DB.authSetVersion(x.authId, x.from).ok) n++; });
-    UNDO = null;
-    clearTimeout(undoTimer);
-    var box = $('#bulk-result');
-    if (box) box.hidden = true;
-    paint();
-    toast('已撤销：' + n + ' 家回到升级前的版本');
+    resultTimer = setTimeout(function () { box.hidden = true; }, 12000);
   }
 
   /* ── 升级 / 取消 / 恢复 / 删除 ─────────────────────────────── */
@@ -642,8 +632,6 @@ if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; PG 
     if (batch) batch.addEventListener('click', batchUpgrade);
     var allUp = $('#act-all');
     if (allUp) allUp.addEventListener('click', upgradeAll);
-    var undoBtn = $('#bulk-undo');
-    if (undoBtn) undoBtn.addEventListener('click', undoRun);
     var pager = $('#pager');
     if (pager) pager.addEventListener('click', function (e) {
       var b = e.target.closest && e.target.closest('[data-pg]');

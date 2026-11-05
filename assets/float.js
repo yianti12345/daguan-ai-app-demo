@@ -275,6 +275,11 @@
           var cardOps = ro ? '' : '<div class="fk-card-ops">'
             + (href ? '<a class="fk-card-link" href="' + href + '" target="_blank" rel="noopener">查看这一版</a>' : '')
             + (c.v ? '<button class="fk-card-btn" type="button" data-restore-v="' + esc(c.v) + '">恢复此版</button>' : '')
+            /* 2026-11-05：发布后还有客户停在旧版本时，这里直接给出口。
+               前滚（发新版→推给客户）比回滚干净：版本号只增，客户侧也不会来回收缩。 */
+            + (c.push && c.push.href
+                ? '<a class="fk-card-link fk-card-push" href="' + esc(c.push.href) + '">还有 ' + (Number(c.push.n) || 0) + ' 家客户在旧版本 · 去推送</a>'
+                : '')
             + '</div>';
           return '<div class="fk-card">'
             + '<div class="fk-card-hd"><span class="fk-card-v">' + v + '</span>' + at + '</div>'

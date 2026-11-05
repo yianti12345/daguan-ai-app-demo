@@ -117,7 +117,10 @@
   flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:var(--font-size-caption); color:var(--color-text-secondary);
 }
-.fk-card-ops{display:flex; align-items:center; gap:8px}
+.fk-card-ops{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+/* 2026-11-05：发布卡上"还有 N 家客户在旧版本 · 去推送"是这一步真正该做的事，
+   不该和「查看 / 恢复」挤在同一行 —— 单独占一行，摆在最后。 */
+.fk-card-ops .fk-card-push{flex-basis:100%}
 .fk-card-link{font-size:var(--font-size-caption); color:var(--color-brand-ink); text-decoration:none}
 .fk-card-link:hover{text-decoration:underline}
 .fk-card-btn{
