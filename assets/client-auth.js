@@ -160,7 +160,6 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       if (crumbSep2) crumbSep2.hidden = true;
       if (crumbPage) crumbPage.textContent = '客户授权';
       if (latestBox) latestBox.hidden = true;
-      if (addC) addC.hidden = true;
       if (kwEl) kwEl.placeholder = '搜客户或租户 ID';
     } else if (APP_ID) {
       var app = DB.appById(APP_ID);
@@ -174,7 +173,6 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       if (crumbSep2) crumbSep2.hidden = false;
       if (crumbPage) crumbPage.textContent = '客户授权';
       if (addBtn) addBtn.textContent = '新增客户授权';
-      if (addC) addC.hidden = false;
       if (kwEl) kwEl.placeholder = '搜客户或租户 ID';
       var topV = app ? DB.latestVer(APP_ID) : 0;
       if (latestBox) {
@@ -188,8 +186,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       if (crumbSep2) crumbSep2.hidden = true;
       if (crumbPage) crumbPage.textContent = '授权总览';
       if (latestBox) latestBox.hidden = true;
-      if (addBtn) addBtn.textContent = '新增授权';
-      if (addC) addC.hidden = true;
+      if (addBtn) addBtn.textContent = '新增客户授权';
       if (kwEl) kwEl.placeholder = '搜客户、应用或租户 ID';
     }
 
