@@ -300,7 +300,7 @@
     var dup = 0, rows = items.map(function (x) {
       var inIt = curIds.indexOf(CAP.fingerprint(x.method, x.path, '')) >= 0;
       if (inIt) dup++;
-      return '<div class="abt-row" style="grid-template-columns:minmax(0,1fr) 60px minmax(0,190px) 72px">'
+      return '<div class="abt-row">'
         + '<span>' + esc(x.name || '未命名') + '</span>'
         + '<span class="abt-m">' + esc(x.method) + '</span>'
         + '<span class="abt-p" title="' + esc(x.path) + '">' + esc(x.path) + '</span>'
@@ -309,7 +309,7 @@
     bd.innerHTML = '<div class="abt-sec" style="margin:0 0 var(--space-8)"><b>识别到 ' + items.length + ' 个接口</b>'
       + (dup ? '<span class="abt-hint" style="margin-left:var(--space-8)">其中 ' + dup + ' 个已经在这个能力里</span>' : '')
       + '<button type="button" class="abt-op" id="pk-back" style="margin-left:auto">重新贴</button></div>'
-      + '<div class="abt-list" style="max-height:320px;overflow:auto">' + rows + '</div>';
+      + '<div class="abt-list">' + rows + '</div>';
     $('#pk-back').addEventListener('click', function () { ADD.mode = 'bulk'; ADD.parsed = null; paintAdd(); });
     paintFoot('加入 ' + (items.length - dup) + ' 个', items.length - dup === 0);
   }

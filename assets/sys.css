@@ -298,7 +298,7 @@ input, select, textarea{font-family:inherit; font-size:inherit; color:inherit;}/
   color:var(--color-text-muted);background:var(--surface-page);cursor:not-allowed;
 }
 .pager .pg[aria-current="true"]{border-color:var(--color-brand);color:var(--color-brand)}/* ── 空态 ── */
-.empty{padding:64px var(--empty-pad-x);text-align:center;color:var(--color-text-tertiary);font-size:var(--font-size-body)}
+.empty{padding:64px var(--empty-pad-x);text-align:center;color:var(--color-text-tertiary);font-size:var(--font-size-body);grid-column:1/-1}
 .empty b{display:block;font-size:var(--font-size-body);font-weight:400;color:var(--color-text-secondary);margin-bottom:var(--space-8)}/* 空态必须自己带出口：造成空态的有三个控件，文案不能只说"清空搜索词" */
 
 

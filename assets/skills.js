@@ -86,9 +86,9 @@
     $('#det-t').textContent = it.name;
     $('#det-bd').innerHTML = ''
       + '<p class="sk-hint">' + (it.on ? '已启用' : '已停用') + ' · ' + esc(it.at || '') + '</p>'
-      + '<p style="margin:12px 0 0;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)">' + esc(it.desc || '—') + '</p>'
-      + (it.content ? '<pre style="margin:12px 0 0;padding:12px;border:1px solid var(--color-border-hairline);border-radius:2px;background:var(--surface-sunken);white-space:pre-wrap;font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)">' + esc(it.content) + '</pre>' : '')
-      + '<p class="sk-hint" style="margin-top:12px">创建人 ' + esc(it.by || '—') + '</p>';
+      + '<p style="margin:var(--space-12) 0 0;line-height:1.7">' + esc(it.desc || '—') + '</p>'
+      + (it.content ? '<pre style="margin:var(--space-12) 0 0;padding:var(--space-12);border:1px solid var(--color-border-hairline);border-radius:var(--radius-xs);background:var(--surface-sunken);white-space:pre-wrap;line-height:1.7">' + esc(it.content) + '</pre>' : '')
+      + '<p class="sk-hint" style="margin-top:var(--space-12)">创建人 ' + esc(it.by || '—') + '</p>';
     DET = id;
     $('#det-toggle').textContent = it.on ? '停用' : '启用';
     $('#det').hidden = false;

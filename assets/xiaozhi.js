@@ -2707,7 +2707,7 @@ function xzMsgsHtml(){
            · 前缀用 ↗（排版符号，不是 emoji），和"发送/提问"区分开；
            · aria-label 说清"会滚动并高亮，不会替你操作"。 */
       var incItems = (x.items && x.items.length)
-        ? '<p class="xz-err" style="margin-top:2px">被改的项：' + att(x.items.slice(0, 4).join('、'))
+        ? '<p class="xz-err">被改的项：' + att(x.items.slice(0, 4).join('、'))
           + (x.items.length > 4 ? ' 等 ' + x.items.length + ' 项' : '') + '</p>'
         : '';
       var goLabel = '跳到「' + x.name + '」';
@@ -2719,9 +2719,7 @@ function xzMsgsHtml(){
         + incItems
         + '<button type="button" class="xz-incident-go" data-act="xzIncidentGo" data-arg="' + att(x.name) + '"'
         + ' aria-label="' + att(goLabel + '（会滚动到它并高亮，不会替你操作）') + '"'
-        + ' style="display:inline-block;margin:6px 0 0 0;padding:0;border:0;background:none;'
-        + 'color:var(--brand);font:inherit;font-size:12px;line-height:1.6;cursor:pointer;'
-        + 'text-decoration:underline;text-underline-offset:2px">'
+        + '>'
         + '<span aria-hidden="true">\u2197</span> ' + att(goLabel) + '</button>'
         + '</div>';
     }).join('') : '';

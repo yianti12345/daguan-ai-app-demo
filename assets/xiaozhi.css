@@ -200,6 +200,9 @@
 .xz-step.is-stop .xz-dot{opacity:1}
 
 .xz-err{margin:0;font-size:var(--font-size-caption);color:var(--color-danger);line-height:1.5}
+/* 事故卡里那颗「跳到「X」」原来把十来条样式全写在内联上（类名有、CSS 没有），
+   2026-11-05 判据 check-inline-override 抓出来：有类就该在这张表里。 */
+.xz-incident-go{display:inline-block;margin:var(--space-8) 0 0 0;padding:0;border:0;background:none;color:var(--color-brand);font:inherit;font-size:var(--font-size-caption);line-height:1.6;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 
 .xz-foot-n{margin:0;font-size:var(--font-size-caption);color:var(--color-text-tertiary);letter-spacing:.1px}
 

@@ -185,15 +185,15 @@
         + '<p class="row-meta">' + esc(x.id) + '</p></div>';
     }
     var n = (b.apiIds || []).length;
-    var meta = n + ' 个接口 · ' + (mdReady(x) ? 'MD 已就绪'
-      : (b.docState === 'run' ? 'MD 生成中' : 'MD 没生成'));
+    var meta = n + ' 个接口 · ' + (mdReady(x) ? '说明书已就绪'
+      : (b.docState === 'run' ? '说明书生成中' : '说明书没生成'));
     return '<div class="row' + (can ? '' : ' is-gone') + '" data-id="' + esc(b.id) + '">'
       + '<div class="row-hd">' + pick + '<b>' + esc(b.name) + '</b><div class="act">'
       + (isOn
           ? '<span class="on-tag">已装配</span><button class="btn-uninstall" type="button" data-do="rm">移除</button>'
           : (can
               ? '<button class="btn-install" type="button" data-do="add">装配</button>'
-              : '<span class="on-tag">没有 MD</span>'))
+              : '<span class="on-tag">没有说明书</span>'))
       + '</div></div>'
       + '<p class="row-desc">' + esc(b.intro || '—') + '</p>'
       + '<p class="row-meta">' + meta + '</p>'

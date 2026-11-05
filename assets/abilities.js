@@ -107,7 +107,7 @@
         + '<div class="nf-hd"><b id="imp-t">导入项目</b>'
         + '<button type="button" class="icon-btn" id="imp-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
         + '<div class="nf-bd"><label class="it-lb" for="imp-raw">内容</label>'
-        + '<textarea class="it-raw" id="imp-raw" style="min-height:260px" placeholder="贴 OpenAPI / Swagger 的 JSON，或一段段接口说明（空行分隔）"></textarea></div>'
+        + '<textarea class="it-raw" id="imp-raw" rows="10" placeholder="贴 OpenAPI / Swagger 的 JSON，或一段段接口说明（空行分隔）"></textarea></div>'
         + '<div class="nf-ft"><span class="it-sp"></span>'
         + '<button type="button" class="btn ghost" id="imp-cancel">取消</button>'
         + '<button type="button" class="btn primary" id="imp-ok" disabled>导入</button></div>'

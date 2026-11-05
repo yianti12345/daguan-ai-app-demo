@@ -448,7 +448,7 @@ window.Gen = (function () {
         return b && b.doc ? ('## ' + b.name + '\n' + String(b.doc)) : '';
       }).filter(Boolean);
       if (docs.length) {
-        apiDocs = '\n可用能力（这个组件装配的能力，需要时按每份 MD 文档里写的调用方式调用；没列出的不许编）：\n' + docs.join('\n\n');
+        apiDocs = '\n可用能力（这个组件装配的能力，需要时按每份能力说明书里写的调用方式调用；没列出的不许编）：\n' + docs.join('\n\n');
       }
     }
     var facts = [

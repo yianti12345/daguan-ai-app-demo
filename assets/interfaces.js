@@ -202,7 +202,7 @@
     var name = $('#pv-name').value.trim();
     if (!name) { toast('填能力名称', 'error'); $('#pv-name').focus(); return; }
     var md = $('#pv-md').value.trim();
-    if (!md) { toast('先生成 MD 文档', 'error'); return; }
+    if (!md) { toast('先生成说明书', 'error'); return; }
     var old = EDIT_ID ? CAP.apiById(EDIT_ID) : null;
     var v = {
       name: name,
@@ -224,10 +224,10 @@
     $('#det-t').textContent = it.name;
     $('#det-bd').innerHTML = ''
       + '<p class="it-hint">' + esc(it.source || '未标注') + ' · ' + st.t + ' · ' + (it.on ? '已启用' : '已停用') + ' · ' + esc(it.at || '') + '</p>'
-      + '<div class="it-pv" style="min-height:0;max-height:320px;margin-top:12px">'
-      +   (it.doc ? mdToHtml(it.doc) : '<span class="it-hint">还没有 MD 文档</span>')
+      + '<div class="it-pv" style="margin-top:var(--space-12)">'
+      +   (it.doc ? mdToHtml(it.doc) : '<span class="it-hint">还没有说明书</span>')
       + '</div>'
-      + (it.raw ? '<details style="margin-top:12px"><summary class="it-lb">内容</summary><pre class="it-pv" style="white-space:pre-wrap;max-height:200px;margin-top:8px">' + esc(it.raw) + '</pre></details>' : '');
+      + (it.raw ? '<details style="margin-top:var(--space-12)"><summary class="it-lb">内容</summary><pre class="it-pv" style="white-space:pre-wrap;margin-top:var(--space-8)">' + esc(it.raw) + '</pre></details>' : '');
     DET = id;
     $('#det').hidden = false;
   }
