@@ -27,6 +27,43 @@
     ]
   };
 
+  /* 种子说明书：接口是给模型读的知识，列表里一句描述不够用，详情与生成上下文都要完整版。
+     老数据（localStorage 里存过但没有 doc 的）在 load() 里按 id 自动补上。 */
+  var DOCS = {
+    'api-audit-tasks': {
+      doc: '### 审核任务查询\n\n**用途**：按状态、时间与核心专家分页查询审核任务。\n\n**调用**：`GET /api/v1/audit/tasks?page=1&per_page=10&status=done`\n\n**入参**：page 页码；per_page 每页条数（≤50）；status 审核状态；expert 核心专家；start / end 审核开始时间区间。\n\n**返回**：`{ total, items: [{ taskNo, status, aiResult, humanResult, startedAt, finishedAt, duration }] }`',
+      raw: "curl 'https://audit.example.com/api/v1/audit/tasks?page=1&per_page=10&status=done' -H 'Authorization: Bearer <token>'"
+    },
+    'api-audit-write': {
+      doc: '### 审核结果回写\n\n**用途**：把人工复核结论回写到业务系统，支持单条与批量。\n\n**调用**：`POST /api/v1/audit/results`\n\n**入参**：taskNo 任务编号；result 结论（pass / reject / manual）；reason 说明；operator 复核人。\n\n**返回**：`{ ok, applied, failed: [{ taskNo, why }] }`',
+      raw: 'POST /api/v1/audit/results  body: {"taskNo":"A20261104001","result":"reject","reason":"发票金额不符","operator":"admin"}'
+    },
+    'api-client-mdm': {
+      doc: '### 客户主数据查询\n\n**用途**：按客户编号取主体信息、证照与风险等级。\n\n**调用**：`GET /api/v1/clients/{clientId}`\n\n**入参**：clientId 客户编号。\n\n**返回**：`{ clientId, name, licenses: [], riskLevel, updatedAt }`',
+      raw: 'GET /api/v1/clients/C00012 —— 返回客户名称、证照清单、风险等级'
+    },
+    'api-contract-extract': {
+      doc: '### 合同要素抽取\n\n**用途**：从合同正文抽取金额、期限、对手方与付款节点。\n\n**调用**：`POST /api/v1/contracts/extract`\n\n**入参**：fileId 文件编号，或 text 正文。\n\n**返回**：`{ amount, currency, term, counterparty, payments: [{ node, ratio, due }] }`',
+      raw: '把合同 PDF 传上去，要能拿到金额、期限、对手方、付款节点'
+    },
+    'api-invoice-check': {
+      doc: '### 发票验真\n\n**用途**：对接税务平台校验发票代码、号码与开票金额。\n\n**调用**：`POST /api/v1/invoices/verify`\n\n**入参**：code 发票代码；number 发票号码；date 开票日期；amount 金额。\n\n**返回**：`{ valid, taxNo, amount, message }`',
+      raw: 'curl -X POST /api/v1/invoices/verify -d "code=033001900111&number=12345678"'
+    },
+    'api-supplier': {
+      doc: '### 供应商准入查询\n\n**用途**：查询供应商准入状态、黑名单与授信额度。\n\n**调用**：`GET /api/v1/suppliers/{id}`\n\n**入参**：id 供应商编号。\n\n**返回**：`{ id, name, admitted, blacklisted, creditLimit }`',
+      raw: 'GET /api/v1/suppliers/S0088 查准入、黑名单、授信额度'
+    },
+    'api-fin-report': {
+      doc: '### 财报三表勾稽\n\n**用途**：资产负债表、利润表、现金流量表交叉勾稽，返回差异项。\n\n**调用**：`POST /api/v1/fin/check`\n\n**入参**：period 报告期；statements 三表数据。\n\n**返回**：`{ balanced, diffs: [{ item, expected, actual, gap }] }`',
+      raw: 'POST /api/v1/fin/check  传报告期和三张表，返回是否勾稽、差异项'
+    },
+    'api-bond-rating': {
+      doc: '### 债券主体评级\n\n**用途**：按债券代码取主体评级、评级展望与历史变动。\n\n**调用**：`GET /api/v1/bonds/{code}/rating`\n\n**入参**：code 债券代码。\n\n**返回**：`{ code, issuer, rating, outlook, history: [{ date, rating }] }`',
+      raw: 'GET /api/v1/bonds/012345/rating'
+    }
+  };
+
   var cache = null;
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -43,6 +80,13 @@
     }
     if (!cache.apis) cache.apis = [];
     if (!cache.skills) cache.skills = [];
+    /* 老存档里没有说明书：按 id 从种子补一次，不覆盖用户自己写过的。 */
+    cache.apis.forEach(function (a) {
+      var d = DOCS[a.id];
+      if (!d) return;
+      if (!a.doc) a.doc = d.doc;
+      if (!a.raw) a.raw = d.raw;
+    });
     return cache;
   }
 

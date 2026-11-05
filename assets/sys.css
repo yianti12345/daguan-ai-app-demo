@@ -405,6 +405,8 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 /* 2026-11-03：范围两段让表单超过一屏。头/脚固定、中段自己滚 —— 底部「创建」永远在视口里。 */
 .nf-hd,.nf-ft{flex:0 0 auto}
 .nf-hd{height:56px;display:flex;align-items:center;padding:0 var(--space-24)}
+/* 2026-11-05：弹窗头的关闭钮靠右（新增/详情/批量三个弹窗共用），标题不跟着跑。 */
+.nf-hd .icon-btn{margin-left:auto}
 .nf-hd .cf-ico{width:18px;height:18px;flex:0 0 18px;border-radius:50%;background:var(--color-danger);color:var(--color-text-inverse);font-size:var(--font-size-caption);font-weight:600;display:grid;place-items:center;margin-right:8px}
 .nf-hd b{font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
 .nf-hd .nf-x{margin-left:auto;width:28px;height:28px;border-radius:var(--radius-xs);display:grid;place-items:center;color:var(--color-text-tertiary);border:0;background:none;cursor:pointer}

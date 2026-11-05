@@ -15,7 +15,8 @@
     else if (window.confirm(o.body || '')) o.onOk && o.onOk();
   };
 
-  var S = { kw: '', state: '', on: '' };
+  var S = { kw: '', state: '', on: '', src: '' };
+  var DET = null;
   var EDIT_ID = null;
 
   var ST = {
@@ -30,6 +31,7 @@
       if (S.state && x.state !== S.state) return false;
       if (S.on === '1' && !x.on) return false;
       if (S.on === '0' && x.on) return false;
+      if (S.src && (x.source || '未标注') !== S.src) return false;
       if (S.kw) {
         var h = (x.name + ' ' + x.desc + ' ' + x.source + ' ' + (x.raw || '')).toLowerCase();
         if (h.indexOf(S.kw.toLowerCase()) < 0) return false;
@@ -45,7 +47,7 @@
       rows: rows,
       rowClass: 'gtable-row',
       cell: function (key, r) {
-        if (key === 'name') return '<a class="it-name" href="#" data-act="edit" data-id="' + esc(r.id) + '">' + esc(r.name) + '</a>';
+        if (key === 'name') return '<a class="it-name" href="#" data-act="view" data-id="' + esc(r.id) + '">' + esc(r.name) + '</a>';
         if (key === 'desc') return '<span class="it-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
         if (key === 'source') return esc(r.source || '—');
         if (key === 'state') {
@@ -66,7 +68,7 @@
       },
       empty: function () {
         return '<div class="empty"><div>'
-          + (S.kw || S.state || S.on ? '没有匹配的接口' : '还没有接口')
+          + (S.kw || S.state || S.on || S.src ? '没有匹配的接口' : '还没有接口')
           + '</div></div>';
       }
     });
@@ -168,6 +170,28 @@
     toast(EDIT_ID ? '已更新' : '已注册');
   });
 
+  function openDetail(id) {
+    var it = CAP.apiById(id); if (!it) return;
+    var st = ST[it.state] || ST.ok;
+    $('#det-t').textContent = it.name;
+    $('#det-bd').innerHTML = ''
+      + '<p class="it-hint">' + esc(it.source || '未标注') + ' · ' + st.t + ' · ' + (it.on ? '已启用' : '已停用') + ' · ' + esc(it.at || '') + '</p>'
+      + '<div class="it-pv" style="min-height:0;max-height:320px;margin-top:12px">'
+      +   (it.doc ? mdToHtml(it.doc) : '<span class="it-hint">还没有说明书</span>')
+      + '</div>'
+      + (it.raw ? '<details style="margin-top:12px"><summary class="it-lb">原文</summary><pre class="it-pv" style="white-space:pre-wrap;max-height:200px;margin-top:8px">' + esc(it.raw) + '</pre></details>' : '');
+    DET = id;
+    $('#det').hidden = false;
+  }
+  function closeDetail() { $('#det').hidden = true; DET = null; }
+  $('#det-x').addEventListener('click', closeDetail);
+  $('#det-close').addEventListener('click', closeDetail);
+  $('#det').addEventListener('mousedown', function (e) { if (e.target === this) closeDetail(); });
+  $('#det-edit').addEventListener('click', function () { var id = DET; closeDetail(); if (id) openDlg(id); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('#det').hidden) closeDetail();
+  });
+
   $('#dlg-x').addEventListener('click', closeDlg);
   $('#dlg-cancel').addEventListener('click', closeDlg);
 
@@ -225,6 +249,7 @@
     var a = e.target.closest('[data-act]'); if (!a) return;
     var id = a.getAttribute('data-id'), act = a.getAttribute('data-act');
     if (a.tagName === 'A') e.preventDefault();
+    if (act === 'view') { openDetail(id); return; }
     if (act === 'edit') { openDlg(id); return; }
     if (act === 'toggle') {
       var r = CAP.apiById(id); if (!r) return;
@@ -245,6 +270,15 @@
   $('#kw').addEventListener('input', function () { S.kw = this.value.trim(); paint(); });
   $('#f-state').addEventListener('change', function () { S.state = this.value; paint(); });
   $('#f-on').addEventListener('change', function () { S.on = this.value; paint(); });
+  $('#f-src').addEventListener('change', function () { S.src = this.value; paint(); });
+  (function fillSrc() {
+    var sel = $('#f-src'), seen = {};
+    CAP.apis().forEach(function (a) {
+      var s = a.source || '未标注';
+      if (seen[s]) return; seen[s] = 1;
+      var o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
+    });
+  })();
 
   paint();
 })();

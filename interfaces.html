@@ -6,7 +6,7 @@
 <title>接口注册</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
-<link rel="stylesheet" href="assets/sys.css?v=dc3392ee">
+<link rel="stylesheet" href="assets/sys.css?v=6ebaf45d">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
 <style>
 /* 只作用于本页。取值全部来自 tokens.css，不新增色值/字号。 */
@@ -15,6 +15,9 @@
 .page-hd .ops{margin-left:auto;display:flex;align-items:center;gap:var(--space-8)}
 .it-bar{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap;padding:0 0 var(--space-12)}
 .it-table .gtable-foot{display:flex;align-items:center;gap:var(--space-12);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
+/* 8 列在 1280 视口下放不进内容区：照真源允许表格横向滚动，不硬压列宽。 */
+.it-table{overflow-x:auto}
+.it-table .gtable-head,.it-table .gtable-row{min-width:1060px}
 .it-pg{margin-left:auto;color:var(--color-text-tertiary)}
 .it-name{color:var(--color-brand-ink);text-decoration:none}
 .it-name:hover{text-decoration:underline;text-underline-offset:2px}
@@ -74,6 +77,7 @@
         <label class="field w220"><input id="kw" placeholder="搜名称、描述、来源" autocomplete="off"></label>
         <label class="field w120"><select id="f-state"><option value="">状态</option><option value="ok">生成成功</option><option value="run">生成中</option><option value="fail">生成失败</option></select></label>
         <label class="field w120"><select id="f-on"><option value="">是否启用</option><option value="1">已启用</option><option value="0">已停用</option></select></label>
+        <label class="field w150"><select id="f-src"><option value="">来源项目</option></select></label>
       </div>
 
       <div class="it-table gtable">
@@ -144,12 +148,30 @@
   </div>
 </div>
 
+<!-- 详情：只读看原文与说明书；要改再进编辑 -->
+<div class="nf-mask" id="det" hidden>
+  <div class="nf" style="width:min(720px,calc(100vw - 32px))" role="dialog" aria-modal="true" aria-labelledby="det-t">
+    <div class="nf-hd">
+      <b id="det-t">接口详情</b>
+      <button type="button" class="icon-btn" id="det-x" aria-label="关闭">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="nf-bd" id="det-bd"></div>
+    <div class="nf-ft">
+      <span class="it-sp"></span>
+      <button type="button" class="btn ghost" id="det-close">关闭</button>
+      <button type="button" class="btn primary" id="det-edit">编辑</button>
+    </div>
+  </div>
+</div>
+
 <script src="assets/shell.js?v=cbeb16d7"></script>
 <script src="assets/ui-kit.js?v=bc773bc9"></script>
 <script src="assets/confirm.js?v=ad0ffde9"></script>
 <script src="assets/spec.js?v=c7914df8"></script>
 <script src="assets/list.js?v=51a688c6"></script>
-<script src="assets/capability.js?v=4351eda7"></script>
-<script src="assets/interfaces.js?v=616fcc94"></script>
+<script src="assets/capability.js?v=6877aa4c"></script>
+<script src="assets/interfaces.js?v=39bb990f"></script>
 </body>
 </html>
