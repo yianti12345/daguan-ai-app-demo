@@ -36,6 +36,24 @@
       ],
       cols: '180px minmax(180px,1fr) 110px 90px 90px 150px 130px 150px'
     },
+    'config.html': {
+      object: '模型（对话/视觉/向量/重排）以及各场景绑定哪一个',
+      source: '真源 /Expert/Management/Config/model 的字段结构（默认模型不可下线、温度/迭代/输出上限/上下文）',
+      truth: '按场景绑定建模：应用配置对话 / 组件配置对话 / 技能生成',
+      states: ['无模型', '有数据', '有停用项', '默认模型'],
+      headCols: [
+        { key: 'name', label: '模型' },
+        { key: 'vendor', label: '供应商' },
+        { key: 'kind', label: '类型' },
+        { key: 'temp', label: '温度' },
+        { key: 'react', label: '最大迭代' },
+        { key: 'outMax', label: '输出上限' },
+        { key: 'ctx', label: '上下文' },
+        { key: 'on', label: '状态' },
+        { key: 'ops', label: '操作' }
+      ],
+      cols: '220px 100px 80px 70px 100px 110px 110px 90px 150px'
+    },
     'skills.html': {
       object: '技能（小智的专属技能包）',
       source: '真源 /Expert/Management/SkillsLibrary（skill名称/可用范围/skill描述/状态/是否启用/最近更新时间/创建人/操作）',

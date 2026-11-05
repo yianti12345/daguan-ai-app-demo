@@ -80,6 +80,8 @@
     }
     if (!cache.apis) cache.apis = [];
     if (!cache.skills) cache.skills = [];
+    if (!cache.models) cache.models = JSON.parse(JSON.stringify(MODEL_SEED));
+    if (!cache.scenes) cache.scenes = JSON.parse(JSON.stringify(SCENE_SEED));
     /* 老存档里没有说明书：按 id 从种子补一次，不覆盖用户自己写过的。 */
     cache.apis.forEach(function (a) {
       var d = DOCS[a.id];
@@ -153,11 +155,66 @@
     saveCompMap(m); return m[compId];
   }
 
+  /* ── 模型与场景绑定 ──────────────────────────────────
+     场景决定"在哪儿用哪个模型"：应用配置对话、组件配置对话、技能生成。
+     模型清单是资产，场景是绑定；默认模型不可删除（真源同一口径）。 */
+  var MODEL_SEED = [
+    { id: 'm-ds-flash', name: 'deepseek-flash', label: 'DeepSeek Flash', vendor: 'DeepSeek', kind: 'chat', temp: 0.2, react: 50, outMax: 32768, ctx: 200000, isDefault: true, on: true },
+    { id: 'm-qwen-max', name: 'qwen3-max', label: '通义千问 Max', vendor: '阿里云', kind: 'chat', temp: 0.1, react: 10, outMax: 32768, ctx: 128000, isDefault: false, on: true },
+    { id: 'm-ds-vl', name: 'deepseek-vl', label: 'DeepSeek VL', vendor: 'DeepSeek', kind: 'vision', temp: 0.1, react: 10, outMax: 16384, ctx: 64000, isDefault: false, on: true },
+    { id: 'm-embed', name: 'text-embedding-v4', label: 'Embedding v4', vendor: '阿里云', kind: 'embed', temp: 0, react: 0, outMax: 0, ctx: 8192, isDefault: false, on: true },
+    { id: 'm-rerank', name: 'qwen3-rerank', label: 'Rerank', vendor: '阿里云', kind: 'rerank', temp: 0, react: 0, outMax: 0, ctx: 8192, isDefault: false, on: true }
+  ];
+  var SCENE_SEED = [
+    { key: 'app', name: '应用配置对话', desc: '在小智里说一句改这个应用', model: 'm-ds-flash' },
+    { key: 'component', name: '组件配置对话', desc: '在小智里说一句改这个组件', model: 'm-ds-flash' },
+    { key: 'skill', name: '技能生成', desc: '新建或导入 skill 时生成内容', model: 'm-qwen-max' }
+  ];
+
+  function models() { return load().models || []; }
+  function modelById(id) { return models().filter(function (x) { return x.id === id; })[0] || null; }
+  function addModel(v) {
+    var it = Object.assign({ id: uid('m'), kind: 'chat', temp: 0.2, react: 10, outMax: 32768, ctx: 128000, isDefault: false, on: true }, v);
+    load().models.push(it); save(); return it;
+  }
+  function updateModel(id, patch) {
+    var it = modelById(id); if (!it) return null;
+    Object.assign(it, patch); save(); return it;
+  }
+  function removeModel(id) {
+    var it = modelById(id);
+    if (!it || it.isDefault) return { error: '默认模型不可删除' };
+    var d = load();
+    d.models = d.models.filter(function (x) { return x.id !== id; });
+    d.scenes.forEach(function (s) { if (s.model === id) s.model = (models()[0] || {}).id || ''; });
+    save(); return { ok: true };
+  }
+  function toggleModel(id) {
+    var it = modelById(id);
+    if (!it) return { error: '没有这个模型' };
+    if (it.isDefault && it.on) return { error: '默认模型不可下线' };
+    it.on = !it.on; save(); return { ok: true };
+  }
+  function scenes() { return load().scenes || []; }
+  function setSceneModel(key, modelId) {
+    var s = (load().scenes || []).filter(function (x) { return x.key === key; })[0];
+    if (s) { s.model = modelId; save(); }
+    return s;
+  }
+  function sceneModel(key) {
+    var s = (load().scenes || []).filter(function (x) { return x.key === key; })[0];
+    var m = s ? modelById(s.model) : null;
+    return m ? m.name : '';
+  }
+
   window.CAP = {
     load: load, save: save,
     apis: apis, apiById: apiById, addApi: addApi, updateApi: updateApi, removeApi: removeApi, toggleApi: toggleApi,
     skills: skills, skillById: skillById, addSkill: addSkill, updateSkill: updateSkill, removeSkill: removeSkill, toggleSkill: toggleSkill,
     compApis: compApis, setCompApis: setCompApis,
+    models: models, modelById: modelById, addModel: addModel, updateModel: updateModel,
+    removeModel: removeModel, toggleModel: toggleModel,
+    scenes: scenes, setSceneModel: setSceneModel, sceneModel: sceneModel,
     now: now
   };
 })();
