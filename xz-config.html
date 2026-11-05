@@ -6,7 +6,7 @@
 <title>小智配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=7b80bc72">
-<link rel="stylesheet" href="assets/sys.css?v=8cd98c1c">
+<link rel="stylesheet" href="assets/sys.css?v=936484c2">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=263ad267">
 <style>
 /* 列与真源 /Expert/Management/SkillsLibrary 一致：8 列、表头 39、行 69。取值全来自令牌。 */
@@ -45,6 +45,7 @@
   resize:vertical;font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)}
 .cf-ta:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 .sec-t{margin:0 0 var(--space-12);font-size:var(--font-size-body);font-weight:600;color:var(--color-text-primary)}
+.sk-form textarea.sk-ta-lg{height:160px}
 </style>
   <meta name="robots" content="noindex,nofollow">
 </head>
@@ -108,6 +109,9 @@
       <div class="sk-form">
         <label for="f-name">skill 名称<input id="f-name" placeholder="例如：财报三表勾稽"></label>
         <label for="f-desc">skill 描述<textarea id="f-desc" placeholder="它能做什么"></textarea></label>
+        <!-- 2026-11-05（用户）：「只能写描述和名称是吧」。技能的核心是内容，不是帽子。
+             内容就是给小智看的那段指令/能力说明。 -->
+        <label for="f-content">skill 内容<textarea id="f-content" class="sk-ta-lg" placeholder="这个技能做什么、什么时候用、按什么步骤做"></textarea></label>
       </div>
     </div>
     <div class="nf-ft">
@@ -189,6 +193,6 @@
   setDirty(t.value !== CAP.prompt());
 })();
 </script>
-<script src="assets/skills.js?v=2b4dac08"></script>
+<script src="assets/skills.js?v=dcdcc705"></script>
 </body>
 </html>

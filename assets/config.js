@@ -54,13 +54,12 @@
         if (key === 'outMax') return r.outMax ? String(r.outMax) : '—';
         if (key === 'ctx') return r.ctx ? String(r.ctx) : '—';
         if (key === 'on') {
-          return '<span style="color:' + (r.on ? 'var(--color-success-ink)' : 'var(--color-text-tertiary)') + '">'
-            + (r.on ? '已启用' : '已停用') + '</span>';
+          return '<button class="sw" type="button" role="switch" aria-checked="' + (r.on ? 'true' : 'false') + '"'
+            + ' aria-label="启用' + esc(r.label || r.name) + '" data-act="toggle" data-id="' + esc(r.id) + '"></button>';
         }
         if (key === 'ops') {
           return '<div class="m-ops">'
             + '<button class="m-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">编辑</button>'
-            + '<button class="m-op" type="button" data-act="toggle" data-id="' + esc(r.id) + '">' + (r.on ? '停用' : '启用') + '</button>'
             + '<button class="m-op is-danger" type="button" data-act="del" data-id="' + esc(r.id) + '">删除</button>'
             + '</div>';
         }

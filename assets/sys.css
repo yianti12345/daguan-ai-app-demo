@@ -2724,3 +2724,14 @@ b,strong{font-weight:600}
 .cfg-bar{display:flex;align-items:center;gap:var(--space-8);padding:0 0 var(--space-12)}
 /* 版本管理：应用/组件名挪到工具条最左，和真源"面包屑下面就是工具条"一致 */
 .vl-owner{font-size:var(--font-size-body);font-weight:600;color:var(--color-text-primary);margin-right:var(--space-8)}
+
+/* 2026-11-05（用户）：启用/禁用一律用真源那个开关（44×24 药丸、白圆点 20、开为品牌蓝），
+   不再用「已启用/已停用」文字，也不再在操作列放文字链。 */
+.sw{position:relative;width:44px;height:24px;padding:0;border:0;border-radius:12px;
+  background:var(--color-border-control);cursor:pointer;transition:background .16s;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+  background:var(--surface-page);transition:left .16s;box-shadow:0 1px 2px rgba(0,0,0,.16)}
+.sw[aria-checked="true"]{background:var(--color-brand)}
+.sw[aria-checked="true"]::after{left:22px}
+.sw:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
+.sw[disabled]{opacity:.5;cursor:not-allowed}

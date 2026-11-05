@@ -43,13 +43,12 @@
       cell: function (key, r) {
         if (key === 'name') return '<a class="sk-name" href="#" data-act="view" data-id="' + esc(r.id) + '">' + esc(r.name) + '</a>';
         if (key === 'desc') return '<span class="sk-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
-        if (key === 'on') return '<span style="color:' + (r.on ? 'var(--color-success-ink)' : 'var(--color-text-tertiary)') + '">' + (r.on ? '已启用' : '已停用') + '</span>';
+        if (key === 'on') return '<button class="sw" type="button" role="switch" aria-checked="' + (r.on ? 'true' : 'false') + '" aria-label="启用' + esc(r.name) + '" data-act="toggle" data-id="' + esc(r.id) + '"></button>';
         if (key === 'at') return '<span class="sk-at">' + esc(r.at || '—') + '</span>';
         if (key === 'by') return esc(r.by || '—');
         if (key === 'ops') {
           return '<div class="sk-ops">'
             + '<button class="sk-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">编辑</button>'
-            + '<button class="sk-op" type="button" data-act="toggle" data-id="' + esc(r.id) + '">' + (r.on ? '停用' : '启用') + '</button>'
             + '<button class="sk-op is-danger" type="button" data-act="del" data-id="' + esc(r.id) + '">删除</button>'
             + '</div>';
         }
@@ -80,6 +79,7 @@
     $('#dlg-t').textContent = '编辑 skill';
     $('#f-name').value = it.name || '';
     $('#f-desc').value = (it.desc && it.desc !== '—') ? it.desc : '';
+    if ($('#f-content')) $('#f-content').value = it.content || '';
     $('#dlg').hidden = false;
     setTimeout(function () { $('#f-name').focus(); }, 0);
   }
@@ -90,6 +90,7 @@
     $('#det-bd').innerHTML = ''
       + '<p class="sk-hint">' + (it.on ? '已启用' : '已停用') + ' · ' + esc(it.at || '') + '</p>'
       + '<p style="margin:12px 0 0;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)">' + esc(it.desc || '—') + '</p>'
+      + (it.content ? '<pre style="margin:12px 0 0;padding:12px;border:1px solid var(--color-border-hairline);border-radius:2px;background:var(--surface-sunken);white-space:pre-wrap;font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-body)">' + esc(it.content) + '</pre>' : '')
       + '<p class="sk-hint" style="margin-top:12px">创建人 ' + esc(it.by || '—') + '</p>';
     DET = id;
     $('#det-toggle').textContent = it.on ? '停用' : '启用';
@@ -115,10 +116,10 @@
     var name = $('#f-name').value.trim();
     if (!name) { toast('先填名称', 'error'); $('#f-name').focus(); return; }
     if (EDIT) {
-      CAP.updateSkill(EDIT, { name: name, desc: $('#f-desc').value.trim() || '—' });
+      CAP.updateSkill(EDIT, { name: name, desc: $('#f-desc').value.trim() || '—', content: ($('#f-content') || {}).value || '' });
       closeNew(); paint(); toast('已保存'); return;
     }
-    var it = CAP.addSkill({ name: name, desc: $('#f-desc').value.trim() || '—', state: 'ok' });
+    var it = CAP.addSkill({ name: name, desc: $('#f-desc').value.trim() || '—', content: ($('#f-content') || {}).value || '', state: 'ok' });
     closeNew(); paint(); toast('已新建');
   });
 
