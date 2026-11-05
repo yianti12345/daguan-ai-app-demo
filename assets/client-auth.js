@@ -206,8 +206,11 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     /* ★2026-11-05（用户截图）：同一屏出现两个「新增客户授权」—— 工具栏一个、空态一个，
        文案和动作都一样。0 条且没在搜索时，工具栏（含版本筛选）本来也没有可操作对象，
        整条收掉，只留空态里那一个入口。 */
-    var bar = document.querySelector('.au-bar');
-    if (bar) bar.hidden = (!list.length && !KW);
+    /* ★2026-11-05（用户：「操作都是放在左上角的，空态有个提示文案就行了」）：
+       操作永远在左上角工具栏，空态不放按钮。0 条且没搜索时只把右侧筛选收起来
+       —— 没有可筛的对象，留两个空控件没意义。 */
+    var barRight = document.querySelector('.au-bar .right');
+    if (barRight) barRight.hidden = (!list.length && !KW);
 
     var card = document.querySelector('.au-card');
     if (card) card.classList.toggle('is-missing', missing);
@@ -232,7 +235,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
         + '</p><p class="au-empty-d">'
         + (APP_ID ? '把「' + esc((DB.appById(APP_ID) || {}).name || '这个应用') + '」授权给客户，他们登录后就能用这一版。'
                   : '选一个应用和客户，建立第一条授权。')
-        + '</p><button class="btn primary" type="button" data-act="empty-add">新增客户授权</button></div>') : '';
+        + '</p></div>') : '';
 
     function clientOps(r) {
       /* ★2026-11-04（用户：「取消授权，如果客户不是最新版本，还有个升级版本操作」）：
@@ -331,8 +334,13 @@ function byVer(r) { return !VER || String(r.version) === VER; }
           if (total) total.textContent = '';
           var pg0 = $('#pager');
           if (pg0) pg0.innerHTML = '';
+          /* 表尾整行收掉：空态下面挂一条只剩边框的横线，看着像"表格有毛病" */
+          var fw = document.querySelector('.au-foot');
+          if (fw) fw.hidden = true;
           return;
         }
+        var fw2 = document.querySelector('.au-foot');
+        if (fw2) fw2.hidden = false;
         paintPager(pages);
       }
     });
