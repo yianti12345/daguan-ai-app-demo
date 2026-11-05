@@ -2455,6 +2455,10 @@ function xzOpDone(){
    标志放在 G 上而不是 xzRun 的闭包里，因为按钮的点击在闭包外面。 */
 function xzStop(){
   G.xzAbort = 1;
+  /* 2026-11-06：停止必须把「小智正在动手」的闸一起放下。
+     原来只 abort 请求，xzHold 留在 1 —— 站内所有 <a href> 的点击被导航闸吞掉
+     （实测 defaultPrevented=true），用户表现为「点菜单没反应」，只能刷新。 */
+  G.xzHold = 0; G.xzDirty = 0;
   /* 停在等模型的那一刻：不 abort 的话请求还在飞，人以为停了，其实后台还在烧 token */
   xzAbortReq();
   xzOp(0);
@@ -3314,14 +3318,17 @@ function xzAttachSync(){
   var bar = document.getElementById('xzAttBar');
   var wrap = document.querySelector('.xz-inputwrap');
   if (!bar || !wrap || !window.UIK || !UIK.Attach) return;
-  xzAttCtl = UIK.Attach.create(bar).seed(xzAttCache);
+  var ctl = UIK.Attach.create(bar).seed(xzAttCache);
+  xzAttCtl = ctl;
   /* 回形针住进控件行（.xz-iact），不再是正文旁边的一个图标 ——
      正文那一行要还给文字。控件行不存在时退回输入区，别让按钮凭空消失。 */
   var row = wrap.querySelector('.xz-iact');
-  if (row) row.insertBefore(xzAttCtl.button, row.firstChild); else wrap.appendChild(xzAttCtl.button);
-  xzAttCtl.bindDrop(wrap);
-  xzAttCtl.onChange(function(n){
-    if (xzAttCtl) xzAttCache = xzAttCtl.all();
+  if (row) row.insertBefore(ctl.button, row.firstChild); else wrap.appendChild(ctl.button);
+  ctl.bindDrop(wrap);
+  /* 2026-11-06：回调只认自己这一份控制器。原来读全局 xzAttCtl，
+     面板重画后它指向新实例，旧按钮选到的文件等于丢掉。 */
+  ctl.onChange(function(n){
+    if (xzAttCtl === ctl) xzAttCache = ctl.all();
     var inp = document.querySelector('[data-act="xzInput"]');
     var snd = document.querySelector('[data-act="xzSend"]');
     if (snd) snd.setAttribute('data-ready', ((inp && inp.value.trim()) || n) ? 'true' : 'false');

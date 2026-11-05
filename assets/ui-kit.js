@@ -203,6 +203,10 @@ window.UIK = (function () {
    * 这套是唯一实现，两处输入框都调它，不各写一份。 */
   var Attach = (function () {
     var MAX_FILES = 10, MAX_SIZE = 20 * 1024 * 1024, cssDone = false;
+    /* 2026-11-06：同一个宿主容器只建一次控制器。
+       根因是「绘制路径里挂载」—— 面板每次重画都调 create()，
+       而 create 会 append 隐藏 input 和按钮，于是连画两次就多一枚回形针（实测 1→3）。 */
+    var CTRL = (typeof WeakMap !== 'undefined') ? new WeakMap() : null;
     var CLIP = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.05 12.3 20.2a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.9 1.9 0 0 1-2.7-2.7l8.5-8.5"/></svg>';
 
     function css() {
@@ -312,12 +316,14 @@ window.UIK = (function () {
     }
     /* 一处控制器：按钮给调用方 append 到自己的输入区；chip 区由调用方给容器 */
     function create(barHost) {
+      if (CTRL && barHost && CTRL.has(barHost)) return CTRL.get(barHost);
       css();
       var list = [], onChange = null;
       var input = document.createElement('input');
       input.type = 'file'; input.multiple = true; input.style.display = 'none';
       input.accept = '.zip,.rar,.7z,.tar,.gz,.png,.jpg,.jpeg,.gif,.webp,.txt,.md,.json,.js,.jsx,.ts,.tsx,.css,.html,.vue,.py,.xml,.csv,.yaml,.yml,.sql,.log,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx';
-      (barHost.parentNode || document.body).appendChild(input);
+      /* 挂在 barHost 自身，不挂它的父级 —— 宿主被整块重画时 input 随旧树一起销毁，不会累积。 */
+      barHost.appendChild(input);
       var btn = document.createElement('button');
       btn.type = 'button'; btn.className = 'uik-att-btn';
       btn.setAttribute('aria-label', '添加附件'); btn.title = '添加附件';
@@ -343,14 +349,14 @@ window.UIK = (function () {
           list.push(a); render(); parse(a, f, render);
         }
       }
-      return {
+      var api = {
         button: btn,
         count: function () { return list.length; },
         all: function () { return list.slice(); },
         /* 小智面板每次 render 都重建 DOM，控制器要重建；附件列表靠 seed 跨重建带回来。 */
-        seed: function (arr) { list = (arr || []).slice(); render(); return this; },
+        seed: function (arr) { list = (arr || []).slice(); render(); return api; },
         take: function () { var out = list.slice(); list = []; render(); return out; },
-        onChange: function (fn) { onChange = fn; return this; },
+        onChange: function (fn) { onChange = fn; return api; },
         bindDrop: function (el) {
           el.addEventListener('dragover', function (e) { e.preventDefault(); el.classList.add('uik-att-drop'); });
           el.addEventListener('dragleave', function () { el.classList.remove('uik-att-drop'); });
@@ -360,6 +366,8 @@ window.UIK = (function () {
           });
         }
       };
+      if (CTRL && barHost) CTRL.set(barHost, api);
+      return api;
     }
     return { create: create, msgHtml: msgHtml, reply: reply };
   })();

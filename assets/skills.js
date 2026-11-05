@@ -52,6 +52,7 @@
       rowClass: 'gtable-row',
       cell: function (key, r) {
         if (key === 'name') return '<span class="sk-name">' + esc(r.name) + '</span>';
+        if (key === 'scope') return '<span class="sk-scope">' + esc(r.scope || '仅自己') + '</span>';
         if (key === 'desc') return '<span class="sk-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
         if (key === 'on') return '<button class="sw" type="button" role="switch" aria-checked="' + (r.on ? 'true' : 'false') + '" aria-label="启用' + esc(r.name) + '" data-act="toggle" data-id="' + esc(r.id) + '"></button>';
         if (key === 'at') return '<span class="sk-at">' + esc(r.at || '—') + '</span>';
@@ -78,6 +79,7 @@
   function openNew() {
     EDIT = null; $('#dlg-t').textContent = '新建 skill';
     $('#f-name').value = ''; $('#f-desc').value = '';
+    var sc = $('#f-scope'); if (sc) sc.value = '仅自己';
     $('#dlg').hidden = false;
     setTimeout(function () { $('#f-name').focus(); }, 0);
   }
@@ -96,18 +98,21 @@
     $('#det-toggle').textContent = it.on ? '停用' : '启用';
     $('#det').hidden = false;
   }
-  function closeDetail() { $('#det').hidden = true; DET = null; }
+  function closeDetail() { var d = $('#det'); if (d) d.hidden = true; DET = null; }
   /* 2026-11-05 体检：这个文件被 skills.html 与 skill-edit.html 共用，两页元素不一样。
      原来直接 $('#x').addEventListener，缺一个元素就抛 TypeError，
      同一文件后面所有绑定都不再执行（页面看着在、点哪儿都没反应）。统一改用 on()。 */
   const on = (sel, ev, fn) => { const el = $(sel); if (el) el.addEventListener(ev, fn); };
+  on('#det-x', 'click', closeDetail);
+  on('#det-close', 'click', closeDetail);
   on('#det-toggle', 'click', function () {
     if (!DET) return;
     var r = CAP.toggleSkill(DET); paint(); openDetail(DET);
     toast(r && r.on ? '已启用' : '已停用');
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !$('#det').hidden) closeDetail();
+    var d = $('#det');
+    if (e.key === 'Escape' && d && !d.hidden) closeDetail();
   });
 
   on('#act-new', 'click', openNew);
@@ -116,11 +121,14 @@
   on('#dlg-save', 'click', function () {
     var name = $('#f-name').value.trim();
     if (!name) { toast('先填名称', 'error'); $('#f-name').focus(); return; }
+    /* 2026-11-06：可用范围原来根本没读控件，选「全平台」也存成「仅自己」。 */
+    var scEl = $('#f-scope');
+    var scope = (scEl && scEl.value) ? scEl.value : '仅自己';
     if (EDIT) {
-      CAP.updateSkill(EDIT, { name: name, desc: $('#f-desc').value.trim() || '—' });
+      CAP.updateSkill(EDIT, { name: name, desc: $('#f-desc').value.trim() || '—', scope: scope });
       closeNew(); paint(); toast('已保存'); return;
     }
-    var it = CAP.addSkill({ name: name, desc: $('#f-desc').value.trim() || '—', state: 'ok' });
+    var it = CAP.addSkill({ name: name, desc: $('#f-desc').value.trim() || '—', scope: scope, state: 'ok' });
     closeNew(); paint(); toast('已新建');
   });
 

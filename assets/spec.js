@@ -96,13 +96,14 @@
       states: ['无技能', '有数据', '搜索无结果', '已停用'],
       headCols: [
         { key: 'name', label: 'skill名称' },
+        { key: 'scope', label: '可用范围' },
         { key: 'desc', label: 'skill描述' },
         { key: 'on', label: '是否启用' },
         { key: 'at', label: '最近更新时间' },
         { key: 'by', label: '创建人' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '220px minmax(240px,1fr) 100px 160px 130px 120px'
+      cols: '220px 110px minmax(200px,1fr) 100px 160px 130px 120px'
     },
     'versions.html': {
       object: '版本（应用或组件的版本存档）',

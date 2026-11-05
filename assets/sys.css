@@ -438,7 +438,7 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
      的命名弹层时就得再抄一份 —— 两处一旦分叉，同一种弹层在两张页上会长得不一样。
      现在它是公共件（与 .tb / .cond 同一处理方式），页面只写结构与行为。
    用途：新增组件、新建应用这种"填三五样就能建"的登记表单。 */
-.nf-mask{position:fixed;inset:0;background:var(--surface-overlay);z-index:60;display:grid;place-items:center}
+.nf-mask{position:fixed;inset:0;background:var(--surface-overlay);z-index:105;display:grid;place-items:center}
 .nf{width:min(var(--dialog-max-w),calc(100vw - 32px));max-height:calc(100vh - 48px);background:var(--surface-page);border-radius:var(--dialog-radius);box-shadow:var(--dialog-shadow);overflow:hidden;display:flex;flex-direction:column}
 /* 2026-11-03：范围两段让表单超过一屏。头/脚固定、中段自己滚 —— 底部「创建」永远在视口里。 */
 .nf-hd,.nf-ft{flex:0 0 auto}
@@ -1057,7 +1057,7 @@ button.cc-meta:focus-visible{
 
 /* 点完必须有回执：toast 两页共用（component.js 页自带同名组件，这里只服务列表两页） */
 .toast{
-  position:fixed;left:50%;bottom:var(--toast-bottom);transform:translate(-50%,8px);z-index:90;
+  position:fixed;left:50%;bottom:var(--toast-bottom);transform:translate(-50%,8px);z-index:108;
   max-width:420px;padding:10px var(--space-16);border-radius:var(--radius-xs);background:var(--color-text-body);color:var(--surface-page);
   font-size:var(--font-size-body);line-height:var(--leading-body);box-shadow:var(--shadow-card-hover);
   opacity:0;pointer-events:none;transition:opacity .16s,transform .16s;
@@ -1723,7 +1723,7 @@ body[data-mode="view"] .cv-blk:hover{background:none;box-shadow:none}
 .mask{position:fixed;inset:0;z-index:100;display:none;pointer-events:none;
   background:color-mix(in srgb,var(--color-text-body) 30%,transparent);
   align-items:center;justify-content:center;padding:var(--space-24)}
-.mask[data-open="true"]{display:flex}
+.mask[data-open="true"]{display:flex;pointer-events:auto}
 /* ★2026-10-28 用户：找组件要空间，抽屉 380 不够看。改成居中大弹窗 1120×80vh：
    左边仍是搜索+页签+列表，但一行能放完整信息；四周留出画布边缘，关掉就回画布。
    背板用 30% 压暗（抽屉时代不铺遮罩，是因为要贴着画布看；现在把"看结果"交给关闭之后）。 */
@@ -2657,7 +2657,7 @@ body[data-drawer="on"] .hint{
 .sc-pick[data-empty="1"]{color:var(--ink-3)}
 .sc-pick:focus-visible{outline:2px solid var(--color-focus-halo);outline-offset:1px;border-color:var(--color-brand)}
 .sc-hint{grid-column:1/-1;margin:0;font-size:var(--font-size-caption);color:var(--ink-3);line-height:1.6}
-.sc-menu{position:fixed;z-index:90;background:var(--surface-page);border:1px solid var(--color-border-card);border-radius:var(--radius-sm);box-shadow:var(--shadow-menu, 0 8px 24px rgba(0,0,0,.14));overflow:hidden}
+.sc-menu{position:fixed;z-index:106;background:var(--surface-page);border:1px solid var(--color-border-card);border-radius:var(--radius-sm);box-shadow:var(--shadow-menu, 0 8px 24px rgba(0,0,0,.14));overflow:hidden}
 .sc-search{display:block;width:100%;height:34px;padding:0 var(--space-8);border:0;border-bottom:1px solid var(--color-border-hairline);font:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);outline:none}
 .sc-list{max-height:200px;overflow:auto;padding:var(--space-4)}
 .sc-item{display:flex;align-items:center;gap:var(--space-8);padding:7px var(--space-8);border-radius:var(--radius-sm);font-size:var(--font-size-body);color:var(--color-text-primary);cursor:pointer}

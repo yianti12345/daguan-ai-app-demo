@@ -2400,8 +2400,8 @@
          `.click()` 还能调通（程序化点击绕过 inert），真人点不动、键盘停不上。
          （上一轮 E23 的结构编辑撤回没撞上，是因为那条路径抽屉是关着的。） */
       if (el === $('#hint')) return;
-      if (on) { if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); el.setAttribute('data-inert-by', 'dlg'); } }
-      else if (el.getAttribute('data-inert-by') === 'dlg') { el.removeAttribute('inert'); el.removeAttribute('data-inert-by'); }
+      if (on) { if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); el.setAttribute('data-inert-by', 'drawer'); } }
+      else if (el.getAttribute('data-inert-by') === 'drawer') { el.removeAttribute('inert'); el.removeAttribute('data-inert-by'); }
     });
   }
   function dlgTabStops() {

@@ -45,8 +45,8 @@ window.Confirm = (function () {
         /* 已经开着别的弹层时，那个弹层所在的支要留着，否则关掉这层也放不出那层 */
         if (el.querySelector && el.querySelector('.nf-mask:not([hidden])')) return;
         if (on) {
-          if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); el.setAttribute('data-inert-by', 'dlg'); }
-        } else if (el.getAttribute('data-inert-by') === 'dlg') {
+          if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); el.setAttribute('data-inert-by', 'confirm'); }
+        } else if (el.getAttribute('data-inert-by') === 'confirm') {
           el.removeAttribute('inert'); el.removeAttribute('data-inert-by');
         }
       });

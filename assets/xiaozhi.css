@@ -285,6 +285,25 @@
 .xz-inputwrap input::placeholder,
 .xz-inputwrap textarea::placeholder{color:var(--color-text-tertiary)}
 
+/* 发送键（2026-11-06 补回）：2026-11-04 重写输入区时把这组基类整段删了，
+   DOM 一直还在生成 .xz-send，界面上是一枚浏览器默认按钮（实测 27×27、透明底、hairline 边框），
+   命中区比旁边的麦克风小一圈。这里与 .xz-mic 同尺寸同基底；
+   可发送时换成品牌色（data-ready 由 xiaozhi.js 维护），空输入时保持灰。 */
+.xz-send{flex:none;width:38px;height:38px;padding:0;border:0;border-radius:var(--radius-pill);cursor:pointer;
+  background:color-mix(in srgb,var(--color-border-hairline) 42%,var(--surface-sunken));color:var(--color-text-tertiary);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .16s,color .16s,transform .16s}
+
+.xz-send[data-ready="true"]{background:var(--color-brand);color:var(--color-text-inverse)}
+
+.xz-send:hover{background:var(--color-brand);color:var(--color-text-inverse);transform:translateY(-1px)}
+
+.xz-send:active{transform:scale(.95)}
+
+.xz-send:focus-visible{outline:2px solid var(--color-focus-halo);outline-offset:2px}
+
+.xz-send svg{width:16px;height:16px;display:block}
+
 .xz-mic{flex:none;width:38px;height:38px;padding:0;border:0;border-radius:var(--radius-pill);cursor:pointer;
   background:color-mix(in srgb,var(--color-border-hairline) 42%,var(--surface-sunken));color:var(--color-text-tertiary);
   display:flex;align-items:center;justify-content:center;
@@ -376,7 +395,8 @@
 
 .xz-foot .fld{flex:1}
 
-/* 层级：面板要低于弹层遮罩（.mask=70）。 */
+/* 层级：小智整组 70–75 必须低于抽屉(100)与对话框(105)、提示(108)、hint(110)。
+   2026-11-06 更正：旧注释写「.mask=70」，实际 .mask=100、.nf-mask=105 —— 两个数都过期了。 */
 
 /* ── 动手期间把面板收起来 ───────────────────────────────────────
    起因（2026-10-23 用户指出）：小智点/填被自己面板挡住的地方，人根本看不到在操作什么。

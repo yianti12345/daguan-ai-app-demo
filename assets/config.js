@@ -15,7 +15,8 @@
     else if (window.confirm(o.body || '')) o.onOk && o.onOk();
   };
 
-  var KIND = { chat: '对话', vision: '视觉', embed: '向量', rerank: '重排' };
+  /* 2026-11-06：「模型类型」表单字段已撤（界面只建对话模型），
+     KIND 常量随字段一起删；新模型的 kind 由 CAP.addModel 默认成 'chat'。 */
   var EDIT_ID = null;
 
   function chatModels() {
@@ -104,16 +105,16 @@
       vendor: $('#f-vendor').value.trim() || '未标注',
       url: $('#f-url').value.trim(),
       key: $('#f-key').value.trim(),
-      kind: $('#f-kind').value,
       temp: Number($('#f-temp').value) || 0,
       react: Number($('#f-react').value) || 0,
       outMax: Number($('#f-out').value) || 0,
       ctx: Number($('#f-ctx').value) || 0
     };
-    if (EDIT_ID) CAP.updateModel(EDIT_ID, v);
+    var isEdit = !!EDIT_ID;
+    if (isEdit) CAP.updateModel(EDIT_ID, v);
     else CAP.addModel(v);
     closeDlg(); paintModels(); paintScenes();
-    toast(EDIT_ID ? '已保存' : '已新增');
+    toast(isEdit ? '已保存' : '已新增');
   });
 
   /* 2026-11-05（用户）：「整页保存」。下拉改了先记在 PENDING 里，点右上「保存」才落库；
