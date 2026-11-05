@@ -131,6 +131,14 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     el.value = want.indexOf(now) >= 0 ? now : '';
   }
 
+  /* 空态里的两个出口：开新增、清空搜索。用事件委托挂一次，重绘不会丢。 */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-act="empty-add"],[data-act="empty-clear"]');
+    if (!b) return;
+    if (b.getAttribute('data-act') === 'empty-add') { var add = $('#act-add'); if (add) add.click(); return; }
+    var kw = $('#kw'); if (kw) { kw.value = ''; KW = ''; PG = 0; paint(); kw.focus(); }
+  });
+
   function paint() {
     paintVerOptions();
     var pgTitle = $('#pg-title'), latestBox = $('#au-latest');
@@ -206,9 +214,19 @@ function byVer(r) { return !VER || String(r.version) === VER; }
 
     /* 空态也走 List.render —— 列宽由 spec 设置；绕过它的话表头没有列定义，会塌成一列。
        （2026-11-04 17:55 用户截图抓到的就是这个：CSS 里的 --gt-cols 已删，空态时 spec 没跑。） */
+    /* 空态要有出口（2026-11-05）：原来只有一句灰字"还没有客户授权"，
+       底下还跟着一句"共 0 条" —— 说了两遍"没有"，但没说"怎么开始"。
+       现在：一句标题 + 一句怎么开始 + 一个按钮（搜不到时给"清空搜索"）。 */
     var emptyHtml = !list.length ? (KW
-      ? '<p class="au-empty">没有匹配「' + esc(KW) + '」的客户</p>'
-      : (APP_ID ? '<p class="au-empty">还没有客户授权</p>' : '<p class="au-empty">还没有任何授权</p>')) : '';
+      ? '<div class="au-empty"><p class="au-empty-t">没有匹配「' + esc(KW) + '」的客户</p>'
+        + '<p class="au-empty-d">换个关键词，或者清空搜索看全部。</p>'
+        + '<button class="btn ghost" type="button" data-act="empty-clear">清空搜索</button></div>'
+      : '<div class="au-empty"><p class="au-empty-t">'
+        + (APP_ID ? '还没有客户授权' : '还没有任何授权')
+        + '</p><p class="au-empty-d">'
+        + (APP_ID ? '把「' + esc((DB.appById(APP_ID) || {}).name || '这个应用') + '」授权给客户，他们登录后就能用这一版。'
+                  : '选一个应用和客户，建立第一条授权。')
+        + '</p><button class="btn primary" type="button" data-act="empty-add">新增客户授权</button></div>') : '';
 
     function clientOps(r) {
       /* ★2026-11-04（用户：「取消授权，如果客户不是最新版本，还有个升级版本操作」）：
@@ -294,16 +312,17 @@ function byVer(r) { return !VER || String(r.version) === VER; }
         return '';
       },
       foot: function (rs) {
+        /* 空态里已经说了"还没有"，表尾再写一句"共 0 条"是同一件事的第二遍。 */
         return rs.length
           ? ('第 ' + (start + 1) + '-' + (start + rs.length) + ' 条/共 ' + list.length + ' 条')
-          : ('共 ' + list.length + ' 条');
+          : '';
       },
       after: function () {
         syncBatch();
-        /* 2026-11-05：0 条时表尾原来只剩一句"每页 10 家"，左边空着 ——
-           没有行就没有分页可言。空列表只说总数。 */
+        /* 2026-11-05：没有行就没有分页可言。空列表连"共 0 条"也不写 ——
+           空态块里已经说了"还没有"，表尾再说一遍是同一件事的第二遍。 */
         if (!list.length) {
-          if (total) total.textContent = '共 0 条';
+          if (total) total.textContent = '';
           var pg0 = $('#pager');
           if (pg0) pg0.innerHTML = '';
           return;
@@ -541,6 +560,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
   function openDlg(presetCid) {
     if (APP_ID && !DB.appById(APP_ID)) { toast('这个应用已经不在了，不能再授权', 'err'); return; }
     mask = mask || $('#mask');
+    PICKED = {};
     var selApp = $('#fm-app');
     var apps = (DB.APPS || []).filter(function (a) { return DB.latestVer(a.id) > 0; });
     if (!apps.length) { toast('还没有可授权的应用，先去存一版', 'err'); return; }
@@ -558,10 +578,13 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     if (appRow) appRow.hidden = !!APP_ID;
     paintClientPick();
     /* 行内「授权」：把这家的勾先打上，弹窗仍可改主意（有效期、要不要多选几家）。 */
-    if (presetCid) {
-      Array.prototype.forEach.call(document.querySelectorAll('#fm-clients input[name="fm-client"]'), function (cb) {
-        if (cb.value === presetCid && !cb.disabled) cb.checked = true;
-      });
+    /* ★2026-11-05：必须判类型。原来这里只写 if (presetCid) —— 而「新增客户授权」按钮
+       是 addEventListener('click', openDlg)，第一个参数是 MouseEvent（truthy），
+       于是每次打开弹窗都凭空写入一个幽灵勾选，底栏显示"已选 1 家"（实测抓到）。 */
+    if (typeof presetCid === 'string' && presetCid) {
+      /* 行内「授权」预设这一家：写进 PICKED 后重绘，勾选框与行底色都跟着对 */
+      PICKED[presetCid] = 1;
+      paintClientPick();
     }
     mask.setAttribute('data-open', 'true');
     syncPickLabel();
@@ -601,24 +624,37 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     }
     box.innerHTML = clients.map(function (c) {
       var rec = DB.authOf(appId, c.id);
-      return '<label class="fm-client">' +
-        '<input type="checkbox" name="fm-client" value="' + esc(c.id) + '">' +
+      return '<label class="fm-client' + (PICKED[c.id] ? ' is-checked' : '') + '">' +
+        '<input type="checkbox" name="fm-client" value="' + esc(c.id) + '"' + (PICKED[c.id] ? ' checked' : '') + '>' +
         '<span class="fm-client-name">' + esc(c.name) + '</span>' +
         '<span class="fm-client-id">' + esc(c.tenantId || '—') + '</span>' +
       '</label>';
     }).join('');
+    syncPickLabel();
   }
   /* 「选择客户」触发器：说得清选了几家，点开才出列表（与真源同一形态） */
+  /* 勾选存在内存里，不靠 DOM（2026-11-05）：搜索会重绘列表，
+     靠 DOM 的话"勾了 5 家、改一下搜索词"就全丢了 —— 与桌面列表那条"勾选不跟筛选丢"同一条规矩。 */
+  var PICKED = {};
+
   function syncPickLabel() {
-    var n = document.querySelectorAll('#fm-clients input:checked').length;
+    var n = Object.keys(PICKED).length;
     var el = $('#fm-picked-lb');
     /* 数字加粗：底栏一行里，用户先看的是"选了几家"，不是"已选" */
     if (el) el.innerHTML = n ? ('已选 <b>' + n + '</b> 家') : '未选客户';
+    /* 结果多才给"全选 / 清空"：3 家的场景摆两颗按钮是噪声（用户 2026-11-04 定过这条） */
+    var boxes = document.querySelectorAll('#fm-clients input').length;
+    var allBtn = $('#fm-pick-all'), noneBtn = $('#fm-pick-none');
+    if (allBtn) {
+      allBtn.hidden = boxes <= 5;
+      allBtn.textContent = '全选 ' + boxes + ' 家';
+    }
+    if (noneBtn) noneBtn.hidden = boxes <= 5 || n === 0;
   }
   function closeDlg() { if (mask) mask.setAttribute('data-open', 'false'); }
   function submitDlg() {
     var appId = $('#fm-app').value;
-    var ids = Array.prototype.slice.call(document.querySelectorAll('#fm-clients input:checked')).map(function (x) { return x.value; });
+    var ids = Object.keys(PICKED);
     var months = $('#fm-exp').value;
     if (!appId) { toast('还没有可授权的应用', 'err'); return; }
     if (!ids.length) { toast('先选客户', 'err'); return; }
@@ -697,12 +733,39 @@ if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; PG 
         add.disabled = true;
         add.title = '这个应用已经不在了，不能再授权';
       }
-      add.addEventListener('click', openDlg);
+      /* 不直接把 openDlg 当 handler：那样第一个参数是 MouseEvent，会被当成 presetCid */
+      add.addEventListener('click', function () { openDlg(); });
     }
     /* 弹窗底栏的「新建客户」：关掉授权弹窗，打开客户弹窗；存完重新 paint 会带回这里的数据。 */
     /* 真源的新增授权只有 取消/确定，没有「新建客户」；客户管理在「编辑客户」那一侧。 */
     var kwEl2 = $('#fm-kw');
     if (kwEl2) kwEl2.addEventListener('input', paintClientPick);
+    var pa = $('#fm-pick-all');
+    if (pa) pa.addEventListener('click', function () {
+      /* 全选的是"当前搜索结果"，不是全部未授权客户 —— 筛过之后按钮上的数字也跟着变 */
+      document.querySelectorAll('#fm-clients input').forEach(function (c) {
+        c.checked = true; PICKED[c.value] = 1;
+        c.closest('.fm-client').classList.add('is-checked');
+      });
+      syncPickLabel();
+    });
+    var pn = $('#fm-pick-none');
+    if (pn) pn.addEventListener('click', function () {
+      document.querySelectorAll('#fm-clients input').forEach(function (c) {
+        c.checked = false; delete PICKED[c.value];
+        c.closest('.fm-client').classList.remove('is-checked');
+      });
+      syncPickLabel();
+    });
+    /* 勾选写进 PICKED：搜索重绘后能回填 */
+    var pickBoxEl = $('#fm-clients');
+    if (pickBoxEl) pickBoxEl.addEventListener('change', function (e) {
+      var cb = e.target;
+      if (!cb || cb.name !== 'fm-client') return;
+      if (cb.checked) PICKED[cb.value] = 1; else delete PICKED[cb.value];
+      cb.closest('.fm-client').classList.toggle('is-checked', cb.checked);
+      syncPickLabel();
+    });
     var pickBox = $('#fm-clients');
     if (pickBox) pickBox.addEventListener('change', syncPickLabel);
     var x = $('#dlg-x'), c = $('#dlg-cancel'), ok = $('#dlg-ok');

@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
 <link rel="stylesheet" href="assets/sys.css?v=5c7c9486">
-<link rel="stylesheet" href="assets/client-auth.css?v=202bc703">
+<link rel="stylesheet" href="assets/client-auth.css?v=0a51a690">
   <meta name="robots" content="noindex,nofollow">
 </head>
 <body>
@@ -116,7 +116,12 @@
              搜索框固定在顶部、列表占满内容区、底栏报「已选 N 家」。 -->
         <div class="fm-row">
           <span class="fm-label" id="fm-pick-lb">选择客户</span>
-          <label class="field"><input id="fm-kw" type="text" placeholder="搜客户名称或租户 ID" autocomplete="off"></label>
+          <div class="fm-pick-hd">
+            <label class="field fm-pick-search"><input id="fm-kw" type="text" placeholder="搜客户名称或租户 ID" autocomplete="off"></label>
+            <!-- 结果多的时候才出现：3 家的场景摆两个"全选/清空"是噪声 -->
+            <button class="au-btn" type="button" id="fm-pick-all" hidden>全选</button>
+            <button class="au-btn" type="button" id="fm-pick-none" hidden>清空</button>
+          </div>
         </div>
         <div class="fm-clients" id="fm-clients" role="group" aria-labelledby="fm-pick-lb"></div>
         <!-- 数据层要一个有效期，但真源新增时不问它（到期在行内「配置」里设），默认 12 个月 -->
@@ -139,6 +144,6 @@
 <script src="assets/spec.js?v=caaab450"></script>
 <script src="assets/list.js?v=cbb213a1"></script>
 <script src="assets/shell.js?v=1736883e"></script>
-<script src="assets/client-auth.js?v=397b25a6"></script>
+<script src="assets/client-auth.js?v=2c301daa"></script>
 </body>
 </html>

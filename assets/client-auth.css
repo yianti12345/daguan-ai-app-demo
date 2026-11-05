@@ -8,7 +8,15 @@
 /* 2026-11-02 第二次整改：卡片壳去掉（平台标准列表是通栏平铺的，员工管理页没有外框、没有阴影），
    只剩一条工具栏 + 通栏表格。 */
 /* 基准行：左边是「最新版本 vN」，右边是搜索与新增授权 */
-.au-latest{display:inline-flex;align-items:baseline;gap:6px;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+/* ★2026-11-05：「最新版本 v1」是这张表的状态，不是筛选项，却和「全部版本」下拉、搜索框
+   同高同排、同一种长相 —— 看起来像三个可以一起调的控件。
+   改成标签：灰底胶囊 + 与筛选之间一条竖线，一眼分清"这是状态"。 */
+.au-latest{display:inline-flex;align-items:baseline;gap:6px;font-size:var(--font-size-caption);
+  color:var(--color-text-secondary);padding:4px 10px;border-radius:999px;
+  background:var(--surface-sunken);white-space:nowrap}
+.au-bar .right .au-latest + *{position:relative}
+.au-bar .right .au-latest + *::before{content:"";position:absolute;left:-9px;top:50%;
+  width:1px;height:16px;margin-top:-8px;background:var(--color-border-hairline)}
 .au-latest b{font-size:var(--font-size-body);font-weight:600;color:var(--color-text-primary);font-variant-numeric:tabular-nums}
 /* 从某个应用进来时应用是锁定的：去掉下拉箭头，否则看起来还能选、点开却没反应 */
 #fm-app.is-locked{appearance:none;-webkit-appearance:none;background-image:none;cursor:default}
@@ -78,6 +86,9 @@
 .au-pager .pg-size{height:24px;padding:0 8px;border:1px solid var(--color-border-card);border-radius:var(--radius-sm);
   display:inline-flex;align-items:center}
 .au-empty{padding:56px 16px;text-align:center;color:var(--color-text-tertiary);font-size:var(--font-size-body)}
+/* 空态要有出口：一句标题 + 一句怎么开始 + 一个按钮（2026-11-05） */
+.au-empty-t{margin:0 0 6px;font-size:var(--font-size-body);font-weight:600;color:var(--color-text-primary)}
+.au-empty-d{margin:0 0 16px;font-size:var(--font-size-body);color:var(--color-text-tertiary)}
 /* 应用不存在：工具栏与表头一起收掉 —— 留着两个点了只会报错的按钮，等于骗用户点。
    只留一句说明和回列表的入口。 */
 .au-card.is-missing .au-bar,.au-card.is-missing .au-head,.au-card.is-missing .au-foot{display:none}
@@ -132,8 +143,14 @@
   /* 列表要有自己的边界：不然最后一行直接贴在底栏上，看着像被切断 */
   border:1px solid var(--color-border-hairline);border-radius:var(--radius-sm)}
 /* 选中的行整行淡底：只靠 14px 勾选框认选中，扫一列眼睛很累（11 家里找 3 个） */
-.fm-client:has(input:checked){background:var(--color-state-hover)}
+.fm-client:has(input:checked),
+.fm-client.is-checked{background:var(--color-state-hover)}
+/* :has 在旧内核上不生效，所以 JS 同步一个 is-checked；两条都留，谁支持谁生效 */
 /* 底栏左侧的已选计数：靠右会跟按钮挤，靠左单独一处，和按钮分开读 */
+/* 搜索框 + 全选/清空同一行：结果多时批量勾，少时不占地方 */
+.fm-pick-hd{display:flex;align-items:center;gap:var(--space-8)}
+/* 不写 .field（共享类不许在页面 CSS 里再出现一次，判据 C1 会红），用本页自己的类 */
+.fm-pick-search{flex:1 1 auto;min-width:0}
 .au-picked{margin-right:auto;font-size:var(--font-size-body);color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
 .au-picked b{color:var(--color-text-primary);font-weight:600}
 /* ── 2026-11-02 多客户授权 ──────────────────────────────────── */
