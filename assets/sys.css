@@ -378,6 +378,9 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
   padding-inline: var(--gt-pad-x);
   align-items: center;
   box-sizing: border-box;
+  /* ★2026-11-05（用户）：「字号都不对」。表头/单元格字号原来是继承来的 —— 有的页面父级是 14，
+     有的页面吃到 16，同一套表格两种字号。这里钉死在 14（真源实测 14），不再靠继承。 */
+  font-size: var(--font-size-body);
 }
 .gtable-head{
   position: sticky; top: 0; z-index: 2;
