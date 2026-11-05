@@ -2072,15 +2072,20 @@
     paintUpdBar();
     if (!rows.length) {
       /* 筛选空态（§5.3）：只留一句事实。清除筛选的入口是上面那行「显示全部」，
-         同一屏同一动作不开第二个入口 —— 所以这里**不放按钮**。 */
+         同一屏同一动作不开第二个入口 —— 但「用 AI 搜这句话」不是同一个动作（换的是检索方式），
+         整句话的需求本来就命中不了关键词，所以这里给它一个出口。 */
       list.innerHTML = '<div class="p-empty">'
         + (kw ? '没有匹配的组件' : (wantOn ? '还没装配任何组件' : '全部装上了，没有可装配的'))
         + (kw ? '<br><button type="button" class="btn-ghost-s" id="p-clear">清除搜索</button>' : '')
+        + (kw && !aiIds ? '<button type="button" class="btn-ghost-s" id="p-ai-try">用 AI 搜这句话</button>' : '')
         + '</div>';
       on('#p-clear', 'click', function () {
         var s = $('#dlg-search'); if (s) s.value = '';
         renderList();
         if (s) s.focus();
+      });
+      on('#p-ai-try', 'click', function () {
+        var b = $('#ai-comp'); if (b) b.click();
       });
       syncBatch(false);
       return;

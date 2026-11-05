@@ -1732,20 +1732,27 @@ body[data-app] .canvas{transition:padding-right .18s ease}
 .p-x:hover{background:var(--surface-sunken-2);color:var(--color-text-body)}
 /* 2026-11-04：搜索框原来 flex:1，在 1120 宽的装配弹窗里被拉成 1000px 长条，
    把标题挤到左边一截、关闭按钮顶到最右，像条地址栏。收成 320 的定宽，靠右贴关闭。 */
-.p-search{flex:0 1 320px;min-width:0;padding:0;margin:0 0 0 auto}
+/* 2026-11-05（用户）：「或者就是一个搜索框，然后 2 个按钮？」。
+   结论：不另加「搜索」按钮（打字就在筛，加了是空点击）；把原本压在输入框里的
+   AI 拿成框外并列的一个按钮，回车＝按关键词筛（并退出 AI 结果）。 */
+.p-search{flex:0 1 440px;min-width:0;padding:0;margin:0 0 0 auto;display:flex;align-items:center;gap:var(--space-8)}
 .p-hd .p-x{margin-left:var(--space-8)}
 .p-search input{
-  width:100%;height:36px;padding: 0 var(--space-12);border:1px solid var(--color-border-card);border-radius:var(--radius-sm);
+  flex:1 1 auto;min-width:0;width:auto;height:36px;padding: 0 var(--space-12);border:1px solid var(--color-border-card);border-radius:var(--radius-sm);
   background:var(--surface-page);font-size:var(--font-size-body);color:var(--color-text-body);outline:0;
 }
-.p-search{position:relative}
-/* 2026-11-05：AI 检索钮——搜索框右侧，品牌浅底 + 星芒；点亮时描边表示"现在按 AI 的结果筛" */
-.p-ai{position:absolute;right:4px;top:50%;transform:translateY(-50%);height:24px;padding:0 8px;border:0;
-  border-radius:var(--radius-xs);display:inline-flex;align-items:center;gap:4px;cursor:pointer;
+/* AI 检索钮：和输入框同高、并列在右侧。未启用＝浅底星芒，启用＝实底（表示"现在看的是 AI 结果"） */
+.p-ai{flex:0 0 auto;height:36px;padding:0 var(--space-12);border:1px solid transparent;
+  border-radius:var(--radius-sm);display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;
   background:linear-gradient(135deg,var(--color-brand-surface) 0%,var(--color-brand-surface-2) 100%);
-  color:var(--color-brand-ink);font-family:inherit;font-size:var(--font-size-caption);line-height:1}
+  color:var(--color-brand-ink);font-family:inherit;font-size:var(--font-size-caption);font-weight:500;line-height:1}
 .p-ai:hover{box-shadow:0 0 0 2px var(--color-brand-glow)}
-.p-ai.is-on{box-shadow:inset 0 0 0 1px var(--color-brand)}
+.p-ai.is-on{background:var(--color-brand);color:var(--color-text-inverse);border-color:var(--color-brand)}
+.p-ai:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
+/* 空态里的 AI 出口：文字链，不抢主按钮的位置 */
+.p-ai-try{display:inline-flex;align-items:center;gap:4px;margin-left:var(--space-8);padding:0;border:0;background:none;
+  font-family:inherit;font-size:var(--font-size-caption);font-weight:500;color:var(--color-brand-ink);cursor:pointer}
+.p-ai-try:hover{text-decoration:underline}
 .p-ai.is-busy{opacity:.6;cursor:progress}
 .p-ai svg{display:block}
 .p-search input::placeholder{color:var(--color-text-tertiary)}

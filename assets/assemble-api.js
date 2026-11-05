@@ -12,6 +12,14 @@
     });
   };
   var toast = function (m, k) { if (window.UIK && UIK.toast) UIK.toast(m, k); };
+  var SPARK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.7 5.3L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.7z"/><path d="M19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/></svg>';
+  /* AI 按钮的两态：空闲「AI 搜索」/ 生效「退出 AI」。文字换了才看得出点它会发生什么。 */
+  function setAi(on) {
+    var b = $('#api-ai'); if (!b) return;
+    b.classList.toggle('is-on', !!on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.innerHTML = SPARK + (on ? '退出 AI' : 'AI 搜索');
+  }
 
   var COMP = null, TAB = 'avail', KW = '', PICK = {}, AI_IDS = null;
 
@@ -23,7 +31,7 @@
       +     '<div class="p-hd">'
       +       '<b id="api-title">装配接口</b>'
       +       '<div class="p-search"><input id="api-search" type="text" placeholder="搜接口，或说要做什么" aria-label="搜索接口" autocomplete="off">'
-      +         '<button type="button" class="p-ai" id="api-ai" title="让模型按你的描述找接口"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.7 5.3L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.7z"/><path d="M19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI</button></div>'
+      +         '<button type="button" class="p-ai" id="api-ai" aria-pressed="false" title="让模型按你的描述找接口"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.7 5.3L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.7z"/><path d="M19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI 搜索</button></div>'
       +       '<button type="button" class="p-x" id="api-close" aria-label="关闭">'
       +         '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
       +       '</button>'
@@ -44,19 +52,26 @@
     $('#api-mask').addEventListener('mousedown', function (e) { if (e.target === this) close(); });
     $('#api-search').addEventListener('input', function () {
       KW = this.value.trim().toLowerCase(); PICK = {};
-      AI_IDS = null; $('#api-ai').classList.remove('is-on');
+      if (AI_IDS) { AI_IDS = null; setAi(false); }
+      render();
+    });
+    /* 回车＝按关键词筛，顺便退出 AI 结果。没有单独的「搜索」按钮，就是它。 */
+    $('#api-search').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      if (AI_IDS) { AI_IDS = null; setAi(false); }
       render();
     });
     $('#api-ai').addEventListener('click', function () {
       var btn = this;
-      if (AI_IDS) { AI_IDS = null; btn.classList.remove('is-on'); render(); return; }
+      if (AI_IDS) { AI_IDS = null; setAi(false); render(); return; }
       var q = $('#api-search').value.trim();
       if (!q) { toast('先说要找什么', 'error'); $('#api-search').focus(); return; }
       btn.classList.add('is-busy');
       AISearch.run(q, CAP.apis()).then(function (ids) {
         btn.classList.remove('is-busy');
         if (ids === null) { toast('AI 检索没连上，按关键词找', 'error'); return; }
-        AI_IDS = ids; btn.classList.add('is-on');
+        AI_IDS = ids; setAi(true);
         if (!ids.length) toast('没找到相关的');
         render();
       });
@@ -94,6 +109,7 @@
       syncBatch();
     });
     $('#api-list').addEventListener('click', function (e) {
+      if (e.target.closest('[data-ai-try]')) { $('#api-ai').click(); return; }
       var b = e.target.closest('[data-do]'); if (!b) return;
       var row = b.closest('.row'); if (!row) return;
       var id = row.getAttribute('data-id');
@@ -185,9 +201,13 @@
     $('#api-n-on').textContent = ids.length;
     var list = $('#api-list');
     if (!r.list.length) {
+      /* 关键词一条都没命中时不让人干瞪眼：就地给 AI 入口。整句话的需求本来就搜不到关键词，
+         这一步比在头部再摆一颗「搜索」按钮有用得多。 */
+      var tryAi = KW && !AI_IDS && TAB === 'avail';
       list.innerHTML = '<div class="p-empty">'
         + (KW ? '没有匹配的接口'
               : (TAB === 'on' ? '还没装配任何接口' : '能装的都装上了。去能力管理登记更多接口。'))
+        + (tryAi ? '<button type="button" class="p-ai-try" data-ai-try>用 AI 搜这句话</button>' : '')
         + '</div>';
       syncBatch();
       return;
@@ -206,7 +226,8 @@
     COMP = compId || 'draft';
     TAB = 'avail'; KW = ''; PICK = {}; AI_IDS = null;
     $('#api-search').value = '';
-    var aib = $('#api-ai'); if (aib) aib.classList.remove('is-on', 'is-busy');
+    var aib = $('#api-ai'); if (aib) aib.classList.remove('is-busy');
+    setAi(false);
     $$('#api-mask .p-tab').forEach(function (x) {
       x.setAttribute('aria-selected', String(x.getAttribute('data-tab') === 'avail'));
     });
