@@ -121,11 +121,23 @@
     toast(EDIT_ID ? '已保存' : '已新增');
   });
 
+  /* 2026-11-05（用户）：「整页保存」。下拉改了先记在 PENDING 里，点右上「保存」才落库；
+     没改过时保存按钮是灰的。下面的模型清单是即时动作，跟这张表单分开。 */
+  var PENDING = {};
+  function syncSave() {
+    var dirty = Object.keys(PENDING).some(function (k) { return PENDING[k] !== CAP.sceneModel(k); });
+    var b = $('#act-save'); if (b) b.disabled = !dirty;
+  }
   $('#scenes').addEventListener('change', function (e) {
     var sel = e.target.closest('[data-scene]'); if (!sel) return;
-    CAP.setSceneModel(sel.getAttribute('data-scene'), sel.value);
-    toast('已切换');
+    PENDING[sel.getAttribute('data-scene')] = sel.value;
+    syncSave();
   });
+  $('#act-save').addEventListener('click', function () {
+    Object.keys(PENDING).forEach(function (k) { CAP.setSceneModel(k, PENDING[k]); });
+    PENDING = {}; syncSave(); toast('已保存');
+  });
+  syncSave();
 
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-act]'); if (!a) return;
