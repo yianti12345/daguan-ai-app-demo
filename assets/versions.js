@@ -220,7 +220,12 @@ window.Versions = (function () {
       var _s = $('#owner-sub'); if (_s) _s.textContent = '';
       var _n = $('#now-t'); if (_n) _n.textContent = '';
       var hd = $('#head'); if (hd) hd.hidden = true;
-      $('#list').innerHTML = '<div class="vl-empty">回' + (S.scope === 'app' ? '应用管理' : '组件库') + '重新选一项。</div>';
+      /* 2026-11-06：原来这里只有一句「回应用管理重新选一项。」—— 空态没有可点的出口，
+         用户得自己翻左侧菜单找。R16 的要求是空态自带出口。 */
+      var backTo = S.scope === 'app' ? 'apps.html' : 'components.html';
+      var backName = S.scope === 'app' ? '应用管理' : '组件库';
+      $('#list').innerHTML = '<div class="vl-empty">这一项已经不在了。<a href="' + backTo + '">回'
+        + backName + '重新选一项</a>。</div>';
       var _t = $('#total'); if (_t) _t.textContent = '';
       /* 2026-11-04：原来这里还要把右上那颗按钮改成「回到应用管理」。
          按钮已删，回列表只剩空态里那一句 + 面包屑，两个入口都指向真实列表页。 */
