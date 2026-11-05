@@ -617,13 +617,42 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     var t = $('#fm-trigger');
     if (t) t.setAttribute('data-on', n ? '1' : '0');
   }
+  /* 下拉浮层：锚在触发器下方，宽度跟触发器一致；下方放不下就向上弹。
+     位置每次开都重算 —— 弹窗会随内容变高变矮，写死 top 必然错位。 */
+  function placePick() {
+    var w = $('#fm-list-wrap'), t = $('#fm-trigger');
+    if (!w || !t || w.hidden) return;
+    var r = t.getBoundingClientRect();
+    var panel = document.querySelector('#mask .au-dlg');
+    var pr = panel ? panel.getBoundingClientRect() : null;
+    var gap = 4, pad = 12;
+    /* 下方可用高度取三者最小：视口、弹窗底边以内。
+       取"弹窗底边以内"是为了不盖住自己的「取消/确定」—— 浮层遮住按钮，
+       用户就得先收起再点，白多一步（截图实测过）。
+       真的够不着（弹窗本身就矮）才翻转向上。 */
+    var toViewport = window.innerHeight - r.bottom - gap - pad;
+    /* 到「底栏顶」为止，不是到弹窗底边：浮层压住取消/确定，用户就得先收起再点。 */
+    var foot = document.querySelector('#mask .p-ft');
+    var limit = foot ? foot.getBoundingClientRect().top : (pr ? pr.bottom : window.innerHeight);
+    var toPanelEnd = limit - r.bottom - gap - 8;
+    var spaceBelow = Math.min(toViewport, toPanelEnd);
+    var spaceAbove = r.top - gap - pad;
+    var up = spaceBelow < 150 && spaceAbove > spaceBelow;
+    var maxH = Math.max(140, Math.min(320, up ? spaceAbove : spaceBelow));
+    w.style.maxHeight = maxH + 'px';
+    w.style.left = Math.round(r.left) + 'px';
+    w.style.width = Math.round(r.width) + 'px';
+    /* 先给高度再量：浮层高度 = min(内容, maxH)，向上弹时才知道自己的实际高 */
+    var h = Math.min(w.scrollHeight, maxH);
+    w.style.top = Math.round(up ? (r.top - gap - h) : (r.bottom + gap)) + 'px';
+  }
   function togglePick(open) {
     var w = $('#fm-list-wrap'), t = $('#fm-trigger');
     if (!w || !t) return;
     var on = (open == null) ? w.hidden : !!open;
     w.hidden = !on;
     t.setAttribute('aria-expanded', on ? 'true' : 'false');
-    if (on) { var k = $('#fm-kw'); if (k) k.focus(); }
+    if (on) { placePick(); var k = $('#fm-kw'); if (k) k.focus(); }
   }
   function closeDlg() { togglePick(false); if (mask) mask.setAttribute('data-open', 'false'); }
   function submitDlg() {
@@ -724,6 +753,15 @@ if (verEl) verEl.addEventListener('change', function () { VER = verEl.value; PG 
       togglePick(false);
     };
     document.addEventListener('mousedown', document.__auPickOff);
+    /* 窗口变了就重算位置；滚动则收起（fixed 浮层不会跟着走，留着必然错位）。 */
+    if (!window.__auPickMove) {
+      window.__auPickMove = function () {
+        var w = $('#fm-list-wrap');
+        if (!w || w.hidden) return;
+        placePick();
+      };
+      window.addEventListener('resize', window.__auPickMove);
+    }
     var pickBox = $('#fm-clients');
     if (pickBox) pickBox.addEventListener('change', syncPickLabel);
     var x = $('#dlg-x'), c = $('#dlg-cancel'), ok = $('#dlg-ok');

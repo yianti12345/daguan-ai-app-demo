@@ -95,7 +95,11 @@
    修：内容区必须能被压缩（flex:1 1 auto + min-height:0）并自己滚，头/脚固定。
    这条是结构约束，不是给某一次尺寸打的补丁。 */
 .mask .au-dlg{width:min(var(--dialog-max-w),92vw);height:auto;
-  max-height:calc(100vh - 96px);display:flex;flex-direction:column}
+  max-height:calc(100vh - 96px);display:flex;flex-direction:column;
+  /* ★2026-11-05：这个弹窗里有个多选下拉。窗口只有 195 高时，下拉无论向上还是向下
+     都会遮住东西（向上遮标题、向下遮「确定」），怎么摆都不像正常产品。
+     留出 400 的高度给下拉往下展开：不遮标题、不遮按钮、弹窗也不因展开而变高。 */
+  min-height:min(400px,calc(100vh - 96px))}
 .au-bd{flex:1 1 auto;min-height:0;overflow:auto}
 .au-bd{padding:0 var(--space-16) var(--space-8)}
 .fm{display:flex;flex-direction:column;gap:var(--space-16)}
@@ -113,19 +117,26 @@
 /* 客户选择器（2026-11-05 照真源形态）：点开是一层下拉浮层，不把弹窗撑高。
    原来列表inline展开，弹窗从 195 撑到 480，触发器/搜索框/列表三层框叠在一起，
    看着像三个输入框摞着。 */
-/* 客户选择器展开后是一整块面板（搜索 + 多选列表），不再是三个独立输入框摞着。
-   ★2026-11-05 试过做成下拉浮层：这个弹窗只有 195 高，触发器下面到弹窗底只剩 95px，
-   浮层必然盖住自己的「取消/确定」。所以改成弹窗内展开、列表自己限高滚动。 */
-#mask #fm-list-wrap{display:flex;flex-direction:column;gap:var(--space-8);
-  margin-top:var(--space-8);padding:var(--space-8);
+/* 选择客户 = 标准多选下拉（真源是 ant-select 多选）。
+   ★2026-11-05：上一版把列表内联展开，弹窗从 195 撑到 485、里面还要滚 ——
+   那不是选择器。改成：框只显示「已选 N 家」，点开在框下方弹一层浮层（fixed 定位，
+   挂在 .mask 下，不受 .panel 的 overflow:hidden 裁剪），点外面收起。弹窗高度不变。 */
+#mask #fm-trigger{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);
+  width:100%;text-align:left;cursor:pointer}
+#mask #fm-trigger[aria-expanded="true"]{border-color:var(--color-brand)}
+.fm-caret{flex:0 0 auto;color:var(--color-text-tertiary);transition:transform .12s ease}
+#mask #fm-trigger[aria-expanded="true"] .fm-caret{transform:rotate(180deg)}
+
+/* z-index 要高于 .mask（100）：浮层挂在 mask 之外，低于它就会被弹窗盖住 ——
+   实测 elementFromPoint 返回的是弹窗底栏，不是列表。 */
+.fm-pop{position:fixed;z-index:120;display:flex;flex-direction:column;gap:var(--space-8);
+  padding:var(--space-8);background:var(--surface-page);
   border:1px solid var(--color-border-hairline);border-radius:var(--radius-sm);
-  background:var(--surface-sunken,var(--color-state-hover))}
-/* display:flex 会盖掉 [hidden] 的 UA 样式，必须显式关掉 */
-#mask #fm-list-wrap[hidden]{display:none}
-/* 滚动只发生在列表里（搜索框始终可见）；高度取 7 行的整倍，底部不会切出半行。
-   2026-11-05：原来限高的是整块面板，最后一行被弹窗边界裁成半截。 */
-#mask #fm-list-wrap .fm-clients{max-height:224px;overflow-y:auto;overflow-x:hidden;
-  scrollbar-gutter:stable;border:0;padding:0;background:none}
+  box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden}
+.fm-pop[hidden]{display:none}
+.fm-pop .fm-clients{max-height:none;overflow-y:auto;overflow-x:hidden;
+  scrollbar-gutter:stable;border:0;padding:0;background:none;flex:1 1 auto;min-height:0}
+.fm-pop-search{flex:0 0 auto}
 /* ── 2026-11-02 多客户授权 ──────────────────────────────────── */
 /* 弹窗里的客户勾选列表：每家一行，名字在左、租户 ID 在右，状态在最右。
    列表限高，客户多了内部滚动，弹窗不会顶出屏幕。 */
@@ -143,7 +154,6 @@
 .fm-client input{width:14px;height:14px;margin:0;accent-color:var(--color-brand)}
 .fm-client-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--font-size-body)}
 .fm-client-id{font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums}
-.fm-client-state{margin-left:8px;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 /* 版本是一句陈述，不是一个控件。
    ★2026-11-05：原来给了 36px 高 + 描边 + 灰底，看上去就是一个"不能点的输入框"——
    形式在说"这是控件"，语义在说"这不是控件"。去掉盒子，只留一行字。 */
