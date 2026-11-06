@@ -1139,6 +1139,12 @@
        模型只能返回清单里的 id，别的会被过滤掉。
      失败显式：模型不通 / 没给 JSON / 结构不对，各说各的，画布一个像素不动。 */
   var genBusy = false;
+  /* ★2026-11-06：忙碌态一处开关。除了内部标志，还要让浮条那颗键变「停止」——
+     业内做法：跑的时候要能中断，而不是把人锁在外面等。 */
+  function setGenBusy(on) {
+    genBusy = !!on;
+    if (ui && ui.setBusy) ui.setBusy(genBusy);
+  }
   /* 这一句正在改哪一块（P1-B）。失败时唯一要说的信息是"没改成什么"，
      所以在动手改之前把它记下来；没有目标（整页重排那一路）就留 null。 */
   var failTarget = null;
@@ -1261,7 +1267,7 @@
   function askModel(text) {
     if (genBusy) { hint('上一句还在处理，稍等', { ms: 2000 }); return; }
     if (!window.Gen) { hint('生成器没加载（assets/gen.js 不在）', { ms: 6000 }); return; }
-    genBusy = true;
+    setGenBusy(true);
     failTarget = null;   /* 每次都说清"这一次在改什么"，别把上一句的目标带进这一句的失败里 */
     hint('在想…', { ms: 1200 });
     /* 进度可见：本地模型单次响应 2–60 秒都有，没有进度的话用户看到的是
@@ -1278,7 +1284,7 @@
     var struct = applyStructCmd(text);
     if (struct) {
       stopTick();
-      genBusy = false;
+      setGenBusy(false);
       DB.save();
       renderCanvas();
       paintApp();
@@ -1336,7 +1342,7 @@
             /* 2026-10-31：同上 —— 撤回栈已删，这里的赋值一并去掉（否则 ReferenceError 打断整条编辑）。 */
             DB.save();
             renderCanvas();
-            genBusy = false;
+            setGenBusy(false);
             stopTick();
             /* 提示只说已完成的事实，不复述模型那句 say ——
                模型爱说"我准备把…改成…"（将来时），而后半句已经在说"已更新"，
@@ -1348,7 +1354,7 @@
         }
       }
       if (did.length) return;
-      genBusy = false;
+      setGenBusy(false);
       stopTick();
       /* ★2026-11-06（用户截图：「你好」「111」下面各挂一句「这句我没听出要改哪里」）：
          原来听不懂时照样往对话里塞那句内部话术，历史里就留下两轮脏对话。
@@ -1360,7 +1366,7 @@
       if (ui && ui.undoSend) ui.undoSend(text);
       else if (ui && ui.addMsg) ui.addMsg('cfg', say);
     }).catch(function (e) {
-      genBusy = false;
+      setGenBusy(false);
       stopTick();
       /* ★2026-10-28 P1-B（体验盲审）：失败只给人话。
          改前这里把 e.message 原样印上屏，而 gen.js 的错误串里嵌着模型原文
@@ -1370,6 +1376,12 @@
          分类只认关键词，绝不回显原文里的任何片段（原文本身不可信）。 */
       var raw = String((e && e.message) || e || '');
       try { console.debug('[app] 这次失败的原因（只给排查，不上界面）', raw); } catch (err) {}
+      /* ★2026-11-06：人点「停止」也会走到 catch（请求被 abort）—— 那不是失败，别按失败报。 */
+      if (/abort/i.test(raw)) {
+        hint('已经停下来了，这一版没动。', { ms: 6000 });
+        if (ui && ui.addMsg) ui.addMsg('cfg', '已经停下来了，画布这一版没动。');
+        return;
+      }
       var bad = failWords(raw, failTarget);
       hint(bad, {
         /* ★2026-10-28 E45：原来把模型原始报错挂到 title 上（悬停可见）。原文只该给排查，
@@ -1561,6 +1573,8 @@
 
   if (window.Float) {
     ui = Float.mount({
+      /* 人点浮条上的「停止」：掐断当前这次模型调用。 */
+      onStop: function () { try { if (window.Gen && Gen.abort) Gen.abort(); } catch (e) {} },
       dialog: {
         placeholder: '请输入你的想法💡',
         /* ★2026-10-28 P1-A：发一句话的时候 float.js 会先把自己的「我」那条写进历史并从 msgs

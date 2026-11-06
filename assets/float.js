@@ -53,7 +53,10 @@
        六点网格（⠿）是拖动把手的标准符号，不会被看成 AI，也不会被看成菜单。 */
     grip: '<span class="fk-grip-ico"><i></i><i></i><i></i><i></i><i></i><i></i></span>',
     /* ★2026-11-04（m06113 需求三）：原生对话框也要能说，不只小智悬浮球。 */
-    mic: sv('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>', 15)
+    mic: sv('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>', 15),
+    /* ★2026-11-06：执行中发送键变停止（业内做法：跑的时候要能中断）。
+       用实心方块，不用「■」字符 —— 字符在不同系统里粗细不一致。 */
+    stop: sv('<rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/>', 15)
   };
 
   /* ── 消息类型：决定"说完这句要不要收起"（2026-10-28 设计判定）──────
@@ -357,8 +360,11 @@
              没话说的时候不该有面板：这块地方直接不出现，输入框的占位符已经说明了一切。 */
           dock.classList.toggle('is-empty', histView === 'chat' && !msgs.length);
           if (!msgs.length) { list.innerHTML = ''; return; }
+          /* ★2026-11-06：原来无条件贴底 —— 用户往上翻看旧消息时，来一条新消息就把他拽回底部。
+             改成"本来贴着底才跟着走"，差 12px 容差。 */
+          var stick = (list.scrollTop + list.clientHeight) >= (list.scrollHeight - 12);
           list.innerHTML = msgs.map(function (m) { return msgHtml(m, false); }).join('');
-          list.scrollTop = list.scrollHeight;
+          if (stick) list.scrollTop = list.scrollHeight;
         }
         function syncHistIco() {
           syncHistMode();
@@ -719,7 +725,22 @@
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); fire(); }
         });
         send.addEventListener('click', fire);
+        /* ★2026-11-06（用户：执行中要按业内做法，能中断）：忙的时候这颗键变成「停止」，
+           点了就掐断当前那次模型调用。忙碌态放在 dock 上，样式与无障碍都读同一个值。 */
+        var busy = false;
+        function setBusy(on) {
+          busy = !!on;
+          dock.setAttribute('data-busy', busy ? 'true' : 'false');
+          send.setAttribute('data-stop', busy ? 'true' : 'false');
+          send.setAttribute('aria-label', busy ? '停止生成' : '发送');
+          send.title = busy ? '停止生成' : '发送';
+          send.innerHTML = busy ? ICON.stop : ICON.send;
+          /* 忙时这颗键必须永远可点：sync() 会把它按"有没有字"置回 false，
+             而那正是"跑着的时候反而点不到停止"的来源。 */
+          if (busy) send.setAttribute('data-ready', 'true'); else sync();
+        }
         function fire() {
+          if (busy) { if (opts.onStop) opts.onStop(); return; }
           var t = ta.value.trim();
           /* ★2026-11-04：必须在 take() **之前**判 ready。take() 会清空附件并回调 sync()，
              sync() 立刻把 data-ready 置回 false —— 先取再判就是自己把自己的发送拦掉（实测踩过）。 */
@@ -766,6 +787,8 @@
           /* 清空的是当前会话；不能 msgs=[] —— 那会让当前会话的数组引用脱钩。 */
           msgs.splice(0, msgs.length); touchCur(); save(); render(); renderPeek();
         };
+        mounted.setBusy = setBusy;
+        mounted.isBusy = function () { return busy; };
         mounted.setCollapsed = setCollapsed;
         /* 历史里有没有说过**这句原话**（F7 用）：组件页的「未发布」提示跨页重载后
            不能再重复播报一次。只比 who=xz 的整句，不做模糊匹配。 */

@@ -936,6 +936,7 @@
 
   function endBusy() {
     busy = false;
+    if (ui && ui.setBusy) ui.setBusy(false);   /* ★2026-11-06 浮条那颗键从「停止」回到「发送」 */
     canvasEl.setAttribute('data-busy', 'false');
     canvasEl.setAttribute('aria-busy', 'false');
   }
@@ -1020,6 +1021,7 @@
     lastText = text;
     clearError();
     busy = true;
+    if (ui && ui.setBusy) ui.setBusy(true);    /* ★2026-11-06 执行态：描边呼吸 + 键变停止 */
     canvasEl.setAttribute('data-busy', 'true');
     canvasEl.setAttribute('aria-busy', 'true');
     $('#comp-ver').textContent = '正在生成…';
@@ -1084,6 +1086,12 @@
       paintSpec(spec);
     }).catch(function (e) {
       clearInterval(tick);
+      /* ★2026-11-06：人点「停止」时请求被 abort，走到这里 —— 说"停了"，别当失败。 */
+      if (/abort/i.test(String((e && e.message) || e || ''))) {
+        endBusy();
+        if (ui && ui.addMsg) ui.addMsg('cfg', '已经停下来了，画布还是上一次的样子。');
+        return;
+      }
       genbar.setAttribute('data-off', 'true');
       setTimeout(function () { genbar.style.width = '0'; }, 200);
       showError(humanizeErr(e));
@@ -1322,6 +1330,8 @@
   }
 
   var ui = window.Float ? window.Float.mount({
+    /* 人点浮条上的「停止」：掐断当前这次模型调用。 */
+    onStop: function () { try { if (window.Gen && Gen.abort) Gen.abort(); } catch (e) {} },
     dialog: {
       placeholder: '描述你要的组件',
       onSend: function (text) { generate(text); }

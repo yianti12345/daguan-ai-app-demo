@@ -76,6 +76,14 @@ window.Gen = (function () {
     return once();
   }
 
+  /* ★2026-11-06（用户：执行中的发送键要变「停止」，按业内做法）：模型调用原来只在
+     内部超时时自己 abort，人点停止没有入口。这里留一个"当前在跑的那一个"，
+     由 Gen.abort() 从外面掐断，promise 会以 AbortError 拒绝，上层据此显示「已停止」。 */
+  var CUR_CTL = null;
+  function abortCurrent() {
+    try { if (CUR_CTL) CUR_CTL.abort(); } catch (e) {}
+  }
+
   function askOnce(messages, opt) {
     opt = opt || {};
     var body = {
@@ -93,6 +101,9 @@ window.Gen = (function () {
     var ctl = null, timer = null;
     try {
       ctl = new AbortController();
+      /* 只留最近一次。请求结束后不清理是有意的：对已完成的控制器 abort 是空操作，
+         下次调用会把它换掉 —— 省掉一条容易漏的清理路径。 */
+      CUR_CTL = ctl;
       timer = setTimeout(function () { try { ctl.abort(); } catch (e) {} }, opt.timeout || ASK_TIMEOUT);
     } catch (e) {}
     return fetch(ENDPOINT, {
@@ -906,6 +917,8 @@ window.Gen = (function () {
   return {
     probe: probe,
     ask: ask,
+    /* 人点「停止」时调这里：掐断当前在跑的那一次请求 */
+    abort: abortCurrent,
     abilityDoc: abilityDoc,
     parseApis: parseApis,
     componentSpec: componentSpec,

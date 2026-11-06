@@ -63,7 +63,12 @@
   /* ★2026-11-04（用户：对话「样式及交互很诡异」）：原来 overflow:auto 会横向滚动 ——
      附件卡一宽，整条对话被推着左右走，消息首字被裁掉（实测「这个页面怎么用」显示成
      「个页面怎么用」）。对话区只许竖向滚动，横向一律不出界。 */
-  padding:var(--space-12); overflow-y:auto; overflow-x:hidden; flex:0 1 auto; min-height:96px; max-height:300px;
+  /* ★2026-11-06（用户：内容一多就太矮、好像没有内部滚动）：
+     原来封顶 300px —— 900 高的屏只占 1/3，一有内容就挤成一条缝，滚动条几乎看不见。
+     改成跟视口走（业内嵌进面板的常见口径 70vh/最小 400；浮条更矮，取 52vh/最小 160），
+     并把滚动条槽预留出来，新消息进来时不会因出现滚动条而横向抖一下。 */
+  padding:var(--space-12); overflow-y:auto; overflow-x:hidden; flex:0 1 auto;
+  min-height:160px; max-height:min(52vh, 560px); scrollbar-gutter:stable;
   display:flex; flex-direction:column; gap:var(--space-12);
   background:var(--surface-page); border-radius:var(--radius-panel);
   box-shadow:var(--shadow-floating);
@@ -72,6 +77,14 @@
 .fk-hist-empty{color:var(--color-text-tertiary); font-size:var(--font-size-body); margin:0; padding:var(--space-4) 0; line-height:var(--leading-body)}
 /* 空历史时不占 96 的固定高度：一片白比一句提示更难看 */
 .fk-hist-list:has(.fk-hist-empty){min-height:0}
+/* 常显细滚动条：macOS 默认滚动条在内容不满时完全不出现，用户以为不能滚。 */
+.fk-hist-list::-webkit-scrollbar{width:8px}
+.fk-hist-list::-webkit-scrollbar-thumb{
+  background:var(--color-border-card); border-radius:var(--radius-pill);
+  border:2px solid var(--surface-page);
+}
+.fk-hist-list::-webkit-scrollbar-thumb:hover{background:var(--color-text-muted)}
+.fk-hist-list::-webkit-scrollbar-track{background:transparent}
 /* ★2026-11-04（用户：「配置页面的对话样式及交互很诡异」）：
    改前两边长得一模一样 —— 都只有一个 12px 灰标签 + 一段通栏正文，读的人分不清
    哪句是自己说的、哪句是系统回的，一屏看下去像两条并排的注释。改后按方向分：
@@ -135,7 +148,7 @@
   background:var(--surface-page); border:0;
   border-radius:var(--radius-panel);
   box-shadow:var(--shadow-floating); padding:0 12px 0 0;
-  height:60px;
+  height:60px; position:relative;
 }
 /* 历史收起时输入条才是独立的一张卡（四角都是圆的） */
 .fk-dock[data-hist="closed"] .fk-bar{border-radius:0 0 var(--radius-panel) var(--radius-panel); box-shadow:none}
@@ -190,6 +203,61 @@ body.fk-hist-open #canvas{padding-bottom:248px}
 }
 .fk-send[data-ready="true"]{background:var(--color-brand); color:var(--color-text-inverse); cursor:pointer}
 .fk-send[data-ready="true"]:hover{background:var(--color-brand-active)}
+/* ★2026-11-06：执行中这颗键变「停止」，必须可点 —— 忙时也走品牌底。 */
+.fk-send[data-stop="true"]{background:var(--color-brand); color:var(--color-text-inverse); cursor:pointer}
+.fk-send[data-stop="true"]:hover{background:var(--color-brand-active)}
+
+/* ── 执行态：2px 呼吸描边（2026-11-06）──────────────────────────────
+   做法取自 Apple Intelligence shimmer 的拆解与 DuckDuckGo 的 AI 答案实现：
+   conic 渐变绕边界扫 + mask 裁成 2px 环 + @property 让角度真的补间
+   （不声明成 angle 类型，浏览器不会对角度做补间，渐变就是静止的）。
+   两条约束写死在这里：
+   1) 白底不用四色 —— amber 在白底对比度约 2.2:1，只用品牌单色；
+   2) 只在真处理时亮，出结果立刻停；常亮等于把"正在处理"这个信息作废。 */
+@property --fk-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+.fk-dock[data-busy="true"] .fk-bar{
+  animation: fk-breathe 2.4s ease-in-out infinite;
+}
+.fk-dock[data-busy="true"] .fk-bar::after{
+  content:''; position:absolute; inset:-1px; border-radius:inherit; padding:2px;
+  background:conic-gradient(from var(--fk-angle),
+    transparent 0deg,
+    color-mix(in srgb, var(--color-brand) 70%, transparent) 40deg,
+    var(--color-brand) 95deg,
+    color-mix(in srgb, var(--color-brand) 70%, transparent) 150deg,
+    transparent 210deg,
+    transparent 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  animation:fk-sweep 2.4s linear infinite;
+  pointer-events:none;
+}
+/* 外圈柔光：只在忙时出现，给"在生成"这件事一个可见的光场，不参与布局、不挡点击。 */
+.fk-dock[data-busy="true"] .fk-bar::before{
+  content:''; position:absolute; inset:-8px; border-radius:calc(var(--radius-panel) + 8px);
+  background:color-mix(in srgb, var(--color-brand) 46%, transparent);
+  filter:blur(14px); opacity:.8; pointer-events:none;
+  animation:fk-halo 2.4s ease-in-out infinite;
+}
+@keyframes fk-halo{ 0%,100%{ opacity:.5; filter:blur(12px); } 50%{ opacity:.95; filter:blur(18px); } }
+@keyframes fk-sweep{ to{ --fk-angle:360deg; } }
+@keyframes fk-breathe{
+  0%,100%{ box-shadow:0 0 0 1px color-mix(in srgb, var(--color-brand) 22%, transparent),
+                      0 0 18px color-mix(in srgb, var(--color-brand) 20%, transparent),
+                      0 10px 24px -12px color-mix(in srgb, var(--color-brand) 20%, transparent); }
+  50%    { box-shadow:0 0 0 1px color-mix(in srgb, var(--color-brand) 45%, transparent),
+                      0 0 30px color-mix(in srgb, var(--color-brand) 38%, transparent),
+                      0 12px 34px -8px  color-mix(in srgb, var(--color-brand) 44%, transparent); }
+}
+/* 减弱动效：环还在，但不再扫、不再呼吸（提示本身不能消失）。 */
+@media (prefers-reduced-motion: reduce){
+  .fk-dock[data-busy="true"] .fk-bar{ animation:none; }
+  .fk-dock[data-busy="true"] .fk-bar::after{ animation:none; --fk-angle:120deg; }
+  .fk-dock[data-busy="true"] .fk-bar::before{ animation:none; opacity:.4; }
+}
 .fk-mic{
   width:32px; height:32px; flex:0 0 32px; border-radius:var(--radius-control);
   border:0; background:transparent; color:var(--color-text-tertiary);
