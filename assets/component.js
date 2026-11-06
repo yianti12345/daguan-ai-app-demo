@@ -927,7 +927,7 @@
     progress(100);
     if (ui && ui.addMsg && lastText) {
       var local = window.__genMode === 'local';
-      ui.addMsg('xz', '已按「' + lastText + '」改好了，看画布。'
+      ui.addMsg('cfg', '已按「' + lastText + '」改好了，看画布。'
         + (local ? '（本机没接上模型，这一版是按规则搭的；接上模型后同一句话会搭得更贴。）' : ''));
     }
     setTimeout(function () { genbar.setAttribute('data-off', 'true'); }, 300);
@@ -949,6 +949,9 @@
     if (/JSON|结构|解析|不完整|补不齐/.test(raw)) return '模型这次返回的内容不完整。可以再说一次，或者把要求写短一点。';
     if (/秒没回应|超时|timeout|abort/i.test(raw)) return '模型响应太慢，等超时了。点「重试」再来一次。';
     if (/连不上|网络|fetch|Failed/i.test(raw)) return '连不上模型服务。检查网络或本机服务是否在跑。';
+    /* ★2026-11-06：额度用尽时上游回 429/quota，原来落到「这次没做成」，
+       用户不知道是额度问题，会反复重试。这条要单独说清。 */
+    if (/429|quota|额度|配额|rate.?limit/i.test(raw)) return '模型额度用完了，等额度恢复再试。';
     if (/没有模型代理|xz\/plan/.test(raw)) return '这个环境没接模型，换到本地起的服务再试。';
     return '这次没做成。点「重试」再来一次，或把要求写短一点。';
   }
@@ -1023,7 +1026,7 @@
     progress(8);
     /* ★ 2026-10-24：说了话必须有回音。原来只有一条 2px 进度条 + 一句 6 秒后的回复，
        用户实测得到的是"什么都没发生"。现在这三处都进对话区：开始、成、败。 */
-    if (ui && ui.addMsg) ui.addMsg('xz', '收到：' + text + '。正在搭一版，搭好直接看画布。');
+    if (ui && ui.addMsg) ui.addMsg('cfg', '收到：' + text + '。正在搭一版，搭好直接看画布。');
 
     /* ?fail=1：下一次生成失败一次（只失败一次）。画布一个像素都不动。 */
     if (failNext) {
@@ -1038,7 +1041,7 @@
            原来这里只弹 toast + 提示条，对话里最后一条还是「正在搭一版」——
            收起后折叠条读到的是"进行中"，而实际已经失败了（浮层该不该自己收，
            也靠这条消息判：「报错」要留着让人看见，不能收）。 */
-        if (ui && ui.addMsg) ui.addMsg('xz', '这次没搭成。画布还是上一次的样子。');
+        if (ui && ui.addMsg) ui.addMsg('cfg', '这次没搭成。画布还是上一次的样子。');
       }, 760);
       return;
     }
@@ -1085,7 +1088,11 @@
       setTimeout(function () { genbar.style.width = '0'; }, 200);
       showError(humanizeErr(e));
       toast('没生成出来', 'error');
-      if (ui && ui.addMsg) ui.addMsg('xz', '这次没搭成：' + String((e && e.message) || '原因不明') + '。画布还是上一次的样子。');
+      /* ★2026-11-06：原来这里直接拼 e.message，界面上就出现
+         「这次没搭成：上游模型失败（502）：{"error": "upstream 429 …"}」——
+         客户看到一坨 JSON。画布上的错误条早就用 humanizeErr 折成人话了，
+         对话里这条漏了，改成同一个来源。 */
+      if (ui && ui.addMsg) ui.addMsg('cfg', '这次没搭成：' + humanizeErr(e) + '画布还是上一次的样子。');
       /* 失败这一轮也留在同一条组件的会话里（迭代时 id 已经有了） */
       mirrorHistoryToComp();
     });
@@ -1231,7 +1238,7 @@
       return;
     }
     noticeShown = true;
-    ui.addMsg('xz', DRAFT_NOTICE);
+    ui.addMsg('cfg', DRAFT_NOTICE);
   }
 
   /* 2026-10-31：「撤回这次生成」整段已删（按钮 + 点击绑定 + 快照恢复）。

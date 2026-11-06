@@ -1285,10 +1285,10 @@
       if (struct.undo) {
         /* E23：改完这一步，屏幕上就有一颗能按的「撤回」—— 不必再对着对话框说 */
         hint(struct.bar, { ms: 8000 });   /* 2026-10-31：撤回已删，提示条只报事实 */
-        if (ui && ui.addMsg) ui.addMsg('xz', struct.msg);
+        if (ui && ui.addMsg) ui.addMsg('cfg', struct.msg);
       } else {
         hint(struct.msg, { ms: 9000 });
-        if (ui && ui.addMsg) ui.addMsg('xz', struct.msg);
+        if (ui && ui.addMsg) ui.addMsg('cfg', struct.msg);
       }
       return;
     }
@@ -1307,7 +1307,7 @@
       plan.install.forEach(function (id) { if (DB.install(appId, id)) did.push('装上 ' + nameOf(id)); });
       if (did.length) {
         paintApp(); renderCanvas(); genBusy = false; stopTick();
-        if (ui && ui.addMsg) ui.addMsg('xz', plan.say || ('已' + did.join('、')));
+        if (ui && ui.addMsg) ui.addMsg('cfg', plan.say || ('已' + did.join('、')));
       }
       /* ── 改某一块的呈现 ──
          模型只负责说"改哪个、怎么改"，真正重画走 Gen.componentSpec
@@ -1343,16 +1343,22 @@
                两句放一起自相矛盾。 */
             var done = '改好了：' + newName;
             hint('已改「' + newName + '」', { ms: 8000 });
-            if (ui && ui.addMsg) ui.addMsg('xz', done);
+            if (ui && ui.addMsg) ui.addMsg('cfg', done);
           });
         }
       }
       if (did.length) return;
       genBusy = false;
       stopTick();
-      var say = plan.say || '这句我没听出要改哪里。可以说"把某一块的标题改成…"或"只显示待复核的行"。';
+      /* ★2026-11-06（用户截图：「你好」「111」下面各挂一句「这句我没听出要改哪里」）：
+         原来听不懂时照样往对话里塞那句内部话术，历史里就留下两轮脏对话。
+         现在：说一句能用的引导（带一个真能照着说的例子），并且把刚发的那句
+         从历史里撤回、文字放回输入框 —— 历史不留、画面不留，只留一条提示条。 */
+      var say = plan.say
+        || '这句我没接住。说清「改哪一块 + 改成什么」就行，比如「把标题改成待复核清单」。';
       hint(say, { ms: 9000 });
-      if (ui && ui.addMsg) ui.addMsg('xz', say);
+      if (ui && ui.undoSend) ui.undoSend(text);
+      else if (ui && ui.addMsg) ui.addMsg('cfg', say);
     }).catch(function (e) {
       genBusy = false;
       stopTick();
@@ -1372,7 +1378,7 @@
         /* 可重试入口就在这一句旁边：重试的是同一句话，不用再打一遍 */
         action: { label: '再说一次', run: function () { askModel(text); } }
       });
-      if (ui && ui.addMsg) ui.addMsg('xz', bad);
+      if (ui && ui.addMsg) ui.addMsg('cfg', bad);
     });
   }
 
@@ -1380,7 +1386,8 @@
      模型有时会在错误串里塞进它自己写坏的 JSON，回显哪一段都可能带出来。 */
   function failWords(raw, target) {
     var why;
-    if (/没回应|超时|timeout|AbortError/i.test(raw)) why = '模型 75 秒没回应';
+    if (/429|quota|额度|配额|rate.?limit/i.test(raw)) why = '模型额度用完了，等额度恢复再试';
+    else if (/没回应|超时|timeout|AbortError/i.test(raw)) why = '模型 75 秒没回应';
     else if (/连不上|Failed to fetch|NetworkError|没起|不是 JSON/.test(raw)) why = '连不上本机的模型服务';
     else if (/没给出可用的 JSON|JSON 不完整|没法识别|没有可识别的块|不是对象/.test(raw)) why = '模型这次给的结果没法用';
     else why = '模型这次没做成';
@@ -1513,7 +1520,7 @@
       });
       if (ui.setCollapsed) ui.setCollapsed(false);
     } else if (ui && ui.addMsg) {
-      ui.addMsg('xz', '已保存为 v' + v + '：' + snap.summary);
+      ui.addMsg('cfg', '已保存为 v' + v + '：' + snap.summary);
     }
   }
 
@@ -1547,7 +1554,7 @@
         renderCanvas();
         paintCounts();
         hint('已把内容换成 v' + want + ' · 客户那边仍是 v' + (actNow ? actNow.v : '—') + '，要客户用上，去「客户授权」页升级', { ms: 9000 });
-        if (ui && ui.addMsg) ui.addMsg('xz', '画布已换成 v' + want + '（授权版本仍是 v' + (actNow ? actNow.v : '—') + '）。');
+        if (ui && ui.addMsg) ui.addMsg('cfg', '画布已换成 v' + want + '（授权版本仍是 v' + (actNow ? actNow.v : '—') + '）。');
       }
     });
   }

@@ -248,6 +248,30 @@
           histView = 'chat'; detailId = '';
           save();
         }
+        /* ★2026-11-06（用户：「历史里躺着你好/111 这种测试遗留」）：
+           原来历史只能新建、不能删 —— 演示前敲错一句就永久留在列表里。
+           删单条与清空全部都写回 localStorage，刷新后不再出现。 */
+        function delConv(id){
+          var i = -1;
+          for (var j = 0; j < convs.length; j++) if (convs[j].id === id){ i = j; break; }
+          if (i < 0) return;
+          var wasCur = convs[i].id === curId;
+          convs.splice(i, 1);
+          if (!convs.length) convs = [blankConv()];
+          /* 删的是当前会话：接管到第一条，msgs 必须跟着换引用，
+             否则后面的 addMsg 会往一个已经不在列表里的数组写。 */
+          if (wasCur){ curId = convs[0].id; msgs = convs[0].msgs; }
+          if (detailId === id) detailId = '';
+          save();
+        }
+        function clearConvs(){
+          convs = [blankConv()];
+          curId = convs[0].id;
+          msgs = convs[0].msgs;
+          detailId = '';
+          histView = 'list';
+          save();
+        }
         function cardHtml(c, ro) {
           if (!c) return '';
           var v = c.v ? 'v' + esc(c.v) : '';
@@ -289,7 +313,11 @@
             + '</div>';
         }
         function msgHtml(m, ro) {
-          var who = m.who === 'me' ? '我' : '小智';
+          /* ★2026-11-06（用户原话：这条框是跟大模型对话，不是跟小智）：
+             原来这里把每条非「我」的回复都署名「小智」，等于把『配置页的意图输入』
+             和『全局操作代理小智』画成同一个角色。署名按产品判断去掉：
+             对话框本身就是这一页的 AI，不引入第二个助手名。 */
+          var who = m.who === 'me' ? '我' : '';
           /* ★2026-11-04：只丢了一个附件、没打字的这一轮，原来照样输出一个空的 <span>，
              屏幕上就是一个空气泡（用户截图里「我」下面那块空白）。没正文就不出气泡。 */
           var say = (m.text || '').trim();
@@ -297,7 +325,7 @@
             : (say ? '<span class="fk-say">' + esc(say) + '</span>' : '')
               + (m.atts ? UIK.Attach.msgHtml(m.atts) : '');
           return '<div class="fk-msg' + (m.who === 'me' ? ' is-me' : '') + (m.card ? ' is-card' : '') + '">' +
-            '<b>' + who + '</b>' + body + '</div>';
+            (who ? '<b>' + who + '</b>' : '') + body + '</div>';
         }
         function threadHtml(arr) {
           return (arr || []).map(function (m) { return msgHtml(m, true); }).join('');
@@ -368,7 +396,7 @@
           var k = m.kind || classify(m.who, m.text, null, !!m.card).kind;
           var st = k === 'error' ? 'err' : (k === 'ask' ? 'ask' : (k === 'progress' ? 'run' : 'ok'));
           var sum = String(m.text || (m.card && m.card.summary) || '').replace(/\s+/g, ' ').trim();
-          if (!sum) sum = '小智';
+          if (!sum) sum = '已回复';
           else if (m.who === 'me') sum = '我：' + sum;
           var label = st === 'err' ? '失败'
             : st === 'ask' ? ('待确认 ' + pendingAsks())
@@ -477,7 +505,7 @@
              它是**要用户点下一步**的那一类，永远不自动收。 */
         function addCard(card) {
           if (!card) return;
-          var m = { who: 'xz', text: card.summary || '', card: card, kind: 'notice', t: Date.now() };
+          var m = { who: 'cfg', text: card.summary || '', card: card, kind: 'notice', t: Date.now() };
           msgs.push(m);
           if (msgs.length > MAX_MSG) msgs.splice(0, msgs.length - MAX_MSG);
           touchCur();
@@ -486,7 +514,8 @@
         }
         list.addEventListener('click', function (e) {
           /* 历史列表/详情里的动作先接住，再轮到普通消息里的复制/恢复。
-             历史详情是只读的，所以这里只可能有 histOpen / histBack / histNew / histToggle。 */
+             历史详情是只读的，所以这里只可能有 histOpen / histBack / histNew / histToggle，
+             以及 2026-11-06 新加的 histDel（删这一条）/ histClear（清空全部）。 */
           var hb = e.target.closest ? e.target.closest('[data-act]') : null;
           if (hb) {
             var act = hb.getAttribute('data-act') || '';
@@ -502,6 +531,17 @@
                 if (first) first.focus();
               } else if (act === 'histNew') {
                 newConv(); setCollapsed(false); render(); syncHistIco(); ta.focus();
+              } else if (act === 'histDel') {
+                delConv(hb.getAttribute('data-arg') || detailId);
+                histView = 'list'; detailId = '';
+                render(); renderPeek(); syncHistIco();
+                var it = list.querySelector('.hist-item');
+                if (it) it.focus();
+              } else if (act === 'histClear') {
+                clearConvs();
+                render(); renderPeek(); syncHistIco();
+                var lg = list.querySelector('.hist-list');
+                if (lg) lg.focus();
               } else if (act === 'histToggle') {
                 toggleHist();
               }
@@ -700,7 +740,7 @@
           if (!atts.length && dlg.onSend) dlg.onSend(t, atts);
           /* 有附件时小智回一句「读到了什么」，引用的是真实文件名/包内清单，不是万能的「已读取」。 */
           var got = UIK.Attach.reply(atts);
-          if (got) addMsg('xz', got);
+          if (got) addMsg('cfg', got);
         }
         sync();
         /* ★ 默认态由**末条消息**决定（F5）：空历史／告知／进行中 → 收起；
@@ -732,7 +772,7 @@
         mounted.hasMsg = function (t) {
           var s = String(t == null ? '' : t);
           for (var i = msgs.length - 1; i >= 0; i--) {
-            if (msgs[i] && msgs[i].who === 'xz' && msgs[i].text === s) return true;
+            if (msgs[i] && msgs[i].who === 'cfg' && msgs[i].text === s) return true;
           }
           return false;
         };
@@ -750,6 +790,21 @@
           ta.value = String(t == null ? '' : t);
           ta.focus();
           try { ta.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {}
+        };
+        /* ★2026-11-06（用户截图里的对话历史）：说了一句、这一页的 AI 没接住时，
+           把刚发的那条「我」从历史里撤回、文字放回输入框，让他改一改再发。
+           原来这种情况会补一条「这句我没听出要改哪里…」，历史里就成了
+           「你好 / 没听出」重复两遍 —— 客户点开历史看到的就是这个。 */
+        mounted.undoSend = function (back) {
+          for (var i = msgs.length - 1; i >= 0; i--) {
+            if (msgs[i] && msgs[i].who === 'me') { msgs.splice(i, 1); break; }
+          }
+          touchCur(); save(); render(); renderPeek();
+          if (back != null) {
+            ta.value = String(back);
+            ta.focus();
+            try { ta.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {}
+          }
         };
       }
 

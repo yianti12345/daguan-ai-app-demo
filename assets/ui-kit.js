@@ -182,8 +182,11 @@ window.UIK = (function () {
       if (!rows) rows = '<p class="hist-empty">还没有对话。说一句要做什么，这里会一条条记下来。</p>';
       return '<div class="hist-pane" role="region" aria-label="对话历史">'
         + '<div class="hist-bar"><span class="hist-count">' + list.length + ' 个对话</span>'
+        /* ★2026-11-06：历史原来只能新建、不能删，演示前敲错一句就永久留着。
+           清空全部与删除单条（详情页里）都走这里下发 data-act，由各自容器收口。 */
+        + (list.length ? '<button type="button" class="hist-clr" data-act="histClear">清空全部</button>' : '')
         + '<button type="button" class="hist-new" data-act="histNew">新对话</button></div>'
-        + '<div class="hist-list">' + rows + '</div></div>';
+        + '<div class="hist-list" tabindex="-1">' + rows + '</div></div>';
     },
     detailHtml: function (conv, threadHtml) {
       var n = hist.count(conv.msgs);
@@ -192,7 +195,9 @@ window.UIK = (function () {
         + '<span aria-hidden="true">←</span> 返回</button>'
         + '<p class="hist-dt">' + esc(hist.title(conv.msgs)) + '</p>'
         + '<p class="hist-dm">' + esc(hist.fmtAt(conv.at) + (n ? ' · ' + n + ' 条' : '')) + '</p>'
-        + '<div class="hist-thread">' + (threadHtml || '') + '</div></div>';
+        + '<div class="hist-thread">' + (threadHtml || '') + '</div>'
+        + '<button type="button" class="hist-del" data-act="histDel" data-arg="' + esc(conv.id) + '">'
+        + '删除这个对话</button></div>';
     }
   };
 

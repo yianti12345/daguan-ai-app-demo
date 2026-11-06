@@ -249,6 +249,8 @@ document.addEventListener('click', function(e){
       return;
     }
     if (act === 'histNew'){ xzHistNew(); return; }
+    if (act === 'histDel'){ xzHistDel(arg || H.detail); return; }
+    if (act === 'histClear'){ xzHistClear(); return; }
     return;
   }
   /* ★2026-10-22：这里必须 stopPropagation。
@@ -876,6 +878,46 @@ function xzFacts(){
 function xzPlan(intent, snap, facts){
   var S = intent;
   var els = snap.els;
+  /* ★2026-11-06（用户原话：『我去跟小智说帮我生成一个页面，然后小智去模拟人的操作，
+     输入文字到对话框再点发送』）：这一页真有配置对话框时，小智不自己动 DOM 改页面，
+     而是像人一样用这条框 —— 把话写进输入框、再点发送，让配置页那条通道去生成。
+     只认最窄的一类话（生成/搭/做一个页面），避免抢掉本该点业务控件的指令。 */
+  var fkIn = null, fkSend = null;
+  try {
+    fkIn = document.querySelector('#fk-input');
+    fkSend = document.querySelector('#fk-send');
+  } catch (e) { fkIn = null; fkSend = null; }
+  if (fkIn && fkSend && /(生成|搭|做|画|建)一?[个版套]?页面|生成一版|帮我生成/.test(S)){
+    /* ★2026-11-06 实测（8941 真浏览器）：同一条指令会被这条路径送进对话框 3 次 ——
+       计划在"本地规则 → 模型失败 → 回退本地规则"这条链上会被执行不止一遍。
+       对着真模型这等于重复下单：一次点击生成三版。所以加一道闸：
+       同一句话 6 秒内只发一次，第二次开始只回话、不再动手。 */
+    var K = '__xzFkSent';
+    var now = Date.now();
+    try {
+      var prev = window[K] || { t:0, s:'' };
+      if (prev.s === S && now - prev.t < 6000){
+        return {
+          say: '这句我刚替你发过一次了，等它跑完再看画布。',
+          stages: [{ t:'没重复发', steps:['同一句话 6 秒内只发一次'] }]
+        };
+      }
+      window[K] = { t:now, s:S };
+    } catch (e) {}
+    return {
+      say: '这句我不自己改页面 —— 我把它放进下面那条对话框，再替你点发送。',
+      stages: [
+        { t:'在对话框里说', steps:['「' + S + '」'] },
+        { t:'点发送', steps:['等它生成完，画布会变'] }
+      ],
+      acts: [
+        { p:'fill',  match:/请输入你的想法|说要改什么/, v:S, re:1, gen:snap.gen },
+        /* 填完必须重读再找发送钮：填值会让浮条重绘一遍，旧索引当场作废。
+           不写 re:1 的话这一刀会拿 undefined 索引去点，直接报「引用已失效」。 */
+        { p:'click', match:/发送/, re:1, gen:snap.gen }
+      ]
+    };
+  }
   function find(re, role){
     for (var i = 0; i < els.length; i++){
       if (role && els[i].r !== role) continue;
@@ -2592,6 +2634,34 @@ function xzHistNew(){
   X.cur[k] = c.id;
   X.box[k] = c.msgs;
   X.view = 'chat'; X.detail = '';
+  xzHistSave();
+  renderXz();
+}
+/* ★2026-11-06（用户：「历史里躺着你好/111 这种测试遗留」）：历史原来只能新建、不能删。
+   删单条与清空全部都写回本地存储，刷新后不再出现。 */
+function xzHistDel(id){
+  var X = xzState();
+  var k = X.mode === 'client' ? 'client' : 'admin';
+  var arr = X.convs[k] || [];
+  var i = -1;
+  for (var j = 0; j < arr.length; j++) if (arr[j].id === id){ i = j; break; }
+  if (i < 0) return;
+  var wasCur = (X.cur[k] === arr[i].id);
+  arr.splice(i, 1);
+  if (!arr.length) arr.push(xzHistBlank());
+  if (wasCur){ X.cur[k] = arr[0].id; X.box[k] = arr[0].msgs; }
+  X.view = 'list'; X.detail = '';
+  xzHistSave();
+  renderXz();
+}
+function xzHistClear(){
+  var X = xzState();
+  var k = X.mode === 'client' ? 'client' : 'admin';
+  var c = xzHistBlank();
+  X.convs[k] = [c];
+  X.cur[k] = c.id;
+  X.box[k] = c.msgs;
+  X.view = 'list'; X.detail = '';
   xzHistSave();
   renderXz();
 }

@@ -2741,6 +2741,23 @@ body[data-drawer="on"] .hint{
 }
 .hist-new:hover{background:var(--color-brand-surface)}
 .hist-new:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset)}
+/* ★2026-11-06：历史删除/清空（演示前把测试遗留清掉）。计数占满左侧，两个按钮靠右。 */
+.hist-count{margin-right:auto}
+.hist-clr{
+  height:var(--size-control-h);padding:0 var(--space-8);border:0;border-radius:var(--radius-sm);
+  background:none;color:var(--color-text-tertiary);font-family:inherit;
+  font-size:var(--font-size-caption);cursor:pointer;
+}
+.hist-clr:hover{background:var(--color-state-hover);color:var(--color-text-secondary)}
+.hist-clr:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset)}
+.hist-del{
+  margin-top:var(--space-12);align-self:flex-start;height:var(--size-control-h);
+  padding:0 var(--space-8);border:0;border-radius:var(--radius-sm);background:none;
+  color:var(--color-text-tertiary);font-family:inherit;
+  font-size:var(--font-size-caption);cursor:pointer;
+}
+.hist-del:hover{background:var(--color-state-hover);color:var(--color-text-secondary)}
+.hist-del:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:var(--size-focus-ring-offset)}
 .hist-list{display:flex;flex-direction:column;gap:var(--space-4);min-height:0}
 .hist-item{
   display:flex;flex-direction:column;gap:var(--space-4);width:100%;padding:var(--space-12);
