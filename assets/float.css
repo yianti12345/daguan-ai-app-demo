@@ -80,10 +80,12 @@
 /* 常显细滚动条：macOS 默认滚动条在内容不满时完全不出现，用户以为不能滚。 */
 .fk-hist-list::-webkit-scrollbar{width:8px}
 .fk-hist-list::-webkit-scrollbar-thumb{
-  background:var(--color-border-card); border-radius:var(--radius-pill);
+  /* ★2026-11-06：第一版用 --color-border-card，跟白卡同色，等于没有 —— 实测截图上看不见。
+     改用 --color-text-muted，仍不抢眼但能看见。 */
+  background:var(--color-text-muted); border-radius:var(--radius-pill);
   border:2px solid var(--surface-page);
 }
-.fk-hist-list::-webkit-scrollbar-thumb:hover{background:var(--color-text-muted)}
+.fk-hist-list::-webkit-scrollbar-thumb:hover{background:var(--color-text-secondary)}
 .fk-hist-list::-webkit-scrollbar-track{background:transparent}
 /* ★2026-11-04（用户：「配置页面的对话样式及交互很诡异」）：
    改前两边长得一模一样 —— 都只有一个 12px 灰标签 + 一段通栏正文，读的人分不清
