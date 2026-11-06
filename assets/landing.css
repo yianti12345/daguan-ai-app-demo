@@ -15,7 +15,9 @@ body.landing{
   padding:var(--space-24)
 }
 
-.ld-wrap{width:100%;max-width:760px}
+/* 2026-11-06：版心 760 → 880、主标题 20 → 36。原来整块在 1440 视口下只占一半宽，
+   第一眼像一张说明书；入口页要一眼看清"这是哪一版、去哪两个地方"。 */
+.ld-wrap{width:100%;max-width:880px}
 
 /* 版本标签放在抬头右侧：入口页第一眼要回答"这是哪一版"，不能只在页脚 */
 .ld-ver{
@@ -34,8 +36,8 @@ body.landing{
 
 .ld-hero{margin-bottom:var(--space-32)}
 .ld-hero h1{
-  margin:0;font-size:var(--font-size-display);font-weight:600;
-  line-height:var(--leading-display);letter-spacing:-.4px
+  margin:0;font-size:var(--font-size-hero);font-weight:600;
+  line-height:1.2;letter-spacing:-.6px
 }
 .ld-hero p{
   margin:var(--space-8) 0 0;
@@ -60,13 +62,13 @@ body.landing{
   border-radius:var(--radius-pill);background:var(--surface-subtle);
   font-size:var(--fs-xs);color:var(--color-text-tertiary)
 }
-.ld-card b{font-size:var(--font-size-heading);font-weight:600}
+.ld-card b{font-size:var(--font-size-card-title);font-weight:600}
 .ld-card p{
-  margin:0;font-size:var(--font-size-caption);line-height:var(--leading-body);
+  margin:0;font-size:var(--font-size-body);line-height:22px;
   color:var(--color-text-tertiary)
 }
 .ld-go{
-  margin-top:var(--space-8);font-size:var(--font-size-caption);
+  margin-top:var(--space-8);font-size:var(--font-size-body);
   color:var(--color-brand-ink);font-weight:500
 }
 
