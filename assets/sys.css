@@ -106,6 +106,28 @@ a:hover{color:var(--color-brand-active)}
    提到 --ink-2（5.9:1）。层级仍靠"末项 .9 / 首项 .65"拉开，不是靠到不了 4.5 的浅灰。 */
 .hdr .crumb > *:not(:last-child){color:var(--color-text-secondary)}
 .hdr .me{margin-left:auto;display:flex;align-items:center;gap:var(--space-8);font-size:var(--font-size-body);color:var(--color-text-secondary)}
+/* 侧栏品牌图（2026-11-06）：换成真源那一份 assets/img/logo-daguan.svg（1618×283 横版，
+   图形渐变 #B56EF8→#6571FB→#6ABEFD + 黑色字）。原来是自造的「蓝方块 + 达」 ——
+   既不是达观的 logo，也没有和真源对过一次。 */
+.sider .logo-img{display:block;height:22px;width:auto}
+
+/* 顶栏账号块（2026-11-06）：头像圆 + admin + ∨，结构与 SaaS 端同一套，
+   菜单直接复用 .ab-menu / .ab-mi —— 不再为「后台」单独写一份下拉。 */
+.hdr .me{position:relative}
+.me-btn{
+  display:flex;align-items:center;gap:var(--space-8);height:32px;padding:0 var(--space-4) 0 0;
+  border:0;border-radius:var(--radius-sm);background:transparent;cursor:pointer;
+  font:inherit;font-size:var(--font-size-body);color:var(--color-text-secondary);
+}
+.me-btn:hover{background:var(--surface-sunken-2);color:var(--color-text-primary)}
+.me-btn:focus-visible{outline:2px solid var(--color-brand);outline-offset:1px}
+.me-av{
+  flex:none;width:24px;height:24px;border-radius:var(--radius-pill);
+  display:grid;place-items:center;background:var(--surface-subtle);color:var(--color-text-tertiary);
+}
+.me-av svg{width:16px;height:16px;display:block}
+.me-nm{white-space:nowrap}
+.me-cv{flex:none;color:var(--color-text-tertiary)}
 .hdr .me u{
   width:24px;height:24px;border-radius:var(--radius-pill);background:var(--color-border-card);text-decoration:none;
   display:grid;place-items:center;font-size:var(--font-size-caption);color:var(--color-text-secondary);

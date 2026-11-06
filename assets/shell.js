@@ -59,6 +59,9 @@
      混用两套线条粗细，是"图标不统一"最直接的原因。
      ★2026-10-28：只剩「AI 应用方案」一组，其余 7 组的图标随组一起删除（无任何地方引用）。 */
   var GROUP_ICON = {
+    '应用管理': { vb:'0 0 24 24', d:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></rect><path d="M3.5 9.5h17M9.5 9.5v10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>' },
+    '组件库': { vb:'0 0 24 24', d:'<path d="M12 3.2 20 7.2 12 11.2 4 7.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 12.2l8 4 8-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 16.6l8 4 8-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>' },
+    '配置管理': { vb:'0 0 24 24', d:'<path d="M4 7h8M17 7h3M4 12h3M12 12h8M4 17h10M19 17h1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="14.5" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></circle><circle cx="9.5" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></circle><circle cx="16.5" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></circle>' },
     /* 应用市场：购物袋（真源侧栏这一项就是"市场"语义的图，不是四宫格） */
     '应用市场': { vb:'0 0 24 24', d:'<path d="M3.5 8.5h17l-1.4 10.4a2 2 0 0 1-2 1.7H6.9a2 2 0 0 1-2-1.7L3.5 8.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"></path><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>' },
     /* 系统设置：齿轮 */
@@ -90,7 +93,7 @@
      ★2026-10-28：原来 21 项没有落地页，只在右侧补一行小字说明。用户已明确
        只要这个模块，于是那些项连同占位分支一起删除，不留"承诺了走不到"的入口。 ── */
   function build(active, nav) {
-    var html = '<div class="logo"><i>达</i><b>达观智能审核平台</b></div>'
+    var html = '<div class="logo"><img class="logo-img" src="assets/img/logo-daguan.svg" alt="达观数据智能审核平台"></div>'
       + '<div class="menu">';
     for (var g = 0; g < nav.length; g++) {
       var group = nav[g];
@@ -216,6 +219,71 @@
     return '';
   }
 
+  /* ── 顶栏右侧账号块（2026-11-06）──────────────────────────────
+     真源（172.26.26.61:10612/admin）实测：右上角只有「圆形头像 + admin + ∨」，
+     点开是一项菜单。我们原来是 `<span>admin</span><u>ad</u>` —— 24 的灰圆里
+     塞两个字母，既不是头像也没有下拉，12 个页面各写一份还都一样。
+     现在由这里统一生成，页面里只留 `<div class="me"></div>` 占位。 */
+  var AVATAR = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">'
+    + '<path d="M12 12.4a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 1.6c-3.7 0-6.7 2.3-6.7 5 0 .9.6 1.4 1.5 1.4h10.4c.9 0 1.5-.5 1.5-1.4 0-2.7-3-5-6.7-5Z"/>'
+    + '</svg>';
+  var ME_ICON = {
+    platform: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
+    pwd: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+    about: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.6"/></svg>',
+    out: '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 8l4 4-4 4M13 12H4"/></svg>'
+  };
+  var ME_ITEMS = [['platform', '切换平台'], ['pwd', '修改密码'], ['about', '关于系统'], ['out', '退出登录']];
+
+  function mountMe() {
+    var boxes = document.querySelectorAll('.hdr .me');
+    for (var i = 0; i < boxes.length; i++) {
+      var box = boxes[i];
+      if (box.dataset.filled === '1') continue;
+      box.dataset.filled = '1';
+      var items = '';
+      for (var k = 0; k < ME_ITEMS.length; k++) {
+        items += '<button type="button" class="ab-mi' + (ME_ITEMS[k][0] === 'out' ? ' is-out' : '') + '"'
+          + ' role="menuitem" data-me="' + ME_ITEMS[k][0] + '">' + ME_ICON[ME_ITEMS[k][0]] + ME_ITEMS[k][1] + '</button>';
+      }
+      box.innerHTML = '<button class="me-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="hd-menu">'
+        + '<span class="me-av" aria-hidden="true">' + AVATAR + '</span>'
+        + '<span class="me-nm">admin</span>'
+        + '<svg class="me-cv" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
+        + '</button>'
+        + '<div class="ab-menu" id="hd-menu" role="menu" hidden>' + items + '</div>';
+      bindMe(box);
+    }
+  }
+  function bindMe(box) {
+    var btn = box.querySelector('.me-btn'), menu = box.querySelector('.ab-menu');
+    if (!btn || !menu) return;
+    function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+    function open() {
+      menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+      var f = menu.querySelector('.ab-mi'); if (f) f.focus();
+    }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); if (menu.hidden) open(); else close(); });
+    document.addEventListener('click', function (e) {
+      if (menu.hidden) return;
+      if (menu.contains(e.target) || btn.contains(e.target)) return;
+      close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !menu.hidden) { close(); btn.focus(); }
+    });
+    menu.addEventListener('click', function (e) {
+      var mi = e.target.closest ? e.target.closest('.ab-mi') : null;
+      if (!mi) return;
+      var act = mi.getAttribute('data-me');
+      close();
+      /* 四个动作都要有结果：没接服务的明说没接，不要留成点了没反应的死项。 */
+      if (act === 'platform' || act === 'out') { location.href = 'index.html'; return; }
+      if (act === 'about') { if (window.UIK) UIK.toast('达观数据智能审核平台 · v12.8.0'); return; }
+      if (act === 'pwd') { if (window.UIK) UIK.toast('账号服务这一版还没接'); return; }
+    });
+  }
+
   function mount() {
     var navs = document.querySelectorAll('.sider[data-active]');
     for (var i = 0; i < navs.length; i++) {
@@ -232,6 +300,7 @@
       });
     }
     mountCrumb();
+    mountMe();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);

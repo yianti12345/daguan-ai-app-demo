@@ -6,7 +6,7 @@
 <title>组件库</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=0e2b696a">
-<link rel="stylesheet" href="assets/sys.css?v=19ab64f0">
+<link rel="stylesheet" href="assets/sys.css?v=ea209f08">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=1965c88b">
 <!-- 2026-10-29：本页 <style> 已清空（原 3,683 B）。`.nf-*`（2026-10-24）与
      引用数格 `.cc-meta`（2026-10-29）都在 assets/sys.css 的组件层：
@@ -599,6 +599,7 @@
                     aria-label="${esc((on ? '禁用' : '启用') + c.name)}">
               <span class="cc-sw-dot" aria-hidden="true"></span>${st}
             </button>
+            ${refBadge}
             <div class="cl-ops">
             <button class="k-more" type="button" data-id="${esc(c.id)}"
                     aria-haspopup="menu" aria-expanded="false"
@@ -617,7 +618,6 @@
           <div class="cc-spec">
             <span class="cc-ver" title="当前版本">${esc(c.ver || 'v1')}</span>
             <span class="cc-upd" title="版本更新时间 ${esc(c.updated || '未记录')}">${esc(updText)}</span>
-            ${refBadge}
             ${metaHtml}
           </div>
         </div>
@@ -1010,7 +1010,7 @@
 })();
 </script>
 <div id="xz-host"></div>
-<script src="assets/shell.js?v=9c46af2c"></script>
+<script src="assets/shell.js?v=3150df09"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
 <script src="assets/xiaozhi.js?v=84c74e05"></script>
 </body>
