@@ -1286,10 +1286,10 @@
       paintApp();
       if (struct.undo) {
         /* E23：改完这一步，屏幕上就有一颗能按的「撤回」—— 不必再对着对话框说 */
-        hint(struct.bar, { ms: 8000 });   /* 2026-10-31：撤回已删，提示条只报事实 */
+        /* 浮条与消息只留一份：消息是持久的，浮条是重复。 */
         if (ui && ui.addMsg) ui.addMsg('cfg', struct.msg);
       } else {
-        hint(struct.msg, { ms: 9000 });
+        /* 同上：只保留下面那条消息。 */
         if (ui && ui.addMsg) ui.addMsg('cfg', struct.msg);
       }
       return;
@@ -1556,7 +1556,7 @@
         paintApp();
         renderCanvas();
         paintCounts();
-        hint('已把内容换成 v' + want + ' · 客户那边仍是 v' + (actNow ? actNow.v : '—') + '，要客户用上，去「客户授权」页升级', { ms: 9000 });
+        /* 同上：这条信息已经写在下面的消息里，浮条是重复。 */
         if (ui && ui.addMsg) ui.addMsg('cfg', '画布已换成 v' + want + '（授权版本仍是 v' + (actNow ? actNow.v : '—') + '）。');
       }
     });
