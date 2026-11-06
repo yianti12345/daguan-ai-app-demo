@@ -138,13 +138,15 @@
   --color-brand:var(--p-blue-600);
   --color-brand-hover:var(--p-blue-650);
   --color-brand-active:var(--p-blue-700);
-  --color-brand-ink:var(--p-blue-700);
+  /* 真源文字/选中态用主蓝本身 #517AFF；我们原来是深一档 #3D63E0（自己推的）。
+     后台应用管理页面包屑链接、SaaS 筛选标签、侧栏选中 —— 三处实测都是 81,122,255。 */
+  --color-brand-ink:var(--p-blue-550);
   /* 真源选中态（菜单项、筛选标签）用的是主蓝本身 #517AFF，不是深一档的 ink */
   --color-brand-text:var(--p-blue-550);
   --color-brand-chip:var(--p-blue-40);
   --color-brand-surface:var(--p-blue-50);
   --color-brand-surface-2:var(--p-blue-100);
-  --color-brand-nav-active:var(--p-blue-700);
+  --color-brand-nav-active:var(--p-blue-550);
   --color-brand-glow:var(--p-blue-a42);
   --color-brand-glow-strong:var(--p-blue-a55);
 

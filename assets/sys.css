@@ -104,7 +104,9 @@ a:hover{color:var(--color-brand-active)}
    正好是末项，规则反过来把末项刷成了浅灰 —— ref-parity 在组件库页当场抓到这一条。 */
 .hdr .crumb > *:not(:last-child){color:var(--color-text-tertiary)}/* 2026-10-25：首项白底 3.35:1 不过 AA（锚：Atlassian 正文 4.5:1），
    提到 --ink-2（5.9:1）。层级仍靠"末项 .9 / 首项 .65"拉开，不是靠到不了 4.5 的浅灰。 */
-.hdr .crumb > *:not(:last-child){color:var(--color-text-secondary)}
+.hdr .crumb > *:not(:last-child){color:var(--color-text-quiet)}/* 真源实测首项 rgba(0,0,0,.45)。
+   2026-10-25 曾为对比度把它提到 .58/.65 —— 那是我按 AA 推的，真源没那么深。
+   复刻优先：先与真源一致；要提对比度得整站一起改，不能只改面包屑。 */
 .hdr .me{margin-left:auto;display:flex;align-items:center;gap:var(--space-8);font-size:var(--font-size-body);color:var(--color-text-secondary)}
 /* 侧栏品牌图（2026-11-06）：换成真源那一份 assets/img/logo-daguan.svg（1618×283 横版，
    图形渐变 #B56EF8→#6571FB→#6ABEFD + 黑色字）。原来是自造的「蓝方块 + 达」 ——
@@ -126,7 +128,7 @@ a:hover{color:var(--color-brand-active)}
   display:grid;place-items:center;background:var(--surface-subtle);color:var(--color-text-tertiary);
 }
 .me-av svg{width:16px;height:16px;display:block}
-.me-nm{white-space:nowrap}
+.me-nm{white-space:nowrap;font-size:var(--font-size-body);font-weight:var(--font-weight-medium);color:var(--color-text-account)}
 .me-cv{flex:none;color:var(--color-text-tertiary)}
 .hdr .me u{
   width:24px;height:24px;border-radius:var(--radius-pill);background:var(--color-border-card);text-decoration:none;
@@ -173,7 +175,7 @@ a:hover{color:var(--color-brand-active)}
    高度仍是 32、字号仍是 14 —— 与真源控件同尺寸，只改质感不改栅格。 */
 .btn{
   height:var(--btn-height); padding:0 var(--btn-pad-x); border-radius:var(--btn-radius);
-  font-size:var(--font-size-body); font-weight:500;
+  font-size:var(--font-size-body); font-weight:400;/* 真源按钮字重 400，我们原来 500 —— 自己加的"按钮要更重点"。 */
   display:inline-flex; align-items:center; justify-content:center; gap:var(--btn-gap);/* 2026-10-29 接 L3：--btn-gap=8，与旧值 --space-8 同值，视觉零变化 */
   border:var(--size-border-w) solid transparent; background:none; color:var(--color-text-primary);
   cursor:pointer; white-space:nowrap;
@@ -212,6 +214,11 @@ a:hover{color:var(--color-brand-active)}
    这里不再写第二份 —— 两套禁用表达正是 2026-10-29 要收掉的违约之一。 *//* 顶栏里的一组动作：与标题同一行，右端对齐 */
 .tb-ops{display:flex; align-items:center; gap:var(--space-8); margin-left:auto}
 .bar .right{margin-left:auto;display:flex;align-items:center;gap:var(--space-8)}
+/* 工具栏筛选标签（真源：应用状态 / 客户，14 号 rgba(0,0,0,.45)）。2026-11-06 补 */
+.bar .tk{font-size:var(--font-size-body);color:var(--color-text-quiet);white-space:nowrap}
+/* 筛选下拉：真源实测 76 宽 / 30 高（原来 120×22，比真源胖一圈） */
+.field.w76{width:auto}
+.field.w76 select{width:76px;height:30px}
 /* ★2026-11-02（照线上应用管理工具条）：筛选与主按钮同一行、紧接在左，不再甩到最右；
    只有「下载客户端」留在右端。线上是 新增核心专家 + 搜索 + 4 个下拉 + 筛选图标的一条过滤带。 */
 .bar-main .right{flex:1 1 auto;margin-left:0}
@@ -2673,7 +2680,7 @@ body[data-drawer="on"] .hint{
   /* 间距由 .kc-info 的 gap 4 给，这里不再叠 margin（叠了内容区就 76，真源是 72） */
   height:38px;margin:0;
   font-size:var(--font-size-caption);line-height:16px;
-  color:var(--color-text-card-meta);overflow:hidden;
+  color:var(--color-text-card-desc);overflow:hidden;
 }
 /* 卡高由 grid 行拉伸时不参与（否则一行里最高的卡会把别的撑开） */
 .grid{align-items:start}

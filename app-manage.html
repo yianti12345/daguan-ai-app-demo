@@ -6,8 +6,8 @@
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
-<link rel="stylesheet" href="assets/tokens.css?v=dd4cdf93">
-<link rel="stylesheet" href="assets/sys.css?v=66c9025a">
+<link rel="stylesheet" href="assets/tokens.css?v=8c85267c">
+<link rel="stylesheet" href="assets/sys.css?v=fe9ac70c">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=1965c88b">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -72,21 +72,23 @@
               <option value="status">按状态</option>
             </select>
           </label>
-          <label class="field w180">
-            <!-- 2026-10-31（状态用词）：这一页的发布态只认一套词 —— 未发布 / 已上架 / 已下架。
-                 它们是 assets/data.js 的 status 枚举原值（筛选值必须与卡面徽章同源，否则选了筛不到），
-                 也是 00c-术语台账.md §二 登记的值；「草稿」已于 2026-10-27 退役（台账 §一），
-                 版本页的「当前线上 / 最近一版」是同一件事的另一面，不再另造「已发布」——
-                 多一个词，用户就要多问一次"已发布和已上架是不是不一样"。 -->
-            <select id="f-st" >
-              <option value="">全部状态</option>
+          <!-- ★2026-11-06（全量差集抓出）：真源这里是「标签 + 下拉」两个筛选：应用状态、客户。
+               我原来把状态塞成 select 里的一句「全部状态」，客户筛选干脆没有 —— 差集一眼看出
+               真源有 4 个控件、我只有 2 个。另外「已下架」的选项被注释掉了（列表里有这种应用却筛不到），
+               这次一并补回。 -->
+          <label class="tk" for="f-st">应用状态</label>
+          <label class="field w76">
+            <select id="f-st">
+              <option value="">全部</option>
               <option value="已上架">已上架</option>
               <option value="内测中">内测中</option>
               <option value="未上架">未上架</option>
-              <!-- ★2026-10-24 修 P1-A3：种子与列表里都有「已下架」应用，但筛选只有三值 ⇒
-                   选「全部状态」能看见它，按状态筛却永远筛不到它。 -->
-
+              <option value="已下架">已下架</option>
             </select>
+          </label>
+          <label class="tk" for="f-cl">客户</label>
+          <label class="field w76">
+            <select id="f-cl"><option value="">全部</option></select>
           </label>
           <!-- 32×32 描边图标钮：线上工具栏右端就是这个位置、这个尺寸（真源 32×32 / border rgb(217,217,217)）。
                它必须有真行为，否则就是死控件 —— 这里做"重绘列表"（筛选条件不变）。 -->
@@ -449,6 +451,8 @@
   function rows() {
     var kw = ($('#f-kw').value || '').trim().toLowerCase();
     var st = $('#f-st').value;
+    /* 客户筛选：候选从授权表现取（见 fillClients），不写死客户名 */
+    var cl = ($('#f-cl') && $('#f-cl').value) || '';
     var out = DB.APPS.filter(function (a) {
       if (st && pubState(a) !== st) return false;
       /* ★2026-10-28（场景清单 A4）：通用平台下应用名不一定含业务词，
@@ -460,6 +464,8 @@
         authNames = DB.authRows(a.id).map(function (r) { return r.clientName || ''; }).join(' ');
       } catch (e) {}
       if (kw && (a.name + ' ' + (a.desc || '') + ' ' + authNames).toLowerCase().indexOf(kw) < 0) return false;
+      /* 客户筛选：一个应用可能授权给多个客户，命中其中一个就留下 */
+      if (cl && authNames.split(' ').indexOf(cl) < 0) return false;
       return true;
     });
     /* 2026-10-31（操作缺口）：排序。只排这份筛选结果，DB.APPS 的数组序一动不动 ——
@@ -732,6 +738,28 @@
     render();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+
+  /* 客户下拉的候选从授权表现取 —— 写死客户名的话，新增一个客户就得回来改页面 */
+  (function fillClients() {
+    var sel = $('#f-cl');
+    if (!sel) return;
+    var names = [];
+    try {
+      DB.APPS.forEach(function (a) {
+        DB.authRows(a.id).forEach(function (r) {
+          if (r.clientName && names.indexOf(r.clientName) < 0) names.push(r.clientName);
+        });
+      });
+    } catch (e) {}
+    names.sort(function (x, y) { return x.localeCompare(y, 'zh-Hans-CN'); });
+    names.forEach(function (n) {
+      var o = document.createElement('option');
+      o.value = n;
+      o.textContent = n;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () { render(); });
+  })();
 
   $('#f-sort').addEventListener('change', function () { render(); });
   /* 卡身整张可点（进配置页）；⋮ 与菜单是兄弟控件，点它们不会顺带进配置页。
