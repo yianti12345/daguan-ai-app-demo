@@ -1100,7 +1100,9 @@
          「这次没搭成：上游模型失败（502）：{"error": "upstream 429 …"}」——
          客户看到一坨 JSON。画布上的错误条早就用 humanizeErr 折成人话了，
          对话里这条漏了，改成同一个来源。 */
-      if (ui && ui.addMsg) ui.addMsg('cfg', '这次没搭成：' + humanizeErr(e) + '画布还是上一次的样子。');
+      /* ★2026-11-06（同一条：失败不要额外气泡）：标成"没执行"，原因走提示条。 */
+      if (ui && ui.failLast) ui.failLast();
+      toast(humanizeErr(e), 'error');
       /* 失败这一轮也留在同一条组件的会话里（迭代时 id 已经有了） */
       mirrorHistoryToComp();
     });

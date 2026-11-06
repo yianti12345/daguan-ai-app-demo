@@ -332,8 +332,15 @@
           var body = m.card ? cardHtml(m.card, ro)
             : (say ? '<span class="fk-say">' + esc(say) + '</span>' : '')
               + (m.atts ? UIK.Attach.msgHtml(m.atts) : '');
-          return '<div class="fk-msg' + (m.who === 'me' ? ' is-me' : '') + (m.card ? ' is-card' : '') + '">' +
-            (who ? '<b>' + who + '</b>' : '') + body + '</div>';
+          /* ★2026-11-06（用户：对话发出去只有两种结果——开始处理，或失败；
+             不该多出一条"教你怎么说"的气泡）：失败做成这条消息自己的状态。 */
+          var fail = m.failed
+            ? '<p class="fk-fail"><i class="fk-fail-dot" aria-hidden="true"></i>没执行'
+              + '<button type="button" class="fk-retry" data-act="fkRetry">重试</button></p>'
+            : '';
+          return '<div class="fk-msg' + (m.who === 'me' ? ' is-me' : '') + (m.card ? ' is-card' : '')
+            + (m.failed ? ' is-fail' : '') + '">' +
+            (who ? '<b>' + who + '</b>' : '') + body + fail + '</div>';
         }
         function threadHtml(arr) {
           return (arr || []).map(function (m) { return msgHtml(m, true); }).join('');
@@ -537,6 +544,19 @@
           /* 历史列表/详情里的动作先接住，再轮到普通消息里的复制/恢复。
              历史详情是只读的，所以这里只可能有 histOpen / histBack / histNew / histToggle，
              以及 2026-11-06 新加的 histDel（删这一条）/ histClear（清空全部）。 */
+          var rb = e.target.closest ? e.target.closest('[data-act="fkRetry"]') : null;
+          if (rb) {
+            for (var ri = msgs.length - 1; ri >= 0; ri--) {
+              if (msgs[ri] && msgs[ri].who === 'me') {
+                var again = msgs[ri].text;
+                delete msgs[ri].failed;
+                render();
+                if (again && dlg.onSend) dlg.onSend(again, []);
+                break;
+              }
+            }
+            return;
+          }
           var hb = e.target.closest ? e.target.closest('[data-act]') : null;
           if (hb) {
             var act = hb.getAttribute('data-act') || '';
@@ -772,6 +792,7 @@
              的反馈是零。**说话之后必须先看见自己说的那句**，所以发送即展开，
              收起的默认只作用于"还没开始说话"的状态。 */
           setCollapsed(false);
+          for (var gi = 0; gi < msgs.length; gi++) if (msgs[gi] && msgs[gi].failed) delete msgs[gi].failed;
           addMsg('me', t, undefined, atts);
           /* 带附件的这一轮由附件逻辑接管，不再把（可能为空的）指令丢给主循环 ——
              实测：空指令进主循环会回一句「这一句没做成」，跟刚读到的附件并排出现，是脏数据。 */
@@ -803,6 +824,13 @@
         mounted.clearMsg = function () {
           /* 清空的是当前会话；不能 msgs=[] —— 那会让当前会话的数组引用脱钩。 */
           msgs.splice(0, msgs.length); touchCur(); save(); render(); renderPeek();
+        };
+        /* 标记最后一条我发的话"没执行"。不新增对话消息 —— 失败是这条消息的状态。 */
+        mounted.failLast = function () {
+          for (var i = msgs.length - 1; i >= 0; i--) {
+            if (msgs[i] && msgs[i].who === 'me') { msgs[i].failed = true; break; }
+          }
+          touchCur(); save(); render();
         };
         mounted.setBusy = setBusy;
         mounted.isBusy = function () { return busy; };

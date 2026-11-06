@@ -154,6 +154,22 @@
   box-shadow:inset 0 1px 0 color-mix(in srgb, var(--surface-page) 70%, transparent);
 }
 .fk-msg.is-me .uik-atts{justify-content:flex-end}
+/* ★2026-11-06（用户：对话只有"开始处理"或"失败"两种结果，不要教你说话的气泡）：
+   失败做成这条消息自己的一行状态：一个小点 + 「没执行」+ 重试。不新增对话消息。 */
+.fk-fail{
+  display:flex; align-items:center; gap:var(--space-4); margin-top:2px;
+  font-size:var(--font-size-caption); line-height:1.4; color:var(--color-text-tertiary);
+}
+.fk-fail-dot{width:5px; height:5px; border-radius:var(--radius-pill); background:var(--color-danger); flex:0 0 5px}
+.fk-retry{
+  border:0; background:none; padding:0 2px; cursor:pointer;
+  color:var(--color-brand-ink); font-family:inherit; font-size:inherit; line-height:inherit;
+  text-decoration:underline; text-underline-offset:2px;
+}
+.fk-retry:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring); outline-offset:2px; border-radius:var(--radius-xs)}
+/* 失败的那条，用户气泡换成同色系细边，一眼能看出"这句没成" */
+.fk-msg.is-me.is-fail .fk-say{border-color:color-mix(in srgb, var(--color-danger) 35%, transparent)}
+
 /* 空态：一句话都没有时连白卡都不该出现（用户截图：一张 96 高的白卡里飘着一行灰字） */
 /* ★2026-11-04（用户：「为什么这个看不到？非要说话才能看到这两个操作？」）：
    原来空态把整条历史工具层藏了，于是新页面第一屏看不到「历史对话」和「展开」。

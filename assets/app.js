@@ -1360,11 +1360,10 @@
          原来听不懂时照样往对话里塞那句内部话术，历史里就留下两轮脏对话。
          现在：说一句能用的引导（带一个真能照着说的例子），并且把刚发的那句
          从历史里撤回、文字放回输入框 —— 历史不留、画面不留，只留一条提示条。 */
-      var say = plan.say
-        || '这句我没接住。说清「改哪一块 + 改成什么」就行，比如「把标题改成待复核清单」。';
-      hint(say, { ms: 9000 });
-      if (ui && ui.undoSend) ui.undoSend(text);
-      else if (ui && ui.addMsg) ui.addMsg('cfg', say);
+      /* ★2026-11-06（用户：这条气泡是"额外提示"，不要）：没解析出要改什么，
+         不算一句回复 —— 把那条消息标成"没执行"，给它一个重试。对话里不多一个字。 */
+      if (ui && ui.failLast) ui.failLast();
+      else hint('这句没执行。', { ms: 6000 });
     }).catch(function (e) {
       setGenBusy(false);
       stopTick();
@@ -1383,14 +1382,10 @@
         return;
       }
       var bad = failWords(raw, failTarget);
-      hint(bad, {
-        /* ★2026-10-28 E45：原来把模型原始报错挂到 title 上（悬停可见）。原文只该给排查，
-           已经 console.debug 过了；界面上一律只给人话。 */
-        ms: 10000, kind: 'err',
-        /* 可重试入口就在这一句旁边：重试的是同一句话，不用再打一遍 */
-        action: { label: '再说一次', run: function () { askModel(text); } }
-      });
-      if (ui && ui.addMsg) ui.addMsg('cfg', bad);
+      /* ★2026-11-06（同一条判断）：请求失败也不新开一条气泡 ——
+         把那条消息标成没执行，原因用一条短提示说清，重试入口就在消息下面。 */
+      if (ui && ui.failLast) ui.failLast();
+      hint(bad, { ms: 8000, kind: 'err' });
     });
   }
 
