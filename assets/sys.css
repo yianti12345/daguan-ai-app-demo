@@ -1565,8 +1565,8 @@ body[data-comp] .canvas{position:fixed;inset:0;overflow:auto;background:var(--gr
   font-size:var(--fs-xs);font-weight:600;line-height:1;
 }
 .ab-nm{display:flex;flex-direction:column;line-height:1.25;min-width:0}
-.ab-nm b{font-size:var(--font-size-caption);font-weight:600;color:var(--color-text-primary);white-space:nowrap}
-.ab-nm i{font-style:normal;font-size:var(--fs-xs);color:var(--color-text-tertiary);white-space:nowrap}
+.ab-nm b{font-size:var(--font-size-body);font-weight:var(--font-weight-medium);color:var(--color-text-account);white-space:nowrap}
+.ab-nm i{font-style:normal;font-size:var(--fs-xs);color:var(--color-text-account-sub);white-space:nowrap}
 .ab-user .ab-cv{flex:none;color:var(--color-text-tertiary)}
 /* ── 账号下拉（2026-11-06，照用户截图逐项复刻）──────────────────────────
    四项：切换平台 / 修改密码 / 关于系统 / 退出登录。

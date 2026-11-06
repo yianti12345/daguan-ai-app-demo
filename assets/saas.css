@@ -54,7 +54,7 @@ body.saas{background:var(--surface-canvas)}
 .sider[data-nav="saas"] .gt:hover .gi{color:var(--color-text-primary)}
 .sider[data-nav="saas"] .gt[aria-current="page"]{
   background:var(--surface-page);
-  color:var(--color-brand-ink);
+  color:var(--color-brand-text);
   font-weight:var(--font-weight-semibold);
 }
 .sider[data-nav="saas"] .gt[aria-current="page"] .gi{color:var(--color-brand)}
@@ -68,7 +68,7 @@ body.saas{background:var(--surface-canvas)}
   height:48px;padding:0 var(--space-16);
   background:var(--surface-page);border-bottom:1px solid var(--color-border-card);
 }
-.sb-l{display:flex;align-items:center;gap:var(--space-8);font-size:var(--font-size-body);color:var(--color-text-primary)}
+.sb-l{display:flex;align-items:center;gap:var(--space-8);font-size:var(--font-size-body);color:var(--color-text-bar-title)}
 .sb-l .sb-ico{display:grid;place-items:center;color:var(--color-text-tertiary)}
 .sb-r{display:flex;align-items:center;gap:var(--space-8)}
 
@@ -121,12 +121,18 @@ body.saas{background:var(--surface-canvas)}
    实测：label 宽 60 / 14 号 rgb(100,106,115) / 上内距 5；
         chip 高 32 / 圆角 6 / 13 号 / 内距 0 14 / 选中底 rgb(244,245,255) 蓝字；
         行间距 16（272 → 320 → 368）。 */
-.saas-filters{flex:none;padding:28px 0 0}
+.saas-filters{flex:none;padding:28px 60px 0 0}
 .sf-row{display:flex;align-items:flex-start;gap:var(--space-12);margin-bottom:var(--space-16)}
 .sf-row:last-child{margin-bottom:0}
 .sf-k{flex:none;width:60px;padding-top:5px;line-height:22px;font-size:var(--font-size-body);color:var(--color-text-secondary)}
 .sf-v{display:flex;flex-wrap:wrap;gap:var(--space-8);min-width:0}
-.sf-row .fchip{height:32px;padding:0 14px;border-radius:var(--radius-sm);font-size:var(--font-size-caption)}
+.sf-row .fchip{height:32px;padding:0 14px;border-radius:var(--radius-sm);font-size:13px}
+/* 真源选中态：底 #F4F5FF、字 #517AFF、字重 400、没有边框。
+   只作用于 SaaS 筛选区 —— .fchip 是共享组件，后台那套没量过，不能一起改。 */
+.sf-row .fchip[aria-pressed="true"]{
+  background:var(--color-brand-chip);border-color:transparent;
+  color:var(--color-brand-text);font-weight:var(--font-weight-regular);
+}
 .sf-row .sv-toggle{margin-left:auto;align-self:flex-start}
 
 .sv-toggle{display:flex;gap:var(--space-4);flex:none}
