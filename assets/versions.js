@@ -222,7 +222,7 @@ window.Versions = (function () {
       var hd = $('#head'); if (hd) hd.hidden = true;
       /* 2026-11-06：原来这里只有一句「回应用管理重新选一项。」—— 空态没有可点的出口，
          用户得自己翻左侧菜单找。R16 的要求是空态自带出口。 */
-      var backTo = S.scope === 'app' ? 'apps.html' : 'components.html';
+      var backTo = S.scope === 'app' ? 'app-manage.html' : 'components.html';
       var backName = S.scope === 'app' ? '应用管理' : '组件库';
       $('#list').innerHTML = '<div class="vl-empty">这一项已经不在了。<a href="' + backTo + '">回'
         + backName + '重新选一项</a>。</div>';

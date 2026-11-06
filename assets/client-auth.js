@@ -213,7 +213,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     if (card) card.classList.toggle('is-missing', missing);
     if (missing) {
       box.innerHTML = '<p class="au-empty">这个应用已经不在了（链接过期或已被删除）。' +
-        '<a href="apps.html">回应用列表</a>重新选一个。</p>';
+        '<a href="app-manage.html">回应用列表</a>重新选一个。</p>';
       if (total) total.textContent = '共 0 条';
       return;
     }

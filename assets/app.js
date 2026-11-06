@@ -142,7 +142,7 @@
 
   if (!app) {
     var why = appId ? 'miss=1' : 'pick=1';
-    try { location.replace('apps.html?' + why); } catch (e) {}
+    try { location.replace('app-manage.html?' + why); } catch (e) {}
     return;
   }
 
@@ -1651,7 +1651,7 @@
           app.updated = today();
           DB.save();
           clearDraft();
-          location.href = 'apps.html';
+          location.href = 'app-manage.html';
         },
         onCancel: function () {
           clearDraft();
@@ -1667,7 +1667,7 @@
             app.content = {};
             DB.save();
           }
-          location.href = 'apps.html';
+          location.href = 'app-manage.html';
         }
       });
     });

@@ -22,7 +22,7 @@
     + ' data-tip="预览：看页面做出来的样子。代码：看这个页面与组件的源码文件。">i</span>';
   ops.insertBefore(seg, ops.firstChild);
 
-  var PAGES = ['components.html', 'component.html', 'apps.html', 'app.html', 'versions.html'];
+  var PAGES = ['components.html', 'component.html', 'app-manage.html', 'app.html', 'versions.html'];
   var CANVAS_KEY = '__canvas__';
   var pane = null, mode = 'preview', selected = null;
 
