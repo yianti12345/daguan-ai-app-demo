@@ -1269,15 +1269,11 @@
     if (!window.Gen) { hint('生成器没加载（assets/gen.js 不在）', { ms: 6000 }); return; }
     setGenBusy(true);
     failTarget = null;   /* 每次都说清"这一次在改什么"，别把上一句的目标带进这一句的失败里 */
-    hint('在想…', { ms: 1200 });
-    /* 进度可见：本地模型单次响应 2–60 秒都有，没有进度的话用户看到的是
-       "说完了，没反应"。每 3 秒报一次已等时长 —— 它不是装饰，是这个通道慢的唯一交代。
-       结束（成功或失败）统一在 finallyStep 里清掉，不许漏。 */
-    var t0 = Date.now();
-    var tick = setInterval(function () {
-      var s = Math.round((Date.now() - t0) / 1000);
-      hint('正在按你说的做…已等 ' + s + ' 秒', { ms: 4000 });
-    }, 3000);
+    /* ★2026-11-06（用户截图：屏幕上浮出一条「在想…」）：这类进度提示一律撤掉。
+       "正在处理"已经有三个就地反馈 —— 状态位「生成中」、输入条呼吸描边、发送键变停止方块，
+       再朝画面扔一个浮条是重复，而且它长得像一条消息，最容易被当成 AI 说了句废话。
+       tick 保留为空实现：下面 stopTick() 的调用点不改，避免再引一次漏清。 */
+    var tick = null;
     var stopTick = function () { if (tick) { clearInterval(tick); tick = null; } };
 
     /* 先本地：确定性结构指令（加列 / 撤回）不花模型、不重造表、跑几次都一样 */
@@ -1327,7 +1323,7 @@
              prevOwn = 改前本应用有没有自己的覆盖；prevShared = 组件库里的底。 */
           var editPrevOwn = ownSnap(target.id);
           var editPrevShared = sharedSnap(target.id);
-          hint('正在改「' + target.name + '」…', { ms: 1200 });
+          /* 同上：进行中的提示不浮条，改成状态位负责。 */
           /* 失败时要说清"没改成什么" —— 目标名字在这里就能确定，别等到 catch 里再猜 */
           failTarget = target.name;
           return Gen.componentSpec(plan.edit.ask || text, {
@@ -1348,7 +1344,7 @@
                模型爱说"我准备把…改成…"（将来时），而后半句已经在说"已更新"，
                两句放一起自相矛盾。 */
             var done = '改好了：' + newName;
-            hint('已改「' + newName + '」', { ms: 8000 });
+            /* 成功不必再浮一条：下面那条消息已经是结果，浮条只算重复。 */
             if (ui && ui.addMsg) ui.addMsg('cfg', done);
           });
         }
