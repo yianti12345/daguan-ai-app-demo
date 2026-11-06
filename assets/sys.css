@@ -79,8 +79,10 @@ a:hover{color:var(--color-brand-active)}
    且会让人以为"还可以有占位项"。删掉，不留后路。 */
 /* ── 顶栏 56：面包屑 + 头像（线上无下边框，白对白直切） ── */
 .hdr{
-  height:56px;flex:0 0 56px;display:flex;align-items:center;gap:var(--space-8);
-  padding:0 var(--space-16);
+  height:48px;flex:0 0 48px;display:flex;align-items:center;gap:var(--space-8);
+  /* 真源实测：顶栏 48 高，面包屑起于 x=240（侧栏 200 + 左内距 40）。
+     原来 56 高 / 左右各 16 —— 高 8、左距少 24，面包屑整体偏左偏下。 */
+  padding:0 var(--space-16) 0 40px;
 }
 .hdr .crumb{display:flex;align-items:center;gap:var(--space-8);font-size:var(--font-size-body);color:var(--color-text-tertiary)}
 /* 面包屑的返回（2026-11-06）：真源 172.26.26.61:10612 的左上角是 16px 圆圈+左箭头，
@@ -134,10 +136,10 @@ a:hover{color:var(--color-brand-active)}
   width:24px;height:24px;border-radius:var(--radius-pill);background:var(--color-border-card);text-decoration:none;
   display:grid;place-items:center;font-size:var(--font-size-caption);color:var(--color-text-secondary);
 }/* ── 主区 ── */
-.main{flex:1;overflow:auto;scrollbar-gutter:stable;padding:var(--space-16) 22px var(--space-16) var(--space-16)}/* 右内距 22 不是随手定的：真源内容区 x=216..1418（宽 1202），右边留 22。
+.main{flex:1;overflow:auto;scrollbar-gutter:stable;padding:21px 22px var(--space-16) var(--space-16)}/* 右内距 22 不是随手定的：真源内容区 x=216..1418（宽 1202），右边留 22。
    我之前四边都是 16，内容区 1208 —— 宽 6，摊到 4 列每列就宽 1.5，
    再被卡片的 aspect-ratio 0.9 放大成高差 2px。1280 断点下这个 2px 直接判红。 */
-.bar{display:flex;align-items:center;gap:var(--space-8);margin-bottom:var(--space-24);padding:0}/* ★ 2026-10-25：原来 padding:0 var(--sp-8)，于是工具条第一个按钮的左缘比
+.bar{display:flex;align-items:center;gap:var(--space-8);margin-bottom:35px;padding-left:30px;padding:0}/* ★ 2026-10-25：原来 padding:0 var(--sp-8)，于是工具条第一个按钮的左缘比
    内容卡（表格/卡片栅格 L=216）多出 var(--sp-8)。独立评审在两轮里都点了这处"不在同一条栅格线上"，
    check-align 却因为量的是 .bar 容器（L=216）而判 0 偏差 —— 量错了对象。改成 0，右缘同样归位。 */
 /* 只给读屏用的文本（2026-11-05 从 client-auth.css 挪进来）：
@@ -218,7 +220,7 @@ a:hover{color:var(--color-brand-active)}
 .bar .tk{font-size:var(--font-size-body);color:var(--color-text-quiet);white-space:nowrap}
 /* 筛选下拉：真源实测 76 宽 / 30 高（原来 120×22，比真源胖一圈） */
 .field.w76{width:auto}
-.field.w76 select{width:76px;height:30px}
+.field.w76 select{width:100px;height:32px}
 /* ★2026-11-02（照线上应用管理工具条）：筛选与主按钮同一行、紧接在左，不再甩到最右；
    只有「下载客户端」留在右端。线上是 新增核心专家 + 搜索 + 4 个下拉 + 筛选图标的一条过滤带。 */
 .bar-main .right{flex:1 1 auto;margin-left:0}
