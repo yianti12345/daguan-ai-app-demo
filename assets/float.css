@@ -79,15 +79,13 @@
 /* 空历史时不占 96 的固定高度：一片白比一句提示更难看 */
 .fk-hist-list:has(.fk-hist-empty){min-height:0}
 /* ★2026-11-06：macOS 是覆盖式滚动条，样式写死了也不显示（实测改深色也没用）。
-   改用底部渐隐表达"下面还有"——它不依赖系统滚动条，任何浏览器都一样。 */
-.fk-hist{position:relative}
-.fk-hist::after{
-  content:''; position:absolute; left:0; right:0; bottom:0; height:26px;
-  pointer-events:none; border-radius:0 0 var(--radius-panel) var(--radius-panel);
-  background:linear-gradient(to top, var(--surface-page) 12%, transparent);
-  opacity:0; transition:opacity .18s ease;
+   改用底部渐隐表达"下面还有"——它不依赖系统滚动条，任何浏览器都一样。
+   ★同日晚修正：第一版用 .fk-hist::after 盖在最外层，把底部的「历史对话 / 收起」
+     也一起压淡了（截图实见）。改成给滚动容器本身加 mask：只淡内容，不动头部。 */
+.fk-hist.has-more .fk-hist-list{
+  -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+  mask-image:linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
 }
-.fk-hist.has-more::after{opacity:1}
 
 /* 常显细滚动条：macOS 默认滚动条在内容不满时完全不出现，用户以为不能滚。 */
 .fk-hist-list::-webkit-scrollbar{width:8px}
