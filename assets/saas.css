@@ -27,33 +27,37 @@ body.saas{background:var(--surface-canvas)}
 /* ── 侧栏：结构由 shell.js 生成（logo + .menu + .grp），这里只换皮 ────────
    后台是"深色分组标题 + 折叠组"，SaaS 端是"平铺项 + 选中浅蓝块"。
    同一份 DOM，两套皮肤，靠 data-nav 区分 —— 不复制第二份侧栏。 */
+/* ★2026-11-06 第二次校正（用户：「你什么自信跟我讲现在是 1:1」）。
+   真源 ApplyShop 实测，逐项替换了上一版凭印象写的值：
+     侧栏底       白               → #F3F4F7（bixi-dashboard-layout-menu 实际底色）
+     菜单项       40 高 / 12 内距  → 48 高 / 9 外距 / 16 内距（LI 实测 9,60,183,48）
+     选中态       浅蓝底+左竖条    → 纯白块 + 蓝字 600 + 图标变蓝（真源没有竖条）
+     未选中字色   text-secondary  → rgba(0,0,0,.7)，图标 rgb(116,127,144)
+   那个 3px 左竖条是我自己加的，真源没有 —— 已删。 */
 .sider[data-nav="saas"]{
-  background:var(--surface-page);
-  border-right:1px solid var(--color-border-card);
+  background:var(--color-sider-bg);
+  border-right:0;
 }
-.sider[data-nav="saas"] .menu{padding:var(--space-8)}
-.sider[data-nav="saas"] .grp[data-leaf="1"]{margin-bottom:var(--space-4)}
+.sider[data-nav="saas"] .grp{padding:0 var(--space-8)}
+.sider[data-nav="saas"] .menu{padding:var(--space-12) 0 0}
+.sider[data-nav="saas"] .grp[data-leaf="1"]{margin:0}
 .sider[data-nav="saas"] .gt{
-  height:40px;
-  padding:0 var(--space-12);
-  border-radius:var(--radius-sm);
+  height:48px;
+  padding:0 var(--space-16);
+  border-radius:var(--radius-xs);
   font-size:var(--font-size-body);
-  font-weight:var(--font-weight-medium);
-  color:var(--color-text-secondary);
+  font-weight:var(--font-weight-regular);
+  color:var(--color-text-nav);
 }
-.sider[data-nav="saas"] .gt:hover{background:var(--surface-sunken-2);color:var(--color-text-primary)}
+.sider[data-nav="saas"] .gt .gi{color:var(--color-icon-nav)}
+.sider[data-nav="saas"] .gt:hover{background:var(--color-sider-hover);color:var(--color-text-primary)}
+.sider[data-nav="saas"] .gt:hover .gi{color:var(--color-text-primary)}
 .sider[data-nav="saas"] .gt[aria-current="page"]{
-  background:var(--color-brand-surface);
+  background:var(--surface-page);
   color:var(--color-brand-ink);
   font-weight:var(--font-weight-semibold);
 }
 .sider[data-nav="saas"] .gt[aria-current="page"] .gi{color:var(--color-brand)}
-/* 选中时左侧那道竖条：真源是块左边缘一条 3px 蓝线，压在圆角外沿 */
-.sider[data-nav="saas"] .grp[data-leaf="1"]:has(.gt[aria-current="page"]){position:relative}
-.sider[data-nav="saas"] .grp[data-leaf="1"]:has(.gt[aria-current="page"])::before{
-  content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;
-  background:var(--color-brand);border-radius:0 2px 2px 0;
-}
 
 /* ── 主区 ───────────────────────────────────────────────────────── */
 .saas-main{flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain}
@@ -68,60 +72,61 @@ body.saas{background:var(--surface-canvas)}
 .sb-l .sb-ico{display:grid;place-items:center;color:var(--color-text-tertiary)}
 .sb-r{display:flex;align-items:center;gap:var(--space-8)}
 
-/* ── hero ──────────────────────────────────────────────────────────
-   两个形态同一份样式，差一个 .is-tall：
-     我的应用（默认）＝ 只有搜索框，660×42、圆角 6，条高约 84；
-     应用市场（.is-tall）＝ 36/600 大标题 + 14 号灰副标题 + 880×48 圆角 12 搜索框。
-   数值全部来自真源实测（agents.datagrand.com/saas 两个路由各量一次）。 */
+/* ── hero：真源是**一整段**，标题 + 副标题 + 搜索 + 筛选全在里面 ──────
+   ApplyShop 实测（agents.datagrand.com/saas，1440×900）：
+     section   200,48 → 1234×424，padding 40 25 30
+     背景      assets/img/hero-bg.png（2480×604，no-repeat，size 120.3% 115%，pos -36.5 -32.5）
+     标题      36/600 rgba(0,0,0,.9)，top 88（= 48 + 40），行高 50
+     副标题    14/400 rgba(0,0,0,.4)，top 146（标题底 138 + 8）
+     搜索框    880×48 圆角 12，padding 14 6 14 20，top 196（副标题底 166 + 30）
+     搜索按钮  90×31 圆角 6
+     筛选首行  top 272（搜索框底 244 + 28）
+
+   ★2026-11-06 第二次校正。上一版有四处是我自己想的，不是量出来的：
+     没有标题（凭空判断"我的应用页不该有"）、搜索框 660×42 圆角 6、
+     筛选放在 hero 外面、背景用 CSS 渐变顶替那张图。用户一句「你什么自信跟我讲 1:1」问得对。 */
 .saas-hero{
   position:relative;flex:none;
-  padding:22px 0 20px;
-  background:linear-gradient(180deg,
-    var(--color-brand-surface-2) 0%,
-    var(--color-brand-surface) 55%,
-    var(--surface-page) 100%);
-  border-bottom:1px solid var(--color-border-card);
+  padding:40px 25px 30px;
+  background:url(assets/img/hero-bg.png) no-repeat -36.5px -32.5px / 120.3% 115%;
 }
-.saas-hero.is-tall{padding:40px 0 20px;text-align:center}
 .sh-t{
+  margin:0;text-align:center;
   font-size:var(--font-size-hero);line-height:50px;
   font-weight:var(--font-weight-semibold);color:var(--color-text-primary);
 }
 .sh-s{
-  margin-top:var(--space-8);
+  margin:var(--space-8) 0 0;text-align:center;
   font-size:var(--font-size-body);line-height:20px;
-  color:var(--color-text-secondary);opacity:.72;
+  color:var(--color-text-quiet);
 }
-.saas-hero.is-tall .saas-search{margin-top:30px}
-.saas-hero:not(.is-tall) .saas-search{margin-top:0}
 
-/* 搜索框：白底 + 右侧蓝按钮。默认 660×42（我的应用），is-tall 下 880×48 圆角 12（市场） */
+/* 搜索框：白底、无描边、圆角 12，右侧一颗 90×31 的蓝按钮 */
 .saas-search{
   display:flex;align-items:center;gap:var(--space-8);
-  width:660px;max-width:calc(100% - 48px);height:42px;
-  margin:var(--space-16) auto 0;padding:0 5px 0 var(--space-16);
+  width:880px;max-width:100%;height:48px;
+  margin:30px auto 0;padding:0 9px 0 20px;
   background:var(--surface-page);
-  border:1px solid var(--color-border-card);
-  border-radius:var(--radius-sm);
-  box-shadow:var(--shadow-flat);
-}
-.saas-hero.is-tall .saas-search{
-  width:880px;height:48px;padding:0 9px 0 var(--space-16);
-  border-radius:var(--radius-panel);
+  border:0;border-radius:var(--radius-panel);
+  box-shadow:0 2px 10px rgba(108,125,169,.14);
 }
 .saas-search input{
   flex:1;min-width:0;border:0;outline:0;background:transparent;
   font:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);
 }
 .saas-search input::placeholder{color:var(--color-text-tertiary)}
-.saas-search .btn{flex:none;height:32px}
-.saas-hero.is-tall .saas-search .btn{width:90px}
+.saas-search .btn{flex:none;width:90px;height:31px;padding:0;border-radius:var(--radius-sm);font-size:var(--font-size-body)}
 
-/* ── 筛选区 ─────────────────────────────────────────────────────── */
-.saas-filters{flex:none;padding:var(--space-16) calc(var(--space-32) + var(--space-4)) 0}
-.sf-row{display:flex;align-items:flex-start;gap:var(--space-12);margin-bottom:var(--space-12)}
-.sf-k{flex:none;width:68px;line-height:32px;font-size:var(--font-size-body);color:var(--color-text-secondary)}
+/* ── 筛选区（在 hero 内部，跟着那段渐变走）───────────────────────────
+   实测：label 宽 60 / 14 号 rgb(100,106,115) / 上内距 5；
+        chip 高 32 / 圆角 6 / 13 号 / 内距 0 14 / 选中底 rgb(244,245,255) 蓝字；
+        行间距 16（272 → 320 → 368）。 */
+.saas-filters{flex:none;padding:28px 0 0}
+.sf-row{display:flex;align-items:flex-start;gap:var(--space-12);margin-bottom:var(--space-16)}
+.sf-row:last-child{margin-bottom:0}
+.sf-k{flex:none;width:60px;padding-top:5px;line-height:22px;font-size:var(--font-size-body);color:var(--color-text-secondary)}
 .sf-v{display:flex;flex-wrap:wrap;gap:var(--space-8);min-width:0}
+.sf-row .fchip{height:32px;padding:0 14px;border-radius:var(--radius-sm);font-size:var(--font-size-caption)}
 .sf-row .sv-toggle{margin-left:auto;align-self:flex-start}
 
 .sv-toggle{display:flex;gap:var(--space-4);flex:none}
@@ -134,14 +139,18 @@ body.saas{background:var(--surface-canvas)}
 .sv-btn[aria-pressed="true"]{background:var(--color-brand-surface);color:var(--color-brand-ink)}
 .sv-btn:focus-visible{outline:2px solid var(--color-brand);outline-offset:1px}
 
-/* ── 分组 + 卡片网格 ─────────────────────────────────────────────── */
-.saas-groups{flex:1;padding:var(--space-8) calc(var(--space-32) + var(--space-4)) var(--space-32)}
+/* ── 分组 + 卡片网格 ───────────────────────────────────────────────
+   真源：分组标题起于 225（= 侧栏 200 + 25），网格同起点、自身再内缩 8 → 卡片 233。
+   上一版内容是 36 的边距（32 + 4），比真源宽 11px，四列卡因此各窄 4px。 */
+.saas-groups{flex:1;padding:0 25px var(--space-32)}
 .saas-group{margin-bottom:var(--space-32)}
 .saas-group:last-child{margin-bottom:0}
+/* 分组标题：真源 .group-title-wrapper 实测 14 号 / gap 8 / 下距 20（不是 16 号 + 下距 16）。
+   那条竖条真源有，保留。 */
 .sg-hd{
   display:flex;align-items:center;gap:var(--space-8);
-  margin:0 0 var(--space-16);
-  font-size:var(--font-size-heading);font-weight:var(--font-weight-semibold);
+  margin:0 0 20px;
+  font-size:var(--font-size-body);font-weight:var(--font-weight-semibold);
   color:var(--color-text-primary);
 }
 .sg-hd::before{
@@ -149,7 +158,7 @@ body.saas{background:var(--surface-canvas)}
   background:var(--color-brand);border-radius:var(--radius-xs);
 }
 
-.saas-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-32)}
+.saas-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-32);padding:0 var(--space-8)}
 @media (max-width:1279px){.saas-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:1023px){.saas-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-24)}}
 
@@ -169,18 +178,26 @@ body.saas{background:var(--surface-canvas)}
 .ac-hit:focus-visible{outline:2px solid var(--color-brand);outline-offset:-2px}
 .ac-cover{position:relative;display:block;aspect-ratio:8/5;overflow:hidden;background:var(--gradient-cover)}
 .ac-cover img{display:block;width:100%;height:100%;object-fit:cover}
-.ac-bd{display:flex;flex-direction:column;gap:var(--space-4);flex:1;padding:var(--space-12) var(--space-12) 0}
+/* ★2026-11-06 第二次校正，卡片内部按真源逐块量：
+     卡片 268×298 / 圆角 12 / 描边 rgba(108,125,169,.3)
+     封面 168（8:5）
+     标题 (246,695,242,27) 18/600 —— 卡片左 233，内距 13
+     描述 (246,726,242,38) 12/400 rgb(108,125,169)，行高 19、两行
+     底栏 (234,776,266,24) 内距 0 12、下距 14
+   上一版把描述写成 14 号灰、标题内距 12、底栏下距 16 —— 三处都比真源"胖"一档。 */
+.ac-bd{display:flex;flex-direction:column;gap:var(--space-4);flex:1;padding:11px 13px 0}
 .ac-nm{
-  font-size:var(--font-size-card-title);font-weight:var(--font-weight-semibold);color:var(--color-text-primary);
+  font-size:var(--font-size-card-title);line-height:27px;
+  font-weight:var(--font-weight-semibold);color:var(--color-text-primary);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .acard:hover .ac-nm{color:var(--color-brand-ink)}
 .ac-desc{
-  font-size:var(--font-size-caption);line-height:18px;color:var(--color-text-tertiary);
-  height:36px;overflow:hidden;
+  font-size:var(--font-size-caption);line-height:19px;color:var(--color-text-card-desc);
+  height:38px;overflow:hidden;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
 }
-.ac-ft{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);padding:var(--space-8) var(--space-12) var(--space-16)}
+.ac-ft{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);margin-top:12px;height:38px;padding:0 12px 14px}
 .ac-time{font-size:var(--font-size-caption);color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ac-go{
   flex:none;width:24px;height:24px;border-radius:var(--radius-pill);

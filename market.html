@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>应用市场</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23587FFF'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>达</text></svg>">
-<link rel="stylesheet" href="assets/tokens.css?v=0e2b696a">
+<link rel="stylesheet" href="assets/tokens.css?v=02e79fcb">
 <link rel="stylesheet" href="assets/sys.css?v=ea209f08">
-<link rel="stylesheet" href="assets/saas.css?v=e896f70b">
+<link rel="stylesheet" href="assets/saas.css?v=dfe0db0f">
   <meta name="robots" content="noindex,nofollow">
 </head>
 <body class="saas" data-saas="market">
@@ -59,16 +59,18 @@
 
     <!-- hero 与「我的应用」同一套，加 .is-tall：大标题 + 副标题 + 880×48 搜索框
          （真源应用市场实测 36/600、14 号灰、880×48 圆角 12） -->
-    <div class="saas-hero is-tall">
-      <div class="sh-t">找到适合你业务的智能审核应用</div>
-      <div class="sh-s">汇聚多业务场景审核应用，开箱即用，让审核更快、更准、更合规</div>
+    <!-- 真源 hero 是**一整段**：大标题 + 副标题 + 搜索框 + 三行筛选全在里面，
+         背景是一张 2480×604 的渐变图（不是 CSS 渐变），padding 40/25/30。
+         上一版我把筛选拆到 hero 外面、用 CSS 渐变顶替 —— 那是最明显的两处不像。 -->
+    <section class="saas-hero">
+      <h1 class="sh-t">找到适合你业务的智能审核应用</h1>
+      <p class="sh-s">汇聚多业务场景审核应用，开箱即用，让审核更快、更准、更合规</p>
       <div class="saas-search">
         <input id="kw" type="search" placeholder="搜索应用" aria-label="按应用名称搜索">
         <button type="button" class="btn primary" id="act-search">搜索</button>
       </div>
-    </div>
-
-    <div class="saas-filters" id="filters"></div>
+      <div class="saas-filters" id="filters"></div>
+    </section>
     <div class="saas-groups" id="groups"></div>
   </div>
 </div>

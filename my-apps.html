@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>我的应用</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23587FFF'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>达</text></svg>">
-<link rel="stylesheet" href="assets/tokens.css?v=0e2b696a">
+<link rel="stylesheet" href="assets/tokens.css?v=02e79fcb">
 <link rel="stylesheet" href="assets/sys.css?v=ea209f08">
-<link rel="stylesheet" href="assets/saas.css?v=e896f70b">
+<link rel="stylesheet" href="assets/saas.css?v=dfe0db0f">
   <meta name="robots" content="noindex,nofollow">
 </head>
 <body class="saas">
@@ -30,7 +30,7 @@
             <rect x="3" y="13.4" width="7.6" height="7.6" rx="1.6"/><rect x="13.4" y="13.4" width="7.6" height="7.6" rx="1.6"/>
           </svg>
         </span>
-        <h1 class="sr-only">我的应用</h1>
+        <span class="sr-only">我的应用</span>
         <span aria-hidden="true">我的应用</span>
       </div>
       <div class="sb-r">
@@ -62,14 +62,18 @@
       </div>
     </header>
 
-    <div class="saas-hero">
+    <!-- 与「应用市场」同一段 hero：标题 + 副标题 + 880×48 搜索 + 三行筛选，
+         背景是那张 2480×604 的渐变图。真源的 MyApply 路由目前是 404，
+         所以这一页没有逐像素对象 —— 度量全部取自同壳的 ApplyShop，不再自称 1:1。 -->
+    <section class="saas-hero">
+      <h1 class="sh-t">我的应用</h1>
+      <p class="sh-s" id="sh-sub">已开通的应用都在这里，点开就能用</p>
       <div class="saas-search">
         <input id="kw" type="search" placeholder="应用名称" aria-label="按应用名称搜索">
         <button type="button" class="btn primary" id="act-search">搜索</button>
       </div>
-    </div>
-
-    <div class="saas-filters" id="filters"></div>
+      <div class="saas-filters" id="filters"></div>
+    </section>
     <div class="saas-groups" id="groups"></div>
   </div>
 </div>

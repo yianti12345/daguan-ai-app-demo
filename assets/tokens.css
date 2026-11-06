@@ -33,6 +33,8 @@
      比 --color-border-card(#E5E7EB) 更偏蓝、更淡，是"卡片浮在浅底上"的那道线。
      只在 L1 写一次字面量，L3 语义别名见 --color-border-card-tint。 */
   --p-line-card-tint:rgba(108,125,169,.3);
+  /* 卡片描述文字：真源 .app-desc 实测 rgb(108,125,169)，比正文浅、偏蓝 */
+  --p-line-ink:#6C7DA9;
   /* 「已购买」徽标底：真源 status-tag.purchased 是半透明品牌蓝叠在封面上（白字）。 */
   --p-brand-55:rgba(81,122,255,.55);
   --p-gray-500:#7A8496;  --p-gray-600:#747F90;  --p-gray-650:#667085;
@@ -40,7 +42,7 @@
 
   /* 墨（黑/冷灰的透明度档） */
   --p-ink-90:rgba(0,0,0,.9);   --p-ink-85:rgba(0,0,0,.85); --p-ink-70:rgba(0,0,0,.7);
-  --p-ink-65:rgba(0,0,0,.65);  --p-ink-58:rgba(0,0,0,.58); --p-ink-25:rgba(0,0,0,.25);
+  --p-ink-65:rgba(0,0,0,.65);  --p-ink-58:rgba(0,0,0,.58); --p-ink-25:rgba(0,0,0,.25); --p-ink-40:rgba(0,0,0,.4);
   --p-ink-10:rgba(0,0,0,.1);   --p-ink-05:rgba(0,0,0,.05); --p-ink-03:rgba(0,0,0,.03);
 
   /* 蓝：品牌主色族（浅 → 深） */
@@ -143,6 +145,11 @@
   /* 描边与焦点 */
   --color-border-hairline:var(--p-gray-150);
   --color-border-card:var(--p-gray-200);
+  /* 侧栏底 + 未选中项 hover：真源 SaaS 侧栏实测 #F3F4F7，不是白色 */
+  --color-sider-bg:var(--p-gray-75);
+  --color-text-quiet:var(--p-ink-40);
+  --color-text-card-desc:var(--p-line-ink);
+  --color-sider-hover:var(--p-gray-125);
   --color-border-card-tint:var(--p-line-card-tint);
   --color-brand-buy:var(--p-brand-55);
   --color-border-control:var(--p-gray-300);
