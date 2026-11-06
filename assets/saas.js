@@ -27,6 +27,25 @@
         });
   }
 
+  /* ── 两种页面：我的应用（看自己的）/ 应用市场（挑着开通）─────────────
+     同一份渲染代码，靠 body[data-saas] 分叉。市场多两样东西：
+     封面右上角的「已购买」、底栏的购物车（已购买则换成进入箭头）。 */
+  var MODE = document.body.getAttribute('data-saas') === 'market' ? 'market' : 'my-apps';
+  var BUYER = '达观数据';                        /* 顶条账号块里写的那个组织 */
+  var BUYER_TID = 'a1b2c3d4e5f60001';            /* 演示租户 ID：16 位，与种子同格式 */
+
+  function isBought(id) {
+    if (!window.DB || !DB.AUTHS) return false;
+    for (var i = 0; i < DB.AUTHS.length; i++) {
+      if (DB.AUTHS[i].appId === id && DB.AUTHS[i].status === '已授权') return true;
+    }
+    return false;
+  }
+  function today() {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+
   /* 「华信证券 · 债承审核」→「债承审核」。没有前缀的原样返回。 */
   function shortName(n) {
     var s = String(n || '');
@@ -104,23 +123,65 @@
     if (a.cover) return '<img src="' + esc(a.cover) + '" alt="">';
     return '<img src="assets/common_card.webp" alt="">';
   }
+  var IC_GO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
+  /* 购物车：真源市场卡底栏那颗（24×24 描边）。未开通才有 —— 已开通的卡片给箭头。 */
+  var IC_CART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h2.2l2.1 9.6a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.5L20 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>';
+
+  /* 卡片结构：`<a class="ac-hit">封面+标题</a>` + `<div class="ac-ft">时间 + 动作</div>`。
+     不能把动作塞进 <a> 里 —— 按钮嵌链接是无效 HTML，点一下会同时触发两个行为。 */
   function cardHtml(a) {
     var href = 'app.html?id=' + encodeURIComponent(a.id) + '&mode=view';
     var nm = shortName(a.name);
+    var bought = isBought(a.id);
+    var cta;
+    if (MODE === 'market' && !bought) {
+      cta = '<button type="button" class="ac-cart" data-buy="' + esc(a.id) + '"'
+        + ' aria-label="开通「' + esc(nm) + '」" title="开通">' + IC_CART + '</button>';
+    } else {
+      cta = '<a class="ac-go" href="' + esc(href) + '" aria-label="进入「' + esc(nm) + '」">' + IC_GO + '</a>';
+    }
     return '<article class="acard">'
-      + '<a class="ac-hit" href="' + esc(href) + '" aria-label="进入应用 ' + esc(nm) + '">'
-      + '<span class="ac-cover">' + coverHtml(a) + '</span>'
+      + '<a class="ac-hit" href="' + esc(href) + '" aria-label="进入应用「' + esc(nm) + '」">'
+      + '<span class="ac-cover">' + coverHtml(a)
+      + (MODE === 'market' && bought ? '<span class="ac-buy">已购买</span>' : '')
+      + '</span>'
       + '<span class="ac-bd">'
       + '<span class="ac-nm">' + esc(nm) + '</span>'
       + '<span class="ac-desc">' + esc(a.desc || '—') + '</span>'
       + '</span>'
-      + '<span class="ac-ft">'
+      + '</a>'
+      + '<div class="ac-ft">'
       + '<span class="ac-time">' + esc(dayOf(a.updated)) + ' 创建</span>'
-      + '<span class="ac-go" aria-hidden="true">'
-      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-      + '<path d="M5 12h13M13 6l6 6-6 6"/></svg>'
-      + '</span></span>'
-      + '</a></article>';
+      + cta
+      + '</div>'
+      + '</article>';
+  }
+
+  /* 开通：真的往授权表里加一条 —— 不是假装成功。
+     租户取顶条那个组织（达观数据），首次开通时自动建这条客户台账。 */
+  function doBuy(id) {
+    var a = DB.appById(id);
+    if (!a) { if (window.UIK) UIK.toast('这个应用已经不在了', 'error'); return; }
+    var nm = shortName(a.name);
+    if (!window.Confirm) return;
+    Confirm.ask({
+      title: '开通「' + nm + '」',
+      body: '开通后这条授权会写进客户授权，' + BUYER + ' 的账号可以用它。',
+      ok: '开通',
+      onOk: function () {
+        var cl = DB.clientByName(BUYER);
+        if (!cl) {
+          var r = DB.addClient(BUYER, BUYER_TID);
+          if (!r || !r.ok) { UIK.toast((r && r.msg) || '客户台账没写进去', 'error'); return; }
+          cl = DB.clientByName(BUYER);
+        }
+        if (!cl) { UIK.toast('客户台账没写进去', 'error'); return; }
+        var res = DB.authGrant(id, [cl.id], 12, today());
+        if (!res || !res.ok) { UIK.toast((res && res.msg) || '没开通成功', 'error'); return; }
+        repaint();
+        UIK.toast('已开通 · 授权已写进客户授权');
+      }
+    });
   }
 
   function paintGroups() {
@@ -164,6 +225,9 @@
 
     /* 筛选与视图切换都走同一条委托：按钮是重画出来的，逐个绑会随重画丢监听。 */
     document.addEventListener('click', function (e) {
+      /* 购物车：先拦（它在 <a> 外面，不拦也不会跳转，但拦一下更稳，防止以后结构变化） */
+      var cart = e.target.closest ? e.target.closest('.ac-cart') : null;
+      if (cart) { e.preventDefault(); doBuy(cart.getAttribute('data-buy')); return; }
       var c = e.target.closest ? e.target.closest('.fchip') : null;
       if (c) {
         var k = c.getAttribute('data-k'), v = c.getAttribute('data-v');

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>应用市场</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23587FFF'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>达</text></svg>">
+<link rel="stylesheet" href="assets/tokens.css?v=0e2b696a">
+<link rel="stylesheet" href="assets/sys.css?v=19ab64f0">
+<link rel="stylesheet" href="assets/saas.css?v=e896f70b">
+</head>
+<body class="saas" data-saas="market">
+
+<div class="saas">
+  <!-- 侧栏与「我的应用」同一份（shell.js 的 saas 那套导航），只是当前项不同 -->
+  <nav class="sider" data-nav="saas" data-active="market" aria-label="主导航"></nav>
+
+  <div class="saas-main">
+    <header class="saas-bar">
+      <div class="sb-l">
+        <a class="crumb-back" id="sb-back" href="index.html" title="返回" aria-label="返回"></a>
+        <span class="sb-ico" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9h18l-1.6 10.2a2 2 0 0 1-2 1.8H6.6a2 2 0 0 1-2-1.8L3 9Z"/><path d="M8 9V6.5a4 4 0 0 1 8 0V9"/>
+          </svg>
+        </span>
+        <h1 class="sr-only">应用市场</h1>
+        <span aria-hidden="true">应用市场</span>
+      </div>
+      <div class="sb-r">
+        <div class="ab-wrap">
+          <button type="button" class="ab-user" id="ab-user" aria-haspopup="true" aria-expanded="false" aria-controls="ab-menu" aria-label="当前账号 zheng，达观数据">
+            <span class="ab-av" aria-hidden="true">郑</span>
+            <span class="ab-nm"><b>zheng</b><i>达观数据</i></span>
+            <svg class="ab-cv" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="ab-menu" id="ab-menu" role="menu" hidden>
+            <button type="button" class="ab-mi" role="menuitem">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+              切换平台
+            </button>
+            <button type="button" class="ab-mi" role="menuitem">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              修改密码
+            </button>
+            <button type="button" class="ab-mi" role="menuitem">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.6"/></svg>
+              关于系统
+            </button>
+            <button type="button" class="ab-mi is-out" role="menuitem">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 8l4 4-4 4M13 12H4"/></svg>
+              退出登录
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- hero 与「我的应用」同一套，加 .is-tall：大标题 + 副标题 + 880×48 搜索框
+         （真源应用市场实测 36/600、14 号灰、880×48 圆角 12） -->
+    <div class="saas-hero is-tall">
+      <div class="sh-t">找到适合你业务的智能审核应用</div>
+      <div class="sh-s">汇聚多业务场景审核应用，开箱即用，让审核更快、更准、更合规</div>
+      <div class="saas-search">
+        <input id="kw" type="search" placeholder="搜索应用" aria-label="按应用名称搜索">
+        <button type="button" class="btn primary" id="act-search">搜索</button>
+      </div>
+    </div>
+
+    <div class="saas-filters" id="filters"></div>
+    <div class="saas-groups" id="groups"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="assets/data.js?v=5ecabad7"></script>
+<script src="assets/ui-kit.js?v=17f759c1"></script>
+<script src="assets/confirm.js?v=33f3cd5b"></script>
+<script src="assets/shell.js?v=353babc7"></script>
+<script src="assets/saas.js?v=7e6ae97b"></script>
+</body>
+</html>

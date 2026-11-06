@@ -29,6 +29,12 @@
   --p-gray-25:#FAFBFC;   --p-gray-50:#F5F6F9;   --p-gray-75:#F3F4F7;  --p-gray-85:#F3F4F6;
   --p-gray-90:#F1F3F7;   --p-gray-100:#F1F2F6;  --p-gray-125:#EFF1F5; --p-gray-150:#F0F0F0;
   --p-gray-200:#E5E7EB;  --p-gray-300:#D9D9D9;  --p-gray-350:#BBBFCD; --p-gray-400:#9DA3B2;
+  /* SaaS 端卡片描边：真源实测 rgba(108,125,169,.3)（agents.datagrand.com 应用卡 1px）。
+     比 --color-border-card(#E5E7EB) 更偏蓝、更淡，是"卡片浮在浅底上"的那道线。
+     只在 L1 写一次字面量，L3 语义别名见 --color-border-card-tint。 */
+  --p-line-card-tint:rgba(108,125,169,.3);
+  /* 「已购买」徽标底：真源 status-tag.purchased 是半透明品牌蓝叠在封面上（白字）。 */
+  --p-brand-55:rgba(81,122,255,.55);
   --p-gray-500:#7A8496;  --p-gray-600:#747F90;  --p-gray-650:#667085;
   --p-slate-700:#5B6C98; --p-neutral-900:#252524;
 
@@ -77,7 +83,7 @@
   --p-radius-12:12px; --p-radius-20:20px; --p-radius-999:999px;
 
   /* 字号 / 行高台阶（真源口径：只用 12/14/16/20） */
-  --p-font-12:12px; --p-font-14:14px; --p-font-16:16px; --p-font-20:20px;
+  --p-font-12:12px; --p-font-14:14px; --p-font-16:16px; --p-font-18:18px; --p-font-36:36px; --p-font-20:20px;
   --p-line-16:16px; --p-line-18:18px; --p-line-19:19px; --p-line-20:20px;
   --p-line-22:22px; --p-line-30:30px;
 
@@ -137,6 +143,8 @@
   /* 描边与焦点 */
   --color-border-hairline:var(--p-gray-150);
   --color-border-card:var(--p-gray-200);
+  --color-border-card-tint:var(--p-line-card-tint);
+  --color-brand-buy:var(--p-brand-55);
   --color-border-control:var(--p-gray-300);
   --color-border-card-footer:var(--p-gray-85);
   --color-focus-ring:var(--p-blue-600);
@@ -205,6 +213,10 @@
   --font-size-caption:var(--p-font-12);
   --font-size-body:var(--p-font-14);
   --font-size-heading:var(--p-font-16);
+  /* 卡片标题：真源应用卡实测 18px/600（既不是 16 也不是 20），单列一档 */
+  --font-size-card-title:var(--p-font-18);
+  /* SaaS 首页 hero 大标题：真源应用市场实测 36/600 */
+  --font-size-hero:var(--p-font-36);
   --font-size-title:var(--p-font-20);   /* 卡片标题（真实浏览器实测线上 .app-title = 20px / 行高 30） */
   --font-size-display:var(--p-font-20);
   --leading-caption:var(--p-line-18);

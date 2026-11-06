@@ -68,9 +68,11 @@ body.saas{background:var(--surface-canvas)}
 .sb-l .sb-ico{display:grid;place-items:center;color:var(--color-text-tertiary)}
 .sb-r{display:flex;align-items:center;gap:var(--space-8)}
 
-/* ── hero：一条浅蓝渐变带，搜索框浮在上面 ─────────────────────────
-   真源「我的应用」这条带只有搜索（无大标题），高度约 100；
-   「应用市场」才带大标题。两者差一个 .is-tall，不各写一套。 */
+/* ── hero ──────────────────────────────────────────────────────────
+   两个形态同一份样式，差一个 .is-tall：
+     我的应用（默认）＝ 只有搜索框，660×42、圆角 6，条高约 84；
+     应用市场（.is-tall）＝ 36/600 大标题 + 14 号灰副标题 + 880×48 圆角 12 搜索框。
+   数值全部来自真源实测（agents.datagrand.com/saas 两个路由各量一次）。 */
 .saas-hero{
   position:relative;flex:none;
   padding:22px 0 20px;
@@ -80,13 +82,20 @@ body.saas{background:var(--surface-canvas)}
     var(--surface-page) 100%);
   border-bottom:1px solid var(--color-border-card);
 }
-.saas-hero.is-tall{padding:44px 0 28px;text-align:center}
-.sh-t{font-size:var(--font-size-display);font-weight:var(--font-weight-semibold);color:var(--color-text-primary);letter-spacing:.5px}
-.sh-s{margin-top:var(--space-8);font-size:var(--font-size-body);color:var(--color-text-tertiary)}
-.saas-hero .saas-search{margin-top:var(--space-16)}
+.saas-hero.is-tall{padding:40px 0 20px;text-align:center}
+.sh-t{
+  font-size:var(--font-size-hero);line-height:50px;
+  font-weight:var(--font-weight-semibold);color:var(--color-text-primary);
+}
+.sh-s{
+  margin-top:var(--space-8);
+  font-size:var(--font-size-body);line-height:20px;
+  color:var(--color-text-secondary);opacity:.72;
+}
+.saas-hero.is-tall .saas-search{margin-top:30px}
 .saas-hero:not(.is-tall) .saas-search{margin-top:0}
 
-/* 搜索框：白底 + 右侧蓝按钮，同真源（660 宽居中） */
+/* 搜索框：白底 + 右侧蓝按钮。默认 660×42（我的应用），is-tall 下 880×48 圆角 12（市场） */
 .saas-search{
   display:flex;align-items:center;gap:var(--space-8);
   width:660px;max-width:calc(100% - 48px);height:42px;
@@ -96,15 +105,20 @@ body.saas{background:var(--surface-canvas)}
   border-radius:var(--radius-sm);
   box-shadow:var(--shadow-flat);
 }
+.saas-hero.is-tall .saas-search{
+  width:880px;height:48px;padding:0 9px 0 var(--space-16);
+  border-radius:var(--radius-panel);
+}
 .saas-search input{
   flex:1;min-width:0;border:0;outline:0;background:transparent;
   font:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);
 }
 .saas-search input::placeholder{color:var(--color-text-tertiary)}
 .saas-search .btn{flex:none;height:32px}
+.saas-hero.is-tall .saas-search .btn{width:90px}
 
 /* ── 筛选区 ─────────────────────────────────────────────────────── */
-.saas-filters{flex:none;padding:var(--space-16) var(--space-24) 0}
+.saas-filters{flex:none;padding:var(--space-16) calc(var(--space-32) + var(--space-4)) 0}
 .sf-row{display:flex;align-items:flex-start;gap:var(--space-12);margin-bottom:var(--space-12)}
 .sf-k{flex:none;width:68px;line-height:32px;font-size:var(--font-size-body);color:var(--color-text-secondary)}
 .sf-v{display:flex;flex-wrap:wrap;gap:var(--space-8);min-width:0}
@@ -121,7 +135,7 @@ body.saas{background:var(--surface-canvas)}
 .sv-btn:focus-visible{outline:2px solid var(--color-brand);outline-offset:1px}
 
 /* ── 分组 + 卡片网格 ─────────────────────────────────────────────── */
-.saas-groups{flex:1;padding:var(--space-8) var(--space-24) var(--space-32)}
+.saas-groups{flex:1;padding:var(--space-8) calc(var(--space-32) + var(--space-4)) var(--space-32)}
 .saas-group{margin-bottom:var(--space-32)}
 .saas-group:last-child{margin-bottom:0}
 .sg-hd{
@@ -139,23 +153,25 @@ body.saas{background:var(--surface-canvas)}
 @media (max-width:1279px){.saas-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:1023px){.saas-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-24)}}
 
-/* 卡片（客户看自己开通的应用） */
+/* 卡片（客户看自己开通的应用）
+   ★2026-11-06 按真源像素对齐：268×298、圆角 12、描边 rgba(108,125,169,.3)、
+     标题 18/600、封面 8:5、底栏图标 24。上一版这几项分别是 4 / #E5E7EB / 16 / 3:2 / 28。 */
 .acard{
   display:flex;flex-direction:column;min-width:0;
   background:var(--surface-page);
-  border:1px solid var(--color-border-card);
-  border-radius:var(--card-radius);
+  border:1px solid var(--color-border-card-tint);
+  border-radius:var(--radius-panel);
   overflow:hidden;
   transition:box-shadow .18s ease, border-color .18s ease;
 }
 .acard:hover{border-color:var(--color-border-control);box-shadow:var(--shadow-flat)}
-.ac-hit{display:flex;flex-direction:column;height:100%;text-decoration:none;color:inherit}
+.ac-hit{display:flex;flex-direction:column;flex:1;min-height:0;text-decoration:none;color:inherit}
 .ac-hit:focus-visible{outline:2px solid var(--color-brand);outline-offset:-2px}
-.ac-cover{display:block;aspect-ratio:3/2;overflow:hidden;background:var(--gradient-cover)}
+.ac-cover{position:relative;display:block;aspect-ratio:8/5;overflow:hidden;background:var(--gradient-cover)}
 .ac-cover img{display:block;width:100%;height:100%;object-fit:cover}
 .ac-bd{display:flex;flex-direction:column;gap:var(--space-4);flex:1;padding:var(--space-12) var(--space-12) 0}
 .ac-nm{
-  font-size:var(--font-size-heading);font-weight:var(--font-weight-semibold);color:var(--color-text-primary);
+  font-size:var(--font-size-card-title);font-weight:var(--font-weight-semibold);color:var(--color-text-primary);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .acard:hover .ac-nm{color:var(--color-brand-ink)}
@@ -164,14 +180,35 @@ body.saas{background:var(--surface-canvas)}
   height:36px;overflow:hidden;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
 }
-.ac-ft{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);padding:var(--space-8) var(--space-12) var(--space-12)}
+.ac-ft{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);padding:var(--space-8) var(--space-12) var(--space-16)}
 .ac-time{font-size:var(--font-size-caption);color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ac-go{
-  flex:none;width:28px;height:28px;border-radius:var(--radius-pill);
+  flex:none;width:24px;height:24px;border-radius:var(--radius-pill);
   border:1px solid var(--color-border-card);
   display:grid;place-items:center;color:var(--color-text-secondary);
 }
 .acard:hover .ac-go{border-color:var(--color-brand);color:var(--color-brand);background:var(--color-brand-surface)}
+.ac-go svg{width:14px;height:14px}
+
+/* 市场里的购物车（未开通）：真源是 24×24 的描边图标，点了走开通 */
+.ac-cart{
+  flex:none;width:24px;height:24px;padding:0;border:0;border-radius:var(--radius-xs);
+  background:transparent;color:var(--color-text-secondary);cursor:pointer;
+  display:grid;place-items:center;
+}
+.ac-cart svg{width:18px;height:18px}
+.ac-cart:hover{color:var(--color-brand);background:var(--color-brand-surface)}
+.ac-cart:focus-visible{outline:2px solid var(--color-brand);outline-offset:1px}
+
+/* 「已购买」徽标：真源 50×20 / 12 号白字 / 圆角 4，压在封面右上角 */
+.ac-buy{
+  position:absolute;top:var(--space-8);right:var(--space-8);
+  display:inline-flex;align-items:center;justify-content:center;
+  height:20px;padding:0 var(--space-8);border-radius:var(--radius-tag);
+  background:var(--color-brand-buy);
+  color:var(--color-text-inverse);
+  font-size:var(--font-size-caption);line-height:1;font-weight:var(--font-weight-medium);
+}
 
 /* 列表视图：真源右上角那颗切换是同一批卡片的另一种排法，不是另一套卡片 */
 .saas-grid.is-list{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -183,3 +220,20 @@ body.saas{background:var(--surface-canvas)}
 
 /* 空态：搜索/筛选到 0 条时的出口（不带按钮的 .empty 已有，这里只放倒计时用的间距） */
 .saas-groups .empty{margin:var(--space-32) 0}
+
+/* ── 未接入页（not-ready.html）────────────────────────────────────
+   菜单里挂出来的五项（员工/角色/部门/素材中心/操作日志）在 demo 里没有页面，
+   用户明确说「页面可以显示未接入」——所以给它一个真落地页，而不是 404 或死链接。 */
+.nr-box{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:var(--space-8);padding:var(--space-32) var(--space-24);
+  text-align:center;
+}
+.nr-ico{color:var(--color-border-card)}
+.nr-t{
+  margin:var(--space-8) 0 0;
+  font-size:var(--font-size-card-title);font-weight:var(--font-weight-semibold);
+  color:var(--color-text-primary);
+}
+.nr-s{margin:0;font-size:var(--font-size-body);color:var(--color-text-tertiary)}
+.nr-box .btn{margin-top:var(--space-8)}

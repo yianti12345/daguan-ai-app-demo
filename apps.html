@@ -6,8 +6,8 @@
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
-<link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
-<link rel="stylesheet" href="assets/sys.css?v=bac76ced">
+<link rel="stylesheet" href="assets/tokens.css?v=0e2b696a">
+<link rel="stylesheet" href="assets/sys.css?v=19ab64f0">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=1965c88b">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -58,10 +58,6 @@
         </button>
         <!-- 2026-10-30：导入是一个"从文件新建"的入口，与新建同级、权重更低（次要按钮） -->
         <button class="btn" id="btn-import" type="button">导入应用</button>
-        <!-- 2026-11-06：批量模式的入口。这段 JS（apps.html:764 BB）一直在找 #btn-batch / #batch-bar /
-             #b-all / #b-cnt，而页面上四个节点一个都没有 —— BB 全为 null，BATCH 恒 false，
-             #grid 里的 .js-pick 勾选框永远不渲染，全选/批量上下架整条链从未生效。 -->
-        <button class="btn" id="btn-batch" type="button" aria-pressed="false">批量操作</button>
         <div class="right">
           <!-- 2026-10-31（操作缺口）：列表原来只有"库里的顺序"（DB.APPS 数组序，新件 unshift 到最前），
                想知道"最近动过哪几个"只能逐条点进去看。默认按更新时间倒序 ——
@@ -99,13 +95,6 @@
           </button>
         
         </div>
-      </div>
-
-      <div class="bar bar-main" id="batch-bar" hidden>
-        <label><input type="checkbox" id="b-all"> 全选本页</label>
-        <span id="b-cnt">已选 0 个</span>
-        <button class="btn" type="button" id="b-on">批量上架</button>
-        <button class="btn danger" type="button" id="b-off">批量下架</button>
       </div>
 
       <div class="grid" id="grid"></div>
@@ -225,14 +214,9 @@
     upd: '更新 ',
     ver: '当前版本 ',
     nover: '还没发布过',
-    pick: '选择 ',
     del: '删除应用'
   };
 
-  /* ── 批量选择（2026-10-31）──────────────────────────────────────────
-     选择态存 id 集合、不存 DOM：render 是整格 innerHTML 重建，勾在节点上会被抹掉。
-     勾选框只在批量模式下渲染 —— 平时卡面结构不变（判据与像素基线都按静止态量）。 */
-  var BATCH = false, SEL = {};
 
 
   /* ── 卡片 ⋮ 菜单：一个打开着的就够，永远不叠两层 ── */
@@ -442,33 +426,12 @@
         DB.APPS.splice(i, 1);
         if (DB.APP_COMPS) delete DB.APP_COMPS[a.id];
         DB.save();
-        delete SEL[a.id];
         render();
         toast('已删除「' + a.name + '」');
       }
     });
   }
 
-  /* ── 批量上下架（2026-10-31）────────────────────────────────────────
-     与单张走同一条数据路径（下架 = versDeactivate，上架 = 恢复最近正式版），
-     不另写状态变更。跳过的条目要能说出理由，不能静默少几个。 */
-  function bulkSet(ids, off) {
-    var done = 0, skip = 0;
-    ids.forEach(function (id) {
-      var a = DB.appById(id);
-      if (!a) { skip++; return; }
-      if (off) {
-        if (a.status !== '已上架') { skip++; return; }
-        DB.versDeactivate('app', id); done++;
-        return;
-      }
-      if (a.status !== '已下架') { skip++; return; }
-      var st = DB.versOf('app', id).filter(function (r) { return r.kind === 'stable'; });
-      if (!st.length) { skip++; return; }
-      DB.versApply('app', id, st[0].v); done++;
-    });
-    return { done: done, skip: skip };
-  }
 
   /* ── 三态（2026-11-03）：真源只有 未上架 / 内测中 / 已上架 ──────────
      底层数据还留着历史字段（未发布 / 已下架），这一层只做一次翻译，
@@ -723,8 +686,6 @@
                 '<button class="k-mi is-danger" type="button" role="menuitem" data-act="off" data-id="' + esc(a.id) + '">' + ICON.off + '下架</button>') +
         '</div>' +
         '<footer class="card-ft">' +
-          (BATCH ? '<input type="checkbox" class="js-pick" data-id="' + esc(a.id) + '"' + (SEL[a.id] ? ' checked' : '') +
-            ' aria-label="' + esc(FACT.pick + a.name) + '">' : '') +
           /* ★2026-11-01（用户）：「我在这里应该直接看到最近更新的时间，精确到年月日时分秒。」
              底栏左侧＝版本号 + 完整时间戳。不写"更新"两个字：右边那个时间就是更新时间，
              加个词只是把它翻译一遍。
@@ -772,73 +733,7 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  /* ── 批量模式（2026-10-31）──────────────────────────────────────── */
-  var BB = { bar: $('#batch-bar'), btn: $('#btn-batch'), all: $('#b-all'), cnt: $('#b-cnt') };
-  function selIds() { return Object.keys(SEL); }
-  function paintBatch() {
-    if (!BB.cnt) return;
-    var n = selIds().length;
-    BB.cnt.textContent = '已选 ' + n + ' 个';
-    if (BB.all) {
-      var list = rows();
-      var allOn = list.length > 0 && list.every(function (a) { return !!SEL[a.id]; });
-      BB.all.checked = allOn;
-      BB.all.indeterminate = n > 0 && !allOn;
-    }
-  }
-  function setBatch(on) {
-    BATCH = !!on;
-    if (!BATCH) SEL = {};
-    if (BB.bar) BB.bar.hidden = !BATCH;
-    if (BB.btn) {
-      BB.btn.setAttribute('aria-pressed', BATCH ? 'true' : 'false');
-      BB.btn.textContent = BATCH ? '退出批量' : '批量操作';
-    }
-    render();
-    paintBatch();
-  }
-  if (BB.btn) BB.btn.addEventListener('click', function () { setBatch(!BATCH); });
-  if (BB.all) BB.all.addEventListener('change', function () {
-    var on = BB.all.checked;
-    rows().forEach(function (a) { if (on) SEL[a.id] = true; else delete SEL[a.id]; });
-    render();
-    paintBatch();
-  });
-  if (BB.bar) BB.bar.addEventListener('click', function (e) {
-    var off = e.target.id === 'b-off';
-    if (e.target.id !== 'b-off' && e.target.id !== 'b-on') return;
-    var ids = selIds().filter(function (x) {
-      var a = DB.appById(x);
-      if (!a) return false;
-      return off ? a.status === '已上架' : a.status === '已下架';
-    });
-    if (!ids.length) {
-      toast(off ? '选中的应用里没有「已上架」的' : '选中的应用里没有「已下架」的', 'error');
-      return;
-    }
-    Confirm.ask({
-      title: '操作确认',
-      body: off
-        ? '下架后，这 ' + ids.length + ' 个应用的客户将无法使用，是否确认下架？'
-        : '上架后，这 ' + ids.length + ' 个应用将恢复使用，是否确认上架？',
-      ok: '确定',
-      danger: off,
-      onOk: function () {
-        var r = bulkSet(ids, off);
-        toast((off ? '已下架 ' : '已上架 ') + r.done + ' 个应用' +
-              (r.skip ? ' · ' + r.skip + ' 个没动（状态不符或没有正式版）' : ''));
-        setBatch(true);   /* 留在批量模式，勾选清空 */
-      }
-    });
-  });
-  $('#grid').addEventListener('change', function (e) {
-    var cb = e.target.closest ? e.target.closest('.js-pick') : null;
-    if (!cb) return;
-    var id = cb.getAttribute('data-id');
-    if (cb.checked) SEL[id] = true; else delete SEL[id];
-    paintBatch();
-  });
-  $('#f-sort').addEventListener('change', function () { render(); paintBatch(); });
+  $('#f-sort').addEventListener('change', function () { render(); });
   /* 卡身整张可点（进配置页）；⋮ 与菜单是兄弟控件，点它们不会顺带进配置页。
      ⋮ 的可见性交给 CSS（:hover / :focus-within），这里只管"开/关/执行"。
      键盘：Tab 能到 ⋮；Enter/Space/↓ 打开并聚焦第一项；↑↓ 移动；Esc 关闭回 ⋮；Tab 关闭（走回 DOM 顺序）。 */
@@ -1152,7 +1047,7 @@
 })();
 </script>
 <div id="xz-host"></div>
-<script src="assets/shell.js?v=ed5964cf"></script>
+<script src="assets/shell.js?v=353babc7"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
 <script src="assets/xiaozhi.js?v=84c74e05"></script>
 <script>

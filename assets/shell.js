@@ -31,15 +31,21 @@
     ]]
   ];
 
-  /* ★2026-11-06（用户：saas 端客户登录后「去我的应用里面，点击任意应用就是咱们授权的 AI 应用」）
-     ── SaaS 端（客户侧）的导航。真源是三项：应用市场 / 我的应用 / 系统设置。
-     这里**只放「我的应用」**，不是漏了：
-       · 应用市场在真源里是"挑选并购买/开通"，demo 没有交易链路，放上去点了没用；
-       · 系统设置下挂员工/角色/部门/素材/操作日志五个页面，一个都没做。
-     没有落地页的入口不放 —— 点了是 404 的入口比没有入口更差（这条是本文件自己的规矩，
-     ★2026-10-28 那次删掉 21 个空入口就是照它办的）。要做就把落地页连入口一起加。 */
+  /* ★2026-11-06（用户两次追问后补全）：
+       ① 「要做，1:1 像素级复刻」→ 应用市场页落地 market.html；
+       ② 「先把菜单模块加上，页面可以显示未接入」→ 系统设置那一组连 5 个子项一起挂出来，
+          它们指向统一的 not-ready.html?p=<页名>，页面上明说"未接入"，不装样子。
+     这一版不再有"点了没反应的入口"：每一项都真有一个落地页。 */
   var NAV_SAAS = [
-    ['我的应用', 'my-apps.html', 'my-apps']
+    ['应用市场', 'market.html', 'market'],
+    ['我的应用', 'my-apps.html', 'my-apps'],
+    ['系统设置', [
+      ['员工管理', 'not-ready.html?p=员工管理', 'sys-staff'],
+      ['角色管理', 'not-ready.html?p=角色管理', 'sys-role'],
+      ['部门管理', 'not-ready.html?p=部门管理', 'sys-dept'],
+      ['素材中心', 'not-ready.html?p=素材中心', 'sys-media'],
+      ['操作日志', 'not-ready.html?p=操作日志', 'sys-log']
+    ]]
   ];
 
   /* 页面用 <nav class="sider" data-nav="saas" data-active="my-apps"> 选另一套。
@@ -53,6 +59,10 @@
      混用两套线条粗细，是"图标不统一"最直接的原因。
      ★2026-10-28：只剩「AI 应用方案」一组，其余 7 组的图标随组一起删除（无任何地方引用）。 */
   var GROUP_ICON = {
+    /* 应用市场：购物袋（真源侧栏这一项就是"市场"语义的图，不是四宫格） */
+    '应用市场': { vb:'0 0 24 24', d:'<path d="M3.5 8.5h17l-1.4 10.4a2 2 0 0 1-2 1.7H6.9a2 2 0 0 1-2-1.7L3.5 8.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"></path><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>' },
+    /* 系统设置：齿轮 */
+    '系统设置': { vb:'0 0 24 24', d:'<path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" fill="none" stroke="currentColor" stroke-width="1.7"></path><path d="M19.4 13.6a7.8 7.8 0 0 0 0-3.2l1.7-1.3-1.8-3.1-2 .8a7.6 7.6 0 0 0-2.8-1.6L14.2 3H9.8l-.3 2.2c-1 .3-2 .9-2.8 1.6l-2-.8L2.9 9.1l1.7 1.3a7.8 7.8 0 0 0 0 3.2L2.9 14.9l1.8 3.1 2-.8c.8.7 1.8 1.3 2.8 1.6l.3 2.2h4.4l.3-2.2c1-.3 2-.9 2.8-1.6l2 .8 1.8-3.1-1.7-1.3Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>' },
     /* ★2026-11-06：SaaS 端「我的应用」——四宫格。真源侧栏这一项是 Element Plus 的四格图标，
        形状是四个圆角方块；这里按同形重画（不是从 sprite 取的，取不到；形状一致即可）。 */
     '我的应用': { vb:'0 0 24 24', d:'<rect x="3" y="3" width="7.6" height="7.6" rx="1.6" fill="currentColor"></rect><rect x="13.4" y="3" width="7.6" height="7.6" rx="1.6" fill="currentColor"></rect><rect x="3" y="13.4" width="7.6" height="7.6" rx="1.6" fill="currentColor"></rect><rect x="13.4" y="13.4" width="7.6" height="7.6" rx="1.6" fill="currentColor"></rect>' },
@@ -141,12 +151,78 @@
     gt.setAttribute('aria-expanded', open ? 'false' : 'true');
   }
 
+  /* ── 面包屑的返回图标（2026-11-06）────────────────────────────────
+     用户原话：「为什么返回没了？面包屑的返回呢？你仔细看看我的系统，
+     左上角有个返回小图标的」。真源实测：16px 圆圈+左箭头，位于面包屑最前
+     （172.26.26.61:10612/admin/#/AuditAgent/AppManage，(216,16) 16×16，title="返回"）。
+     放在这里而不是 11 个页面各写一遍 —— 面包屑是全站骨架，图标也该只有一处定义。
+     返回目标：优先页面写的 data-back，其次面包屑里第一个链接，最后回汇总页。 */
+  var BACK_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">'
+    + '<path d="M13.47 7.47a.75.75 0 0 1 1.06 1.06L11.06 12l3.47 3.47a.75.75 0 1 1-1.06 1.06l-4-4a.75.75 0 0 1-.1-.9.75.75 0 0 1 .1-.23l4-3.93Z"/>'
+    + '<path fill-rule="evenodd" clip-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 1.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Z"/>'
+    + '</svg>';
+
+  function mountCrumb() {
+    /* 页面里已经写好的空壳（SaaS 页顶条那种）在这里补图形：图标只定义一处。 */
+    var shells = document.querySelectorAll('.crumb-back');
+    for (var s = 0; s < shells.length; s++) {
+      if (!shells[s].children.length) shells[s].innerHTML = BACK_ICON;
+    }
+    var navs = document.querySelectorAll('nav.crumb');
+    for (var i = 0; i < navs.length; i++) {
+      var nav = navs[i];
+      if (nav.dataset.backed === '1' || nav.querySelector('.crumb-back')) continue;
+      var href = nav.getAttribute('data-back');
+      if (!href) {
+        /* 面包屑里的第一个链接只有当它指向**别的页**时才算"上一级"。
+           组件库页的面包屑第一级就是它自己（<a href="components.html">组件库</a>），
+           照着取会得到一个"返回自己"的图标 —— 点了什么都不发生。 */
+        var same = function (h) {
+          try { return new URL(h, location.href).pathname === location.pathname; } catch (e) { return false; }
+        };
+        var links = nav.querySelectorAll('a');
+        for (var k = 0; k < links.length; k++) {
+          if (links[k].hidden) continue;
+          var h = links[k].getAttribute('href');
+          if (h && !same(h)) { href = h; break; }
+        }
+      }
+      if (!href) href = 'index.html';
+      var a = document.createElement('a');
+      a.className = 'crumb-back';
+      a.href = href;
+      a.title = '返回';
+      a.setAttribute('aria-label', '返回');
+      a.innerHTML = BACK_ICON;
+      nav.insertBefore(a, nav.firstElementChild);
+      nav.dataset.backed = '1';
+    }
+  }
+
+  /* 「未接入」那五个子页共用一个 not-ready.html，靠 ?p=<页名> 区分。
+     它们没法在 HTML 里写死 data-active（一页要顶五项），所以这里按页名反查 key。
+     反查不到就不高亮 —— 宁可少亮一项，也不要亮错一项。 */
+  function activeFromQuery(nav) {
+    var p = '';
+    try { p = new URLSearchParams(location.search).get('p') || ''; } catch (e) { return ''; }
+    if (!p) return '';
+    for (var g = 0; g < nav.length; g++) {
+      var grp = nav[g];
+      if (typeof grp[1] === 'string') { if (grp[0] === p) return grp[2]; continue; }
+      for (var k = 0; k < grp[1].length; k++) {
+        if (grp[1][k][0] === p) return grp[1][k][2];
+      }
+    }
+    return '';
+  }
+
   function mount() {
     var navs = document.querySelectorAll('.sider[data-active]');
     for (var i = 0; i < navs.length; i++) {
       if (navs[i].dataset.filled === '1') continue;
       var set = NAVS[navs[i].getAttribute('data-nav') || 'admin'] || NAV;
-      navs[i].innerHTML = build(navs[i].getAttribute('data-active'), set);
+      var act = navs[i].getAttribute('data-active') || activeFromQuery(set);
+      navs[i].innerHTML = build(act, set);
       navs[i].dataset.filled = '1';
       /* 事件委托绑在 sider 上：render 只在首绘发生一次，
          但委托写法让以后"重画侧栏"也不用重新绑。 */
@@ -155,9 +231,10 @@
         if (gt) { toggle(gt); return; }
       });
     }
+    mountCrumb();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   else mount();
-  window.Shell = { mount: mount, NAV: NAV, NAVS: NAVS };
+  window.Shell = { mount: mount, NAV: NAV, NAVS: NAVS, backIcon: BACK_ICON };
 })();

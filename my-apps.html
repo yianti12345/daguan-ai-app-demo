@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>我的应用</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23587FFF'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>达</text></svg>">
-<link rel="stylesheet" href="assets/tokens.css?v=308f06b8">
-<link rel="stylesheet" href="assets/sys.css?v=bac76ced">
-<link rel="stylesheet" href="assets/saas.css?v=1ce8a941">
+<link rel="stylesheet" href="assets/tokens.css?v=0e2b696a">
+<link rel="stylesheet" href="assets/sys.css?v=19ab64f0">
+<link rel="stylesheet" href="assets/saas.css?v=e896f70b">
+  <meta name="robots" content="noindex,nofollow">
 </head>
 <body class="saas">
 
@@ -20,6 +21,9 @@
   <div class="saas-main">
     <header class="saas-bar">
       <div class="sb-l">
+        <!-- 左上角返回：图形由 shell.js 填（与后台面包屑那颗同一份定义），
+             这里只给空壳和去处 —— 不复制第二份 svg path。 -->
+        <a class="crumb-back" id="sb-back" href="index.html" title="返回" aria-label="返回"></a>
         <span class="sb-ico" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <rect x="3" y="3" width="7.6" height="7.6" rx="1.6"/><rect x="13.4" y="3" width="7.6" height="7.6" rx="1.6"/>
@@ -75,7 +79,8 @@
 
 <script src="assets/data.js?v=5ecabad7"></script>
 <script src="assets/ui-kit.js?v=17f759c1"></script>
-<script src="assets/shell.js?v=ed5964cf"></script>
-<script src="assets/saas.js?v=dd35353d"></script>
+<script src="assets/confirm.js?v=33f3cd5b"></script>
+<script src="assets/shell.js?v=353babc7"></script>
+<script src="assets/saas.js?v=7e6ae97b"></script>
 </body>
 </html>
