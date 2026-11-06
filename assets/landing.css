@@ -19,12 +19,6 @@ body.landing{
    第一眼像一张说明书；入口页要一眼看清"这是哪一版、去哪两个地方"。 */
 .ld-wrap{width:100%;max-width:880px}
 
-/* 版本标签放在抬头右侧：入口页第一眼要回答"这是哪一版"，不能只在页脚 */
-.ld-ver{
-  margin-left:auto;padding:2px var(--space-8);border-radius:var(--radius-tag);
-  background:var(--color-brand-surface);color:var(--color-brand-ink);
-  font-size:var(--font-size-caption);font-weight:var(--font-weight-medium);
-}
 .ld-hd{display:flex;align-items:center;gap:var(--space-8);margin-bottom:var(--space-32)}
 .ld-logo{
   display:inline-flex;align-items:center;justify-content:center;

@@ -279,7 +279,7 @@
       close();
       /* 四个动作都要有结果：没接服务的明说没接，不要留成点了没反应的死项。 */
       if (act === 'platform' || act === 'out') { location.href = 'index.html'; return; }
-      if (act === 'about') { if (window.UIK) UIK.toast('达观数据智能审核平台 · v12.8.0'); return; }
+      if (act === 'about') { if (window.UIK) UIK.toast('达观数据智能审核平台 · 11 月版本'); return; }
       if (act === 'pwd') { if (window.UIK) UIK.toast('账号服务这一版还没接'); return; }
     });
   }
