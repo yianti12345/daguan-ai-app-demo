@@ -51,6 +51,21 @@
   height:24px; padding:0 var(--space-4); flex:0 0 auto;
   background:transparent;
 }
+/* 左侧状态位：点 + 文案。静态「就绪」是低频灰点，生成中变品牌色并呼吸。 */
+.fk-st{display:flex; align-items:center; gap:6px; margin-right:auto;
+  font-size:var(--font-size-caption); line-height:1; color:var(--color-text-tertiary)}
+.fk-st-dot{width:6px; height:6px; border-radius:var(--radius-pill);
+  background:color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--color-text-muted) 10%, transparent);
+  transition:background .18s ease, box-shadow .18s ease}
+.fk-dock[data-busy="true"] .fk-st{color:var(--color-brand-ink)}
+.fk-dock[data-busy="true"] .fk-st-dot{
+  background:var(--color-brand); animation:fk-dot 1.6s ease-in-out infinite}
+@keyframes fk-dot{
+  0%,100%{ box-shadow:0 0 0 3px color-mix(in srgb, var(--color-brand) 12%, transparent); }
+  50%    { box-shadow:0 0 0 6px color-mix(in srgb, var(--color-brand) 6%, transparent); }
+}
+@media (prefers-reduced-motion: reduce){ .fk-dock[data-busy="true"] .fk-st-dot{animation:none} }
 .fk-hist-tt{font-size:var(--font-size-caption); color:var(--color-text-tertiary)}
 .fk-hist-col{
   height:24px; padding:0 var(--space-4); border:0; background:none; border-radius:var(--radius-sm);
@@ -71,9 +86,22 @@
   min-height:160px; max-height:min(52vh, 560px); scrollbar-gutter:stable;
   padding-bottom:calc(var(--space-12) + 10px);
   display:flex; flex-direction:column; gap:var(--space-12);
-  background:var(--surface-page); border-radius:var(--radius-panel);
+  /* ★2026-11-06（用户：A 的结构没毛病，但没科技感）：白底上加一层 3% 的点阵 ——
+     它是"这是个系统面板"的暗示，不是装饰，密度 16px、几乎看不见。
+     顶部再压一条 1px 横向渐变细线，把"通道"这件事画出来。 */
+  position:relative;
+  background-color:var(--surface-page);
+  background-image:radial-gradient(color-mix(in srgb, var(--color-brand) 7%, transparent) 1px, transparent 1.2px);
+  background-size:16px 16px; background-position:13px 13px;
+  border-radius:var(--radius-panel);
   box-shadow:var(--shadow-floating);
-  /* 列表是独立白卡，不再和输入条拼成一块。 */
+  /* 顶部渐变细线：从中间亮到两端透明的 1px，读作"数据正在流"。 */
+.fk-hist-list::before{
+  content:''; position:sticky; top:0; height:1px; margin:-1px 0 0; flex:0 0 auto;
+  background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-brand) 72%, transparent) 45%, color-mix(in srgb, var(--color-brand) 30%, transparent) 70%, transparent);
+  box-shadow:0 1px 8px -2px color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+/* 列表是独立白卡，不再和输入条拼成一块。 */
 }
 .fk-hist-empty{color:var(--color-text-tertiary); font-size:var(--font-size-body); margin:0; padding:var(--space-4) 0; line-height:var(--leading-body)}
 /* 空历史时不占 96 的固定高度：一片白比一句提示更难看 */
@@ -111,9 +139,20 @@
 @media (prefers-reduced-motion: reduce){ .fk-msg:last-child{animation:none} }
 .fk-msg .fk-say{display:block; max-width:78%; padding:var(--space-8) var(--space-12); border-radius:var(--radius-panel);
   white-space:pre-wrap; overflow-wrap:anywhere}
+/* AI 那条带一根 2px 竖向渐变：说明这句是"生成出来的"，不是系统公告。用户那条不加。 */
+.fk-msg:not(.is-me):not(.is-card) .fk-say{position:relative; padding-left:calc(var(--space-12) + 6px)}
+.fk-msg:not(.is-me):not(.is-card) .fk-say::before{
+  content:''; position:absolute; left:0; top:6px; bottom:6px; width:2px; border-radius:var(--radius-pill);
+  background:linear-gradient(180deg, var(--color-brand), color-mix(in srgb, var(--color-brand) 12%, transparent));
+  box-shadow:0 0 6px color-mix(in srgb, var(--color-brand) 35%, transparent);
+}
 .fk-msg .uik-atts{max-width:100%}
 .fk-msg.is-me{align-items:flex-end; color:var(--color-text-primary)}
-.fk-msg.is-me .fk-say{background:var(--surface-subtle)}
+.fk-msg.is-me .fk-say{
+  background:color-mix(in srgb, var(--color-brand) 7%, var(--surface-page));
+  border:1px solid color-mix(in srgb, var(--color-brand) 16%, transparent);
+  box-shadow:inset 0 1px 0 color-mix(in srgb, var(--surface-page) 70%, transparent);
+}
 .fk-msg.is-me .uik-atts{justify-content:flex-end}
 /* 空态：一句话都没有时连白卡都不该出现（用户截图：一张 96 高的白卡里飘着一行灰字） */
 /* ★2026-11-04（用户：「为什么这个看不到？非要说话才能看到这两个操作？」）：
@@ -217,7 +256,7 @@ body.fk-hist-open #canvas{padding-bottom:248px}
   background:var(--color-border-card); color:var(--color-text-tertiary); display:grid; place-items:center;
   border:0; cursor:not-allowed;
 }
-.fk-send[data-ready="true"]{background:var(--color-brand); color:var(--color-text-inverse); cursor:pointer}
+.fk-send[data-ready="true"]{background:linear-gradient(135deg, var(--color-brand), var(--color-brand-active)); color:var(--color-text-inverse); cursor:pointer}
 .fk-send[data-ready="true"]:hover{background:var(--color-brand-active)}
 /* ★2026-11-06：执行中这颗键变「停止」，必须可点 —— 忙时也走品牌底。 */
 .fk-bar:focus-within{

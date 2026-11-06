@@ -100,6 +100,11 @@
            现在输入框上面永远有一条长条：左边末条摘要＋状态，右端一个箭头；
            展开时长条下面接列表，收起时整块只剩这条。 */
         var hd = el('div', 'fk-hist-hd');
+        /* ★2026-11-06：左侧放状态点 + 一句话状态。纯装饰的点看不出来在说什么，
+           配上「就绪 / 生成中」它才是一个有意义的状态位。 */
+        var st = el('span', 'fk-st', { role: 'status', 'aria-live': 'polite' });
+        st.innerHTML = '<i class="fk-st-dot" aria-hidden="true"></i><span class="js-fk-st">就绪</span>';
+        hd.appendChild(st);
         var col = el('button', 'fk-hist-col', { type: 'button', 'aria-label': '展开对话历史', title: '展开历史' });
         col.innerHTML = '<span class="js-fk-hist-col-tx">展开</span>' + ICON.up;
         hist.appendChild(hd);
@@ -745,6 +750,8 @@
           send.setAttribute('aria-label', busy ? '停止生成' : '发送');
           send.title = busy ? '停止生成' : '发送';
           send.innerHTML = busy ? ICON.stop : ICON.send;
+          var stx = st.querySelector('.js-fk-st');
+          if (stx) stx.textContent = busy ? '生成中' : '就绪';
           /* 忙时这颗键必须永远可点：sync() 会把它按"有没有字"置回 false，
              而那正是"跑着的时候反而点不到停止"的来源。 */
           if (busy) send.setAttribute('data-ready', 'true'); else sync();
