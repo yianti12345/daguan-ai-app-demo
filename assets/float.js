@@ -339,12 +339,19 @@
           histBtn.setAttribute('aria-label', '对话历史');
           histBtn.title = '对话历史';
         }
+        /* ★2026-11-06：还有内容没露出来时给底部渐隐 —— 系统滚动条在 macOS 上不显示，
+           这是唯一跟浏览器无关的"下面还有"提示。 */
+        function syncMore() {
+          var more = (list.scrollHeight - list.scrollTop - list.clientHeight) > 8;
+          hist.classList.toggle('has-more', more);
+        }
         function render() {
           syncHistMode();
           /* 空态只管聊天态；看历史列表时面板必须出现，否则点「历史对话」什么都不会发生。 */
           dock.classList.toggle('is-empty', histView === 'chat' && !msgs.length);
           if (histView === 'list') {
             list.innerHTML = UIK.hist.listHtml(visibleConvs(), curId);
+            syncMore();
             return;
           }
           if (histView === 'detail') {
@@ -352,6 +359,7 @@
             for (var i = 0; i < convs.length; i++) if (convs[i].id === detailId) dc = convs[i];
             if (!dc) { histView = 'list'; return render(); }
             list.innerHTML = UIK.hist.detailHtml(dc, threadHtml(dc.msgs));
+            syncMore();
             return;
           }
           /* ★2026-11-04（用户：「提示文案也不对」）：原来空态会渲染一整块白卡，
@@ -365,6 +373,7 @@
           var stick = (list.scrollTop + list.clientHeight) >= (list.scrollHeight - 12);
           list.innerHTML = msgs.map(function (m) { return msgHtml(m, false); }).join('');
           if (stick) list.scrollTop = list.scrollHeight;
+          syncMore();
         }
         function syncHistIco() {
           syncHistMode();
@@ -518,6 +527,7 @@
           save(); render();
           applyArrival(m, { kind: 'notice', hold: true });
         }
+        list.addEventListener('scroll', syncMore);
         list.addEventListener('click', function (e) {
           /* 历史列表/详情里的动作先接住，再轮到普通消息里的复制/恢复。
              历史详情是只读的，所以这里只可能有 histOpen / histBack / histNew / histToggle，
