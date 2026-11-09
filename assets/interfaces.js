@@ -75,7 +75,12 @@
           return '<input type="checkbox" class="it-ck" data-id="' + esc(r.id) + '"'
             + (SEL[r.id] ? ' checked' : '') + ' aria-label="选择 ' + esc(r.name) + '">';
         }
-        if (key === 'name') return '<span class="it-name">' + esc(r.name) + '</span>';
+        /* ★2026-11-09：openDetail 早写好了，但全仓没有一个 data-act="view" 的入口 ——
+           列表上点名字进不了详情，这个函数等于挂着。名称做成可点。 */
+        if (key === 'name') {
+          return '<button class="it-name it-link" type="button" data-act="view" data-id="' + esc(r.id) + '"'
+            + ' title="查看详情">' + esc(r.name) + '</button>';
+        }
         if (key === 'desc') return '<span class="it-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
         if (key === 'source') return esc(r.source || '—');
         if (key === 'at') return '<span class="it-at">' + esc(r.at || '—') + '</span>';
