@@ -17,11 +17,11 @@
 .cfg-sec-hd{display:flex;align-items:baseline;gap:var(--space-8);margin:0 0 var(--space-12)}
 .cfg-sec-hd b{font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
 .cfg-sec-hd span{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
-/* 一组设置项，不要铺满 1000px 的整行——右边空一大片会看成"表格缺列" */
-.scene{display:flex;align-items:center;gap:var(--space-32);max-width:720px;padding:var(--space-12) 0;border-bottom:1px solid var(--color-border-hairline)}
+#scenes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--space-32)} /* 五条绑定两列排，别一条占一行把右边空掉 */
+.scene{display:flex;align-items:center;gap:var(--space-16);padding:var(--space-12) 0;border-bottom:1px solid var(--color-border-hairline)}
 .scene:last-child{border-bottom:0}
-.scene .scene-t{flex:0 0 auto;min-width:240px}
-.scene .scene-sel{flex:0 0 240px}
+.scene .scene-t{flex:1 1 auto;min-width:0}
+.scene .scene-sel{flex:0 0 200px}
 .scene b{font-size:var(--font-size-body);font-weight:500;color:var(--color-text-primary)}
 .scene p{margin:2px 0 0;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 .m-name{color:var(--color-text-primary)}
