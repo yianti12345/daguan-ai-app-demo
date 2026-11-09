@@ -87,7 +87,12 @@
           return '<span class="it-st" style="color:' + st.c + '">' + st.t + '</span>';
         }
         if (key === 'ops') {
+          /* ★2026-11-09（用户：筛选有「是否启用」，操作呢？）：筛选一直是通的，
+             但行上没有任何地方能改启用状态 —— 能筛不能改。
+             toggle 的处理（data-act="toggle"）早就写在下面的事件里，只是没人渲染这个开关。 */
           return '<div class="it-ops">'
+            + '<button class="sw" type="button" role="switch" aria-checked="' + (r.on ? 'true' : 'false') + '"'
+            + ' aria-label="启用' + esc(r.name) + '" data-act="toggle" data-id="' + esc(r.id) + '"></button>'
             + '<button class="it-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">编辑</button>'
             + '<button class="it-op is-danger" type="button" data-act="del" data-id="' + esc(r.id) + '">删除</button>'
             + '</div>';
@@ -507,7 +512,9 @@
     syncAllCk();
   });
 
-  $('#act-new').addEventListener('click', function () { openDlg(null); });
+  /* ★2026-11-09（用户：接入是什么鬼，给我去掉）：列表页不再有「接入」这个入口。
+     新建单个接口走能力详情页的「＋ 添加接口」；整包走「导入」。
+     编辑仍用 openDlg(id)，所以弹层本身保留。 */
 
   /* ── 行内动作 ── */
   document.addEventListener('click', function (e) {

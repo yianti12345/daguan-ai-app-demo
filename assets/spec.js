@@ -75,7 +75,7 @@
         { key: 'state', label: '状态' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '40px 200px minmax(240px,1fr) 140px 150px 130px 120px'
+      cols: '40px 200px minmax(200px,1fr) 140px 150px 130px 176px'
     },
     'config.html': {
       object: '模型（对话/视觉/向量/重排）以及各场景绑定哪一个',
