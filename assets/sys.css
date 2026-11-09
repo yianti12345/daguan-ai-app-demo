@@ -3018,3 +3018,23 @@ b,strong{font-weight:600}
 .api-testres{font-size:var(--font-size-caption)}
 .api-testres.is-ok{color:var(--color-success-ink)}
 .api-testres.is-bad{color:var(--color-danger)}
+
+/* ══ 接口清单标题行右侧：汇总 / 测试全部 / 添加接口（2026-11-09）══════════════
+   为什么汇总也放这里：几十上百个接口逐个点「测试连通」不现实（用户原话），
+   批量跑完必须有一个总数给人看，否则跑完还是不知道整体通不通。 */
+.abt-ops{display:flex;align-items:center;gap:var(--space-12)}
+.abt-sum{display:flex;align-items:center;gap:var(--space-4);
+  font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.abt-sum .ok{color:var(--color-success-ink)}
+.abt-sum .na{color:var(--color-text-tertiary)}
+.abt-sum .dot{color:var(--color-border-card)}
+/* 「失败 N」做成可点：滚到第一条失败的那张卡。几十条里靠眼睛找红边太慢。 */
+.abt-sum .bad{
+  border:0;background:none;padding:0;font-family:inherit;font-size:inherit;line-height:inherit;
+  color:var(--color-danger);cursor:pointer;text-decoration:underline;text-underline-offset:2px;
+}
+.abt-sum .bad:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:2px;border-radius:var(--radius-xs)}
+/* 批量测完：失败的那条留红边；从汇总跳过来时闪一下，知道落在了哪。 */
+.api-card[data-bad="true"]{border-color:color-mix(in srgb, var(--color-danger) 45%, transparent)}
+.api-card[data-flash="true"]{box-shadow:0 0 0 2px color-mix(in srgb, var(--color-danger) 40%, transparent)}
+.api-testres.is-na{color:var(--color-text-tertiary)}

@@ -336,29 +336,25 @@
        path 本身是完整 URL 就直接打它；否则拼 host+path；两个都没有 → 说清缺什么，不给死按钮。
      ★生产必须走同源代理（xz-server 的 /xz/probe）：客户内网不会给前端开 CORS，
        浏览器直连一定失败。这里先直连，代理一接就替换成它（与模型页的 probe 同一口径）。 */
-  function testApi(id, btn) {
-    var a = ((window.CAP && CAP.apis()) || []).filter(function (x) { return x.id === id; })[0];
-    if (!a) return;
+  /* ══ 探测：一个纯函数，单条与批量共用（2026-11-09）══════════════════════════
+     为什么要抽出来：用户说「几十上百个接口，一个个点，累死了」——
+     批量测试若另写一套请求逻辑，两边的超时、代理降级、成功判定迟早不一致，
+     那时会出现"单条通过、批量失败"这种没人能解释的现象。 */
+
+  /* 这个接口该打哪个地址：path 是完整 URL 就用它，否则 host+path，都没有返回 ''。 */
+  function apiUrl(a) {
+    if (!a) return '';
     var path = a.path || '';
+    if (/^https?:\/\//i.test(path)) return path;
     var base = (a.host || parseRaw(a.raw).host || '').replace(/\/+$/, '');
-    var url = /^https?:\/\//i.test(path) ? path : (base ? base + path : '');
-    if (!url) { toast('这个接口没填地址，先在编辑里补上'); return; }
-    var card = btn.closest ? btn.closest('.api-card') : null;
-    var resEl = card ? card.querySelector('.api-testres') : null;
-    if (!resEl) {
-      resEl = document.createElement('span');
-      resEl.className = 'api-testres';
-      btn.parentNode.insertBefore(resEl, btn);
-    }
-    btn.disabled = true; btn.textContent = '测试中…';
-    resEl.textContent = ''; resEl.className = 'api-testres';
-    /* ★2026-11-09 走同源代理（与模型页同一口径）：客户内网不给前端开 CORS，直连必失败。
-       ★同轮修正：这里原来写 pr.headers —— pr 是渲染函数里的局部变量，testApi 作用域里根本没有，
-         抛的是同步 ReferenceError，Promise 的 .catch 捕不到，按钮就永远卡在「测试中…」。
-         现在自己在函数里重新解析一次。 */
-    var pr2 = parseRaw(a.raw);
-    var payload = { url: url, method: a.method || 'GET', headers: pr2.headers || [] };
-    fetch('/xz/probe', {
+    return base ? base + path : '';
+  }
+
+  /* 发一次探测 → { ok, status }。走同源代理；没有代理（公网静态）退回直连。 */
+  function probeApi(a, url) {
+    var pr = parseRaw(a.raw);
+    var payload = { url: url, method: a.method || 'GET', headers: pr.headers || [] };
+    return fetch('/xz/probe', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     }).then(function (r) {
       if (!r.ok) throw new Error('no-proxy');
@@ -366,17 +362,126 @@
     }).then(function (j) {
       return { ok: !!j.ok, status: j.status || 0 };
     }).catch(function (err) {
-      try { console.debug('[probe] 接口测试退回直连（本页可能没有 /xz/probe）', err); } catch (x) {}
+      try { console.debug('[probe] 退回直连（本页可能没有 /xz/probe）', err); } catch (x) {}
       return fetch(url, { method: a.method || 'GET' }).then(function (r) {
         return { ok: r.ok, status: r.status };
       }).catch(function () { return { ok: false, status: 0 }; });
-    }).then(function (r) {
+    });
+  }
+
+  /* 结果写在这一条卡片上：没有就造一个，位置在「测试连通」按钮左边。 */
+  function ensureRes(card) {
+    if (!card) return null;
+    var el = card.querySelector('.api-testres');
+    if (el) return el;
+    var ops = card.querySelector('.api-ops');
+    if (!ops) return null;
+    el = document.createElement('span');
+    el.className = 'api-testres';
+    ops.insertBefore(el, ops.firstChild);
+    return el;
+  }
+
+  function paintRes(card, r) {
+    var el = ensureRes(card);
+    if (!el) return;
+    if (!r) { el.textContent = ''; el.className = 'api-testres'; card.removeAttribute('data-bad'); return; }
+    if (r.na) { el.textContent = '无地址'; el.className = 'api-testres is-na'; card.removeAttribute('data-bad'); return; }
+    el.textContent = r.ok ? '连接成功' : '连接失败';
+    el.className = 'api-testres ' + (r.ok ? 'is-ok' : 'is-bad');
+    el.title = 'HTTP ' + (r.status || '—');
+    if (r.ok) card.removeAttribute('data-bad'); else card.setAttribute('data-bad', 'true');
+  }
+
+  function testApi(id, btn) {
+    var a = ((window.CAP && CAP.apis()) || []).filter(function (x) { return x.id === id; })[0];
+    if (!a) return;
+    var url = apiUrl(a);
+    if (!url) { toast('这个接口没填地址，先在编辑里补上'); return; }
+    var card = btn.closest ? btn.closest('.api-card') : null;
+    btn.disabled = true; btn.textContent = '测试中…';
+    paintRes(card, null);
+    probeApi(a, url).then(function (r) {
       btn.disabled = false; btn.textContent = '测试连通';
-      resEl.textContent = r.ok ? '连接成功' : '连接失败';
-      resEl.className = 'api-testres ' + (r.ok ? 'is-ok' : 'is-bad');
+      paintRes(card, r);
       btn.title = 'HTTP ' + (r.status || '—');
     });
   }
+
+  /* ══ 测试全部（用户 2026-11-09：「几十上百个接口，一个个点，累死了」）═════════
+     并发 4，不一次性打出去 —— 客户网关一般扛不住几十个同时到。
+     无地址的直接计入「无地址」，不发请求，也不假装失败（那不是接口坏了，是没填）。
+     结束后：标题行给汇总；失败的卡片留红边，点汇总里的数字跳到第一条失败的。 */
+  var BATCH = { running: false };
+
+  function testAll() {
+    if (BATCH.running) return;
+    var btn = $('#act-testall'), sum = $('#api-sum');
+    var cards = [].slice.call(document.querySelectorAll('#api-list .api-card[data-id]'))
+      .filter(function (c) { return c.getAttribute('data-off') !== 'true'; });
+    if (!cards.length) { toast('这条能力还没有接口'); return; }
+    if (!sum) return;
+
+    var n = cards.length, done = 0, ok = 0, bad = 0, na = 0;
+    var started = 0, running = 0, finished = false;
+    BATCH.running = true;
+    btn.disabled = true;
+    sum.hidden = false;
+    /* ★2026-11-09 实机发现：开始新一轮时若不清，汇总还挂着上一轮的数字
+       （"通过 1 · 失败 1 · 无地址 4"），看起来像这一轮已经出结果了。 */
+    sum.textContent = '';
+    cards.forEach(function (c) { paintRes(c, null); });
+
+    function tick() { btn.textContent = '测试中 ' + done + '/' + n; }
+    tick();
+
+    function finish() {
+      if (finished) return;
+      finished = true;
+      BATCH.running = false;
+      btn.disabled = false;
+      btn.textContent = '测试全部';
+      var parts = ['<span class="ok">通过 ' + ok + '</span>'];
+      if (bad) parts.push('<button type="button" class="bad" data-act="jumpbad">失败 ' + bad + '</button>');
+      else parts.push('<span class="ok">失败 0</span>');
+      if (na) parts.push('<span class="na">无地址 ' + na + '</span>');
+      sum.innerHTML = parts.join('<span class="dot">·</span>');
+      sum.title = '共 ' + n + ' 个接口，测试完成';
+    }
+
+    function runOne(card) {
+      var a = CAP.apiById(card.getAttribute('data-id'));
+      var url = apiUrl(a);
+      if (!url) { done++; na++; paintRes(card, { na: true }); tick(); return Promise.resolve(); }
+      return probeApi(a, url).then(function (r) {
+        done++; if (r.ok) ok++; else bad++;
+        paintRes(card, r); tick();
+      });
+    }
+
+    function pump() {
+      while (running < 4 && started < n) {
+        running++;
+        runOne(cards[started++]).then(function () { running--; pump(); });
+      }
+      if (started >= n && running === 0) finish();
+    }
+    pump();
+  }
+
+  /* 点汇总里的「失败 N」→ 滚到第一条失败的卡片。几十条里靠眼睛找红边太慢。 */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-act="jumpbad"]') : null;
+    if (!b) return;
+    var first = document.querySelector('#api-list .api-card[data-bad="true"]');
+    if (!first) return;
+    /* ★2026-11-09 实测：原来写 behavior:'smooth'，滚动容器的 scrollTop 一直是 0 ——
+       平滑滚动在部分环境（无头、被系统减弱动效）里根本不执行，等于按钮没反应。
+       改成默认的立即滚动，行为确定，且滚动容器是 main（overflow:auto）也能正确居中。 */
+    first.scrollIntoView({ block: 'center' });
+    first.setAttribute('data-flash', 'true');
+    setTimeout(function () { first.removeAttribute('data-flash'); }, 1200);
+  });
 
   $('#api-list').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act="rm"]'); if (!b) return;
@@ -563,8 +668,17 @@
 
   var sec = $('#api-title') ? $('#api-title').parentNode : null;
   if (sec) {
-    sec.insertAdjacentHTML('beforeend', '<button type="button" class="abt-op" id="act-add" style="margin-left:auto">＋ 添加接口</button>');
+    /* ★2026-11-09：接口清单标题行右侧三项 —— 汇总 / 测试全部 / 添加接口。
+       汇总平时空着不占位，测完才出现（"通过 5 · 失败 2 · 无地址 1"）。
+       三者包在一个容器里靠 margin-left:auto 推右，这样汇总为空时按钮仍在右边。 */
+    sec.insertAdjacentHTML('beforeend',
+      '<span class="abt-ops">'
+      + '<span class="abt-sum" id="api-sum" hidden></span>'
+      + '<button type="button" class="abt-op" id="act-testall">测试全部</button>'
+      + '<button type="button" class="abt-op" id="act-add">＋ 添加接口</button>'
+      + '</span>');
     $('#act-add').addEventListener('click', openAdd);
+    $('#act-testall').addEventListener('click', testAll);
   }
 
   if (boot()) paint();
