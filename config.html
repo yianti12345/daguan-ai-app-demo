@@ -6,7 +6,7 @@
 <title>基础配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=8c85267c">
-<link rel="stylesheet" href="assets/sys.css?v=8b63d730">
+<link rel="stylesheet" href="assets/sys.css?v=50e3e2ae">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=1965c88b">
 <style>
 /* 只作用于本页，取值全来自令牌。 */
@@ -69,6 +69,8 @@
 
       <section class="cfg-sec" aria-labelledby="sec-model">
         <div class="cfg-sec-hd"><b id="sec-model">模型清单</b></div>
+      <!-- ★2026-11-09：按类型筛选。计数为 0 的类型不渲染（真源那个「视觉(0)」是纯噪音）。 -->
+      <div class="mtabs" id="mtabs" role="tablist" aria-label="按类型筛选模型"></div>
         <div class="cfg-table gtable">
           <div class="gtable-head" id="head" aria-hidden="true"></div>
           <div class="gtable-body" id="list" role="list" aria-label="模型列表"></div>
@@ -90,20 +92,40 @@
       </button>
     </div>
     <div class="nf-bd">
-      <div class="m-form">
-        <label for="f-name">模型标识<input id="f-name" placeholder="例如 deepseek-flash"></label>
-        <label for="f-label">显示名<input id="f-label" placeholder="例如 DeepSeek Flash"></label>
-        <label for="f-vendor">模型厂商<input id="f-vendor" list="vendor-list" placeholder="选或填，例如 DeepSeek"></label>
+      <div class="m-form" id="m-form">
+        <!-- 类型是第一项：它决定下面出现哪些字段（2026-11-09） -->
+        <div class="fld">
+          <span class="f-hint">模型类型</span>
+          <div class="chips" id="k-chips" role="radiogroup" aria-label="模型类型"></div>
+        </div>
+        <div class="fld">
+          <span class="f-hint">模型来源</span>
+          <div class="chips" id="s-chips" role="radiogroup" aria-label="模型来源"></div>
+        </div>
+        <label for="f-name"><span>模型标识</span><span class="f-hint">调用时用的真实模型名，如 gpt-4o</span><input id="f-name" placeholder="例如 deepseek-flash"></label>
+        <label for="f-label"><span>显示名</span><span class="f-hint">列表里给人看的，只影响展示</span><input id="f-label" placeholder="例如 DeepSeek Flash"></label>
+        <label for="f-vendor"><span>模型厂商</span><input id="f-vendor" list="vendor-list" placeholder="选或填，例如 DeepSeek"></label>
         <datalist id="vendor-list"><option value="DeepSeek"></option><option value="阿里云"></option><option value="OpenAI"></option><option value="自建"></option></datalist>
-        <label for="f-url">API 地址<input id="f-url" placeholder="https://api.example.com/v1"></label>
-        <label for="f-key">API Key<input id="f-key" type="password" placeholder="sk-..."></label>
-        <label for="f-temp">温度<input id="f-temp" type="number" step="0.1" min="0" max="2" value="0.2"></label>
-        <label for="f-react">最大迭代次数<input id="f-react" type="number" min="0" value="10"></label>
-        <label for="f-out">单次输出上限<input id="f-out" type="number" min="0" value="32768"></label>
-        <label for="f-ctx">上下文窗口<input id="f-ctx" type="number" min="0" value="128000"></label>
+        <label for="f-url"><span>API 地址</span><input id="f-url" placeholder="https://api.example.com/v1"></label>
+        <label for="f-key"><span>API Key</span><input id="f-key" type="password" placeholder="sk-..."></label>
+        <label for="f-temp" data-need="chat"><span>温度</span><input id="f-temp" type="number" step="0.1" min="0" max="2" value="0.2"></label>
+        <label for="f-react" data-need="chat"><span>最大迭代次数</span><input id="f-react" type="number" min="0" value="10"></label>
+        <label for="f-out" data-need="chat"><span>单次输出上限</span><input id="f-out" type="number" min="0" value="32768"></label>
+        <label for="f-ctx" data-need="chat embed rerank"><span>上下文窗口</span><input id="f-ctx" type="number" min="0" value="128000"></label>
+        <label for="f-dim" data-need="embed"><span>向量维度</span><span class="f-hint">必须与索引一致，换模型要重建索引</span><input id="f-dim" type="number" min="0" placeholder="例如 1024"></label>
+        <label for="f-topn" data-need="rerank"><span>候选数</span><input id="f-topn" type="number" min="1" placeholder="例如 10"></label>
+        <label for="f-afmt" data-need="asr"><span>音频格式</span><span class="f-hint">允许上传的格式，逗号分隔</span><input id="f-afmt" placeholder="例如 mp3, wav"></label>
+        <label for="f-vision" data-need="chat"><span>支持图片输入</span><select id="f-vision"><option value="0">不支持</option><option value="1">支持</option></select></label>
+        <div class="fld">
+          <button type="button" class="btn quiet" id="hd-add">+ 添加请求头（可选）</button>
+          <div id="hd-list" class="hd-list"></div>
+        </div>
       </div>
     </div>
     <div class="nf-ft">
+      <!-- ★2026-11-09：测试连接在左下角，结果就在它右边。界面只有「连接成功／连接失败」两个词。 -->
+      <button type="button" class="btn quiet" id="dlg-test" disabled>测试连接</button>
+      <span class="rt" id="dlg-test-res" role="status" aria-live="polite"></span>
       <span class="m-sp"></span>
       <button type="button" class="btn ghost" id="dlg-cancel">取消</button>
       <button type="button" class="btn primary" id="dlg-save">保存</button>
@@ -114,9 +136,9 @@
 <script src="assets/shell.js?v=fb699fab"></script>
 <script src="assets/ui-kit.js?v=ca813031"></script>
 <script src="assets/confirm.js?v=33f3cd5b"></script>
-<script src="assets/spec.js?v=42f09a8d"></script>
+<script src="assets/spec.js?v=fa39c321"></script>
 <script src="assets/list.js?v=cbb213a1"></script>
-<script src="assets/capability.js?v=089bd664"></script>
-<script src="assets/config.js?v=1222c47c"></script>
+<script src="assets/capability.js?v=97016c40"></script>
+<script src="assets/config.js?v=39c6e5f0"></script>
 </body>
 </html>

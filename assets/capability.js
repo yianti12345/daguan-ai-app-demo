@@ -224,6 +224,9 @@
     if (!cache.apis) cache.apis = [];
     if (!cache.skills) cache.skills = [];
     if (!cache.models) cache.models = JSON.parse(JSON.stringify(MODEL_SEED));
+    /* ★2026-11-09：老存档的模型缺 source/headers/vision，kind 可能还是 'vision'。
+       幂等补齐，跑多少次结果都一样。种子本身也过一遍，保证两条来路一致。 */
+    cache.models = cache.models.map(normModel);
     if (!cache.scenes || !cache.scenes.some(function (x) { return x.key === 'config'; })) {
       cache.scenes = JSON.parse(JSON.stringify(SCENE_SEED));
     }
@@ -339,7 +342,7 @@
   var MODEL_SEED = [
     { id: 'm-ds-flash', name: 'deepseek-flash', label: 'DeepSeek Flash', vendor: 'DeepSeek', kind: 'chat', temp: 0.2, react: 50, outMax: 32768, ctx: 200000, isDefault: true, on: true },
     { id: 'm-qwen-max', name: 'qwen3-max', label: '通义千问 Max', vendor: '阿里云', kind: 'chat', temp: 0.1, react: 10, outMax: 32768, ctx: 128000, isDefault: false, on: true },
-    { id: 'm-ds-vl', name: 'deepseek-vl', label: 'DeepSeek VL', vendor: 'DeepSeek', kind: 'vision', temp: 0.1, react: 10, outMax: 16384, ctx: 64000, isDefault: false, on: true },
+    { id: 'm-ds-vl', name: 'deepseek-vl', label: 'DeepSeek VL', vendor: 'DeepSeek', kind: 'chat', vision: true, temp: 0.1, react: 10, outMax: 16384, ctx: 64000, isDefault: false, on: true },
     { id: 'm-embed', name: 'text-embedding-v4', label: 'Embedding v4', vendor: '阿里云', kind: 'embed', temp: 0, react: 0, outMax: 0, ctx: 8192, isDefault: false, on: true },
     { id: 'm-rerank', name: 'qwen3-rerank', label: 'Rerank', vendor: '阿里云', kind: 'rerank', temp: 0, react: 0, outMax: 0, ctx: 8192, isDefault: false, on: true }
   ];
@@ -352,10 +355,40 @@
   ];
 
 
+  /* ★2026-11-09：模型字段的唯一规范化入口，种子与老存档共用一套规则。
+     为什么要有它：类型回到表单之后，模型对象多了 source / headers / vision 三个字段，
+     老存档里一个都没有；如果只在 addModel 里给默认值，老数据永远缺这三项，
+     界面上一会儿有值一会儿没有。
+     - kind 沿用旧值域（chat/embed/rerank）并扩出 asr/tts，不新立 type
+     - 视觉从「独立类型」降为 chat 的属性：老数据的 kind:'vision' → kind:'chat' + vision:true
+     - 这个函数必须幂等：load() 每次都会跑，不能越跑越变 */
+  function normModel(m) {
+    if (!m || typeof m !== 'object') return m;
+    if (m.kind === 'vision') { m.kind = 'chat'; m.vision = true; }
+    if (!m.kind) m.kind = 'chat';
+    if (typeof m.vision !== 'boolean') m.vision = false;
+    if (!m.source) m.source = 'api';
+    if (!Array.isArray(m.headers)) m.headers = [];
+    return m;
+  }
+
+  /* ★2026-11-09：配置指纹。测试结果只有绑住"测的是哪一版配置"才有意义 ——
+     改了地址或 Key 之后绿点还亮着，就是假通过（真源官方规则也要求改完重测）。
+     影响连接的字段只有这五个，别的字段（温度、上下文）变了不必重测。 */
+  function fpOf(parts) {
+    var str = parts.join('|'), h = 0;
+    for (var i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) | 0; }
+    return 'fp' + (h >>> 0).toString(36);
+  }
+  function modelFp(m) {
+    if (!m) return '';
+    return fpOf([m.source || 'api', m.url || '', m.name || '', m.key || '', JSON.stringify(m.headers || [])]);
+  }
+
   function models() { return load().models || []; }
   function modelById(id) { return models().filter(function (x) { return x.id === id; })[0] || null; }
   function addModel(v) {
-    var it = Object.assign({ id: uid('m'), kind: 'chat', temp: 0.2, react: 10, outMax: 32768, ctx: 128000, isDefault: false, on: true }, v);
+    var it = Object.assign({ id: uid('m'), kind: 'chat', vision: false, source: 'api', headers: [], temp: 0.2, react: 10, outMax: 32768, ctx: 128000, isDefault: false, on: true }, v);
     load().models.push(it); save(); return it;
   }
   function updateModel(id, patch) {
@@ -366,8 +399,13 @@
     var it = modelById(id);
     if (!it) return { error: '没有这个模型' };
     var d = load();
+    /* ★2026-11-09：回退原来是 models()[0] —— 不看类型。
+       场景绑的是对话模型，删掉最后一个对话模型时，会把它绑到一个向量或重排模型上。
+       有了 asr 之后更糟（删语音模型会把「默认语音模型」绑到对话模型）。
+       改成同类型优先；同类型一个都没有就置空，界面显示「该场景暂无可用模型」。 */
+    var sameKind = d.models.filter(function (x) { return x.id !== id && x.kind === it.kind; });
     d.models = d.models.filter(function (x) { return x.id !== id; });
-    d.scenes.forEach(function (s) { if (s.model === id) s.model = (models()[0] || {}).id || ''; });
+    d.scenes.forEach(function (s) { if (s.model === id) s.model = sameKind[0] ? sameKind[0].id : ''; });
     save(); return { ok: true };
   }
   function toggleModel(id) {
@@ -388,6 +426,58 @@
   }
 
   /* 整包导出/导入：接后端前，至少让数据能跟着人走。 */
+  /* ★2026-11-09：导入能力包（interfaces 页「导入」用）。
+     口径：接口进池按 host+method+path 去重（同一个接口被两个能力引用不算两份）；
+     能力同名则合并（追加接口），不新建 —— 客户重发一版不会把清单撑成两份。 */
+  function importAbilities(items) {
+    var d = load();
+    var nAb = 0, nApi = 0;
+    (items || []).forEach(function (b) {
+      if (!b || !b.name) return;
+      var apiIds = [];
+      (b.apis || []).forEach(function (a) {
+        if (!a || !a.path) return;
+        /* ★2026-11-09：host 在种子里普遍是空串，只用 method+path 做键会把
+           「A 项目的 /api/v1/verify」和「B 项目的 /api/v1/verify」判成同一个接口，
+           静默合并成一条。host 缺失时用项目名占位，宁可多一条也不误合并。 */
+        var hk = a.host || ('project:' + (b.project || '未标注'));
+        var key = hk + ' ' + (a.method || 'GET') + ' ' + a.path;
+        var hit = d.apis.filter(function (x) {
+          var xk = (x.host || ('project:' + (x.project || '未标注'))) + ' ' + (x.method || 'GET') + ' ' + x.path;
+          return xk === key;
+        })[0];
+        if (hit) { apiIds.push(hit.id); return; }
+        var nid = 'api-imp-' + (nApi++) + '-' + Date.now().toString(36);
+        d.apis.push({
+          id: nid, name: a.name || a.path, desc: a.summary || '',
+          source: b.project || '未标注', project: b.project || '未标注',
+          state: 'ok', on: true, at: now(),
+          method: a.method || 'GET', path: a.path || '', host: a.host || '',
+          params: a.params || '', returns: a.returns || '', raw: a.raw || ''
+          /* ★2026-11-09：这里原来写 doc: b.doc —— 把能力的说明书塞给每一个接口。
+             接口的说明和能力的说明是两回事，导进来之后接口详情会显示一段跟它无关的文字。 */
+        });
+        apiIds.push(nid);
+      });
+      var same = d.abilities.filter(function (x) { return x.name === b.name; })[0];
+      if (same) {
+        apiIds.forEach(function (id) { if ((same.apiIds || []).indexOf(id) < 0) same.apiIds.push(id); });
+        if (b.doc && !same.doc) { same.doc = b.doc; same.docState = 'ready'; }
+        same.at = now();
+      } else {
+        d.abilities.push({
+          id: 'ab-imp-' + (nAb++) + '-' + Date.now().toString(36),
+          name: b.name, intro: b.intro || '', project: b.project || '未标注',
+          apiIds: apiIds, doc: b.doc || '',
+          docState: b.doc ? 'ready' : 'none', docFrom: b.docFrom || '', docAt: b.docAt || '',
+          at: now()
+        });
+      }
+    });
+    save();
+    return { abilities: nAb, apis: nApi };
+  }
+
   function exportAll() {
     return { v: 1, at: now(), apis: load().apis, skills: load().skills,
              models: load().models, scenes: load().scenes, compApis: compMap() };
@@ -457,8 +547,8 @@
     updateAbility: updateAbility, removeAbility: removeAbility, abilityApis: abilityApis,
     compAbilities: compAbilities, setCompAbilities: setCompAbilities,
     fingerprint: fingerprint, pickMethodPath: pickMethodPath, parseApis: parseApis,
-    models: models, modelById: modelById, addModel: addModel, updateModel: updateModel,
-    removeModel: removeModel, toggleModel: toggleModel,
+    models: models, modelById: modelById, addModel: addModel, updateModel: updateModel, modelFp: modelFp,
+    removeModel: removeModel, toggleModel: toggleModel, importAbilities: importAbilities,
     scenes: scenes, setSceneModel: setSceneModel, sceneModel: sceneModel,
     now: now
   };

@@ -2943,3 +2943,78 @@ b,strong{font-weight:600}
 .sw[aria-checked="true"]::after{left:calc(var(--switch-track-w) - var(--switch-knob) - var(--sw-inset))}
 .sw:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 .sw[disabled]{opacity:.5;cursor:not-allowed}
+
+/* ══ 模型表单：字段组 / 副标题 / 连接状态 / 请求头行（2026-11-09）═════════════
+   为什么在这些样式不留在 config.html：页面私有样式有基线（30 行），
+   新增样式必须进这里 —— 这是判据 check-page-style 的口径，不是偏好。 */
+.fld{display:flex;flex-direction:column;gap:var(--space-8);grid-column:1 / -1;align-items:flex-start}
+.fld .chips{width:100%}
+.chips{display:flex;gap:var(--space-8);flex-wrap:wrap}
+.f-hint{font-size:var(--font-size-caption);line-height:1.3;color:var(--color-text-tertiary)}
+/* 切类型后不适用的字段：不显示。值仍留在 input 里，切回原类型还在。
+   （第一版做成"变灰+标『当前类型不适用』"，那行字把格子撑高，两列从这儿错位。） */
+.m-form label[data-off]{display:none}
+/* 连接状态三态。不用 .tag 胶囊：表格行里胶囊太重，真源这一列也是文字。 */
+.m-conn{font-size:var(--font-size-caption);line-height:1.4;white-space:nowrap}
+.m-conn.is-ok{color:var(--color-success-ink)}
+.m-conn.is-stale{color:var(--color-text-tertiary)}
+.m-conn.is-bad{color:var(--color-danger)}
+.nf-ft .rt.is-ok{color:var(--color-success-ink)}
+.nf-ft .rt.is-bad{color:var(--color-danger)}
+.hd-list{display:flex;flex-direction:column;gap:var(--space-8);width:100%}
+.hd-row{display:flex;gap:var(--space-8);align-items:center;width:100%}
+.hd-row input{flex:1 1 0;min-width:0}
+
+/* ══ 类型 Tab（2026-11-09，按真源形态重做）════════════════════════════════
+   真源那一排是：纯文字、无底色无边框、计数带括号、**只有选中项**有 2px 彩色下划线，
+   整行没有分隔线。原来的 .p-tab 是页面级页签（44 高 + 整行 1px 底线），套在这里太重。
+   ★同一轮改口径：计数为 0 的类型**也要显示** —— 用户原话「不然我们怎么知道系统支持哪些类型的模型」。
+     空 Tab 不是噪音，是能力声明。（上一版我按真源截图里的「视觉(0)」把它当噪音隐藏了，判错。） */
+.mtabs{display:flex;gap:var(--space-24);margin:0 0 var(--space-12);flex-wrap:wrap}
+.mtab{position:relative;border:0;background:none;padding:0 0 8px;cursor:pointer;
+  font-family:inherit;font-size:var(--font-size-body);line-height:1.4;
+  color:var(--color-text-secondary)}
+.mtab:hover{color:var(--color-text-primary)}
+.mtab[aria-selected="true"]{color:var(--color-brand);font-weight:600}
+.mtab[aria-selected="true"]::after{
+  content:''; position:absolute; left:0; right:0; bottom:0; height:2px;
+  background:var(--color-brand);
+}
+.mtab:focus-visible{outline:2px solid var(--color-brand);outline-offset:3px;border-radius:var(--radius-xs)}
+.mtab .n{margin-left:4px;font-size:var(--font-size-caption);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums}
+.mtab[aria-selected="true"] .n{color:var(--color-brand)}
+
+/* ══ 能力详情 · 接口清单卡片（2026-11-09）══════════════════════════════════
+   为什么新起 .api-* 而不是改 .abt-row：.abt-row 是「添加接口」弹窗里预览列表在用的
+   （grid-template-columns:minmax(0,1fr) 56px 150px 56px），改它会当场把弹窗预览弄错行。 */
+.api-list{display:flex;flex-direction:column;gap:var(--space-8)}
+.api-card{border:1px solid var(--color-border-hairline);border-radius:var(--radius-xs);background:var(--surface-page)}
+.api-card[data-off="true"]{color:var(--color-text-tertiary)}
+.api-card[data-off="true"] .api-hd{cursor:default;background:none}
+.api-hd{display:flex;align-items:center;gap:var(--space-8);width:100%;border:0;background:none;
+  padding:10px var(--space-12);cursor:pointer;font-family:inherit;text-align:left}
+.api-hd:hover{background:var(--color-state-hover)}
+.api-m{font-family:var(--font-family-mono);font-size:var(--font-size-caption);color:var(--color-text-secondary);flex:0 0 auto}
+.api-p{font-family:var(--font-family-mono);font-size:var(--font-size-caption);color:var(--color-text-primary);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
+.api-caret{flex:0 0 auto;color:var(--color-text-tertiary);transition:transform .15s ease}
+.api-hd[aria-expanded="true"] .api-caret{transform:rotate(90deg)}
+.api-sub{display:flex;align-items:center;gap:var(--space-12);padding:0 var(--space-12) 10px;
+  font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.api-sub .api-n{color:var(--color-text-body)}
+.api-sub .api-ops{margin-left:auto;display:flex;align-items:center;gap:var(--space-12)}
+.api-body{padding:0 var(--space-12) var(--space-12);display:flex;flex-direction:column;gap:var(--space-8)}
+.api-cap{font-size:var(--font-size-caption);color:var(--color-text-secondary);margin:var(--space-4) 0 0}
+.api-note{margin-left:var(--space-8);color:var(--color-text-tertiary)}
+.api-tbl{width:100%;border-collapse:collapse;font-size:var(--font-size-caption)}
+.api-tbl th,.api-tbl td{text-align:left;padding:6px var(--space-8);border-bottom:1px solid var(--color-border-hairline);vertical-align:top}
+.api-tbl th{font-weight:400;color:var(--color-text-tertiary)}
+.api-tbl td{color:var(--color-text-body)}
+.api-raw{margin:0;max-height:240px;overflow:auto;padding:var(--space-8);
+  background:var(--surface-sunken);border-radius:var(--radius-xs);
+  font-family:var(--font-family-mono);font-size:var(--font-size-caption);color:var(--color-text-secondary);
+  white-space:pre-wrap;overflow-wrap:anywhere}
+.api-empty{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+.api-testres{font-size:var(--font-size-caption)}
+.api-testres.is-ok{color:var(--color-success-ink)}
+.api-testres.is-bad{color:var(--color-danger)}

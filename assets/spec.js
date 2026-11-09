@@ -67,14 +67,15 @@
       truth: '能力管理下新增第 8 项；列与技能页同一套',
       states: ['无能力', '有数据', '搜索无结果', '生成失败', '已停用'],
       headCols: [
+        { key: 'sel', label: '' },
         { key: 'name', label: '名称' },
         { key: 'desc', label: '描述' },
         { key: 'source', label: '来源' },
         { key: 'at', label: '最近更新时间' },
-        { key: 'by', label: '创建人' },
+        { key: 'state', label: '状态' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '200px minmax(240px,1fr) 140px 150px 130px 120px'
+      cols: '40px 200px minmax(240px,1fr) 140px 150px 130px 120px'
     },
     'config.html': {
       object: '模型（对话/视觉/向量/重排）以及各场景绑定哪一个',
@@ -84,6 +85,7 @@
       headCols: [
         { key: 'name', label: '模型' },
         { key: 'vendor', label: '供应商' },
+        { key: 'conn', label: '连接' },
         { key: 'temp', label: '温度' },
         { key: 'react', label: '最大迭代' },
         { key: 'outMax', label: '输出上限' },
@@ -91,7 +93,7 @@
         { key: 'on', label: '状态' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '240px 120px 80px 110px 120px 110px 90px 150px'
+      cols: '240px 120px 84px 80px 110px 120px 110px 90px 150px'
     },
     'skills.html': {
       object: '技能（直接装给小智的技能包，只有一个归属：小智）',

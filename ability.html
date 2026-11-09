@@ -6,7 +6,7 @@
 <title>能力详情</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/tokens.css?v=8c85267c">
-<link rel="stylesheet" href="assets/sys.css?v=8b63d730">
+<link rel="stylesheet" href="assets/sys.css?v=50e3e2ae">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=1965c88b">
 <style>
 /* 能力详情：左边是人的输入（名称/说明/接口清单），右边是给模型的产物（MD）。
@@ -67,8 +67,6 @@
           <label class="abt-lb" for="f-intro" style="margin-top:var(--space-12)">说明</label>
           <textarea class="abt-ta" id="f-intro" placeholder="什么时候该用它，一句话"></textarea>
 
-          <div class="abt-sec"><b id="api-title">接口清单（0）</b></div>
-          <div class="abt-list" id="api-list"></div>
         </div>
 
         <div>
@@ -78,6 +76,13 @@
           <textarea class="abt-doc-ta" id="doc" aria-label="能力说明书" spellcheck="false" placeholder="点右上「生成」，或直接写"></textarea>
         </div>
       </div>
+
+      <!-- ★2026-11-09（用户：「接口的具体信息我现在完全看不到，还需要每个单独编辑看下」）：
+           接口清单从左侧半栏移到通栏。半栏 1440 下只有 589px、900 下 319px，
+           四列入参表每列不到 80px，信息根本摆不下。
+           #api-title 保留且父节点仍是 .abt-sec —— ability.js 靠它的 parentNode 插「添加接口」。 -->
+      <div class="abt-sec"><b id="api-title">接口清单（0）</b></div>
+      <div class="api-list" id="api-list"></div>
     </main>
     <div id="toast" class="toast" data-on="false" role="status" aria-live="polite"></div>
   </div>
@@ -86,8 +91,8 @@
 <script src="assets/shell.js?v=fb699fab"></script>
 <script src="assets/ui-kit.js?v=ca813031"></script>
 <script src="assets/confirm.js?v=33f3cd5b"></script>
-<script src="assets/capability.js?v=089bd664"></script>
+<script src="assets/capability.js?v=97016c40"></script>
 <script src="assets/gen.js?v=e38f21b2"></script>
-<script src="assets/ability.js?v=337ddcf4"></script>
+<script src="assets/ability.js?v=403f2268"></script>
 </body>
 </html>

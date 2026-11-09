@@ -91,6 +91,114 @@
     $('#doc').value = B.doc || '';
   }
 
+  /* ══ 接口卡片：把"看得到"这件事做出来（2026-11-09）══════════════════════
+     用户原话：「接口的具体信息我现在完全看不到，还需要每个单独编辑看下，太恶心了，
+                我需要每个接口所有的信息都展示出来」。
+     原来每行只画 4 格（名称/方法/路径/移除），入参、返回、原始文本一个都没露过。
+     数据层其实一直有这三样（params / returns / raw）。 */
+
+  /* 入参在数据里是**一段 JSON 文本**（capability.js 的 paramJson 写进去的），不是数组。
+     能解析成数组就画四列表格；解析不了（自由文本、或空的）就原样给 <pre> —— 不假装成表格。 */
+  function parseList(str) {
+    if (!str) return null;
+    try {
+      var v = JSON.parse(str);
+      if (!Array.isArray(v) || !v.length) return null;
+      return v.map(function (p) {
+        var t = p.type || (p.schema && p.schema.type) || '';
+        return {
+          name: p.name || p.key || '',
+          type: typeof t === 'string' ? t : '',
+          required: !!p.required,
+          desc: p.description || p.desc || ''
+        };
+      });
+    } catch (e) { return null; }
+  }
+
+  /* ★2026-11-09：raw 里其实什么都有，只是从没被解析过。
+     实测第一条的 raw 是：
+       curl 'https://audit.example.com/api/v1/audit/tasks?page=1&per_page=10&status=done' -H 'Authorization: Bearer <token>'
+     域名、三个 query 参数、请求头全在里面 —— 而界面上原来只显示「入参 —」。
+     能确定的就抽出来（域名 / query / 请求头）；抽不到的（返回结构）老实说没有。 */
+  function parseRaw(raw) {
+    var out = { host: '', url: '', query: [], headers: [], body: [] };
+    var s = String(raw || '');
+    if (!s) return out;
+
+    /* ① 完整 URL → 域名 + query 参数 */
+    var m = s.match(/https?:\/\/[^\s'"]+/);
+    if (m) {
+      out.url = m[0];
+      var parts = m[0].split('?');
+      var hm = parts[0].match(/^(https?:\/\/[^\/]+)/);
+      out.host = hm ? hm[1] : '';
+      if (parts[1]) {
+        parts[1].split('&').forEach(function (kv) {
+          var p = kv.split('=');
+          if (p[0]) out.query.push({ name: p[0], type: 'string', required: false, desc: p[1] ? '示例：' + p[1] : '' });
+        });
+      }
+    }
+
+    /* ② 请求头 -H 'Name: value' */
+    var re = /-H\s+'([^:'"]+):\s*([^']*)'/g, h;
+    while ((h = re.exec(s))) out.headers.push({ k: h[1], v: h[2] });
+
+    /* ③ curl -d 'a=1&b=2' 这种表单体（原来看不见，等于把入参吞了） */
+    var dm = s.match(/(?:-d|--data(?:-raw|-binary)?)\s+['"]([^'"]+)['"]/);
+    if (dm && dm[1].indexOf('=') >= 0 && dm[1].indexOf('{') < 0) {
+      dm[1].split('&').forEach(function (kv) {
+        var p = kv.split('=');
+        if (p[0]) out.body.push({ name: p[0], type: 'string', required: false, desc: p[1] ? '示例：' + p[1] : '' });
+      });
+    }
+
+    /* ④ 文字里写的 body: {"k":"v"} */
+    var bm = s.match(/body:\s*(\{[\s\S]*?\})(?:\s|$)/);
+    if (bm) {
+      try {
+        var obj = JSON.parse(bm[1]);
+        Object.keys(obj).forEach(function (k) {
+          var v = obj[k];
+          out.body.push({
+            name: k,
+            type: v === null ? 'null' : (Array.isArray(v) ? 'array' : typeof v),
+            required: false,
+            desc: '示例：' + (typeof v === 'string' ? v : JSON.stringify(v))
+          });
+        });
+      } catch (e) { /* 不是合法 JSON 就不猜 */ }
+    }
+
+    /* ⑤ 路径参数：/clients/C00012 这类末尾的具体值，说明这个接口要带一个 id */
+    var pm = (out.url || s).match(/\/[A-Za-z0-9_-]+\/([A-Z]{1,3}\d{3,}|\d{3,})(?:[\s'"?#]|$)/);
+    if (pm) out.query.push({ name: 'path 参数', type: 'string', required: true, desc: '示例：' + pm[1] });
+
+    return out;
+  }
+
+  function block(title, list, raw, fromRaw) {
+    /* 登记过就用登记的；没登记但 raw 里解析得出来，就用解析出来的，并注明来源 ——
+       不把"解析出来的"和"登记过的"混为一谈。 */
+    var use = (list && list.length) ? list : (fromRaw && fromRaw.length ? fromRaw : null);
+    var note = (!list || !list.length) && fromRaw && fromRaw.length ? '（从原始请求里解析）' : '';
+    if (use) {
+      return '<div class="api-cap">' + title + (note ? '<span class="api-note">' + note + '</span>' : '') + '</div>'
+        + '<table class="api-tbl"><thead><tr>'
+        + '<th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>'
+        + use.map(function (p) {
+            return '<tr><td>' + esc(p.name) + '</td><td>' + esc(p.type) + '</td>'
+              + '<td>' + (p.required ? '是' : '') + '</td><td>' + esc(p.desc) + '</td></tr>';
+          }).join('')
+        + '</tbody></table>';
+    }
+    if (raw && String(raw).trim()) {
+      return '<div class="api-cap">' + title + '</div><pre class="api-raw">' + esc(raw) + '</pre>';
+    }
+    return '<div class="api-cap">' + title + '</div><p class="api-empty">没有登记' + title + '</p>';
+  }
+
   function paintApis() {
     var rows = CAP.abilityApis(ID);
     $('#api-title').textContent = '接口清单（' + rows.length + '）';
@@ -101,16 +209,46 @@
     }
     box.innerHTML = rows.map(function (x) {
       if (x.missing) {
-        return '<div class="abt-row is-gone" data-id="' + esc(x.id) + '">'
-          + '<span>接口已删除</span><span class="abt-m">—</span><span class="abt-p">' + esc(x.id) + '</span>'
-          + '<button class="abt-op is-danger" type="button" data-act="rm" data-id="' + esc(x.id) + '">移除</button></div>';
+        /* ★2026-11-09：容器换成 .api-list（flex 纵向）后，这里还留着 .abt-row（4 列 grid + 底边），
+           放进来就是一条横排错位的东西。改成与正常卡片同构的占位卡。 */
+        return '<div class="api-card" data-off="true" data-id="' + esc(x.id) + '">'
+          + '<div class="api-hd"><span class="api-p">接口已删除</span><span class="api-m">' + esc(x.id) + '</span></div>'
+          + '<div class="api-sub"><span>这个接口已从库里移除</span>'
+          +   '<span class="api-ops"><button class="abt-op is-danger" type="button" data-act="rm" data-id="' + esc(x.id) + '">移除</button></span>'
+          + '</div></div>';
       }
       var a = x.api;
-      return '<div class="abt-row" data-id="' + esc(a.id) + '">'
-        + '<span>' + esc(a.name) + '</span>'
-        + '<span class="abt-m">' + esc(a.method || 'GET') + '</span>'
-        + '<span class="abt-p" title="' + esc(a.path || '') + '">' + esc(a.path || '—') + '</span>'
-        + '<button class="abt-op is-danger" type="button" data-act="rm" data-id="' + esc(a.id) + '">移除</button></div>';
+      var pin = parseList(a.params), pout = parseList(a.returns);
+      var pr = parseRaw(a.raw);
+      return '<div class="api-card" data-id="' + esc(a.id) + '">'
+        /* 第一行：方法 + 路径 + 折叠箭头（整行可点） */
+        + '<button class="api-hd" type="button" aria-expanded="false" data-act="fold">'
+        +   '<svg class="api-caret" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>'
+        +   '<span class="api-m">' + esc(a.method || 'GET') + '</span>'
+        +   '<span class="api-p" title="' + esc(a.path || '') + '">' + esc(a.path || '—') + '</span>'
+        + '</button>'
+        /* 第二行：名称 + 规模 + 操作 */
+        + '<div class="api-sub">'
+        +   '<span class="api-n">' + esc(a.name) + '</span>'
+        +   '<span>' + (pin || pr.query.length ? '入参 ' + (pin ? pin.length : pr.query.length) : '入参 —')
+            + ' · ' + (pout ? '返回 ' + pout.length : '返回 —') + '</span>'
+        +   '<span class="api-ops">'
+        +     '<button class="abt-op" type="button" data-act="test" data-id="' + esc(a.id) + '">测试连通</button>'
+        +     '<button class="abt-op is-danger" type="button" data-act="rm" data-id="' + esc(a.id) + '">移除</button>'
+        +   '</span>'
+        + '</div>'
+        /* 展开：入参表 / 返回表 / 原始文本 */
+        + '<div class="api-body" hidden>'
+        +   (pr.host ? '<div class="api-cap">地址</div><pre class="api-raw">' + esc(pr.url || (pr.host + (a.path || ''))) + '</pre>' : '')
+        +   block('入参', pin, a.params, pr.query)
+        +   (pr.body.length ? block('请求体', null, '', pr.body) : '')
+        +   (pr.headers.length ? '<div class="api-cap">请求头</div><table class="api-tbl"><thead><tr><th>名称</th><th>值</th></tr></thead><tbody>'
+              + pr.headers.map(function (h) { return '<tr><td>' + esc(h.k) + '</td><td>' + esc(h.v) + '</td></tr>'; }).join('')
+              + '</tbody></table>' : '')
+        +   block('返回', pout, a.returns)
+        +   (a.raw && String(a.raw).trim() ? '<div class="api-cap">原始</div><pre class="api-raw">' + esc(a.raw) + '</pre>' : '')
+        + '</div>'
+        + '</div>';
     }).join('');
   }
 
@@ -175,6 +313,70 @@
     paintDoc(); paintState(); paintApis(); syncBar();
     toast('已保存');
   });
+
+  /* ── 折叠 / 测试连通（2026-11-09）──
+     单独一个监听器：原来那个处理「移除」，这里只处理新加的两个动作，互不干扰。 */
+  $('#api-list').addEventListener('click', function (e) {
+    var f = e.target.closest ? e.target.closest('[data-act="fold"]') : null;
+    if (f) {
+      var card = f.closest('.api-card');
+      var body = card ? card.querySelector('.api-body') : null;
+      if (!body) return;
+      var open = f.getAttribute('aria-expanded') === 'true';
+      f.setAttribute('aria-expanded', open ? 'false' : 'true');
+      body.hidden = open;
+      return;
+    }
+    var t = e.target.closest ? e.target.closest('[data-act="test"]') : null;
+    if (t) testApi(t.getAttribute('data-id'), t);
+  });
+
+  /* 接口的「测试连通」：发一个真实请求看通不通。
+     ★地址从哪来：数据层只有 api.host（种子里是空串）与 api.path。
+       path 本身是完整 URL 就直接打它；否则拼 host+path；两个都没有 → 说清缺什么，不给死按钮。
+     ★生产必须走同源代理（xz-server 的 /xz/probe）：客户内网不会给前端开 CORS，
+       浏览器直连一定失败。这里先直连，代理一接就替换成它（与模型页的 probe 同一口径）。 */
+  function testApi(id, btn) {
+    var a = ((window.CAP && CAP.apis()) || []).filter(function (x) { return x.id === id; })[0];
+    if (!a) return;
+    var path = a.path || '';
+    var base = (a.host || parseRaw(a.raw).host || '').replace(/\/+$/, '');
+    var url = /^https?:\/\//i.test(path) ? path : (base ? base + path : '');
+    if (!url) { toast('这个接口没填地址，先在编辑里补上'); return; }
+    var card = btn.closest ? btn.closest('.api-card') : null;
+    var resEl = card ? card.querySelector('.api-testres') : null;
+    if (!resEl) {
+      resEl = document.createElement('span');
+      resEl.className = 'api-testres';
+      btn.parentNode.insertBefore(resEl, btn);
+    }
+    btn.disabled = true; btn.textContent = '测试中…';
+    resEl.textContent = ''; resEl.className = 'api-testres';
+    /* ★2026-11-09 走同源代理（与模型页同一口径）：客户内网不给前端开 CORS，直连必失败。
+       ★同轮修正：这里原来写 pr.headers —— pr 是渲染函数里的局部变量，testApi 作用域里根本没有，
+         抛的是同步 ReferenceError，Promise 的 .catch 捕不到，按钮就永远卡在「测试中…」。
+         现在自己在函数里重新解析一次。 */
+    var pr2 = parseRaw(a.raw);
+    var payload = { url: url, method: a.method || 'GET', headers: pr2.headers || [] };
+    fetch('/xz/probe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    }).then(function (r) {
+      if (!r.ok) throw new Error('no-proxy');
+      return r.json();
+    }).then(function (j) {
+      return { ok: !!j.ok, status: j.status || 0 };
+    }).catch(function (err) {
+      try { console.debug('[probe] 接口测试退回直连（本页可能没有 /xz/probe）', err); } catch (x) {}
+      return fetch(url, { method: a.method || 'GET' }).then(function (r) {
+        return { ok: r.ok, status: r.status };
+      }).catch(function () { return { ok: false, status: 0 }; });
+    }).then(function (r) {
+      btn.disabled = false; btn.textContent = '测试连通';
+      resEl.textContent = r.ok ? '连接成功' : '连接失败';
+      resEl.className = 'api-testres ' + (r.ok ? 'is-ok' : 'is-bad');
+      btn.title = 'HTTP ' + (r.status || '—');
+    });
+  }
 
   $('#api-list').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act="rm"]'); if (!b) return;

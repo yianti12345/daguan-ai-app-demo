@@ -16,6 +16,8 @@
   };
 
   var S = { kw: '', state: '', on: '', src: '' };
+  /* ★2026-11-09：勾选状态按 id 存在对象里，翻页不丢（列表只渲染当前页，用数组会丢）。 */
+  var SEL = {};
   var DET = null;
   var PAGE = 15, PG = 1;
   var EDIT_ID = null;
@@ -52,11 +54,21 @@
       rows: rows,
       rowClass: 'gtable-row',
       cell: function (key, r) {
+        if (key === 'sel') {
+          return '<input type="checkbox" class="it-ck" data-id="' + esc(r.id) + '"'
+            + (SEL[r.id] ? ' checked' : '') + ' aria-label="选择 ' + esc(r.name) + '">';
+        }
         if (key === 'name') return '<span class="it-name">' + esc(r.name) + '</span>';
         if (key === 'desc') return '<span class="it-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
         if (key === 'source') return esc(r.source || '—');
         if (key === 'at') return '<span class="it-at">' + esc(r.at || '—') + '</span>';
-        if (key === 'by') return esc(r.by || '—');
+        /* ★2026-11-09：这一列原来读 r.by（创建人），但 api 与 ability 都没有这个字段 ——
+           永远显示「—」，等于白占一列。换成 state（说明书生成状态）：它一直存在数据里、
+           界面上却从来没露过，而"哪条能力还没生成说明书"正是这一页要看的。 */
+        if (key === 'state') {
+          var st = ST[r.state] || ST.ok;
+          return '<span class="it-st" style="color:' + st.c + '">' + st.t + '</span>';
+        }
         if (key === 'ops') {
           return '<div class="it-ops">'
             + '<button class="it-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">编辑</button>'
@@ -81,6 +93,109 @@
       }
       pager.innerHTML = h;
     }
+  }
+
+  /* ══ 导出 / 导入能力（2026-11-09）════════════════════════════════════════
+     用户原话：「这个是导入导出吧，没看到导出……导出的是能力，导入的也是能力」
+     列表这一页渲染的是接口（编辑/新增/批量导入都围绕接口），但导出要按**能力**口径 ——
+     一个能力带说明书 + N 个接口。所以导出时按 apiIds 反查能力，把说明书一起带走。
+     为什么不直接把列表换成能力：编辑弹窗、批量导入、贴文本解析全建在接口对象上，
+     换对象等于重写整页，收益只有"名字对了"，不划算。 */
+  function buildExport() {
+    /* 有勾选就只导勾选的；一条没勾才导「当前筛选的全部」。
+       弹层里会把这两个数额分别写出来，不静默改变范围。 */
+    var all = list();
+    var picked = all.filter(function (a) { return SEL[a.id]; });
+    var apis = picked.length ? picked : all;
+    if (!apis.length) return null;
+    var ids = {};
+    apis.forEach(function (a) { ids[a.id] = 1; });
+    var allApis = CAP.apis();
+    var abs = CAP.abilities().filter(function (b) {
+      return (b.apiIds || []).some(function (id) { return ids[id]; });
+    });
+    return {
+      type: 'ability-export', schema: 1, at: Date.now(),
+      count: { apis: apis.length, abilities: abs.length },
+      picked: apis !== all,
+      abilities: abs.map(function (b) {
+        var mine = (b.apiIds || []).filter(function (id) { return ids[id]; });
+        return {
+          name: b.name || '', intro: b.intro || '', project: b.project || '',
+          doc: b.doc || '', docFrom: b.docFrom || '', docAt: b.docAt || '',
+          apis: mine.map(function (id) {
+            var a = allApis.filter(function (x) { return x.id === id; })[0];
+            if (!a) return null;
+            return { id: a.id, name: a.name || '', method: a.method || '', path: a.path || '',
+                     host: a.host || '', summary: a.desc || '',
+                     params: a.params || '', returns: a.returns || '', raw: a.raw || '' };
+          }).filter(Boolean)
+        };
+      })
+    };
+  }
+
+  /* zip 里那份 README：说清里面有什么、怎么用。客户不解压也能看懂。 */
+  function readme(pkg) {
+    var nd = pkg.abilities.filter(function (b) { return b.doc; }).length;
+    return [
+      '达观智能审核平台 · 能力包',
+      '',
+      '导出时间：' + new Date(pkg.at || Date.now()).toLocaleString('zh-CN'),
+      '内容：' + pkg.count.abilities + ' 个能力，' + pkg.count.apis + ' 个接口，' + nd + ' 份说明书',
+      '',
+      '包里有什么——',
+      '  能力包.json      可再导入回平台（列表页「导入」，选这个文件即可，不必解压）',
+      '  说明书/*.md      每个能力的说明书，可直接阅读、也可给别的模型当上下文',
+      '',
+      '怎么导回去——',
+      '  1. 打开「能力配置」列表页',
+      '  2. 点「导入」，选中 能力包.json（也可直接选本 zip，系统会自动解包）',
+      '  3. 接口按 域名+方法+路径 去重；能力同名的会合并接口，不会重复建',
+      ''
+    ].join('\n');
+  }
+
+  function doExport() {
+    var pkg = buildExport();
+    if (!pkg) { toast('没有可导出的接口', 'error'); return; }
+    var nDoc = pkg.abilities.filter(function (b) { return b.doc; }).length;
+    ask({
+      title: '导出能力',
+      body: '将导出 ' + pkg.count.abilities + ' 个能力（来自 ' + pkg.count.apis + ' 个接口），'
+        + '其中 ' + nDoc + ' 个带说明书。'
+        + (pkg.picked ? '范围：已勾选 ' + pkg.count.apis + ' 个接口。' : '范围：当前筛选的全部 ' + pkg.count.apis + ' 个接口（未勾选）。')
+        + ' 下载为 zip，内含可导回的 JSON 与 ' + nDoc + ' 份说明书。',
+      okText: '导出',
+      onOk: function () {
+        if (!window.Transfer) { toast('这一页没接下载组件', 'error'); return; }
+        /* ★2026-11-09：导 zip 而不是裸 JSON —— 客户拿到手要能直接读，不只是能导回来。
+           一个包 = 可导回的 JSON + 每个能力的说明书 MD + 一份 README。
+           浏览器不许一次存多个文件，所以必须打包；zip 用 STORE 手写，没引依赖。 */
+        var files = [{ name: 'README.txt', text: readme(pkg) }];
+        files.push({ name: '能力包.json', text: JSON.stringify(pkg, null, 2) });
+        pkg.abilities.forEach(function (b, i) {
+          if (!b.doc) return;
+          var safe = String(b.name || ('能力' + (i + 1))).replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 40);
+          files.push({ name: '说明书/' + (i + 1) + '-' + safe + '.md', text: b.doc });
+        });
+        Transfer.downloadZip('能力包', files);
+        toast('已导出 ' + pkg.count.abilities + ' 个能力（zip 内含 JSON 与说明书）');
+      }
+    });
+  }
+
+  function doImport() {
+    if (!window.Transfer) return;
+    Transfer.pick(function (obj) {
+      if (!obj || !Array.isArray(obj.abilities)) {
+        toast('这不是能力包：缺少 abilities', 'error');
+        return;
+      }
+      var r = CAP.importAbilities(obj.abilities);
+      paint();
+      toast('已导入 ' + r.abilities + ' 个能力、' + r.apis + ' 个接口');
+    }, function () { toast('文件读不出来', 'error'); });
   }
 
   /* ── 生成 MD 文档：本地按内容抽取，失败也给可编辑的草稿 ── */
@@ -344,6 +459,19 @@
   });
 
 
+
+  /* 导入 / 导出（2026-11-09） */
+  var btnEx = $('#act-export'); if (btnEx) btnEx.addEventListener('click', doExport);
+  var btnIm = $('#act-import'); if (btnIm) btnIm.addEventListener('click', doImport);
+
+  /* 勾选（事件委托，列表每次重绘都会换掉 DOM） */
+  var listBox = $('#list');
+  if (listBox) listBox.addEventListener('change', function (e) {
+    var cb = e.target;
+    if (!cb || cb.className.indexOf('it-ck') < 0) return;
+    var id = cb.getAttribute('data-id');
+    if (cb.checked) SEL[id] = 1; else delete SEL[id];
+  });
 
   $('#act-new').addEventListener('click', function () { openDlg(null); });
 
