@@ -421,7 +421,10 @@ window.Gen = (function () {
       return (i + 1) + '. ' + (a.name || '未命名')
         + '\n   方法与路径：' + (a.method || 'GET') + ' ' + (a.path || '（未标注）')
         + '\n   一句说明：' + (a.summary || a.desc || '（没写）')
-        + (a.doc ? '\n   原有文档：\n' + String(a.doc).split('\n').map(function (l) { return '     ' + l; }).join('\n') : '');
+        /* ★2026-11-09 盲审：接口被改过之后它那份"原有文档"写的是旧路径，
+           再喂给模型 = 让模型照着旧路径重写一遍，用户点重新生成也洗不掉。
+           标记过 docStale 的直接不用。 */
+        + (a.doc && !a.docStale ? '\n   原有文档：\n' + String(a.doc).split('\n').map(function (l) { return '     ' + l; }).join('\n') : '');
     })).join('\n');
     /* 三种结局都要说得清：模型写成了 / 模型不行按文档拼 / 连拼都拼不出来。 */
     return probe().then(function (p) {

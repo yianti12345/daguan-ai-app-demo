@@ -66,10 +66,25 @@
 
   /* 状态只描述事实：在生成、已就绪、这次没生成出来（带原因）、还没生成、
      接口变了说明书没跟上。 */
+  /* ★2026-11-09 盲审：原来 docApis 只存接口 id，所以「改了路径/方法」它察觉不到 ——
+     说明书照样显示「已就绪」、里面还印着旧路径。把方法路径也纳入签名。 */
+  function apisSig(ids) {
+    return (ids || []).map(function (id) {
+      var a = CAP.apiById(id);
+      return a ? (id + '|' + (a.method || '') + '|' + (a.path || '')) : id;
+    }).join(',');
+  }
+  /* 旧存档的 docApis 是纯 id 拼接（没有 |），按旧口径比，避免存量能力全部误报"要重新生成"。 */
+  function docMoved(b) {
+    var saved = String(b.docApis || '');
+    if (saved.indexOf('|') >= 0) return apisSig(b.apiIds) !== saved;
+    return (b.apiIds || []).join(',') !== saved;
+  }
+
   function paintState() {
     var st = B.docState || 'none';
     var el = $('#md-state');
-    var moved = (B.apiIds || []).join(',') !== String(B.docApis || '');
+    var moved = docMoved(B);
     if (BUSY || st === 'run') {
       el.textContent = '生成中…';
       el.classList.remove('is-danger');
@@ -103,6 +118,16 @@
     if (!str) return null;
     try {
       var v = JSON.parse(str);
+      /* 盲审：原来只认数组，用户按占位符填 {"page": 1} 这种对象时解析成 null，
+         卡片就回退去读 raw，改完入参数字纹丝不动，看着像没保存。对象也要能读。 */
+      if (v && !Array.isArray(v) && typeof v === 'object') {
+        var keys = Object.keys(v);
+        if (!keys.length) return null;
+        return keys.map(function (k) {
+          var t = v[k] === null ? 'null' : (Array.isArray(v[k]) ? 'array' : typeof v[k]);
+          return { name: k, type: t, required: false, desc: '示例：' + (typeof v[k] === 'string' ? v[k] : JSON.stringify(v[k])) };
+        });
+      }
       if (!Array.isArray(v) || !v.length) return null;
       return v.map(function (p) {
         var t = p.type || (p.schema && p.schema.type) || '';
@@ -233,6 +258,9 @@
         +   '<span>' + (pin || pr.query.length ? '入参 ' + (pin ? pin.length : pr.query.length) : '入参 —')
             + ' · ' + (pout ? '返回 ' + pout.length : '返回 —') + '</span>'
         +   '<span class="api-ops">'
+        /* ★2026-11-09（用户：为什么居然没有编辑）：接口信息虽然全展示了，却改不了 ——
+           想改路径或入参只能删掉重加。编辑按危险程度排在移除之前。 */
+        +     '<button class="abt-op" type="button" data-act="edit" data-id="' + esc(a.id) + '">编辑</button>'
         +     '<button class="abt-op" type="button" data-act="test" data-id="' + esc(a.id) + '">测试连通</button>'
         +     '<button class="abt-op is-danger" type="button" data-act="rm" data-id="' + esc(a.id) + '">移除</button>'
         +   '</span>'
@@ -275,7 +303,12 @@
     paintState(); syncBar();
     Gen.abilityDoc(CAP.abilityById(ID)).then(function (r) {
       CAP.updateAbility(ID, {
-        doc: r.text, docState: 'ready', docAt: CAP.now(), docApis: (B.apiIds || []).join(','),
+        doc: r.text, docState: 'ready', docAt: CAP.now(), docApis: apisSig(B.apiIds),
+        /* 生成成功 = 这份说明书已经按当前接口写过一遍，各接口的 docStale 可以摘掉了。 */
+        docStaleCleared: (function () {
+          (B.apiIds || []).forEach(function (id) { CAP.updateApi(id, { docStale: false }); });
+          return true;
+        })(),
         docFrom: r.from || 'model', docErr: r.from === 'local' ? (r.why || '') : ''
       });
       BUSY = false; B = CAP.abilityById(ID);
@@ -327,6 +360,8 @@
       body.hidden = open;
       return;
     }
+    var ed = e.target.closest ? e.target.closest('[data-act="edit"]') : null;
+    if (ed) { openAdd(ed.getAttribute('data-id')); return; }
     var t = e.target.closest ? e.target.closest('[data-act="test"]') : null;
     if (t) testApi(t.getAttribute('data-id'), t);
   });
@@ -552,26 +587,55 @@
     return n;
   }
 
-  function openAdd() {
+  /* editId 为空 = 添加；给了就变成「编辑这个接口」：直接进手填表单、预填现有值、按钮改「保存」。
+     没有另做一个编辑弹层 —— 字段是同一批字段，另做一套必然两边越改越不像。 */
+  function openAdd(editId) {
     var old = $('#pk-mask'); if (old) old.remove();
-    ADD = { mode: 'bulk', parsed: null, busy: false, text: '' };
+    var editing = editId ? CAP.apiById(editId) : null;
+    ADD = { mode: editing ? 'form' : 'bulk', parsed: null, busy: false, text: '', editId: editId || '' };
     document.body.insertAdjacentHTML('beforeend',
       '<div class="nf-mask" id="pk-mask"><div class="nf" role="dialog" aria-modal="true" aria-labelledby="pk-t">'
-      + '<div class="nf-hd"><b id="pk-t">添加接口</b>'
+      + '<div class="nf-hd"><b id="pk-t">' + (editing ? '编辑接口' : '添加接口') + '</b>'
       + '<button type="button" class="icon-btn" id="pk-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
       /* 页签用现成的 .p-tabs / .p-tab（装配能力面板同一套），间距一行都不许在这里改；
          上一版给它加了 padding:0 和负 margin，等于把现成组件的样式改掉了 —— 那就是另搞一套。 */
-      + '<div class="p-tabs" id="pk-tabs" role="tablist" aria-label="添加方式">'
+      + (editing ? '' :
+        '<div class="p-tabs" id="pk-tabs" role="tablist" aria-label="添加方式">'
       +   '<button type="button" role="tab" class="p-tab" data-mode="bulk" aria-selected="true">贴内容自动拆</button>'
       +   '<button type="button" role="tab" class="p-tab" data-mode="form" aria-selected="false">手动填一条</button>'
-      + '</div>'
+      + '</div>')
       + '<div class="nf-bd" id="pk-bd"></div>'
       + '<div class="nf-ft">'
       + '<button type="button" class="btn ghost" id="pk-cancel">取消</button>'
       + '<button type="button" class="btn primary" id="pk-ok">解析</button></div>'
       + '</div></div>');
-    $('#pk-x').addEventListener('click', function () { $('#pk-mask').remove(); });
-    $('#pk-cancel').addEventListener('click', function () { $('#pk-mask').remove(); });
+    /* 盲审：改了一半点 X 或取消，弹层直接销毁、内容全丢，也没有任何提示。
+       编辑态下先比一次表单和原值，有差异就问一句。 */
+    function closeAddDlg() {
+      var mask = $('#pk-mask');
+      if (!mask) return;
+      var ea = ADD.editId ? CAP.apiById(ADD.editId) : null;
+      var dirty = ea && (
+        ($('#fa-name') || {}).value.trim() !== (ea.name || '') ||
+        ($('#fa-path') || {}).value.trim() !== (ea.path || '') ||
+        ($('#fa-host') || {}).value.trim() !== (ea.host || parseRaw(ea.raw).host || '') ||
+        ($('#fa-desc') || {}).value.trim() !== (ea.desc || ea.summary || '') ||
+        ($('#fa-in') || {}).value.trim() !== (ea.params || '') ||
+        ($('#fa-out') || {}).value.trim() !== (ea.returns || '')
+      );
+      if (dirty && window.Confirm && Confirm.ask) {
+        Confirm.ask({
+          title: '放弃这次修改？',
+          body: '这个接口改了还没保存，关掉就没了。',
+          okText: '放弃',
+          onOk: function () { mask.remove(); }
+        });
+        return;
+      }
+      mask.remove();
+    }
+    $('#pk-x').addEventListener('click', closeAddDlg);
+    $('#pk-cancel').addEventListener('click', closeAddDlg);
     $('#pk-ok').addEventListener('click', onAddOk);
     $$('#pk-tabs .p-tab').forEach(function (t) {
       t.addEventListener('click', function () {
@@ -610,16 +674,35 @@
       bd.innerHTML = ''
         + '<div class="nf-row"><label for="fa-name">接口名称<span class="nf-req">*</span></label><input id="fa-name" placeholder="这个接口叫什么"></div>'
         + '<div class="nf-row"><label for="fa-m">方法</label><select id="fa-m"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select></div>'
+        + '<div class="nf-row"><label for="fa-host">地址</label><input id="fa-host" placeholder="https://api.example.com，留空表示不知道"></div>'
         + '<div class="nf-row"><label for="fa-path">路径<span class="nf-req">*</span></label><input id="fa-path" placeholder="/api/v1/…"></div>'
         + '<div class="nf-row"><label for="fa-desc">说明</label><input id="fa-desc" placeholder="干什么用，一句话"></div>'
         + '<div class="nf-row"><label for="fa-in">入参（JSON）</label><textarea id="fa-in" placeholder="{&quot;page&quot;: 1, &quot;status&quot;: &quot;done&quot;}"></textarea></div>'
         + '<div class="nf-row"><label for="fa-out">返回（JSON）</label><textarea id="fa-out" placeholder="{&quot;total&quot;: 0, &quot;items&quot;: []}"></textarea></div>';
+      /* 编辑：把现有值填回去。raw 是接口信息的来源，一并放进入参/返回之外的说明区，
+         这样"我看到的"和"我能改的"是同一份数据。 */
+      if (ADD.editId) {
+        var ea = CAP.apiById(ADD.editId);
+        if (ea) {
+          $('#fa-name').value = ea.name || '';
+          $('#fa-m').value = (ea.method || 'GET').toUpperCase();
+          /* 盲审：表单原来没有「地址」，而「测试连通」失败时提示"去编辑里补地址" —— 补不了，死循环。
+             地址优先取 host，没有就从 raw 里解析（种子接口的域名都在 raw 里）。 */
+          $('#fa-host').value = ea.host || parseRaw(ea.raw).host || '';
+          $('#fa-path').value = ea.path || '';
+          $('#fa-desc').value = ea.desc || ea.summary || '';
+          $('#fa-in').value = ea.params || '';
+          $('#fa-out').value = ea.returns || '';
+        }
+      }
       ['#fa-name', '#fa-path'].forEach(function (sel) {
         $(sel).addEventListener('input', function () {
           $('#pk-ok').disabled = !($('#fa-name').value.trim() && $('#fa-path').value.trim());
         });
       });
-      paintFoot('添加', true);
+      paintFoot(ADD.editId ? '保存' : '添加', true);
+      /* 预填之后按钮要按"有没有值"重新判一次，否则一进来永远是灰的 */
+      if (ADD.editId) $('#pk-ok').disabled = !($('#fa-name').value.trim() && $('#fa-path').value.trim());
       return;
     }
     /* list：拆出来的先给人看一眼 */
@@ -646,10 +729,34 @@
     if (ADD.mode === 'form') {
       var v = {
         name: $('#fa-name').value.trim(), method: $('#fa-m').value, path: $('#fa-path').value.trim(),
+        host: ($('#fa-host') ? $('#fa-host').value.trim() : ''),
         desc: $('#fa-desc').value.trim(), summary: $('#fa-desc').value.trim(),
         params: $('#fa-in').value.trim(), returns: $('#fa-out').value.trim()
       };
       if (!v.name || !v.path) return;
+      if (ADD.editId) {
+        /* 改完清掉上一次的测试结果：地址或方法变了，旧的「连接成功」不再作数（与模型页同一口径）。 */
+        CAP.updateApi(ADD.editId, {
+          name: v.name, method: v.method, path: v.path, host: v.host,
+          /* 接口改了，它自己那份说明就过期了。生成说明书时要跳过它，否则旧路径会被当成
+             "原有文档"再喂给模型，重新生成也洗不掉（盲审指出的原话：用户点重新生成也洗不掉旧路径）。 */
+          docStale: true,
+          desc: v.desc, summary: v.summary, params: v.params, returns: v.returns,
+          test: null
+        });
+        $('#pk-mask').remove();
+        /* 旧存档的 docApis 只存了接口 id，改了路径它察觉不到（docMoved 走旧口径会判"没变"）。
+           这里直接把签名清掉，逼它下一次必然判"接口有变动"，提示重新生成。 */
+        CAP.updateAbility(ID, { docApis: '' });
+        CHANGED = true; B = CAP.abilityById(ID);
+        /* 只改了接口，上一轮的批量测试结果就作废了 —— 不清的话顶上还挂着"通过 1 · 失败 2"，
+           看着像新接口也测过了。 */
+        var sumEl = $('#api-sum');
+        if (sumEl) { sumEl.textContent = ''; sumEl.hidden = true; }
+        paintApis(); paintState(); syncBar();
+        toast('已保存，记得点右上「保存」');
+        return;
+      }
       addItems([v]);
       $('#pk-mask').remove();
       paintApis(); paintState(); syncBar();
@@ -696,7 +803,10 @@
       + '<button type="button" class="abt-op" id="act-testall">测试全部</button>'
       + '<button type="button" class="abt-op" id="act-add">＋ 添加接口</button>'
       + '</span>');
-    $('#act-add').addEventListener('click', openAdd);
+    /* ★2026-11-09 盲审抓到的致命 bug：直接传 openAdd 会把 MouseEvent 当成 editId，
+       于是"添加接口"变成"编辑接口"（按钮显示保存、点击 updateApi(事件对象) 静默返回 null），
+       用户看到"已保存"但一条都没写进去。必须包一层、明确传空串。 */
+    $('#act-add').addEventListener('click', function () { openAdd(''); });
     $('#act-testall').addEventListener('click', testAll);
   }
 
