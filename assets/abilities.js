@@ -216,8 +216,16 @@
         + '<div class="nf-hd"><b id="imp-t">导入</b>'
         + '<button type="button" class="icon-btn" id="imp-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
         + '<div class="nf-bd">'
-        + '<div id="imp-s1"><label class="it-lb" for="imp-raw">内容</label>'
-        + '<textarea class="it-raw" id="imp-raw" rows="10" placeholder="贴 OpenAPI / Swagger 的 JSON、一段段接口说明（空行分隔），或一份导出过的能力 JSON"></textarea></div>'
+        + '<div id="imp-s1">'
+        /* ★2026-11-09（用户）：导出给的是文件，导入只能贴内容 —— 两头不对等。
+           第一步就要能「选文件 / 拖进来」，读到的内容和粘贴走同一条解析。 */
+        + '<div class="imp-drop" id="imp-drop">'
+        + '<button type="button" class="btn ghost" id="imp-file">选择文件</button>'
+        + '<span>或把导出的 JSON 拖到这里</span>'
+        + '<input type="file" id="imp-input" accept=".json,application/json" multiple hidden>'
+        + '</div>'
+        + '<label class="it-lb" for="imp-raw">也可以直接贴</label>'
+        + '<textarea class="it-raw" id="imp-raw" rows="8" placeholder="OpenAPI / Swagger 的 JSON、一段段接口说明（空行分隔），或一份导出过的能力 JSON"></textarea></div>'
         + '<div id="imp-s2" hidden></div>'
         + '</div>'
         + '<div class="nf-ft"><span class="it-sp"></span>'
@@ -236,6 +244,17 @@
         preview();
       });
       $('#imp-merge').addEventListener('click', function () { doImport('merge'); });
+      /* 选文件 / 拖文件：和"贴"走同一条解析，不另立一套。 */
+      $('#imp-file').addEventListener('click', function () { $('#imp-input').click(); });
+      $('#imp-input').addEventListener('change', function () { readFiles(this.files); this.value = ''; });
+      var bd = $('#imp-mask .nf-bd');
+      if (bd) {
+        bd.addEventListener('dragover', function (e) { e.preventDefault(); });
+        bd.addEventListener('drop', function (e) {
+          e.preventDefault();
+          readFiles(e.dataTransfer && e.dataTransfer.files);
+        });
+      }
     }
     m = $('#imp-mask');
     m.hidden = false;
@@ -296,10 +315,38 @@
     return { same: same, dup: dup };
   }
 
+  /* 读文件：多个文件合并成一次导入，逐个 parse 后拼 items。
+     不做 size 上限之外的拦截 —— 解析不出就明说，不吞。 */
+  function readFiles(files) {
+    var arr = [].slice.call(files || []);
+    if (!arr.length) return;
+    var texts = new Array(arr.length), done = 0;
+    function tick() {
+      if (++done < arr.length) return;
+      var items = [];
+      texts.forEach(function (t) {
+        var p = t && parseInput(t);
+        if (p) items = items.concat(p.items);
+      });
+      if (!items.length) { toast('文件里没解析出能力', 'error'); return; }
+      showPreview({ from: 'file', items: items });
+    }
+    arr.forEach(function (f, i) {
+      var r = new FileReader();
+      r.onload = function () { texts[i] = String(r.result || ''); tick(); };
+      r.onerror = function () { texts[i] = ''; tick(); };
+      r.readAsText(f);
+    });
+  }
+
   function preview() {
     var raw = (($('#imp-raw') || {}).value || '').trim();
     var p = parseInput(raw);
     if (!p) { toast('没解析出接口', 'error'); return; }
+    showPreview(p);
+  }
+
+  function showPreview(p) {
     PENDING = p;
     var it = p.items[0] || {};
     var c = conflictOf(it);

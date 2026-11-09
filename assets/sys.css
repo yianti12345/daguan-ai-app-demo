@@ -3066,3 +3066,6 @@ b,strong{font-weight:600}
 .imp-row{display:flex;gap:var(--space-12);font-size:var(--font-size-body);color:var(--color-text-primary)}
 .imp-row span{color:var(--color-text-tertiary);min-width:96px}
 .imp-tip{margin:var(--space-12) 0 0;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+/* 导入第一步：选文件 / 拖进来。导出给的是文件，导入就得能接文件，不能只让贴。 */
+.imp-drop{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-12);margin:0 0 var(--space-12);
+  border:1px dashed var(--color-border-control);border-radius:var(--radius-control);color:var(--color-text-tertiary);font-size:var(--font-size-caption)}
