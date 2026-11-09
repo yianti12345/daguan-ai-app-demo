@@ -98,6 +98,15 @@
       var n = selCount();
       t.textContent = '共 ' + all.length + ' 条' + (n ? ' · 已选 ' + n + ' 条' : '');
     }
+    /* 勾选数直接长在按钮上：勾 1 个就写「批量导出（1）」，没勾就是灰的。
+       不再弹一层让人选范围 —— 那三行单选没人看得懂。 */
+    var eb = $('#act-export');
+    if (eb) {
+      var nsel = selCount();
+      eb.textContent = nsel ? ('批量导出（' + nsel + '）') : '批量导出';
+      eb.disabled = !nsel;
+      eb.title = nsel ? '' : '先勾选要导出的能力';
+    }
     var pg = $('#pg');
     if (pg) {
       pg.innerHTML = '<button type="button" class="ab-op" data-pg="prev"' + (S.page <= 1 ? ' disabled' : '') + '>上一页</button>'
@@ -142,49 +151,17 @@
     toast('已导出「' + (b.name || '未命名') + '」');
   }
 
-  /* 批量导出：三个范围必须显式选。原写法「没勾就导当前页全部」是静默缩小范围，
-     分两页的人会以为导全了 —— 数额直接写在单选项上，让他自己看。 */
-  function openExport() {
-    var all = allRows();
-    var nSel = selRows(all).length, nCur = pageRows(all).length, nAll = all.length;
-    if (!nAll) { toast('没有可导出的能力', 'error'); return; }
-
-    var m = document.createElement('div');
-    m.className = 'nf-mask'; m.id = 'exp-mask';
-    m.innerHTML = '<div class="nf" role="dialog" aria-modal="true" aria-labelledby="exp-t">'
-      + '<div class="nf-hd"><b id="exp-t">导出能力</b>'
-      + '<button type="button" class="icon-btn" id="exp-x" aria-label="关闭">'
-      + '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
-      + '<div class="nf-bd"><div class="exp-opts">'
-      + opt('sel', '已勾选 ' + nSel + ' 条', nSel === 0)
-      + opt('cur', '本页 ' + nCur + ' 条', nCur === 0)
-      + opt('all', '全部筛选 ' + nAll + ' 条', false)
-      + '</div></div>'
-      + '<div class="nf-ft"><span class="it-sp"></span>'
-      + '<button type="button" class="btn ghost" id="exp-cancel">取消</button>'
-      + '<button type="button" class="btn primary" id="exp-ok">导出</button></div>'
-      + '</div>';
-    document.body.appendChild(m);
-
-    function opt(v, label, dis) {
-      return '<label class="exp-opt"><input type="radio" name="exp-range" value="' + v + '"'
-        + (dis ? ' disabled' : '') + (v === 'all' ? ' checked' : '') + '>' + esc(label) + '</label>';
-    }
-    function close() { m.remove(); }
-    $('#exp-x', m).addEventListener('click', close);
-    $('#exp-cancel', m).addEventListener('click', close);
-    $('#exp-ok', m).addEventListener('click', function () {
-      var v = (m.querySelector('input[name="exp-range"]:checked') || {}).value || 'all';
-      var list = v === 'sel' ? selRows(all) : v === 'cur' ? pageRows(all) : all;
-      if (!list.length) { toast('这个范围里没有能力', 'error'); return; }
-      var at = CAP.now();
-      download({
-        v: 1, exportedAt: at,
-        abilities: list.map(abilityPack)
-      }, '能力-' + list.length + '条-' + String(at).replace(/[^0-9]/g, '').slice(0, 12) + '.json');
-      close();
-      toast('已导出 ' + list.length + ' 条');
-    });
+  /* 批量导出：不弹层。勾了几个，按钮上就写几个；点一下直接导走。
+     单个导出仍走每行的「导出」（exportOne），两条路互不干扰。 */
+  function batchExport() {
+    var list = selRows(allRows());
+    if (!list.length) { toast('先勾选要导出的能力', 'error'); return; }
+    var at = CAP.now();
+    download({
+      v: 1, exportedAt: at,
+      abilities: list.map(abilityPack)
+    }, '能力-' + list.length + '条-' + String(at).replace(/[^0-9]/g, '').slice(0, 12) + '.json');
+    toast('已导出 ' + list.length + ' 条');
   }
 
   /* ── 删除 ───────────────────────────────────────────────────────── */
@@ -415,7 +392,7 @@
     }
     if (e.target.id === 'act-new') { location.href = 'ability.html?id=new'; }
     if (e.target.id === 'act-import') { openImport(); }
-    if (e.target.id === 'act-export') { openExport(); }
+    if (e.target.id === 'act-export') { batchExport(); }
   });
 
   $('#kw').addEventListener('input', function () {
