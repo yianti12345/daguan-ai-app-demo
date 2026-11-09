@@ -229,9 +229,15 @@
     cache.models = cache.models.map(normModel);
     /* ★2026-11-09：老存档里一个语音模型都没有，语音绑定就永远空着。
        整类补一条 —— 只补 asr，不逐条复活别的种子（删过的不能被塞回来）。 */
-    if (!cache.models.some(function (m) { return m.kind === 'asr'; })) {
-      var asrSeed = MODEL_SEED.filter(function (m) { return m.kind === 'asr'; })[0];
-      if (asrSeed) { cache.models.push(JSON.parse(JSON.stringify(asrSeed))); save(); }
+    /* ★2026-11-09 盲审：原来写成「没有 asr 就补」，删掉后一刷新又回来，删除是假的。
+       改成只补一次（seededAsr 标记）：补过就不再补，删了就真没了。 */
+    if (!cache.seededAsr) {
+      cache.seededAsr = 1;
+      if (!cache.models.some(function (m) { return m.kind === 'asr'; })) {
+        var asrSeed = MODEL_SEED.filter(function (m) { return m.kind === 'asr'; })[0];
+        if (asrSeed) cache.models.push(JSON.parse(JSON.stringify(asrSeed)));
+      }
+      save();
     }
     /* ★2026-11-09：新增语音/向量/重排三条绑定后，老存档里只有 xz、config 两条。
        逐条补齐而不是整体重置 —— 重置会把他已经选过的模型冲回种子值。
@@ -451,9 +457,13 @@
   /* ★2026-11-09：导入能力包（interfaces 页「导入」用）。
      口径：接口进池按 host+method+path 去重（同一个接口被两个能力引用不算两份）；
      能力同名则合并（追加接口），不新建 —— 客户重发一版不会把清单撑成两份。 */
-  function importAbilities(items) {
+  function importAbilities(items, opts) {
+    /* ★2026-11-09 盲审：导入要能选「新建」还是「合并」——
+       原来同名一律静默合并，用户以为新建了一条，实际清单条数没变。
+       mode='new' 时即使同名也建新的一条；默认 merge，保持老调用不变。 */
+    var mode = (opts && opts.mode === 'new') ? 'new' : 'merge';
     var d = load();
-    var nAb = 0, nApi = 0;
+    var nAb = 0, nApi = 0, nSkip = 0;
     (items || []).forEach(function (b) {
       if (!b || !b.name) return;
       var apiIds = [];
@@ -468,7 +478,7 @@
           var xk = (x.host || ('project:' + (x.project || '未标注'))) + ' ' + (x.method || 'GET') + ' ' + x.path;
           return xk === key;
         })[0];
-        if (hit) { apiIds.push(hit.id); return; }
+        if (hit) { apiIds.push(hit.id); nSkip++; return; }
         var nid = 'api-imp-' + (nApi++) + '-' + Date.now().toString(36);
         d.apis.push({
           id: nid, name: a.name || a.path, desc: a.summary || '',
@@ -481,10 +491,17 @@
         });
         apiIds.push(nid);
       });
-      var same = d.abilities.filter(function (x) { return x.name === b.name; })[0];
+      var same = mode === 'merge' ? d.abilities.filter(function (x) { return x.name === b.name; })[0] : null;
       if (same) {
         apiIds.forEach(function (id) { if ((same.apiIds || []).indexOf(id) < 0) same.apiIds.push(id); });
-        if (b.doc && !same.doc) { same.doc = b.doc; same.docState = 'ready'; }
+        /* ★2026-11-09 盲审：原来只在 same.doc 为空时写，导出的说明书永远进不来 ——
+           验收「导出→导入→详情能看到完整说明书」在合并这条路上不成立。以文件为准。 */
+        if (b.doc && b.doc !== same.doc) {
+          same.doc = b.doc;
+          same.docState = 'ready';
+          same.docFrom = b.docFrom || same.docFrom || '';
+          same.docAt = b.docAt || same.docAt || '';
+        }
         same.at = now();
       } else {
         d.abilities.push({
@@ -497,7 +514,7 @@
       }
     });
     save();
-    return { abilities: nAb, apis: nApi };
+    return { abilities: nAb, apis: nApi, skipped: nSkip };
   }
 
   function exportAll() {

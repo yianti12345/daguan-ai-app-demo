@@ -89,15 +89,19 @@
       el.textContent = '生成中…';
       el.classList.remove('is-danger');
     } else if (st === 'fail') {
-      el.textContent = '这次没生成出来：' + (B.docErr || '模型没返回');
+      /* 文案与列表统一成「生成失败」；异常原文只挂 title，不上屏。 */
+      el.textContent = '生成失败';
+      el.title = B.docErr || '模型没返回';
       el.classList.add('is-danger');
     } else if (st === 'ready') {
       el.classList.remove('is-danger');
+      el.removeAttribute('title');
       el.textContent = (B.doc && moved)
         ? '接口有变动，说明书要重新生成'
         : ('已就绪' + (B.docAt ? ' · ' + B.docAt : ''));
     } else {
-      el.textContent = '还没生成';
+      el.textContent = '未生成';
+      el.removeAttribute('title');
       el.classList.remove('is-danger');
     }
   }
@@ -261,7 +265,8 @@
         /* ★2026-11-09（用户：为什么居然没有编辑）：接口信息虽然全展示了，却改不了 ——
            想改路径或入参只能删掉重加。编辑按危险程度排在移除之前。 */
         +     '<button class="abt-op" type="button" data-act="edit" data-id="' + esc(a.id) + '">编辑</button>'
-        +     '<button class="abt-op" type="button" data-act="test" data-id="' + esc(a.id) + '">测试连通</button>'
+        +     '<button class="abt-op" type="button" data-act="test" data-id="' + esc(a.id) + '"'
+        +       (apiUrl(a) ? '' : ' disabled title="这个接口没填地址，先在编辑里补上"') + '>测试连通</button>'
         +     '<button class="abt-op is-danger" type="button" data-act="rm" data-id="' + esc(a.id) + '">移除</button>'
         +   '</span>'
         + '</div>'
@@ -347,6 +352,21 @@
     toast('已保存');
   });
 
+  /* ★2026-11-09 盲审：这一页一半操作即时落库（移除/添加接口）、一半要按保存，
+     用户点面包屑回列表时改动全丢且没有任何提示。离开前先问一句。 */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[href="abilities.html"]') : null;
+    if (!a) return;
+    if (!(CHANGED || formDirty())) return;
+    e.preventDefault();
+    Confirm.ask({
+      title: '离开这一页？',
+      body: '名称、说明或说明书改了还没保存，离开就没了。接口的增删已经生效。',
+      ok: '离开',
+      onOk: function () { location.href = a.getAttribute('href'); }
+    });
+  });
+
   /* ── 折叠 / 测试连通（2026-11-09）──
      单独一个监听器：原来那个处理「移除」，这里只处理新加的两个动作，互不干扰。 */
   $('#api-list').addEventListener('click', function (e) {
@@ -356,6 +376,16 @@
       var body = card ? card.querySelector('.api-body') : null;
       if (!body) return;
       var open = f.getAttribute('aria-expanded') === 'true';
+      /* ★2026-11-09 盲审：展开第 4 个时第 1 个不该还占着屏 ——
+         一次只看一个接口，打开新的先收起其它。 */
+      if (!open) {
+        [].forEach.call(document.querySelectorAll('#api-list .api-card [data-act="fold"]'), function (o) {
+          if (o === f) return;
+          o.setAttribute('aria-expanded', 'false');
+          var b = o.closest('.api-card').querySelector('.api-body');
+          if (b) b.hidden = true;
+        });
+      }
       f.setAttribute('aria-expanded', open ? 'false' : 'true');
       body.hidden = open;
       return;
@@ -385,11 +415,17 @@
     return base ? base + path : '';
   }
 
-  /* 发一次探测 → { ok, status }。走同源代理；没有代理（公网静态）退回直连。 */
+  /* 发一次探测 → { ok, status }。走同源代理；没有代理（公网静态）退回直连。
+     ★2026-11-09 盲审：原来没有超时，网关不回包就永远「测试中…」。
+       现在 10 秒必断（弹窗里人等在面前，60s 太长）。 */
   function probeApi(a, url) {
     var pr = parseRaw(a.raw);
-    var payload = { url: url, method: a.method || 'GET', headers: pr.headers || [] };
-    return fetch('/xz/probe', {
+    /* 入参要进请求：原来 payload 只有 url/method/headers，
+       填不填参数测的都是同一个请求，「参数不对」永远测不出来。 */
+    var q = (pr.query || []).map(function (x) { return x.k + '=' + encodeURIComponent(x.v == null ? '' : x.v); }).join('&');
+    var full = url + (q ? (url.indexOf('?') >= 0 ? '&' : '?') + q : '');
+    var payload = { url: full, method: a.method || 'GET', headers: pr.headers || [] };
+    return fetchT('/xz/probe', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     }).then(function (r) {
       if (!r.ok) throw new Error('no-proxy');
@@ -398,10 +434,20 @@
       return { ok: !!j.ok, status: j.status || 0 };
     }).catch(function (err) {
       try { console.debug('[probe] 退回直连（本页可能没有 /xz/probe）', err); } catch (x) {}
-      return fetch(url, { method: a.method || 'GET' }).then(function (r) {
+      return fetchT(full, { method: a.method || 'GET' }).then(function (r) {
         return { ok: r.ok, status: r.status };
       }).catch(function () { return { ok: false, status: 0 }; });
     });
+  }
+
+  /* 带 10s 超时的 fetch：超时按「连接失败」处理，不留悬空状态。 */
+  function fetchT(url, opt) {
+    if (!window.AbortController) return fetch(url, opt);
+    var ac = new AbortController();
+    var t = setTimeout(function () { ac.abort(); }, 10000);
+    return fetch(url, Object.assign({}, opt, { signal: ac.signal })).then(function (r) {
+      clearTimeout(t); return r;
+    }, function (e) { clearTimeout(t); throw e; });
   }
 
   /* 结果写在这一条卡片上：没有就造一个，位置在「测试连通」按钮左边。 */
@@ -627,7 +673,7 @@
         Confirm.ask({
           title: '放弃这次修改？',
           body: '这个接口改了还没保存，关掉就没了。',
-          okText: '放弃',
+          ok: '放弃',
           onOk: function () { mask.remove(); }
         });
         return;

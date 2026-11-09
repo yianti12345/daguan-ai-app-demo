@@ -25,6 +25,7 @@
       truth: '一条记录 = 一个能力。接口是池子里的原子，能力只记 apiIds，不复制接口字段',
       states: ['无能力', '有数据', '搜索无结果', '说明书生成中', '说明书生成失败'],
       headCols: [
+        { key: 'sel', label: '' },
         { key: 'name', label: '能力名称' },
         { key: 'desc', label: '说明' },
         { key: 'cnt', label: '接口数' },
@@ -32,7 +33,7 @@
         { key: 'at', label: '更新时间' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '200px minmax(220px,1fr) 80px 110px 150px 130px'
+      cols: '40px 200px minmax(220px,1fr) 80px 110px 150px 130px'
     },
     /* ★2026-11-05 补：这两页此前也没有规格（preflight 报「spec.js 里没有这一页」）。
        批量升级的三处入口都在它们身上，先把"这一页在管什么"写下来，再谈按钮。 */
@@ -77,7 +78,7 @@
       cols: '40px 200px minmax(200px,1fr) 140px 150px 130px 176px'
     },
     'config.html': {
-      object: '模型（对话/视觉/向量/重排）以及各场景绑定哪一个',
+      object: '模型（对话/向量/重排/语音）以及各场景绑定哪一个',
       source: '真源 /Expert/Management/Config（真源页面名是「能力配置」，这里叫模型配置，避免与一级的「能力管理」撞出"能力XX"；默认模型不可下线，温度/迭代/输出上限/上下文）',
       truth: '按场景绑定建模：应用配置对话 / 组件配置对话 / 技能生成',
       states: ['无模型', '有数据', '有停用项', '默认模型'],

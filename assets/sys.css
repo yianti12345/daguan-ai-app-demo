@@ -3054,3 +3054,15 @@ b,strong{font-weight:600}
   color:inherit;cursor:pointer;text-align:left}
 .it-link:hover{color:var(--color-brand-ink)}
 .it-link:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:2px;border-radius:var(--radius-xs)}
+
+/* ── 能力清单：选择列 / 分页 / 导入预览 / 导出范围（2026-11-09）──
+   新样式一律进这里，不塞页面内联 —— 页面私有样式基线有硬上限。 */
+.ab-pg{display:flex;align-items:center;gap:var(--space-8);margin-left:auto;color:var(--color-text-tertiary)}
+.ab-table .gtable-head span:first-child,.ab-table .gtable-row>span:first-child{display:flex;justify-content:center}
+.ab-op[disabled]{color:var(--color-text-tertiary);cursor:default;text-decoration:none}
+.exp-opts{display:flex;flex-direction:column;gap:var(--space-8)}
+.exp-opt{display:flex;align-items:center;gap:var(--space-8);font-size:var(--font-size-body);color:var(--color-text-primary);cursor:pointer}
+.imp-pv{display:flex;flex-direction:column;gap:var(--space-8)}
+.imp-row{display:flex;gap:var(--space-12);font-size:var(--font-size-body);color:var(--color-text-primary)}
+.imp-row span{color:var(--color-text-tertiary);min-width:96px}
+.imp-tip{margin:var(--space-12) 0 0;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}

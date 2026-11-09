@@ -32,12 +32,14 @@
       /* ★2026-11-09：每条绑定只列它自己那一类模型。原来固定列 chat，
          加语音/向量/重排之后会把对话模型塞进向量下拉，选了就绑错。 */
       var kind = s.kind || 'chat';
-      var ms = CAP.models().filter(function (m) { return m.kind === kind && m.on; });
+      /* ★2026-11-09 盲审：停用后原来直接从下拉消失，但库里绑定还是它 ——
+         界面说 A、实际绑 B。现在把当前绑定的那条留在列表里，并标「已停用」。 */
+      var ms = CAP.models().filter(function (m) { return m.kind === kind && (m.on || m.id === s.model); });
       var kl = (KIND_DEF.filter(function (x) { return x.k === kind; })[0] || { label: '' }).label;
       var opts = ms.length
         ? ms.map(function (m) {
             return '<option value="' + esc(m.id) + '" title="' + esc(m.name) + '"' + (m.id === s.model ? ' selected' : '') + '>'
-              + esc(m.label) + (m.vision ? ' · 多模态' : '') + '</option>';
+              + esc(m.label) + (m.on ? '' : ' · 已停用') + (m.vision ? ' · 多模态' : '') + '</option>';
           }).join('')
         : '<option value="">没有可用的' + esc(kl) + '模型</option>';
       return '<div class="scene" data-key="' + esc(s.key) + '">'
@@ -82,7 +84,7 @@
     var t = r.test;
     if (!t) return '<span class="m-conn" title="还没测过"></span>';
     if (t.fp !== CAP.modelFp(r)) return '<span class="m-conn is-stale" title="配置改过，需要重新测试">待重测</span>';
-    if (t.ok) return '<span class="m-conn is-ok">连接正常</span>';
+    if (t.ok) return '<span class="m-conn is-ok">连接成功</span>';
     return '<span class="m-conn is-bad" title="' + esc('HTTP ' + (t.status || '—')) + '">连接失败</span>';
   }
 
@@ -215,9 +217,20 @@
      客户内网不会给前端域名开 CORS，浏览器直连 100% 失败 —— 那时这个按钮永远显示「连接失败」。
      服务端发请求还有一个好处：API Key 不出前端。
      代理不存在时（公网静态部署）退回直连，至少能测已开 CORS 的地址。 */
+  /* ★2026-11-09 盲审：探针原来没有超时，网关不回包就永远「测试中…」。
+     10 秒必断，超时按连接失败处理。 */
+  function fetchT(url, opt) {
+    if (!window.AbortController) return fetch(url, opt);
+    var ac = new AbortController();
+    var t = setTimeout(function () { ac.abort(); }, 10000);
+    return fetch(url, Object.assign({}, opt, { signal: ac.signal })).then(function (r) {
+      clearTimeout(t); return r;
+    }, function (e) { clearTimeout(t); throw e; });
+  }
+
   function probe(url, method, key, headers) {
     var payload = { url: url, method: method || 'GET', key: key || '', headers: headers || [] };
-    return fetch('/xz/probe', {
+    return fetchT('/xz/probe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -227,7 +240,7 @@
     }).then(function (j) {
       return { ok: !!j.ok, status: j.status || 0, ms: j.ms || 0 };
     }).catch(function () {
-      return fetch(url, { method: method || 'GET' }).then(function (r) {
+      return fetchT(url, { method: method || 'GET' }).then(function (r) {
         return { ok: r.ok, status: r.status, ms: 0 };
       }).catch(function () { return { ok: false, status: 0, ms: 0 }; });
     });
@@ -320,11 +333,14 @@
     });
   });
 
-  /* 必填项变了，按钮跟着变灰/可点 */
-  ['f-name', 'f-url', 'f-dim'].forEach(function (id) {
+  /* 必填项 / 会改变连接结果的项变了，按钮跟着变灰，旧结果作废 */
+  ['f-name', 'f-url', 'f-dim', 'f-key'].forEach(function (id) {
     var el = $('#' + id);
-    if (el) el.addEventListener('input', function () { setTestRes(''); syncTestBtn(); });
+    if (el) el.addEventListener('input', function () { setTestRes(''); pendingTest = null; syncTestBtn(); });
   });
+  /* 请求头也会改变连通结果：改了就得重测，不能让绿字留着 */
+  var hdBox = $('#hd-list');
+  if (hdBox) hdBox.addEventListener('input', function () { setTestRes(''); pendingTest = null; syncTestBtn(); });
 
   $('#act-new').addEventListener('click', function () { openDlg(null); });
   $('#dlg-x').addEventListener('click', closeDlg);
@@ -337,11 +353,18 @@
   $('#dlg-save').addEventListener('click', function () {
     var name = $('#f-name').value.trim();
     if (!name) { toast('先填模型标识', 'error'); $('#f-name').focus(); return; }
+    /* ★2026-11-09 盲审：原来只校验名称 —— 地址空、向量维度空都能「保存成功」，
+       之后这条模型在清单里看着正常，测试连接却永远是灰的。 */
+    var url0 = $('#f-url').value.trim();
+    if (!url0) { toast('先填 API 地址', 'error'); $('#f-url').focus(); return; }
+    if (dlgKind === 'embed' && !(Number($('#f-dim').value) > 0)) {
+      toast('向量模型要填向量维度', 'error'); $('#f-dim').focus(); return;
+    }
     var v = {
       name: name,
       label: $('#f-label').value.trim() || name,
-      vendor: $('#f-vendor').value.trim() || '未标注',
-      url: $('#f-url').value.trim(),
+      vendor: $('#f-vendor').value.trim(),
+      url: url0,
       key: $('#f-key').value.trim(),
       temp: Number($('#f-temp').value) || 0,
       react: Number($('#f-react').value) || 0,
@@ -370,7 +393,13 @@
      没改过时保存按钮是灰的。下面的模型清单是即时动作，跟这张表单分开。 */
   var PENDING = {};
   function syncSave() {
-    var dirty = Object.keys(PENDING).some(function (k) { return PENDING[k] !== CAP.sceneModel(k); });
+    /* ★2026-11-09 盲审：PENDING 存的是模型 id，sceneModel() 返回的是 name，两个永远不等 ——
+       保存键永远亮着，点下去其实一个字节没变。这里把当前值换回 id 再比。 */
+    var dirty = Object.keys(PENDING).some(function (k) {
+      var cur = CAP.sceneModel(k);
+      var hit = CAP.models().filter(function (m) { return m.name === cur; })[0];
+      return PENDING[k] !== (hit ? hit.id : '');
+    });
     var b = $('#act-save'); if (b) b.disabled = !dirty;
   }
   $('#scenes').addEventListener('change', function (e) {

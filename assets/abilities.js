@@ -12,7 +12,9 @@
   };
   var toast = function (m, k) { if (window.UIK && UIK.toast) UIK.toast(m, k); };
 
-  var S = { kw: '' };
+  /* 分页与勾选都在这一层，不塞进 List —— 列表契约只管表头/列宽/行骨架，
+     分页是这页的业务。sel 用对象当集合（id → 1），跨页保留。 */
+  var S = { kw: '', page: 1, size: 15, sel: {} };
 
   /* MD 三态：只读、不可手改。没有 MD 的能力在装配面板里勾不上，所以这里必须一眼看出来。 */
   var MD = {
@@ -22,7 +24,7 @@
     none:  { t: '未生成', c: 'var(--color-text-tertiary)' }
   };
 
-  function rows() {
+  function allRows() {
     var kw = S.kw.toLowerCase();
     return CAP.abilities().filter(function (b) {
       /* 名字还没填的草稿不进清单：那是"正在建"的一条，不是一个能力。 */
@@ -31,14 +33,36 @@
       return (b.name + ' ' + (b.intro || '')).toLowerCase().indexOf(kw) >= 0;
     });
   }
+  function pageRows(all) {
+    var s = (S.page - 1) * S.size;
+    return all.slice(s, s + S.size);
+  }
+  function selRows(all) { return all.filter(function (r) { return S.sel[r.id]; }); }
+  function selCount() { return Object.keys(S.sel).length; }
 
   function paint() {
-    var rs = rows();
+    var all = allRows();
+    var pages = Math.max(1, Math.ceil(all.length / S.size));
+    if (S.page > pages) S.page = pages;
+    if (S.page < 1) S.page = 1;
+    var rows = pageRows(all);
+    var allChecked = rows.length > 0 && rows.every(function (r) { return S.sel[r.id]; });
+
     List.render(SPEC['abilities.html'], {
       table: '.ab-table', head: '#head', body: '#list', total: '#total',
-      rows: rs,
+      rows: rows,
       rowClass: 'gtable-row',
+      rowAttr: function (r) { return ' data-id="' + esc(r.id) + '"'; },
+      /* 表头控件必须走 headCell：表头每次重绘都是整段重建，写死在 HTML 里会被覆盖。 */
+      headCell: function (key) {
+        if (key !== 'sel') return null;
+        return '<input type="checkbox" id="sel-all" aria-label="全选本页"' + (allChecked ? ' checked' : '') + '>';
+      },
       cell: function (key, r) {
+        if (key === 'sel') {
+          return '<input type="checkbox" data-sel="' + esc(r.id) + '" aria-label="选择 ' + esc(r.name) + '"'
+            + (S.sel[r.id] ? ' checked' : '') + '>';
+        }
         if (key === 'name') {
           /* 名字是纯文字：这一行的"编辑"已经是唯一入口，再来一个可点的蓝字就是两个入口。 */
           return '<span class="ab-name">' + esc(r.name) + '</span>';
@@ -64,27 +88,25 @@
       },
       empty: function () {
         return '<div class="empty"><div>'
-          + (S.kw ? '没有匹配的能力' : '还没有能力，先「导入」把接口或能力包带进来，再「新建能力」')
+          + (S.kw ? '没有匹配的能力' : '还没有能力，先「导入」把接口或能力 JSON 带进来，再「新建能力」')
           + '</div></div>';
       }
     });
+
     var t = $('#total');
-    if (t) t.textContent = '共 ' + rs.length + ' 条';
+    if (t) {
+      var n = selCount();
+      t.textContent = '共 ' + all.length + ' 条' + (n ? ' · 已选 ' + n + ' 条' : '');
+    }
+    var pg = $('#pg');
+    if (pg) {
+      pg.innerHTML = '<button type="button" class="ab-op" data-pg="prev"' + (S.page <= 1 ? ' disabled' : '') + '>上一页</button>'
+        + '<span>' + S.page + ' / ' + pages + '</span>'
+        + '<button type="button" class="ab-op" data-pg="next"' + (S.page >= pages ? ' disabled' : '') + '>下一页</button>';
+    }
   }
 
-  /* 删除：只说删的是什么，不吓唬人。能力走了，池子里的接口还在。 */
-  function del(id) {
-    var b = CAP.abilityById(id); if (!b) return;
-    Confirm.ask({
-      title: '删除能力',
-      body: '「' + b.name + '」会从清单里移除。池子里的接口不受影响。',
-      ok: '删除', danger: true,
-      onOk: function () { CAP.removeAbility(id); paint(); toast('已删除'); }
-    });
-  }
-
-  /* 单条能力导出：结构与 CAP.importAbilities 的入参同构，所以导出的文件能直接导回来。
-     只带这条能力引用到的接口快照，不导整库——否则导出 A 会把 B 项目的接口一起带出去。 */
+  /* ── 导出 ───────────────────────────────────────────────────────── */
   function abilityPack(b) {
     var apis = (b.apiIds || []).map(function (id) {
       var a = CAP.apiById(id);
@@ -103,21 +125,239 @@
     };
   }
 
-  function exportOne(id) {
-    var b = CAP.abilityById(id); if (!b) return;
-    var pack = abilityPack(b);
-    var stamp = String(pack.at).replace(/[^0-9]/g, '').slice(0, 12);
-    var fn = '能力-' + (b.name || '未命名') + '-' + stamp + '.json';
-    var blob = new Blob([JSON.stringify(pack, null, 2)], { type: 'application/json' });
+  function download(obj, fn) {
+    var blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url; a.download = fn;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+  }
+
+  function exportOne(id) {
+    var b = CAP.abilityById(id); if (!b) return;
+    var pack = abilityPack(b);
+    var stamp = String(pack.at).replace(/[^0-9]/g, '').slice(0, 12);
+    download(pack, '能力-' + (b.name || '未命名') + '-' + stamp + '.json');
     toast('已导出「' + (b.name || '未命名') + '」');
   }
 
+  /* 批量导出：三个范围必须显式选。原写法「没勾就导当前页全部」是静默缩小范围，
+     分两页的人会以为导全了 —— 数额直接写在单选项上，让他自己看。 */
+  function openExport() {
+    var all = allRows();
+    var nSel = selRows(all).length, nCur = pageRows(all).length, nAll = all.length;
+    if (!nAll) { toast('没有可导出的能力', 'error'); return; }
+
+    var m = document.createElement('div');
+    m.className = 'nf-mask'; m.id = 'exp-mask';
+    m.innerHTML = '<div class="nf" role="dialog" aria-modal="true" aria-labelledby="exp-t">'
+      + '<div class="nf-hd"><b id="exp-t">导出能力</b>'
+      + '<button type="button" class="icon-btn" id="exp-x" aria-label="关闭">'
+      + '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
+      + '<div class="nf-bd"><div class="exp-opts">'
+      + opt('sel', '已勾选 ' + nSel + ' 条', nSel === 0)
+      + opt('cur', '本页 ' + nCur + ' 条', nCur === 0)
+      + opt('all', '全部筛选 ' + nAll + ' 条', false)
+      + '</div></div>'
+      + '<div class="nf-ft"><span class="it-sp"></span>'
+      + '<button type="button" class="btn ghost" id="exp-cancel">取消</button>'
+      + '<button type="button" class="btn primary" id="exp-ok">导出</button></div>'
+      + '</div>';
+    document.body.appendChild(m);
+
+    function opt(v, label, dis) {
+      return '<label class="exp-opt"><input type="radio" name="exp-range" value="' + v + '"'
+        + (dis ? ' disabled' : '') + (v === 'all' ? ' checked' : '') + '>' + esc(label) + '</label>';
+    }
+    function close() { m.remove(); }
+    $('#exp-x', m).addEventListener('click', close);
+    $('#exp-cancel', m).addEventListener('click', close);
+    $('#exp-ok', m).addEventListener('click', function () {
+      var v = (m.querySelector('input[name="exp-range"]:checked') || {}).value || 'all';
+      var list = v === 'sel' ? selRows(all) : v === 'cur' ? pageRows(all) : all;
+      if (!list.length) { toast('这个范围里没有能力', 'error'); return; }
+      var at = CAP.now();
+      download({
+        v: 1, exportedAt: at,
+        abilities: list.map(abilityPack)
+      }, '能力-' + list.length + '条-' + String(at).replace(/[^0-9]/g, '').slice(0, 12) + '.json');
+      close();
+      toast('已导出 ' + list.length + ' 条');
+    });
+  }
+
+  /* ── 删除 ───────────────────────────────────────────────────────── */
+  function del(id) {
+    var b = CAP.abilityById(id); if (!b) return;
+    Confirm.ask({
+      title: '删除能力',
+      body: '「' + b.name + '」会从清单里移除。池子里的接口不受影响。',
+      ok: '删除', danger: true,
+      onOk: function () {
+        CAP.removeAbility(id);
+        delete S.sel[id];
+        paint();
+        toast('已删除');
+      }
+    });
+  }
+
+  /* ── 导入：两步（贴 → 预览 → 新建/合并）──────────────────────────
+     原实现点一下就直接落库，冲突被静默合并，用户看不到跳过了几条。
+     现在第二步把「能力名 / 接口数 / 冲突」摆出来，再让他选新建还是合并。 */
+  var PENDING = null;
+
+  function openImport() {
+    var m = $('#imp-mask');
+    if (!m) {
+      document.body.insertAdjacentHTML('beforeend',
+        '<div class="nf-mask" id="imp-mask" hidden><div class="nf" role="dialog" aria-modal="true" aria-labelledby="imp-t">'
+        + '<div class="nf-hd"><b id="imp-t">导入</b>'
+        + '<button type="button" class="icon-btn" id="imp-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
+        + '<div class="nf-bd">'
+        + '<div id="imp-s1"><label class="it-lb" for="imp-raw">内容</label>'
+        + '<textarea class="it-raw" id="imp-raw" rows="10" placeholder="贴 OpenAPI / Swagger 的 JSON、一段段接口说明（空行分隔），或一份导出过的能力 JSON"></textarea></div>'
+        + '<div id="imp-s2" hidden></div>'
+        + '</div>'
+        + '<div class="nf-ft"><span class="it-sp"></span>'
+        + '<button type="button" class="btn ghost" id="imp-cancel">取消</button>'
+        + '<button type="button" class="btn ghost" id="imp-merge" hidden>合并进去</button>'
+        + '<button type="button" class="btn primary" id="imp-ok" disabled>下一步</button>'
+        + '</div></div></div>');
+      $('#imp-x').addEventListener('click', closeImp);
+      $('#imp-cancel').addEventListener('click', closeImp);
+      $('#imp-raw').addEventListener('input', function () {
+        $('#imp-ok').disabled = !this.value.trim();
+        backStep1();
+      });
+      $('#imp-ok').addEventListener('click', function () {
+        if (PENDING) { doImport('new'); return; }
+        preview();
+      });
+      $('#imp-merge').addEventListener('click', function () { doImport('merge'); });
+    }
+    m = $('#imp-mask');
+    m.hidden = false;
+    backStep1();
+    setTimeout(function () { var t = $('#imp-raw'); if (t) t.focus(); }, 0);
+  }
+
+  function closeImp() {
+    var m = $('#imp-mask'); if (m) m.hidden = true;
+    var t = $('#imp-raw'); if (t) t.value = '';
+    backStep1();
+  }
+
+  function backStep1() {
+    PENDING = null;
+    var s1 = $('#imp-s1'), s2 = $('#imp-s2');
+    if (s1) s1.hidden = false;
+    if (s2) { s2.hidden = true; s2.innerHTML = ''; }
+    var ok = $('#imp-ok'); if (!ok) return;
+    ok.textContent = '下一步';
+    ok.disabled = !(($('#imp-raw') || {}).value || '').trim();
+    var mg = $('#imp-merge'); if (mg) mg.hidden = true;
+  }
+
+  /* 解析成统一形状：{ items:[{name,project,intro,doc,apis}], from:'pack'|'text' } */
+  function parseInput(raw) {
+    var j = null;
+    try { j = JSON.parse(raw); } catch (e) { j = null; }
+    if (j && j.kind === 'ability' && j.name) return { from: 'pack', items: [j] };
+    if (j && Array.isArray(j.abilities)) return { from: 'pack', items: j.abilities };
+    if (Array.isArray(j)) return { from: 'pack', items: j };
+    var list = CAP.parseApis(raw);
+    if (!list.length) return null;
+    var proj = (list[0] && list[0].project) || '';
+    return {
+      from: 'text',
+      items: [{
+        name: (proj && proj !== '未标注') ? proj : '未命名能力',
+        project: proj, intro: '', doc: '', apis: list
+      }]
+    };
+  }
+
+  /* 冲突口径必须与 importAbilities 一致：host 缺失用 project 占位 */
+  function conflictOf(item) {
+    var same = CAP.abilities().filter(function (x) { return x.name === item.name; }).length;
+    var pool = CAP.apis();
+    var dup = 0;
+    (item.apis || []).forEach(function (a) {
+      if (!a || !a.path) return;
+      var hk = a.host || ('project:' + (item.project || '未标注'));
+      var key = hk + ' ' + (a.method || 'GET') + ' ' + a.path;
+      var hit = pool.filter(function (x) {
+        return ((x.host || ('project:' + (x.project || '未标注'))) + ' ' + (x.method || 'GET') + ' ' + x.path) === key;
+      })[0];
+      if (hit) dup++;
+    });
+    return { same: same, dup: dup };
+  }
+
+  function preview() {
+    var raw = (($('#imp-raw') || {}).value || '').trim();
+    var p = parseInput(raw);
+    if (!p) { toast('没解析出接口', 'error'); return; }
+    PENDING = p;
+    var it = p.items[0] || {};
+    var c = conflictOf(it);
+    var total = p.items.reduce(function (n, x) { return n + (x.apis || []).length; }, 0);
+    $('#imp-s1').hidden = true;
+    var s2 = $('#imp-s2');
+    s2.hidden = false;
+    s2.innerHTML = '<div class="imp-pv">'
+      + row('能力名', esc(it.name || '—'))
+      + row('接口数', String(total))
+      + row('同名能力', c.same ? ('已存在 ' + c.same + ' 条，合并会追加接口') : '无')
+      + row('已存在接口', c.dup ? ('将跳过 ' + c.dup + ' 个') : '无')
+      + '</div>'
+      + '<p class="imp-tip">' + (p.items.length > 1 ? ('这份文件含 ' + p.items.length + ' 条能力，会一并导入。') : '') + '</p>';
+    var ok = $('#imp-ok');
+    ok.textContent = '新建一条';
+    ok.disabled = false;
+    var mg = $('#imp-merge');
+    mg.hidden = !c.same;
+
+    function row(k, v) {
+      return '<div class="imp-row"><span>' + k + '</span><b>' + v + '</b></div>';
+    }
+  }
+
+  function doImport(mode) {
+    if (!PENDING) return;
+    var r = CAP.importAbilities(PENDING.items, { mode: mode });
+    closeImp();
+    paint();
+    var msg = '导入完成：新增 ' + r.abilities + ' 条能力、' + r.apis + ' 个接口';
+    if (r.skipped) msg += '，跳过 ' + r.skipped + ' 个已存在接口';
+    toast(msg);
+  }
+
+  /* ── 事件 ───────────────────────────────────────────────────────── */
+  document.addEventListener('change', function (e) {
+    if (e.target.id === 'sel-all') {
+      var rows = pageRows(allRows());
+      var on = e.target.checked;
+      rows.forEach(function (r) { if (on) S.sel[r.id] = 1; else delete S.sel[r.id]; });
+      paint();
+      return;
+    }
+    if (e.target.hasAttribute && e.target.hasAttribute('data-sel')) {
+      var id = e.target.getAttribute('data-sel');
+      if (e.target.checked) S.sel[id] = 1; else delete S.sel[id];
+      paint();
+    }
+  });
+
   document.addEventListener('click', function (e) {
+    var pg = e.target.closest('[data-pg]');
+    if (pg && !pg.disabled) {
+      S.page += pg.getAttribute('data-pg') === 'next' ? 1 : -1;
+      paint();
+      return;
+    }
     var a = e.target.closest('[data-act]');
     if (a) {
       var id = a.getAttribute('data-id');
@@ -128,82 +368,14 @@
     }
     if (e.target.id === 'act-new') { location.href = 'ability.html?id=new'; }
     if (e.target.id === 'act-import') { openImport(); }
+    if (e.target.id === 'act-export') { openExport(); }
   });
 
-  $('#kw').addEventListener('input', function () { S.kw = this.value.trim(); paint(); });
-
-  /* ── 导入项目：把一份文档拆成接口，直接落成一条能力。
-     拆解逻辑只有一份，在 CAP.parseApis 里（能力详情页的「添加接口」用的也是它）。 ── */
-
-  function openImport() {
-    var m = $('#imp-mask');
-    if (!m) {
-      document.body.insertAdjacentHTML('beforeend',
-        '<div class="nf-mask" id="imp-mask" hidden><div class="nf" role="dialog" aria-modal="true" aria-labelledby="imp-t">'
-        + '<div class="nf-hd"><b id="imp-t">导入</b>'
-        + '<button type="button" class="icon-btn" id="imp-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
-        + '<div class="nf-bd"><label class="it-lb" for="imp-raw">内容</label>'
-        + '<textarea class="it-raw" id="imp-raw" rows="10" placeholder="贴 OpenAPI / Swagger 的 JSON、一段段接口说明（空行分隔），或一条导出过的能力 JSON"></textarea></div>'
-        + '<div class="nf-ft"><span class="it-sp"></span>'
-        + '<button type="button" class="btn ghost" id="imp-cancel">取消</button>'
-        + '<button type="button" class="btn primary" id="imp-ok" disabled>导入</button></div>'
-        + '</div></div>');
-      $('#imp-x').addEventListener('click', function () { $('#imp-mask').hidden = true; });
-      $('#imp-cancel').addEventListener('click', function () { $('#imp-mask').hidden = true; });
-      $('#imp-raw').addEventListener('input', function () {
-        $('#imp-ok').disabled = !this.value.trim();
-      });
-      $('#imp-ok').addEventListener('click', function () {
-        var raw = $('#imp-raw').value.trim();
-        /* 先认「导出的能力包」：同一份文件导出去能导回来，否则导出就是死路。
-           不是能力包才退回原来的 OpenAPI / 文本拆接口。 */
-        var pack = null;
-        try {
-          var j = JSON.parse(raw);
-          if (j && j.kind === 'ability' && j.name) pack = j;
-        } catch (err) { /* 不是 JSON，按文本走 */ }
-        if (pack) {
-          var r = CAP.importAbilities([pack]);
-          $('#imp-mask').hidden = true;
-          $('#imp-raw').value = ''; $('#imp-ok').disabled = true;
-          paint();
-          toast(r.abilities ? '已导入「' + pack.name + '」，接口 ' + r.apis + ' 个'
-                            : '「' + pack.name + '」已在清单里，接口已合并');
-          return;
-        }
-        var list = CAP.parseApis(raw);
-        if (!list.length) { toast('没解析出接口', 'error'); return; }
-        var ids = [], added = 0;
-        list.forEach(function (x) {
-          var id = CAP.fingerprint(x.method, x.path, x.host);
-          if (CAP.apiById(id)) { if (ids.indexOf(id) < 0) ids.push(id); return; }
-          CAP.addApi({
-            id: id, name: x.name, desc: x.summary, summary: x.summary,
-            method: x.method, path: x.path, project: x.project,
-            source: x.project, raw: x.raw, doc: '', state: 'ok', on: true, at: ''
-          });
-          ids.push(id); added++;
-        });
-        $('#imp-mask').hidden = true;
-        $('#imp-raw').value = ''; $('#imp-ok').disabled = true;
-        if (!ids.length) { paint(); toast('没解析出新接口'); return; }
-        /* 拆出来的接口要有归属：直接落成一条能力，进去命名、删掉不要的，一保存就出 MD。
-           否则接口躺在池子里，没有第二个入口能捡回来。 */
-        var proj = (list[0] && list[0].project) || '';
-        var b = CAP.addAbility({
-          /* 有项目名就用项目名；纯文本贴进来的没有项目名，留空当草稿，等人在详情页命名。 */
-          name: proj === '未标注' ? '' : proj,
-          intro: '', apiIds: ids, project: proj
-        });
-        location.href = 'ability.html?id=' + encodeURIComponent(b.id);
-      });
-    }
-    /* 第一次点：上面刚把节点插进 DOM，局部变量 m 还是 null，必须重新取，
-       否则下一行就是 null.hidden —— 第一次点打不开、第二次才开。 */
-    m = $('#imp-mask');
-    m.hidden = false;
-    setTimeout(function () { $('#imp-raw').focus(); }, 0);
-  }
+  $('#kw').addEventListener('input', function () {
+    S.kw = this.value.trim();
+    S.page = 1;
+    paint();
+  });
 
   paint();
 })();
