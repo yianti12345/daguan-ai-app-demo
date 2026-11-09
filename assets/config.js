@@ -29,10 +29,17 @@
   function paintScenes() {
     var box = $('#scenes');
     box.innerHTML = CAP.scenes().map(function (s) {
-      var opts = chatModels().map(function (m) {
-        return '<option value="' + esc(m.id) + '" title="' + esc(m.name) + '"' + (m.id === s.model ? ' selected' : '') + '>'
-          + esc(m.label) + (m.vision ? ' · 多模态' : '') + '</option>';
-      }).join('');
+      /* ★2026-11-09：每条绑定只列它自己那一类模型。原来固定列 chat，
+         加语音/向量/重排之后会把对话模型塞进向量下拉，选了就绑错。 */
+      var kind = s.kind || 'chat';
+      var ms = CAP.models().filter(function (m) { return m.kind === kind && m.on; });
+      var kl = (KIND_DEF.filter(function (x) { return x.k === kind; })[0] || { label: '' }).label;
+      var opts = ms.length
+        ? ms.map(function (m) {
+            return '<option value="' + esc(m.id) + '" title="' + esc(m.name) + '"' + (m.id === s.model ? ' selected' : '') + '>'
+              + esc(m.label) + (m.vision ? ' · 多模态' : '') + '</option>';
+          }).join('')
+        : '<option value="">没有可用的' + esc(kl) + '模型</option>';
       return '<div class="scene" data-key="' + esc(s.key) + '">'
         + '<div class="scene-t"><b>' + esc(s.name) + '</b><p>' + esc(s.desc) + '</p></div>'
         + '<label class="field scene-sel"><select data-scene="' + esc(s.key) + '" aria-label="' + esc(s.name) + '使用的模型">' + opts + '</select></label>'

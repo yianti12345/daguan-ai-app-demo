@@ -227,9 +227,27 @@
     /* ★2026-11-09：老存档的模型缺 source/headers/vision，kind 可能还是 'vision'。
        幂等补齐，跑多少次结果都一样。种子本身也过一遍，保证两条来路一致。 */
     cache.models = cache.models.map(normModel);
-    if (!cache.scenes || !cache.scenes.some(function (x) { return x.key === 'config'; })) {
-      cache.scenes = JSON.parse(JSON.stringify(SCENE_SEED));
+    /* ★2026-11-09：老存档里一个语音模型都没有，语音绑定就永远空着。
+       整类补一条 —— 只补 asr，不逐条复活别的种子（删过的不能被塞回来）。 */
+    if (!cache.models.some(function (m) { return m.kind === 'asr'; })) {
+      var asrSeed = MODEL_SEED.filter(function (m) { return m.kind === 'asr'; })[0];
+      if (asrSeed) { cache.models.push(JSON.parse(JSON.stringify(asrSeed))); save(); }
     }
+    /* ★2026-11-09：新增语音/向量/重排三条绑定后，老存档里只有 xz、config 两条。
+       逐条补齐而不是整体重置 —— 重置会把他已经选过的模型冲回种子值。
+       已有条目只同步文案与类型（name/desc/kind），model 保留他选的那个，
+       所以「默认语音模型」改名「语音模型」在老存档上也会生效。 */
+    if (!cache.scenes) cache.scenes = [];
+    SCENE_SEED.forEach(function (s) {
+      var hit = cache.scenes.filter(function (x) { return x.key === s.key; })[0];
+      if (!hit) {
+        cache.scenes.push(JSON.parse(JSON.stringify(s)));
+        save();
+      } else if (hit.name !== s.name || hit.desc !== s.desc || hit.kind !== s.kind) {
+        hit.name = s.name; hit.desc = s.desc; hit.kind = s.kind;
+        save();
+      }
+    });
     /* ★顺序有讲究：必须**先补文档再迁移**。
        迁移要从 raw 里解析方法与路径，而种子的 apis 里根本没有 raw —— 先迁移的话
        每个接口都解析成 "GET + 空路径"，界面上「接口清单」的方法路径整列是「—」，
@@ -344,14 +362,18 @@
     { id: 'm-qwen-max', name: 'qwen3-max', label: '通义千问 Max', vendor: '阿里云', kind: 'chat', temp: 0.1, react: 10, outMax: 32768, ctx: 128000, isDefault: false, on: true },
     { id: 'm-ds-vl', name: 'deepseek-vl', label: 'DeepSeek VL', vendor: 'DeepSeek', kind: 'chat', vision: true, temp: 0.1, react: 10, outMax: 16384, ctx: 64000, isDefault: false, on: true },
     { id: 'm-embed', name: 'text-embedding-v4', label: 'Embedding v4', vendor: '阿里云', kind: 'embed', temp: 0, react: 0, outMax: 0, ctx: 8192, isDefault: false, on: true },
-    { id: 'm-rerank', name: 'qwen3-rerank', label: 'Rerank', vendor: '阿里云', kind: 'rerank', temp: 0, react: 0, outMax: 0, ctx: 8192, isDefault: false, on: true }
+    { id: 'm-rerank', name: 'qwen3-rerank', label: 'Rerank', vendor: '阿里云', kind: 'rerank', temp: 0, react: 0, outMax: 0, ctx: 8192, isDefault: false, on: true },
+    { id: 'm-asr', name: 'paraformer-v2', label: 'Paraformer 语音识别', vendor: '阿里云', kind: 'asr', temp: 0, react: 0, outMax: 0, ctx: 0, isDefault: false, on: true }
   ];
   /* 2026-11-05（用户定稿）：「只需要一个就行，不需要多选切换，所以也就没有默认了」。
-     场景只有两条：小智用哪个模型、配置页（应用/组件配置的对话）用哪个模型。
-     一条场景一个模型，没有默认这回事，也就不需要"默认不可删"。 */
+     ★2026-11-09（用户）：上面两条对话绑定之后，再加默认语音、向量、重排序三条。
+     kind 决定这条绑定从哪一类模型里挑，不是一个模型能同时占三类。 */
   var SCENE_SEED = [
-    { key: 'xz', name: '小智使用模型', desc: '客户在应用里跟小智对话时用', model: 'm-ds-flash' },
-    { key: 'config', name: '配置页使用模型', desc: '应用配置、组件配置的对话用', model: 'm-ds-flash' }
+    { key: 'xz', name: '小智使用模型', desc: '客户在应用里跟小智对话时用', model: 'm-ds-flash', kind: 'chat' },
+    { key: 'config', name: '配置页使用模型', desc: '应用配置、组件配置的对话用', model: 'm-ds-flash', kind: 'chat' },
+    { key: 'asr', name: '语音模型', desc: '语音输入转成文字时用', model: 'm-asr', kind: 'asr' },
+    { key: 'embed', name: '向量模型', desc: '知识切片入库时生成向量用', model: 'm-embed', kind: 'embed' },
+    { key: 'rerank', name: '重排序模型', desc: '检索结果重排序时用', model: 'm-rerank', kind: 'rerank' }
   ];
 
 

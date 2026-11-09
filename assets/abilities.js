@@ -52,11 +52,11 @@
           var st = MD[r.docState] || MD.none;
           return '<span class="ab-md" style="color:' + st.c + '">' + st.t + '</span>';
         }
-        if (key === 'project') return esc(r.project || '—');
         if (key === 'at') return '<span class="ab-at">' + esc(r.at || '—') + '</span>';
         if (key === 'ops') {
           return '<div class="ab-ops">'
             + '<button class="ab-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">编辑</button>'
+            + '<button class="ab-op" type="button" data-act="exp" data-id="' + esc(r.id) + '">导出</button>'
             + '<button class="ab-op is-danger" type="button" data-act="del" data-id="' + esc(r.id) + '">删除</button>'
             + '</div>';
         }
@@ -64,7 +64,7 @@
       },
       empty: function () {
         return '<div class="empty"><div>'
-          + (S.kw ? '没有匹配的能力' : '还没有能力，先「导入项目」把接口拆进来，再「新建能力」')
+          + (S.kw ? '没有匹配的能力' : '还没有能力，先「导入」把接口或能力包带进来，再「新建能力」')
           + '</div></div>';
       }
     });
@@ -83,12 +83,48 @@
     });
   }
 
+  /* 单条能力导出：结构与 CAP.importAbilities 的入参同构，所以导出的文件能直接导回来。
+     只带这条能力引用到的接口快照，不导整库——否则导出 A 会把 B 项目的接口一起带出去。 */
+  function abilityPack(b) {
+    var apis = (b.apiIds || []).map(function (id) {
+      var a = CAP.apiById(id);
+      if (!a) return null;
+      return {
+        name: a.name || '', summary: a.desc || '', method: a.method || 'GET',
+        path: a.path || '', host: a.host || '',
+        params: a.params || '', returns: a.returns || '', raw: a.raw || ''
+      };
+    }).filter(Boolean);
+    return {
+      kind: 'ability', v: 1, at: CAP.now(),
+      name: b.name || '', intro: b.intro || '', project: b.project || '未标注',
+      doc: b.doc || '', docFrom: b.docFrom || '', docAt: b.docAt || '',
+      apis: apis
+    };
+  }
+
+  function exportOne(id) {
+    var b = CAP.abilityById(id); if (!b) return;
+    var pack = abilityPack(b);
+    var stamp = String(pack.at).replace(/[^0-9]/g, '').slice(0, 12);
+    var fn = '能力-' + (b.name || '未命名') + '-' + stamp + '.json';
+    var blob = new Blob([JSON.stringify(pack, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = fn;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+    toast('已导出「' + (b.name || '未命名') + '」');
+  }
+
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-act]');
     if (a) {
       var id = a.getAttribute('data-id');
-      if (a.getAttribute('data-act') === 'edit') { location.href = 'ability.html?id=' + encodeURIComponent(id); return; }
-      if (a.getAttribute('data-act') === 'del') { del(id); return; }
+      var act = a.getAttribute('data-act');
+      if (act === 'edit') { location.href = 'ability.html?id=' + encodeURIComponent(id); return; }
+      if (act === 'exp') { exportOne(id); return; }
+      if (act === 'del') { del(id); return; }
     }
     if (e.target.id === 'act-new') { location.href = 'ability.html?id=new'; }
     if (e.target.id === 'act-import') { openImport(); }
@@ -104,10 +140,10 @@
     if (!m) {
       document.body.insertAdjacentHTML('beforeend',
         '<div class="nf-mask" id="imp-mask" hidden><div class="nf" role="dialog" aria-modal="true" aria-labelledby="imp-t">'
-        + '<div class="nf-hd"><b id="imp-t">导入项目</b>'
+        + '<div class="nf-hd"><b id="imp-t">导入</b>'
         + '<button type="button" class="icon-btn" id="imp-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
         + '<div class="nf-bd"><label class="it-lb" for="imp-raw">内容</label>'
-        + '<textarea class="it-raw" id="imp-raw" rows="10" placeholder="贴 OpenAPI / Swagger 的 JSON，或一段段接口说明（空行分隔）"></textarea></div>'
+        + '<textarea class="it-raw" id="imp-raw" rows="10" placeholder="贴 OpenAPI / Swagger 的 JSON、一段段接口说明（空行分隔），或一条导出过的能力 JSON"></textarea></div>'
         + '<div class="nf-ft"><span class="it-sp"></span>'
         + '<button type="button" class="btn ghost" id="imp-cancel">取消</button>'
         + '<button type="button" class="btn primary" id="imp-ok" disabled>导入</button></div>'
@@ -118,7 +154,24 @@
         $('#imp-ok').disabled = !this.value.trim();
       });
       $('#imp-ok').addEventListener('click', function () {
-        var list = CAP.parseApis($('#imp-raw').value.trim());
+        var raw = $('#imp-raw').value.trim();
+        /* 先认「导出的能力包」：同一份文件导出去能导回来，否则导出就是死路。
+           不是能力包才退回原来的 OpenAPI / 文本拆接口。 */
+        var pack = null;
+        try {
+          var j = JSON.parse(raw);
+          if (j && j.kind === 'ability' && j.name) pack = j;
+        } catch (err) { /* 不是 JSON，按文本走 */ }
+        if (pack) {
+          var r = CAP.importAbilities([pack]);
+          $('#imp-mask').hidden = true;
+          $('#imp-raw').value = ''; $('#imp-ok').disabled = true;
+          paint();
+          toast(r.abilities ? '已导入「' + pack.name + '」，接口 ' + r.apis + ' 个'
+                            : '「' + pack.name + '」已在清单里，接口已合并');
+          return;
+        }
+        var list = CAP.parseApis(raw);
         if (!list.length) { toast('没解析出接口', 'error'); return; }
         var ids = [], added = 0;
         list.forEach(function (x) {

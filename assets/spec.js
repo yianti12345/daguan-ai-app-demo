@@ -29,11 +29,10 @@
         { key: 'desc', label: '说明' },
         { key: 'cnt', label: '接口数' },
         { key: 'md', label: '能力说明书' },
-        { key: 'project', label: '来源' },
         { key: 'at', label: '更新时间' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '200px minmax(220px,1fr) 80px 110px 120px 150px 130px'
+      cols: '200px minmax(220px,1fr) 80px 110px 150px 130px'
     },
     /* ★2026-11-05 补：这两页此前也没有规格（preflight 报「spec.js 里没有这一页」）。
        批量升级的三处入口都在它们身上，先把"这一页在管什么"写下来，再谈按钮。 */
