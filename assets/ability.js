@@ -412,10 +412,18 @@
      并发 4，不一次性打出去 —— 客户网关一般扛不住几十个同时到。
      无地址的直接计入「无地址」，不发请求，也不假装失败（那不是接口坏了，是没填）。
      结束后：标题行给汇总；失败的卡片留红边，点汇总里的数字跳到第一条失败的。 */
-  var BATCH = { running: false };
+  var BATCH = { running: false, cancel: false };
 
   function testAll() {
-    if (BATCH.running) return;
+    var btn0 = $('#act-testall');
+    /* 跑着的时候这颗键变成「停止」——几十上百个接口、全超时的话要好几分钟，
+       中途不能停是不合理的。已经发出去的请求拦不住（fetch 没有 abort 也没必要），
+       但可以不再派新的，并如实报「还有几个没测」。 */
+    if (BATCH.running) {
+      BATCH.cancel = true;
+      if (btn0) { btn0.textContent = '正在停…'; btn0.disabled = true; }
+      return;
+    }
     var btn = $('#act-testall'), sum = $('#api-sum');
     var cards = [].slice.call(document.querySelectorAll('#api-list .api-card[data-id]'))
       .filter(function (c) { return c.getAttribute('data-off') !== 'true'; });
@@ -425,6 +433,7 @@
     var n = cards.length, done = 0, ok = 0, bad = 0, na = 0;
     var started = 0, running = 0, finished = false;
     BATCH.running = true;
+    BATCH.cancel = false;
     btn.disabled = true;
     sum.hidden = false;
     /* ★2026-11-09 实机发现：开始新一轮时若不清，汇总还挂着上一轮的数字
@@ -432,7 +441,11 @@
     sum.textContent = '';
     cards.forEach(function (c) { paintRes(c, null); });
 
-    function tick() { btn.textContent = '测试中 ' + done + '/' + n; }
+    /* 进度写在汇总位、按钮专管「停止」——一颗键同时显示进度又当停止钮，读起来是乱的。 */
+    function tick() {
+      sum.innerHTML = '<span class="run">测试中 ' + done + '/' + n + '</span>';
+      if (!BATCH.cancel) { btn.textContent = '停止'; btn.disabled = false; }
+    }
     tick();
 
     function finish() {
@@ -445,8 +458,12 @@
       if (bad) parts.push('<button type="button" class="bad" data-act="jumpbad">失败 ' + bad + '</button>');
       else parts.push('<span class="ok">失败 0</span>');
       if (na) parts.push('<span class="na">无地址 ' + na + '</span>');
+      var left = n - done;
+      if (left > 0) parts.push('<span class="na">未测 ' + left + '</span>');
       sum.innerHTML = parts.join('<span class="dot">·</span>');
-      sum.title = '共 ' + n + ' 个接口，测试完成';
+      sum.title = left > 0
+        ? '已停止：共 ' + n + ' 个接口，测了 ' + done + ' 个'
+        : '共 ' + n + ' 个接口，测试完成';
     }
 
     function runOne(card) {
@@ -460,11 +477,13 @@
     }
 
     function pump() {
-      while (running < 4 && started < n) {
-        running++;
-        runOne(cards[started++]).then(function () { running--; pump(); });
+      if (!BATCH.cancel) {
+        while (running < 4 && started < n) {
+          running++;
+          runOne(cards[started++]).then(function () { running--; pump(); });
+        }
       }
-      if (started >= n && running === 0) finish();
+      if ((started >= n || BATCH.cancel) && running === 0) finish();
     }
     pump();
   }

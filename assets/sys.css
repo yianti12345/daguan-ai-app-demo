@@ -3023,11 +3023,20 @@ b,strong{font-weight:600}
    为什么汇总也放这里：几十上百个接口逐个点「测试连通」不现实（用户原话），
    批量跑完必须有一个总数给人看，否则跑完还是不知道整体通不通。 */
 .abt-ops{display:flex;align-items:center;gap:var(--space-12)}
+/* 汇总是"读数"，右边两个是"动作"，中间多留 4px 分开。 */
+.abt-sum:not([hidden]){margin-right:var(--space-4)}
 .abt-sum{display:flex;align-items:center;gap:var(--space-4);
   font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
+/* 显式写 [hidden]：UA 的 [hidden]{display:none} 权重最低，会被上面那条 display:flex 盖掉，
+   于是「测完才出现」的汇总框在空着时仍占一个 flex 间距，把按钮推偏 12px。 */
+.abt-sum[hidden]{display:none}
 .abt-sum .ok{color:var(--color-success-ink)}
 .abt-sum .na{color:var(--color-text-tertiary)}
-.abt-sum .dot{color:var(--color-border-card)}
+/* 正在跑的进度（"测试中 3/8"）：与结果同一行位，跑完被结果替换。 */
+.abt-sum .run{color:var(--color-brand-ink);font-variant-numeric:tabular-nums}
+/* 分隔点用 --color-border-card 时白底上几乎看不见，"通过 2 失败 6" 会被连读成一个数。
+   换成 tertiary；两侧各留 2px，读起来才有停顿。 */
+.abt-sum .dot{color:var(--color-text-tertiary);margin:0 2px}
 /* 「失败 N」做成可点：滚到第一条失败的那张卡。几十条里靠眼睛找红边太慢。 */
 .abt-sum .bad{
   border:0;background:none;padding:0;font-family:inherit;font-size:inherit;line-height:inherit;

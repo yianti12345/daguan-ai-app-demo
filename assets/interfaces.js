@@ -18,6 +18,9 @@
   var S = { kw: '', state: '', on: '', src: '' };
   /* ★2026-11-09：勾选状态按 id 存在对象里，翻页不丢（列表只渲染当前页，用数组会丢）。 */
   var SEL = {};
+  /* ★2026-11-09：当前页的行。全选只能选「当前页」—— 跨页全选会让人以为"全都选上了"，
+     实际导出时又只出看到的那几条，这类误会比不给全选更糟。 */
+  var CUR = [];
   var DET = null;
   var PAGE = 15, PG = 1;
   var EDIT_ID = null;
@@ -43,6 +46,15 @@
     });
   }
 
+  /* 全选框的三态：没选 / 选了一部分（半选）/ 当前页全选。 */
+  function syncAllCk() {
+    var all = $('#it-all-ck');
+    if (!all) return;
+    var hit = CUR.filter(function (r) { return SEL[r.id]; }).length;
+    all.checked = hit > 0 && hit === CUR.length;
+    all.indeterminate = hit > 0 && hit < CUR.length;
+  }
+
   function paint() {
     var all = list();
     var pages = Math.max(1, Math.ceil(all.length / PAGE));
@@ -53,6 +65,11 @@
       table: '.it-table', head: '#head', body: '#list', total: '#total',
       rows: rows,
       rowClass: 'gtable-row',
+      /* 勾选列的表头：全选框。没有它，8 条要逐个点；客户真有上百个接口时这是硬伤。 */
+      headCell: function (key) {
+        if (key !== 'sel') return null;
+        return '<input type="checkbox" class="it-ck it-ck-all" id="it-all-ck" aria-label="全选当前页">';
+      },
       cell: function (key, r) {
         if (key === 'sel') {
           return '<input type="checkbox" class="it-ck" data-id="' + esc(r.id) + '"'
@@ -83,6 +100,8 @@
           + '</div></div>';
       }
     });
+    CUR = rows;
+    syncAllCk();
     var total = $('#total');
     if (total) total.textContent = '第 ' + (all.length ? start + 1 : 0) + '-' + (start + rows.length) + ' 条 / 共 ' + all.length + ' 条';
     var pager = $('#pager');
@@ -162,10 +181,15 @@
     var nDoc = pkg.abilities.filter(function (b) { return b.doc; }).length;
     ask({
       title: '导出能力',
-      body: '将导出 ' + pkg.count.abilities + ' 个能力（来自 ' + pkg.count.apis + ' 个接口），'
-        + '其中 ' + nDoc + ' 个带说明书。'
-        + (pkg.picked ? '范围：已勾选 ' + pkg.count.apis + ' 个接口。' : '范围：当前筛选的全部 ' + pkg.count.apis + ' 个接口（未勾选）。')
-        + ' 下载为 zip，内含可导回的 JSON 与 ' + nDoc + ' 份说明书。',
+      /* ★2026-11-09（真人体验时发现）：原来写「将导出 10 个能力（来自 12 个接口）」——
+         勾了 12 条却导出 10 个，两个数字并排会让人以为漏了。真实原因是 2 个接口同属一个能力，
+         所以要把"归并"这件事说出来，而不是让人自己推。 */
+      body: (pkg.picked ? '已勾选 ' + pkg.count.apis + ' 个接口' : '当前筛选的全部 ' + pkg.count.apis + ' 个接口')
+        + (pkg.count.apis > pkg.count.abilities
+            ? '，归并成 ' + pkg.count.abilities + ' 个能力（有的能力含多个接口）'
+            : '，对应 ' + pkg.count.abilities + ' 个能力')
+        + '，其中 ' + nDoc + ' 个带说明书。'
+        + '下载为 zip，内含可导回的 JSON 与 ' + nDoc + ' 份说明书。',
       okText: '导出',
       onOk: function () {
         if (!window.Transfer) { toast('这一页没接下载组件', 'error'); return; }
@@ -465,12 +489,22 @@
   var btnIm = $('#act-import'); if (btnIm) btnIm.addEventListener('click', doImport);
 
   /* 勾选（事件委托，列表每次重绘都会换掉 DOM） */
-  var listBox = $('#list');
+  /* ★2026-11-09：原来绑在 #list 上 —— 而「全选」框在表头 #head 里，事件冒泡不到 #list，
+     点了完全没反应（实测 allChecked=true 但 rowChecked=0）。改成委托到 document。 */
+  var listBox = document;
   if (listBox) listBox.addEventListener('change', function (e) {
     var cb = e.target;
+    if (cb && cb.id === 'it-all-ck') {
+      var on = cb.checked;
+      CUR.forEach(function (r) { if (on) SEL[r.id] = 1; else delete SEL[r.id]; });
+      [].forEach.call(document.querySelectorAll('#list .it-ck'), function (x) { x.checked = on; });
+      syncAllCk();
+      return;
+    }
     if (!cb || cb.className.indexOf('it-ck') < 0) return;
     var id = cb.getAttribute('data-id');
     if (cb.checked) SEL[id] = 1; else delete SEL[id];
+    syncAllCk();
   });
 
   $('#act-new').addEventListener('click', function () { openDlg(null); });
