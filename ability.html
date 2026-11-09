@@ -14,12 +14,12 @@
 .abt-bar{display:flex;align-items:center;gap:var(--space-8);padding:0 0 var(--space-12)}
 .abt-state{margin-left:auto;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 .abt-state.is-danger{color:var(--color-danger)}
-.abt-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-24);align-items:start}
+.abt-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-24);align-items:stretch}.abt-two>div{display:flex;flex-direction:column;min-width:0}
 .abt-lb{display:block;margin:0 0 var(--space-4);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
 .abt-lb i{font-style:normal;color:var(--color-danger);margin-right:2px}
 .abt-in{width:100%;height:var(--field-h);box-sizing:border-box;padding:0 var(--space-8);border:1px solid var(--color-border-control);border-radius:var(--radius-xs);font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);background:var(--surface-page)}
 .abt-in:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
-.abt-ta{width:100%;min-height:64px;box-sizing:border-box;resize:vertical;padding:var(--space-8);border:1px solid var(--color-border-control);border-radius:var(--radius-xs);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
+.abt-ta{width:100%;flex:1 1 auto;min-height:120px;box-sizing:border-box;resize:none;overflow-y:auto;padding:var(--space-8);border:1px solid var(--color-border-control);border-radius:var(--radius-xs);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
 .abt-ta:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 .abt-sec{display:flex;align-items:center;justify-content:space-between;margin:var(--space-24) 0 var(--space-8)}
 .abt-sec b{font-size:var(--font-size-body);font-weight:600;color:var(--color-text-primary)}
@@ -33,7 +33,7 @@
 .abt-op.is-danger{color:var(--color-danger)}
 /* 说明书是给模型读的文本，人能改：直接给一个满宽文本域，不做渲染态（渲染了就没法编辑，
    还会让人以为不能动）。 */
-.abt-doc-ta{width:100%;min-height:520px;box-sizing:border-box;resize:vertical;padding:var(--space-16);border:1px solid var(--color-border-hairline);border-radius:var(--radius-xs);background:var(--surface-page);font-family:var(--font-family-mono);font-size:var(--font-size-body);line-height:1.8;color:var(--color-text-body)}
+.abt-doc-ta{width:100%;flex:1 1 auto;min-height:520px;box-sizing:border-box;resize:none;overflow-y:auto;padding:var(--space-16);border:1px solid var(--color-border-hairline);border-radius:var(--radius-xs);background:var(--surface-page);font-family:var(--font-family-mono);font-size:var(--font-size-body);line-height:1.8;color:var(--color-text-body)}
 .abt-doc-ta:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
 .abt-hint{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 </style>
