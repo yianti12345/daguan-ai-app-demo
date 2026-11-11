@@ -529,3 +529,9 @@ else window.UIK.userMenu();
 (function(U){
  U.Dialog={html:function(o){var e=U.esc,title=o.titleId||o.id+'-title';return '<div class="nf-mask" id="'+e(o.id)+'"'+(o.hidden?' hidden':'')+'><div class="nf'+(o.wide?' nf-wide':'')+'" role="dialog" aria-modal="true" aria-labelledby="'+e(title)+'"><div class="nf-hd"><b id="'+e(title)+'">'+e(o.title)+'</b><button type="button" class="icon-btn" id="'+e(o.closeId||o.id+'-close')+'" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'+(o.tabs||'')+'<div class="nf-bd"'+(o.bodyId?' id="'+e(o.bodyId)+'"':'')+'>'+(o.body||'')+'</div><div class="nf-ft">'+(o.footer||'')+'</div></div></div>';}};
 })(window.UIK);
+
+/* 公网演示不连接模型；本机的模型与推理配置保持原样。 */
+UIK.modelRequestsAllowed=function(){
+  var loc=window.location||{};
+  return !(loc.hostname==='yianti12345.github.io'&&/^\/daguan-ai-app-demo(?:\/|$)/.test(loc.pathname||''));
+};

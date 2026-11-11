@@ -28,6 +28,7 @@ window.Gen = (function () {
      一次探活 0.16 秒、0 token。 */
   var probeCache = null;
   function probe() {
+    if(window.UIK&&UIK.modelRequestsAllowed&&!UIK.modelRequestsAllowed())return Promise.resolve({ok:false,disabled:true,why:'线上演示不调用模型'});
     if(probeCache)return probeCache;
     probeCache=fetch('/xz/status').then(function(r){if(!r.ok)throw new Error('本机模型服务未启动');return r.json();}).then(function(j){return {ok:j.ok,backend:j.backend,model:j.model};}).catch(function(e){probeCache=null;return {ok:false,why:e.message};});
     return probeCache;
@@ -46,6 +47,7 @@ window.Gen = (function () {
   var GEN_SCENE = 'config';
 
   function ask(messages, opt) {
+    if(window.UIK&&UIK.modelRequestsAllowed&&!UIK.modelRequestsAllowed())return Promise.reject(new Error('线上演示不调用模型'));
     opt = opt || {};
     if (!opt.model && typeof window !== 'undefined' && window.CAP && CAP.sceneModel) {
       var mm = CAP.sceneModel(GEN_SCENE);
@@ -71,7 +73,7 @@ window.Gen = (function () {
      由 Gen.abort() 从外面掐断，promise 会以 AbortError 拒绝，上层据此显示「已停止」。 */
   var CUR_CTL = null;
   var CUR_REQ = '';
-  function cancelRequest(id){if(id)fetch('/xz/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:id}),keepalive:true}).catch(function(){});}
+  function cancelRequest(id){if(window.UIK&&UIK.modelRequestsAllowed&&!UIK.modelRequestsAllowed())return;if(id)fetch('/xz/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:id}),keepalive:true}).catch(function(){});}
   function abortCurrent() {
     try { if(CUR_CTL){CUR_CTL.userStopped=true;CUR_CTL.abort();cancelRequest(CUR_REQ);} } catch (e) {}
   }

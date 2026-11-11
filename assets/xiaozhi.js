@@ -428,11 +428,8 @@ document.addEventListener('keydown', function(e){
 
 /* ══ 以下为原逻辑（原样抽出，未改写）═══════════════════════════ */
 var XZ_CFG = {
-  /* ★2026-11-03（用户 m01931「公网链接小智用不了了」）：GitHub Pages 是纯静态站，
-     没有 /xz/plan。演示机就跑在本机，所以公网页面直连本机转发（浏览器视 127.0.0.1 为可信源），
-     本机转发没起 / 被挡时仍按原有逻辑退回内置规则，不会白屏。 */
-  endpoint: (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
-    ? '/xz/plan' : 'http://127.0.0.1:8941/xz/plan',
+  /* 线上演示关闭模型通道，不再回连本机 CLI。 */
+  endpoint: !UIK.modelRequestsAllowed()?null:(location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:'?'/xz/plan':'http://127.0.0.1:8941/xz/plan'),
   temp: 0,
   batch: 6,          /* 一批最多几个动作：一次规划太多，错在第三步后面全错 */
   maxSteps: 40,      /* 整个任务最多几轮（他定的 40） */
@@ -443,7 +440,7 @@ var XZ_CFG = {
      这台机器只有这一个模型，不能换，所以给足输出预算：7000 是"一次规划
      6 个动作 + 2 个阶段 + 一句话"的 4 倍余量，再多也不会更慢（一次请求就一个）。 */
   maxTokens: 7000,
-  useModel: true     /* 关掉就退回本地规划器（调试用） */
+  useModel: UIK.modelRequestsAllowed()
 };
 
 /* 原语集：给模型看的工具定义。这一层永远不随业务增加而变。 */
@@ -1232,10 +1229,11 @@ var XZ_REQ = null;
 var XZ_REQ_ID = null;
 function xzAbortReq(){
   if (XZ_REQ && XZ_REQ.abort){ try { XZ_REQ.abort(); } catch (e) {} }
-  if(XZ_REQ_ID){fetch('/xz/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:XZ_REQ_ID}),keepalive:true}).catch(function(){});XZ_REQ_ID=null;}
+  if(XZ_REQ_ID){if(UIK.modelRequestsAllowed())fetch('/xz/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:XZ_REQ_ID}),keepalive:true}).catch(function(){});XZ_REQ_ID=null;}
   XZ_REQ = null;
 }
 function xzPlanModel(intent, snap, facts){
+  if(!UIK.modelRequestsAllowed()){var disabled=new Error('线上演示不调用模型');disabled.code='offline';return Promise.reject(disabled);}
   xzAbortReq();
   XZ_REQ_ID='xz-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
   var ctl = null, timer = null;
@@ -3265,6 +3263,7 @@ function xzAsrHint(){
 }
 
 function xzMicToggle(){
+  if(!UIK.modelRequestsAllowed()){xzMicNote('线上演示不调用模型');return;}
   if (XZ_MIC.st === 'rec'){ xzMicStop(); return; }
   if (XZ_MIC.st === 'busy') return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
@@ -3437,9 +3436,7 @@ function xzAsk(me, fromVoice, atts){
   xzRun(me, list);
 }
 
-/* 静态预览没有 /xz/plan 这个转发接口，指向不存在的地址只会 404 —— 明确标出来，不假装能跑 */
-/* ★2026-11-03：这里原来把 endpoint 硬写回 '/xz/plan'，把上面的公网分流覆盖掉了，
-   公网页因此永远拿到 404、退回内置规则。删掉这行，统一用上面的 endpoint 取值。 */
+/* 线上演示由共享策略关闭模型，本地连接仍使用既有配置。 */
 document.addEventListener('DOMContentLoaded', renderXz);
 
 /* ★2026-10-22：两个播报节点**一开始就建好**（空内容）。
