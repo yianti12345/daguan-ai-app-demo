@@ -1,9 +1,10 @@
 /* abilities.js —— 能力清单（一条记录 = 一个独立任务，不是一个接口）
    数据：CAP.abilities()；能力里的接口用 apiIds 引用池子，不复制字段。
-   MD 状态只回答一件事：这份能力现在能不能拿去建组件。 */
+   列表只展示管理启用开关；模型使用前另行检查授权及配置完整性。 */
 (function () {
   'use strict';
 
+  var Parts=UIK.Ability;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -14,19 +15,13 @@
 
   /* 分页与勾选都在这一层，不塞进 List —— 列表契约只管表头/列宽/行骨架，
      分页是这页的业务。sel 用对象当集合（id → 1），跨页保留。 */
-  var S = { kw: '', page: 1, size: 15, sel: {} };
+  var S = { kw: '', kind: '', page: 1, size: 15, sel: {} };
 
-  /* MD 三态：只读、不可手改。没有 MD 的能力在装配面板里勾不上，所以这里必须一眼看出来。 */
-  var MD = {
-    ready: { t: '已就绪', c: 'var(--color-text-body)' },
-    run:   { t: '生成中', c: 'var(--color-text-tertiary)' },
-    fail:  { t: '生成失败', c: 'var(--color-danger)' },
-    none:  { t: '未生成', c: 'var(--color-text-tertiary)' }
-  };
 
   function allRows() {
     var kw = S.kw.toLowerCase();
-    return CAP.abilities().filter(function (b) {
+    return CAP.visibleAbilities().filter(function (b) {
+      if (S.kind && b.kind !== S.kind) return false;
       /* 名字还没填的草稿不进清单：那是"正在建"的一条，不是一个能力。 */
       if (!String(b.name || '').trim()) return false;
       if (!kw) return true;
@@ -37,7 +32,7 @@
     var s = (S.page - 1) * S.size;
     return all.slice(s, s + S.size);
   }
-  function selRows(all) { return all.filter(function (r) { return S.sel[r.id]; }); }
+  function selRows(all) { return all.filter(function (r) { return S.sel[r.id] && CAP.canManage(r); }); }
   function selCount() { return Object.keys(S.sel).length; }
 
   function paint() {
@@ -61,7 +56,7 @@
       cell: function (key, r) {
         if (key === 'sel') {
           return '<input type="checkbox" data-sel="' + esc(r.id) + '" aria-label="选择 ' + esc(r.name) + '"'
-            + (S.sel[r.id] ? ' checked' : '') + '>';
+            + (S.sel[r.id] ? ' checked' : '') + (!CAP.canManage(r) ? ' disabled' : '') + '>';
         }
         if (key === 'name') {
           /* 名字是纯文字：这一行的"编辑"已经是唯一入口，再来一个可点的蓝字就是两个入口。 */
@@ -71,17 +66,19 @@
           var d = r.intro || '—';
           return '<span class="ab-desc" title="' + esc(d) + '">' + esc(d) + '</span>';
         }
-        if (key === 'cnt') return '<span class="ab-cnt">' + (r.apiIds || []).length + '</span>';
-        if (key === 'md') {
-          var st = MD[r.docState] || MD.none;
-          return '<span class="ab-md" style="color:' + st.c + '">' + st.t + '</span>';
-        }
+        if (key === 'kind') return Parts.kindTag(r.kind);
+        if (key === 'scope') return '<span class="ab-desc" title="'+esc(CAP.scopeLabel(r))+'">'+esc(CAP.scopeLabel(r))+'</span>';
+        if (key === 'owner') return esc(r.ownerName);
+        if(key==='docState'){var st=r.docState||'none',label=st==='run'?'生成中':st==='fail'?'生成失败':r.doc&&r.doc.trim()?'已生成':'未生成',tone=label==='已生成'?'done':label==='生成失败'?'bad':'wait';return '<span class="cond" data-k="'+tone+'">'+label+'</span>';}
+        if(key==='source'){var src=r.source||r.project||'—';return '<span class="ab-desc" title="'+esc(src)+'">'+esc(src)+'</span>';}
+        if (key === 'cnt') return '<span class="ab-cnt">' + (r.kind==='skill' ? (r.files || []).length : (r.apiIds || []).length) + '</span>';
+        if (key === 'enabled') return Parts.enableSwitch(r,'management');
         if (key === 'at') return '<span class="ab-at">' + esc(r.at || '—') + '</span>';
         if (key === 'ops') {
           return '<div class="ab-ops">'
-            + '<button class="ab-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">编辑</button>'
-            + '<button class="ab-op" type="button" data-act="exp" data-id="' + esc(r.id) + '">导出</button>'
-            + '<button class="ab-op is-danger" type="button" data-act="del" data-id="' + esc(r.id) + '">删除</button>'
+            + '<button class="ab-op" type="button" data-act="edit" data-id="' + esc(r.id) + '">'+(CAP.canManage(r)?'编辑':'查看')+'</button>'
+            + (CAP.canManage(r) ? '<button class="ab-op" type="button" data-act="exp" data-id="' + esc(r.id) + '">导出</button>' : '')
+            + (CAP.canManage(r) ? '<button class="ab-op is-danger" type="button" data-act="del" data-id="' + esc(r.id) + '">删除</button>' : '')
             + '</div>';
         }
         return '';
@@ -127,7 +124,8 @@
       };
     }).filter(Boolean);
     return {
-      kind: 'ability', v: 1, at: CAP.now(),
+      kind: 'ability', abilityType: b.kind, v: 2, at: CAP.now(),
+      files: b.files || [],
       name: b.name || '', intro: b.intro || '', project: b.project || '未标注',
       doc: b.doc || '', docFrom: b.docFrom || '', docAt: b.docAt || '',
       apis: apis
@@ -144,7 +142,7 @@
   }
 
   function exportOne(id) {
-    var b = CAP.abilityById(id); if (!b) return;
+    var b = CAP.abilityById(id); if (!b || !CAP.canManage(b)) return;
     var pack = abilityPack(b);
     var stamp = String(pack.at).replace(/[^0-9]/g, '').slice(0, 12);
     download(pack, '能力-' + (b.name || '未命名') + '-' + stamp + '.json');
@@ -351,7 +349,8 @@
 
   function doImport(mode) {
     if (!PENDING) return;
-    var r = CAP.importAbilities(PENDING.items, { mode: mode });
+    var r;
+    try { r = CAP.importAbilities(PENDING.items.map(function(b){return Object.assign({},b,{kind:b.abilityType || (b.kind==='skill'?'skill':'api')});}), { mode: mode }); } catch(e) { toast(e.message,'error'); return; }
     closeImp();
     paint();
     var msg = '导入完成：新增 ' + r.abilities + ' 条能力、' + r.apis + ' 个接口';
@@ -386,11 +385,12 @@
     if (a) {
       var id = a.getAttribute('data-id');
       var act = a.getAttribute('data-act');
-      if (act === 'edit') { location.href = 'ability.html?id=' + encodeURIComponent(id); return; }
+      if (act === 'edit') { location.href = Parts.kinds[CAP.abilityById(id).kind].editor+'?id=' + encodeURIComponent(id); return; }
       if (act === 'exp') { exportOne(id); return; }
       if (act === 'del') { del(id); return; }
+      if (act === 'toggle') { var item=CAP.abilityById(id); if(!item || !CAP.canManage(item))return; try { var next=item.on===false; CAP.updateAbility(id,{on:next}); paint(); UIK.toast(next?'已启用':'已停用'); } catch(err) { UIK.toast(err.message,'error'); } return; }
     }
-    if (e.target.id === 'act-new') { location.href = 'ability.html?id=new'; }
+    if (e.target.id === 'act-new') { location.href='ability.html?new=1'; }
     if (e.target.id === 'act-import') { openImport(); }
     if (e.target.id === 'act-export') { batchExport(); }
   });
@@ -401,5 +401,7 @@
     paint();
   });
 
+
+  if(new URLSearchParams(location.search).get('new')==='1'){location.replace('ability.html?new=1');return;}
   paint();
 })();

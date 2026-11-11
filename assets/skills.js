@@ -52,7 +52,6 @@
       rowClass: 'gtable-row',
       cell: function (key, r) {
         if (key === 'name') return '<span class="sk-name">' + esc(r.name) + '</span>';
-        if (key === 'scope') return '<span class="sk-scope">' + esc(r.scope || '仅自己') + '</span>';
         if (key === 'desc') return '<span class="sk-desc" title="' + esc(r.desc) + '">' + esc(r.desc) + '</span>';
         if (key === 'on') return '<button class="sw" type="button" role="switch" aria-checked="' + (r.on ? 'true' : 'false') + '" aria-label="启用' + esc(r.name) + '" data-act="toggle" data-id="' + esc(r.id) + '"></button>';
         if (key === 'at') return '<span class="sk-at">' + esc(r.at || '—') + '</span>';
@@ -79,7 +78,6 @@
   function openNew() {
     EDIT = null; $('#dlg-t').textContent = '新建 skill';
     $('#f-name').value = ''; $('#f-desc').value = '';
-    var sc = $('#f-scope'); if (sc) sc.value = '仅自己';
     $('#dlg').hidden = false;
     setTimeout(function () { $('#f-name').focus(); }, 0);
   }
@@ -121,14 +119,11 @@
   on('#dlg-save', 'click', function () {
     var name = $('#f-name').value.trim();
     if (!name) { toast('先填名称', 'error'); $('#f-name').focus(); return; }
-    /* 2026-11-06：可用范围原来根本没读控件，选「全平台」也存成「仅自己」。 */
-    var scEl = $('#f-scope');
-    var scope = (scEl && scEl.value) ? scEl.value : '仅自己';
     if (EDIT) {
-      CAP.updateSkill(EDIT, { name: name, desc: $('#f-desc').value.trim() || '—', scope: scope });
+      CAP.updateSkill(EDIT, { name: name, desc: $('#f-desc').value.trim() || '—' });
       closeNew(); paint(); toast('已保存'); return;
     }
-    var it = CAP.addSkill({ name: name, desc: $('#f-desc').value.trim() || '—', scope: scope, state: 'ok' });
+    var it = CAP.addSkill({ name: name, desc: $('#f-desc').value.trim() || '—', state: 'ok' });
     closeNew(); paint(); toast('已新建');
   });
 

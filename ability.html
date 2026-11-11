@@ -5,49 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>能力详情</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/tokens.css?v=8c85267c">
-<link rel="stylesheet" href="assets/sys.css?v=3dce5172">
+<link rel="stylesheet" href="assets/tokens.css?v=b38a25d3">
+<link rel="stylesheet" href="assets/sys.css?v=1affd7da">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=455c3b02">
-<style>
-/* 能力详情：左边是人的输入（名称/说明/接口清单），右边是给模型的产物（MD）。
-   两栏等高，各自内部滚动；字段一律满宽（共享层已兜底）。 */
-.abt-bar{display:flex;align-items:center;gap:var(--space-8);padding:0 0 var(--space-12)}
-.abt-state{margin-left:auto;font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
-.abt-state.is-danger{color:var(--color-danger)}
-.abt-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-24);align-items:stretch}.abt-two>div{display:flex;flex-direction:column;min-width:0}
-.abt-lb{display:block;margin:0 0 var(--space-4);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
-.abt-lb i{font-style:normal;color:var(--color-danger);margin-right:2px}
-.abt-in{width:100%;height:var(--field-h);box-sizing:border-box;padding:0 var(--space-8);border:1px solid var(--color-border-control);border-radius:var(--radius-xs);font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);background:var(--surface-page)}
-.abt-in:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
-.abt-ta{width:100%;flex:1 1 auto;min-height:120px;box-sizing:border-box;resize:none;overflow-y:auto;padding:var(--space-8);border:1px solid var(--color-border-control);border-radius:var(--radius-xs);font-family:inherit;font-size:var(--font-size-body);line-height:1.7;color:var(--color-text-primary);background:var(--surface-page)}
-.abt-ta:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
-.abt-sec{display:flex;align-items:center;justify-content:space-between;margin:var(--space-24) 0 var(--space-8)}
-.abt-sec b{font-size:var(--font-size-body);font-weight:600;color:var(--color-text-primary)}
-.abt-list{border:1px solid var(--color-border-hairline);border-radius:var(--radius-xs)}
-.abt-row{display:grid;grid-template-columns:minmax(0,1fr) 56px 150px 56px;gap:var(--space-8);align-items:center;padding:10px var(--space-12);border-bottom:1px solid var(--color-border-hairline);font-size:var(--font-size-body)}
-.abt-row:last-child{border-bottom:0}
-.abt-row.is-gone{color:var(--color-text-tertiary)}
-.abt-m{color:var(--color-text-secondary);font-family:var(--font-family-mono);font-size:var(--font-size-caption)}
-.abt-p{color:var(--color-text-secondary);font-family:var(--font-family-mono);font-size:var(--font-size-caption);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.abt-op{height:24px;padding:0;border:0;background:none;font-family:inherit;font-size:var(--font-size-caption);color:var(--color-brand-ink);cursor:pointer;white-space:nowrap}
-.abt-op.is-danger{color:var(--color-danger)}
-/* 说明书是给模型读的文本，人能改：直接给一个满宽文本域，不做渲染态（渲染了就没法编辑，
-   还会让人以为不能动）。 */
-.abt-doc-ta{width:100%;flex:1 1 auto;min-height:520px;box-sizing:border-box;resize:none;overflow-y:auto;padding:var(--space-16);border:1px solid var(--color-border-hairline);border-radius:var(--radius-xs);background:var(--surface-page);font-family:var(--font-family-mono);font-size:var(--font-size-body);line-height:1.8;color:var(--color-text-body)}
-.abt-doc-ta:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
-.abt-hint{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
-</style>
-  <meta name="robots" content="noindex,nofollow">
+
+<link rel="stylesheet" href="assets/capability-workspace.css?v=734c92c1">
 </head>
-<body>
+<body class="cap-workspace">
 <div class="app">
   <nav class="sider" data-active="cap-abilities"></nav>
   <div class="workspace">
     <header class="hdr">
       <nav class="crumb">
-        <b>配置管理</b>
+        <b>资产中心</b>
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
-        <b><a href="abilities.html">能力配置</a></b>
+        <b><a href="abilities.html">能力管理</a></b>
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
         <b id="crumb-name">新建能力</b>
       </nav>
@@ -88,11 +60,20 @@
   </div>
 </div>
 
-<script src="assets/shell.js?v=fb699fab"></script>
-<script src="assets/ui-kit.js?v=ca813031"></script>
+<script src="assets/shell.js?v=e279ad97"></script>
+<script src="assets/ui-kit.js?v=1d1eff99"></script>
 <script src="assets/confirm.js?v=33f3cd5b"></script>
-<script src="assets/capability.js?v=4bcd12b2"></script>
-<script src="assets/gen.js?v=eee8a11a"></script>
-<script src="assets/ability.js?v=8b8328a0"></script>
+<script src="assets/data.js?v=c21d73e3"></script>
+<script src="assets/capability.js?v=0e6fc3b6"></script>
+<script src="assets/ability-policy.js?v=74980590"></script>
+<script src="assets/template-store.js?v=f58dc3df"></script>
+<script src="assets/asset-policy.js?v=097b3984"></script>
+<script src="assets/ability-components.js?v=f60776c0"></script>
+<script src="assets/capability-catalog.js?v=d75a5bc2"></script>
+<script src="assets/scope.js?v=7bc3b33b"></script>
+<script src="assets/ability-ui.js?v=c729339c"></script>
+<script src="assets/gen.js?v=ce9fa87e"></script>
+<script src="assets/ability-draft.js?v=6354d87b"></script>
+<script src="assets/ability.js?v=79d2f824"></script>
 </body>
 </html>

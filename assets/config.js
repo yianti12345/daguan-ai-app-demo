@@ -21,6 +21,7 @@
        定稿值域见 _reports/方案-v1-能力配置与基础配置-20261109.md 第九节 9.6。 */
   /* 这条规则：kind 在数据层只有一个值，不要在别处另立 type 字段。 */
   var EDIT_ID = null;
+  window.addEventListener('models-ready',function(){paintModels();paintScenes();});
 
   function chatModels() {
     return CAP.models().filter(function (m) { return m.kind === 'chat' && m.on; });

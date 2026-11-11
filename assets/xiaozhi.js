@@ -474,7 +474,7 @@ var XZ_Q = {
      在这一页上根本查不到也点不到 —— 实测点第一条，模型转身去点「返回应用管理」，
      被"不许跳页"的闸拦下，面板上红了一条。推荐问题是**这一页**的推荐，
      不是整套系统的推荐：写成这页真做得到的事，第一条点下去就能看见它动手。 */
-  app: ['把装配面板打开', '点一下发布新版本']
+  app: ['打开「可用资产」', '保存草稿']
 };
 
 /* ── 不可逆动作的代码闸 ─────────────────────────────────────────────
@@ -1024,23 +1024,18 @@ function xzPlan(intent, snap, facts){
    所以把业务说法喂给它。加页面/加菜单只往这里加一条文本，不动任何逻辑。
    注意：这是说明，不是规则 —— 它不限制模型怎么走，只是让它认得这些词。 */
 var XZ_TERMS = [
-  ['客户配置', '某一个应用的授权入口。点开它会有客户列表，可以把应用授权给客户；授权＝把这套应用复制一份到客户空间。菜单里没有叫「授权」的项，「客户配置」就是它。'],
-  ['更多操作', '每张应用卡片右下角的 ⋮ 菜单，里面依次是 客户配置 / 编辑 / 查看 / 导出。'],
-  ['已上架 / 未上架 / 内测中', '应用的状态角标，只是状态，不影响能不能授权。'],
-  ['工作台式 / 表单式 / 对话式', '应用的形态，不是客户名也不是版本。'],
-  ['母版 / 当前 vN', '母版就是应用本身；授权出去的那一份锁定复制那一刻的版本，之后母版升级不自动传导。'],
-  /* ★2026-10-26：界面改文案会打断语义定位，这是实测踩到的。
-     顶栏那个按钮从「装配组件 3」改成了「装配组件 已装 3 / 8」，用户仍按老说法说"点一下装配组件"，
-     模型在快照里按字面找不到就被判成"没有动页面"（e2e A 段 5 条全红）。
-     术语表是界面文案与用户口语之间的桥：界面可以改叫法，桥必须同时认识新旧两种。 */
-  ['装配组件 / 已装配 / 已装 N / M', '应用配置页顶栏右上角的按钮，点开是装配面板（「可装配」与「已装配」两个页签）。按钮上的数字是"已经装了几个 / 组件库一共几个"，那是状态不是动作；按钮本身是干活的地方。用户说"装配组件""加个组件""打开装配面板"都指它。'],
-  ['配置 / 版本管理 / 被哪些应用使用', '组件卡片右下角 ⋮ 菜单里的三项。配置＝进这个组件的配置页；版本管理＝进它的版本子页面；被哪些应用使用＝列出引用它的应用（装配关系，不是授权关系）。']
+ ['资产中心','包含能力管理和模版管理。'],
+ ['能力管理','本版维护接口能力。'],
+ ['模版管理','导入、预览和更新模版文件包。更新不联动已生成应用。'],
+ ['可用资产','已授权的能力和模版清单，个人开关控制模型可用性。'],
+ ['保存草稿','保存本应用的编辑内容，不发布。'],
+ ['保存并发布','保存应用自己的新版本，客户授权版本仍由授权流程管理。']
 ];
 
 /* ── 模型通道 ───────────────────────────────────────────────────────
    同源 POST /xz/plan，服务端带 key 转发。前端拿不到密钥。 */
 function xzSystemPrompt(snap, facts){
-  return '你是页面操作助手。你只能使用这些原语：\n' + JSON.stringify(XZ_PRIMS)
+  return '你是页面操作助手。组件库和装配功能已退役，不得选择旧组件、装配或组件升级操作。本版只有接口能力与模版资产；Skill暂不提供。模版仅作生成参考，后续改动不联动应用。\n'+(window.CAP && CAP.catalog ? '当前身份的可用资产目录：'+JSON.stringify(CAP.discoverCandidates ? CAP.discoverCandidates(document.querySelector('#xz-input') ? document.querySelector('#xz-input').value : '',20) : [])+'\n' : '')+'你只能使用这些原语：\n' + JSON.stringify(XZ_PRIMS)
     + '\n当前页面语义快照（i 是元素索引，n 是名字，r 是角色，v 是当前值）：\n'
     + JSON.stringify({ where: facts.here, inDialog: facts.layer, zones: snap.zones, els: snap.els })
     + '\n页面上的记录：' + JSON.stringify(facts.cards.slice(0, 12))
@@ -1058,8 +1053,6 @@ function xzSystemPrompt(snap, facts){
     + '⑦ **用户要的是结果，不是穷举。** 拿到足以回答他的信息就停（acts 给空数组并在 say 里说结论），'
     + '不要为了"再确认一下"逐个核对同类项；'
     + '⑧ 同一页面上同一种操作不要超过 2 次，第 3 次就该停下来把情况告诉用户。'
-    + '⑩ **在装配面板里搜不到某个组件，不等于任务失败**：它很可能已经装在这个应用里了（切到「已装配」看一眼）。'
-    + '如果确实已经装了，要在 say 里直接说「它已经装在这个应用里了」，不要当成做完了，也不要说"无匹配"。\n'
     + '⑨ **「把某个应用授权给某客户」这类任务，三件事做完才算到终点**：'
     + '打开客户配置 → 在「选择客户」下拉里真的选中那个客户（用 pick，不是只看选项）→ 停在「授权并复制」按钮前。'
     + '只打开弹窗、只读取下拉有哪些选项，都**不算做到** —— 这时候 acts 不许给空数组。'
@@ -1236,18 +1229,22 @@ var XZ_HIST_MAX = 6;   /* 3 轮 = 6 条 */
    「正在读这一页…」，既没有已等秒数，也没有重试入口。DESIGN.md:418 自己写着
    「超过 3 秒报已等 N 秒」，此处原本一条都没实现。 */
 var XZ_REQ = null;
+var XZ_REQ_ID = null;
 function xzAbortReq(){
   if (XZ_REQ && XZ_REQ.abort){ try { XZ_REQ.abort(); } catch (e) {} }
+  if(XZ_REQ_ID){fetch('/xz/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:XZ_REQ_ID}),keepalive:true}).catch(function(){});XZ_REQ_ID=null;}
   XZ_REQ = null;
 }
 function xzPlanModel(intent, snap, facts){
   xzAbortReq();
+  XZ_REQ_ID='xz-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
   var ctl = null, timer = null;
   try { ctl = new AbortController(); XZ_REQ = ctl; } catch (e) { ctl = null; }
   var opt = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      request_id:XZ_REQ_ID,
       messages: [
         { role:'system', content: xzSystemPrompt(snap, facts) },
         ...XZ_HIST.slice(-XZ_HIST_MAX),

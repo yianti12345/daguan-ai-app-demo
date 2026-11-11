@@ -1165,35 +1165,16 @@
     return v === undefined ? undefined : JSON.parse(JSON.stringify(v));
   }
   DB.contentOf = function (appId, compId) {
-    var a = DB.appById(appId);
-    var c = DB.compById(compId);
-    if (!a || !c) return null;
-    var own = (a.content && a.content[compId]) || null;
-    /* 装配的是哪个版本，就渲哪一版的内容。应用自己改过这一块（own.fields）时以应用为准。 */
-    var av = (a.compVer && a.compVer[compId]) || null;
-    var fullFields = c.fields || [];
-    var baseFields = (av && c.fieldsByVer && c.fieldsByVer[av]) ? c.fieldsByVer[av] : fullFields;
-    /* 行数据是按「完整字段表」的位置存的定位数组；裁列后必须记住每列原来在第几位，
-       否则表头三列、值还是五列的顺序 —— 金额列会显示成业务类型（盲审 F1 blocker）。 */
-    var fieldSrc = baseFields.map(function (f) { return fullFields.indexOf(f); });
-    return {
-      id: c.id, name: (own && own.name) ? own.name : c.name,
-      layout: c.layout || 'full', block: c.block || null, status: c.status, enabled: c.enabled !== false,
-      refs: c.refs || 0, strip: c.strip === true,
-      fields: (own && Array.isArray(own.fields)) ? own.fields.slice() : baseFields.slice(),
-      fieldSrc: (own && Array.isArray(own.fields))
-        ? own.fields.map(function (f) { return fullFields.indexOf(f); })
-        : fieldSrc.slice(),
-      spec: deepCopy((own && own.spec !== undefined) ? own.spec : c.spec),
-      config: deepCopy((own && own.config !== undefined) ? own.config : c.config)
-    };
+    var a=DB.appById(appId);if(!a)return null;DB.detachAppContent(a);
+    var own=a.content[compId];if(!own)return null;
+    var out=Object.assign({id:compId},deepCopy(own));out.fieldSrc=out.fields.map(function(f){return (out.sourceFields||out.fields).indexOf(f);});return out;
   };
   DB.resolveContent = function (appId) {
     var a = DB.appById(appId), out = {};
     if (!a) return out;
     a.comps.forEach(function (id) {
       var c = DB.contentOf(appId, id);
-      if (c) out[id] = { name: c.name, spec: c.spec, fields: c.fields, fieldSrc: c.fieldSrc, config: c.config };
+      if (c) out[id] = deepCopy(c);
     });
     return out;
   };
@@ -1201,6 +1182,7 @@
     var a = DB.appById(appId);
     if (!a || !DB.compById(compId) || !patch) return null;
     if (!a.content || typeof a.content !== 'object') a.content = {};
+    DB.detachAppContent(a);
     var cur = a.content[compId] || {};
     ['name', 'spec', 'fields', 'config'].forEach(function (k) {
       if (patch[k] === undefined) return;
@@ -1717,6 +1699,10 @@
 
   /* 发布＝把草稿转成正式版并启用：草稿被消费掉，不留第二行；
      新版本号 = 现有正式版最大号 + 1（不许回收、不许跳号复用旧号）。 */
+  function versionCreator() {
+    var a=window.CAP&&window.CAP.actor?window.CAP.actor():null;
+    return {createdById:a?a.id:DB.editor(),createdBy:a?a.name:DB.editor()};
+  }
   DB.versPublish = function (scope, id, snap, at, forceV) {
     var list = DB.versOf(scope, id);
     var stables = list.filter(function (r) { return r.kind === 'stable'; });
@@ -1727,7 +1713,7 @@
     list = list.filter(function (r) { return r.kind !== 'draft'; });
     /* 不可变：快照一旦落盘就与当前对象脱钩，后续改画布不会改到历史版 */
     var frozen = snap ? JSON.parse(JSON.stringify(snap)) : null;
-    list.push({ v: next, kind: 'stable', active: true, at: at || todayISO(), snap: frozen });
+    list.push(Object.assign({ v: next, kind: 'stable', active: true, at: at || todayISO(), snap: frozen }, versionCreator()));
     var saved = DB.versSet(scope, id, list);
     /* 快照把当前内容整包冻住了 —— 之前攒的改动都已入档，流水清零。
        不清的话，用户会看到"刚存完快照，未入档改动还是 5 条"。 */
@@ -1749,7 +1735,7 @@
     if (list.some(function (r) { return r.kind === 'stable' && r.v === next; })) return null;
     list = list.filter(function (r) { return r.kind !== 'draft'; });
     var frozen = snap ? JSON.parse(JSON.stringify(snap)) : null;
-    list.push({ v: next, kind: 'stable', active: false, at: at || todayISO(), snap: frozen });
+    list.push(Object.assign({ v: next, kind: 'stable', active: false, at: at || todayISO(), snap: frozen }, versionCreator()));
     var saved = DB.versSet(scope, id, list);
     if (saved) DB.changesClear(scope, id);
     /* 把"当前授权版本"钉回去：normalize/versSet 都不该动 active，
@@ -1931,4 +1917,24 @@
     return DB.versPublish('comp', id, snap || null, null, n || null);
   };
 
+  DB.componentUpgradesEnabled=false;
+  DB.updatesOf=function(){return [];};DB.updateCount=function(){return 0;};
+  DB.compRefs=function(){return [];};DB.compUpgradeStats=function(){return {total:0,behind:0};};
+  /* 存量应用补齐私有内容，后续读取不依赖共享库的当前内容。 */
+  DB.detachAppContent=function(a){
+    if(!a)return; if(!a.content||typeof a.content!=='object')a.content={};
+    (a.comps||[]).forEach(function(id){var c=DB.compById(id);if(!c)return;
+      var own=a.content[id]||{};
+      if(['name','fields','fieldSrc','sourceFields','spec','config','layout','block','strip','status','enabled'].every(function(k){return Object.prototype.hasOwnProperty.call(own,k);}))return;
+      var all=own.sourceFields||c.fields||[],v=a.compVer&&a.compVer[id];
+      var fields=Array.isArray(own.fields)?own.fields:((v&&c.fieldsByVer&&c.fieldsByVer[v])||all);
+      var base={name:c.name,fields:fields,sourceFields:all,fieldSrc:fields.map(function(f){return all.indexOf(f);}),spec:c.spec===undefined?null:c.spec,config:c.config||{},layout:c.layout||'full',block:c.block||null,strip:c.strip===true,status:c.status,enabled:c.enabled!==false};
+      Object.keys(own).forEach(function(k){base[k]=own[k];});
+      a.content[id]=JSON.parse(JSON.stringify(base));
+    });
+  };
+  var loadIndependent=DB.load;DB.load=function(){var out=loadIndependent.apply(DB,arguments);DB.APPS.forEach(DB.detachAppContent);return out;};
+
+  ['install','upgradeAll','upgradeSome','upgradeCompRefs'].forEach(function(name){DB[name]=function(){throw new Error('组件联动升级已退役');};});
+  ['versSet','versPublish','versSave','versActivate','versDeactivate','versApply','versRestoreForward'].forEach(function(name){var previous=DB[name];DB[name]=function(scope){if(scope==='comp')throw new Error('模版不使用组件版本发布');return previous.apply(DB,arguments);};});
   window.DB = DB;})();

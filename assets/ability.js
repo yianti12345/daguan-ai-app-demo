@@ -15,7 +15,10 @@
   var toast = function (m, k) { if (window.UIK && UIK.toast) UIK.toast(m, k); };
 
   var ID = '';
-  var B = null;
+  var B = null,DRAFT=null;
+  function currentAbility(){return DRAFT?DRAFT.record():CAP.abilityById(ID);}
+  function patchAbility(p){return DRAFT?DRAFT.update(p):CAP.updateAbility(ID,p);}
+  function currentApis(){return DRAFT?DRAFT.apis():CAP.abilityApis(ID);}
   var BUSY = false;    /* 正在生成，防止保存键按第二下 */
   var CHANGED = false; /* 自上次生成后，接口清单动过 */
 
@@ -23,17 +26,9 @@
   function boot() {
     var q = new URLSearchParams(location.search);
     ID = q.get('id') || 'new';
-    if (ID === 'new') {
-      /* 「新建」会先落一条空记录（刷新不丢）。上次点到一半就走的空壳在这里收掉，
-         否则清单里会越攒越多「未命名能力」。 */
-      CAP.abilities().forEach(function (x) {
-        if (!String(x.name || '').trim()) CAP.removeAbility(x.id);
-      });
-      var b = CAP.addAbility({ name: '', intro: '', project: q.get('project') || '' });
-      location.replace('ability.html?id=' + encodeURIComponent(b.id));
-      return false;
-    }
-    if (!CAP.abilityById(ID)) {
+    if(ID==='new'){DRAFT=AbilityDraft.create(CAP);return true;}
+    if (currentAbility() && currentAbility().kind==='skill') { location.replace('skill-edit.html?id='+encodeURIComponent(ID)); return false; }
+    if (!currentAbility() || !CAP.isGranted(currentAbility())) {
       toast('这个能力不存在了', 'error');
       setTimeout(function () { location.href = 'abilities.html'; }, 800);
       return false;
@@ -44,22 +39,25 @@
   function formDirty() {
     return $('#f-name').value.trim() !== (B.name || '')
       || $('#f-intro').value.trim() !== (B.intro || '')
-      || $('#doc').value.trim() !== String(B.doc || '').trim();
+      || $('#doc').value.trim() !== String(B.doc || '').trim()
+      || JSON.stringify(AbilityEditor.scope()) !== JSON.stringify(B.useScope)
+      || AbilityEditor.kind() !== B.kind
+      || JSON.stringify(AbilityEditor.files()) !== JSON.stringify(B.files || []);
   }
   /* 说明是选填（用户 2026-11-05 明确）。必填只有名称和至少一个接口。 */
   function filled() {
-    return $('#f-name').value.trim() && (CAP.abilityById(ID).apiIds || []).length;
+    return AbilityEditor.editable && $('#f-name').value.trim() && (AbilityEditor.kind()==='skill' ? $('#doc').value.trim() : (currentAbility().apiIds || []).length);
   }
 
   function paint() {
-    B = CAP.abilityById(ID);
+    B = currentAbility();
     if (!B) return;
     $('#crumb-name').textContent = B.name || '新建能力';
     document.title = (B.name || '新建能力') + ' · 能力详情';
     $('#f-name').value = B.name || '';
     $('#f-intro').value = B.intro || '';
-    paintState();
     paintDoc();
+    paintState();
     paintApis();
     syncBar();
   }
@@ -82,28 +80,7 @@
   }
 
   function paintState() {
-    var st = B.docState || 'none';
-    var el = $('#md-state');
-    var moved = docMoved(B);
-    if (BUSY || st === 'run') {
-      el.textContent = '生成中…';
-      el.classList.remove('is-danger');
-    } else if (st === 'fail') {
-      /* 文案与列表统一成「生成失败」；异常原文只挂 title，不上屏。 */
-      el.textContent = '生成失败';
-      el.title = B.docErr || '模型没返回';
-      el.classList.add('is-danger');
-    } else if (st === 'ready') {
-      el.classList.remove('is-danger');
-      el.removeAttribute('title');
-      el.textContent = (B.doc && moved)
-        ? '接口有变动，说明书要重新生成'
-        : ('已就绪' + (B.docAt ? ' · ' + B.docAt : ''));
-    } else {
-      el.textContent = '未生成';
-      el.removeAttribute('title');
-      el.classList.remove('is-danger');
-    }
+    UIK.Ability.editorFeedback($('#md-state'), BUSY ? 'generating' : formDirty() ? 'dirty' : 'idle');
   }
 
   function paintDoc() {
@@ -229,7 +206,7 @@
   }
 
   function paintApis() {
-    var rows = CAP.abilityApis(ID);
+    var rows = currentApis();
     $('#api-title').textContent = '接口清单（' + rows.length + '）';
     var box = $('#api-list');
     if (!rows.length) {
@@ -301,13 +278,14 @@
   function regenerate() {
     if (BUSY) return;
     if (!window.Gen || !Gen.abilityDoc) { toast('生成脚本没加载', 'error'); return; }
-    if (!(CAP.abilityById(ID).apiIds || []).length) { toast('先加接口', 'error'); return; }
+    if (!(currentAbility().apiIds || []).length) { toast('先加接口', 'error'); return; }
+    if(DRAFT)patchAbility({name:$('#f-name').value.trim(),intro:$('#f-intro').value.trim()});
     BUSY = true;
-    CAP.updateAbility(ID, { docState: 'run', docErr: '' });
-    B = CAP.abilityById(ID);
+    patchAbility( { docState: 'run', docErr: '' });
+    B = currentAbility();
     paintState(); syncBar();
-    Gen.abilityDoc(CAP.abilityById(ID)).then(function (r) {
-      CAP.updateAbility(ID, {
+    Gen.abilityDoc(currentAbility()).then(function (r) {
+      patchAbility( {
         doc: r.text, docState: 'ready', docAt: CAP.now(), docApis: apisSig(B.apiIds),
         /* 生成成功 = 这份说明书已经按当前接口写过一遍，各接口的 docStale 可以摘掉了。 */
         docStaleCleared: (function () {
@@ -316,12 +294,12 @@
         })(),
         docFrom: r.from || 'model', docErr: r.from === 'local' ? (r.why || '') : ''
       });
-      BUSY = false; B = CAP.abilityById(ID);
+      BUSY = false; B = currentAbility();
       paintDoc(); paintState(); syncBar();
       toast('说明书已生成');
     }).catch(function (e) {
-      CAP.updateAbility(ID, { docState: 'fail', docErr: String((e && e.message) || e) });
-      BUSY = false; B = CAP.abilityById(ID);
+      patchAbility( { docState: 'fail', docErr: String((e && e.message) || e) });
+      BUSY = false; B = currentAbility();
       paintState(); syncBar();
       toast('没生成出来', 'error');
     });
@@ -340,14 +318,15 @@
   $('#act-save').addEventListener('click', function () {
     var n = $('#f-name').value.trim(), i = $('#f-intro').value.trim(), d = $('#doc').value.trim();
     if (!n) { toast('填能力名称', 'error'); $('#f-name').focus(); return; }
-    if (!(CAP.abilityById(ID).apiIds || []).length) { toast('先加接口', 'error'); return; }
+    if (!filled()) { toast(AbilityEditor.kind()==='skill'?'填写技能说明':'先加接口','error'); return; }
+    if (!CAP.canManage(B)) return;
     var old = String(B.doc || '');
-    var patch = { name: n, intro: i, doc: d };
+    var patch = { name:n, intro:i, doc:d, kind:AbilityEditor.kind(), useScope:AbilityEditor.scope(), files:AbilityEditor.files() };
     if (d !== old.trim()) { patch.docFrom = 'manual'; patch.docErr = ''; patch.docAt = CAP.now(); }
     if (d) patch.docState = 'ready';
     else { patch.docState = 'none'; patch.docAt = ''; }
-    CAP.updateAbility(ID, patch);
-    CHANGED = false; B = CAP.abilityById(ID);
+    try { CAP.validateFiles(patch.files); if(DRAFT){var created=DRAFT.commit(patch);ID=created.id;DRAFT=null;var url=new URL(location.href);url.searchParams.delete('new');url.searchParams.set('id',ID);history.replaceState(null,'',url.pathname+url.search+url.hash);}else patchAbility(patch); } catch(e) { toast(e.message || '没保存上','error'); return; }
+    CHANGED = false; B = currentAbility();
     paintDoc(); paintState(); paintApis(); syncBar();
     toast('已保存');
   });
@@ -361,7 +340,7 @@
     e.preventDefault();
     Confirm.ask({
       title: '离开这一页？',
-      body: '名称、说明或说明书改了还没保存，离开就没了。接口的增删已经生效。',
+      body: '当前修改尚未保存，确认离开？',
       ok: '离开',
       onOk: function () { location.href = a.getAttribute('href'); }
     });
@@ -586,10 +565,10 @@
   $('#api-list').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act="rm"]'); if (!b) return;
     var aid = b.getAttribute('data-id');
-    var cur = (CAP.abilityById(ID).apiIds || []).filter(function (x) { return x !== aid; });
-    CAP.updateAbility(ID, { apiIds: cur });
+    var cur = (currentAbility().apiIds || []).filter(function (x) { return x !== aid; });
+    patchAbility( { apiIds: cur });
     CHANGED = true;
-    B = CAP.abilityById(ID);
+    B = currentAbility();
     paintApis(); paintState(); syncBar();
     toast('已移除');
   });
@@ -612,7 +591,7 @@
 
   /* 加入接口：同一个方法+路径只存一条；已经在这个能力里的不重复加。 */
   function addItems(items) {
-    var ids = (CAP.abilityById(ID).apiIds || []).slice(), n = 0;
+    var ids = (currentAbility().apiIds || []).slice(), n = 0;
     items.forEach(function (x) {
       if (!x.path) return;
       var id = CAP.fingerprint(x.method, x.path, '');
@@ -628,8 +607,8 @@
       }
       if (ids.indexOf(id) < 0) { ids.push(id); n++; }
     });
-    CAP.updateAbility(ID, { apiIds: ids });
-    CHANGED = true; B = CAP.abilityById(ID);
+    patchAbility( { apiIds: ids });
+    CHANGED = true; B = currentAbility();
     return n;
   }
 
@@ -639,22 +618,9 @@
     var old = $('#pk-mask'); if (old) old.remove();
     var editing = editId ? CAP.apiById(editId) : null;
     ADD = { mode: editing ? 'form' : 'bulk', parsed: null, busy: false, text: '', editId: editId || '' };
-    document.body.insertAdjacentHTML('beforeend',
-      '<div class="nf-mask" id="pk-mask"><div class="nf" role="dialog" aria-modal="true" aria-labelledby="pk-t">'
-      + '<div class="nf-hd"><b id="pk-t">' + (editing ? '编辑接口' : '添加接口') + '</b>'
-      + '<button type="button" class="icon-btn" id="pk-x" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
-      /* 页签用现成的 .p-tabs / .p-tab（装配能力面板同一套），间距一行都不许在这里改；
-         上一版给它加了 padding:0 和负 margin，等于把现成组件的样式改掉了 —— 那就是另搞一套。 */
-      + (editing ? '' :
-        '<div class="p-tabs" id="pk-tabs" role="tablist" aria-label="添加方式">'
-      +   '<button type="button" role="tab" class="p-tab" data-mode="bulk" aria-selected="true">贴内容自动拆</button>'
-      +   '<button type="button" role="tab" class="p-tab" data-mode="form" aria-selected="false">手动填一条</button>'
-      + '</div>')
-      + '<div class="nf-bd" id="pk-bd"></div>'
-      + '<div class="nf-ft">'
-      + '<button type="button" class="btn ghost" id="pk-cancel">取消</button>'
-      + '<button type="button" class="btn primary" id="pk-ok">解析</button></div>'
-      + '</div></div>');
+    document.body.insertAdjacentHTML('beforeend',UIK.Dialog.html({id:'pk-mask',titleId:'pk-t',title:editing?'编辑接口':'添加接口',closeId:'pk-x',bodyId:'pk-bd',
+      tabs:editing?'':'<div class="p-tabs" id="pk-tabs" role="tablist" aria-label="添加方式"><button type="button" role="tab" class="p-tab" data-mode="bulk" aria-selected="true">贴内容自动拆</button><button type="button" role="tab" class="p-tab" data-mode="form" aria-selected="false">手动填一条</button></div>',
+      footer:'<button type="button" class="btn ghost" id="pk-cancel">取消</button><button type="button" class="btn primary" id="pk-ok">解析</button>'}));
     /* 盲审：改了一半点 X 或取消，弹层直接销毁、内容全丢，也没有任何提示。
        编辑态下先比一次表单和原值，有差异就问一句。 */
     function closeAddDlg() {
@@ -753,7 +719,7 @@
     }
     /* list：拆出来的先给人看一眼 */
     var items = ADD.parsed || [];
-    var curIds = CAP.abilityById(ID).apiIds || [];
+    var curIds = currentAbility().apiIds || [];
     var dup = 0, rows = items.map(function (x) {
       var inIt = curIds.indexOf(CAP.fingerprint(x.method, x.path, '')) >= 0;
       if (inIt) dup++;
@@ -793,8 +759,8 @@
         $('#pk-mask').remove();
         /* 旧存档的 docApis 只存了接口 id，改了路径它察觉不到（docMoved 走旧口径会判"没变"）。
            这里直接把签名清掉，逼它下一次必然判"接口有变动"，提示重新生成。 */
-        CAP.updateAbility(ID, { docApis: '' });
-        CHANGED = true; B = CAP.abilityById(ID);
+        patchAbility( { docApis: '' });
+        CHANGED = true; B = currentAbility();
         /* 只改了接口，上一轮的批量测试结果就作废了 —— 不清的话顶上还挂着"通过 1 · 失败 2"，
            看着像新接口也测过了。 */
         var sumEl = $('#api-sum');
@@ -856,5 +822,5 @@
     $('#act-testall').addEventListener('click', testAll);
   }
 
-  if (boot()) paint();
+  if (boot()) { paint(); AbilityEditor.paint(); }
 })();

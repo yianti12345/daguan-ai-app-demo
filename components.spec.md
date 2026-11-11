@@ -850,7 +850,7 @@ kind=canvas：.topbar（fixed 16/16，pointer-events:none）
 .code-pane
   ├ aside.code-tree
   │   ├ 运行时 → 画布（运行时组装）
-  │   ├ 页面   → components / component / apps / app / versions
+  │   ├ 页面   → 模版管理／配置／版本，或应用管理／配置／版本（按当前对象区分）
   │   └ assets → 按当前页 script[src]/link[rel=stylesheet] 现收集
   └ .code-main
       ├ .code-pane-hd（路径 · N 行 + 复制）
@@ -867,7 +867,7 @@ kind=canvas：.topbar（fixed 16/16，pointer-events:none）
 | 选中（文件项） | 点击文件 | `.on`：白底 + 品牌墨色 + 600 | 同一时刻只有一项 `.on` |
 | 读取失败 | file:// 或 404 | 单元格内写明原因与出路 | 不假装读到 |
 
-**令牌**：`--seg-h`（28）／`--seg-item-h`（24）／`--code-tree-w`（210），其余全部取语义层（间距档、字色、边框、焦点环、`--font-family-mono`）。
+**令牌**：`--seg-h`（40）／`--seg-item-h`（30）／`--code-tree-w`（210），其余全部取语义层（间距档、字色、边框、焦点环、`--font-family-mono`）。
 
 **做 / 不做**
 
@@ -1054,3 +1054,25 @@ kind=canvas：.topbar（fixed 16/16，pointer-events:none）
 | pager | 补 hover / focus-visible / 禁用三态；删掉重复的 background 声明 | stylequick rc=0 |
 | skeleton | 从族表删除（无实现，不留空名字） | judged 15 族 |
 | floatdock | 登记进组件表；`.fk-dock` 五个跨层规则收进 `float.css` | 组件闸 rc=0 |
+
+## 27 能力界面组件 Ability UI
+
+本版能力管理只提供接口能力。UIK.Ability 统一输出管理／个人开关、复制图标与编辑反馈；assetTag/assetOptions 为可用资产提供“能力／模版”两种标签和筛选。Skill历史数据保留，其编辑入口只读，不进入本版模型目录；历史连续工作区根 .se-main 由 capability-workspace.css 保持，不作为当前新建入口。
+
+“启用状态”只放共享 .sw，不附加就绪状态；详情不放管理开关。可用范围复用 Scope.render 的角色／部门／用户多选。复制图标24×24，紧跟资产名称；卡片没有带入对话或底部操作区。默认没有调用选择框，批量管理模式才显示启停勾选框。
+
+## 28 资产文件 AssetFiles
+
+唯一根 `.template-files`，实现于 assets/asset-file-viewer.js 与 assets/asset-center.css，消费者 template.html。左侧 `.af-tree` 文件列表，右侧 `.af-main` 含文件名、代码／预览切换、下载和 `.af-content`。内部零间隔、细线分栏、外框圆角复用语义令牌。
+
+输入 files 来自经过校验的模版包。只读展示，切换文件不修改资产。文本以 textContent 展示；图片用本地 data URL；HTML 放在 sandbox 空权限、禁止外网与脚本的 iframe，静态本地样式和图片可预览。缺少授权时回到模版列表；非法路径、重复路径、超限包在导入前拒绝，错误保留原记录。
+
+## 29 模版卡片 AssetCard
+
+UIK.AssetCard.template 复用原组件库 `.crow.ccard > .cc-body + .cc-ft`，由 sys.css 统一卡片、三列栅格、文字、间距和菜单外观，不复制 CSS。顶部名称与摘要，中部 `.cc-run` 管理开关与 `.k-more/.k-menu`，底部 `.cc-spec` 版本号／时间／可用范围。菜单为编辑、复制、版本管理、导出、删除；编辑打开信息弹窗，卡片进入原画布配置。版本号与模版自身历史保留，无同步或应用升级动作。
+
+模版管理和能力管理均使用共享 `.bar/.btn/.field`；不同资产展示可分别使用原卡片与既有表格，不另造按钮样式。禁用开关、焦点、长说明、空列表由共享规则处理。修改模版只更新自身修订，不修改应用、应用草稿或客户授权。
+
+卡片更多菜单的触发器与条目必须共用UIK.Menu.trigger/item，应用与模版都使用同一竖向三点、图标和.k-mi样式。模版启用开关通过UIK.Ability的showLabel变体显示已启用／已禁用。能力列表不套外框卡片。
+
+2026-11-11用户最新列表截图覆盖旧39px/69px/600约定：表头#F7F8FA、48px、字重400；数据行64px，均由根令牌和.gtable唯一实现；能力列宽在SPEC保证1440视口下操作完整可见。

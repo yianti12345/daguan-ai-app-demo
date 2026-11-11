@@ -6,8 +6,8 @@
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
-<link rel="stylesheet" href="assets/tokens.css?v=8c85267c">
-<link rel="stylesheet" href="assets/sys.css?v=3dce5172">
+<link rel="stylesheet" href="assets/tokens.css?v=b38a25d3">
+<link rel="stylesheet" href="assets/sys.css?v=1affd7da">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=455c3b02">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -22,7 +22,6 @@
 .dl-btn[aria-expanded="true"]{background:var(--color-state-hover);color:var(--color-brand-ink)}
 </style>
 
-  <meta name="robots" content="noindex,nofollow">
 </head>
 <body>
 
@@ -155,7 +154,7 @@
 
       <!-- 版本管理（2026-10-26 改）：弹层本身不再写在这一页里。
            应用与组件的版本控制是同一件事，两页各写一遍就是两套规则 —— 统一收到
-           assets/versions.js 里画，这一页只提供"谁的、发布完回哪、变了之后重画谁"。
+           assets/versions.js?v=af60247f 里画，这一页只提供"谁的、发布完回哪、变了之后重画谁"。
            2026-10-31（状态用词）：版本模型那三个旧词（草稿 / 正式 / 唯一启用）已于 2026-10-27 退役，
            现在两页只认一套 —— 发布态：未发布 / 已上架 / 已下架（卡面徽章与筛选同源，值就是 data.js 的 status 枚举）；
            版本页说的是同一件事的另一面（当前线上 / 保存时间 / 最近一版）。 -->
@@ -164,45 +163,24 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=5ecabad7"></script>
-<script src="assets/ui-kit.js?v=ca813031"></script>
+<script src="assets/data.js?v=c21d73e3"></script>
+<script src="assets/ui-kit.js?v=1d1eff99"></script>
 <script src="assets/transfer.js?v=d79dd74b"></script>
 <script src="assets/confirm.js?v=33f3cd5b"></script>
 <script src="assets/popover.js?v=7f96155d"></script>
-<script src="assets/scope.js?v=5826944c"></script>
+<script src="assets/scope.js?v=7bc3b33b"></script>
 <script>
 (function () {
   'use strict';
   DB.load();
 
   var $ = function (s) { return document.querySelector(s); };
-  /* HTML 转义：唯一实现 assets/ui-kit.js（UIK.esc）；本页只留别名，不再各写一份 */
+  /* HTML 转义：唯一实现 assets/ui-kit.js?v=b49971dc（UIK.esc）；本页只留别名，不再各写一份 */
   var esc = UIK.esc;
   /* 底栏图标：24 视图、1.7 描边，与侧栏同一套线（不混填充图标）。
      2026-10-24 用户 m04062：图标砖与 ⋮ 都删了，`app` / `more` 两枚图标已无使用者，一并撤。 */
-  var ICON = {
-    ver: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.5v5l3 1.8"/><circle cx="12" cy="12" r="8.5"/></svg>',
-    /* ★2026-10-27：cfg 回来了。10-26 撤「配置」按钮时把图标一起删了，
-       结果卡上零可见入口（零上下文评审 P0）。现在入口以「蓝色 + 图标」的形态回来，
-       与组件库那颗「配置」完全同一套（那边实测 rgb(47,85,192) / 14px / 带 SVG），
-       两页同一个动作长同一样。 */
-    cfg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 8.9 19a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.7 8.9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>',
-    /* 2026-10-24 m01293：⋮ 回来了 —— 但这次里面放的是卡身放不下的真动作 */
-    more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.4" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18.6" r="1.7"/></svg>',
-    off: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M7 12h10"/></svg>',
-    on: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/></svg>',
-    /* ★2026-10-29（refparity：卡底栏图标钮 真源有/我方缺失）：真源底栏第一颗 24×24 图标钮是
-       Poweroff 形态（圆环上开口 + 一根竖线），hover 出「发布内测版 / 下架」。
-       我方把它落成**一键上架/下架**（复用 menuAct('toggle') 的确认链），不做死图标。 */
-    pow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3.2v7.6"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/></svg>',
-    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 13.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5L11.8 7.2"/><path d="M13.5 10.5a3.5 3.5 0 0 0-5 0L6 13a3.5 3.5 0 0 0 5 5l1.2-1.2"/></svg>',
-    /* 2026-10-30：复制 / 导出 —— 与组件页同一枚形状（同一个动作不许两页两样） */
-    copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
-    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/></svg>',
-    /* 2026-10-31（操作缺口）：删除。垃圾桶形，与上面几枚同一套 24 视图 / 1.7 描边 */
-    del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.6h6V7"/><path d="M6.5 7l.9 12.4h9.2L17.5 7"/><path d="M10.2 11v5.2M13.8 11v5.2"/></svg>'
-  };
-  /* ── toast：唯一实现在 assets/ui-kit.js（2.5 秒 · 新消息替换旧 · 错误升级 alert）。
+  var ICON = UIK.MenuIcons;
+  /* ── toast：唯一实现在 assets/ui-kit.js?v=b49971dc（2.5 秒 · 新消息替换旧 · 错误升级 alert）。
      本页只留别名，不再自己维护一份分叉的计时器。 ── */
   var toast = window.UIK.toast;
 
@@ -254,7 +232,7 @@
      渲染出来仍贴在卡内、bottom 被解析成 -120px 把 top 吃掉），
      而"菜单盖住卡片描述"是用户一眼就看见的问题，不能再赌样式层。
      现在：贴着 ⋮ 的下沿开、右缘与 ⋮ 对齐、下方放不下就翻到上面。 */
-  /* 2026-10-26：这段搬进 assets/popover.js 了 —— 组件卡当时另有一套 CSS 定位，
+  /* 2026-10-26：这段搬进 assets/popover.js?v=026014fb 了 —— 组件卡当时另有一套 CSS 定位，
      两页同一颗 ⋮ 开出不同位置（CARDMENU ⑧c 实测右缘差 153px）。
      **一件事只有一个定义处**：现在两页都调 Popover.place。 */
   function placeMenu(btn, menu) {
@@ -564,12 +542,11 @@
          卡片徽标、抽屉筛选行、（下一单）列表行数共用这一个数，谁自己再 filter 一遍就会漂移。
          有更新时两个入口带同一组参数：自动展开装配面板 · 停在「已装配」· 只看有更新。
          没更新时 href 与以前逐字相同（不带空参数）。 */
-      var upd = DB.updateCount(a.id);
       var href = 'app.html?id=' + encodeURIComponent(a.id)
                + '';   /* ★2026-11-04：不再带 panel/updates 参数 —— 带参进配置页不再自动开面板，链接也就不该承诺这件事 */
       /* 可读名后缀（规格 §2.4）：徽标自己 aria-hidden，这条状态靠锚点名字播报。
          文案只在 ui-kit 里出现一次（UIK.badgeLabel），页面不另写一份。 */
-      var label = '配置 ' + a.name + (upd ? '，' + UIK.badgeLabel(upd) : '');
+      var label = '配置 ' + a.name;
       /* ★2026-11-03（对象级判据抓到）：up/ps 原来算在 DB.latestVer() 之前。
          latestVer() 会经 versOf()→syncOwner() 把底层「已下架」派生出来；
          ps 先算就拿到旧值，卡面把已下架画成内测中。状态必须在所有台账读取之后再投影。 */
@@ -651,11 +628,6 @@
                 + esc(behindCnt + ' 家待升级') + '</span>'
               : '') +
             '<span class="card-tag kc-tag ' + (up ? 'is-up' : (ps === '内测中' ? 'is-trial' : 'is-off')) + '">' + esc(ps) + '</span>' +
-            /* ★2026-11-02（两个升级别混）：这一个是**装配组件**的可升级数，上面那个 kc-stale 是
-               **客户授权版本**落后的家数。原来写「2 个可升级」「3 家待升级」—— 同一张卡两个"升级"，
-               用户分不出点哪个。这里补主语"组件"。 */
-            (upd ? '<span class="kc-upd-flag" title="' + esc(UIK.badgeLabel(upd)) + '，点卡片进去升级组件">' +
-              esc(upd + ' 个组件可升级') + '</span>' : '') +
           '</span>' +
           '<span class="kc-info">' +
             /* ★2026-11-01（评审 P0 修正）：`upd` 原来只进了 href 和 aria-label，卡面一个字符都没用。
@@ -669,16 +641,16 @@
         /* ★2026-11-03（m04500 实机）：真源里状态动作在**电源钮**上，⋮ 只放通用动作。
            两条菜单分开，不再把「上架/下架」混进 ⋮ —— 这是真系统的逻辑，不是猜的。 */
         '<div class="k-menu" role="menu" hidden>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="auth" data-id="' + esc(a.id) + '">' + ICON.link + '客户配置</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="edit" data-id="' + esc(a.id) + '">' + ICON.cfg + '编辑信息</button>' +
+          UIK.Menu.item({label:'客户配置',icon:'link',attrs:{'data-act':'auth','data-id':a.id}}) +
+          UIK.Menu.item({label:'编辑信息',icon:'cfg',attrs:{'data-act':'edit','data-id':a.id}}) +
           /* ★2026-11-04（m07271）：应用也要能复制，且复制时先让用户起唯一新名。 */
-          '<button class="k-mi" type="button" role="menuitem" data-act="dup" data-id="' + esc(a.id) + '">' + ICON.copy + '复制应用</button>' +
+          UIK.Menu.item({label:'复制应用',icon:'copy',attrs:{'data-act':'dup','data-id':a.id}}) +
           /* ★2026-11-03（用户 m05073）：⋮ 里不能只剩真系统的四项通用动作；
              版本管理是应用级操作，必须回来。删除同在应用级，放最后。 */
-          '<button class="k-mi" type="button" role="menuitem" data-act="ver" data-id="' + esc(a.id) + '">' + ICON.ver + '版本管理</button>' +
-          '<button class="k-mi" type="button" role="menuitem" data-act="export" data-id="' + esc(a.id) + '">' + ICON.down + '导出应用</button>' +
+          UIK.Menu.item({label:'版本管理',icon:'ver',attrs:{'data-act':'ver','data-id':a.id}}) +
+          UIK.Menu.item({label:'导出应用',icon:'down',attrs:{'data-act':'export','data-id':a.id}}) +
           (ps === '未上架'
-            ? '<button class="k-mi is-danger" type="button" role="menuitem" data-act="del" data-id="' + esc(a.id) + '">' + ICON.del + '删除应用</button>'
+            ? UIK.Menu.item({label:'删除应用',icon:'del',danger:true,attrs:{'data-act':'del','data-id':a.id}})
             : '') +
         '</div>' +
         '<div class="k-menu js-k-menu-status" role="menu" hidden>' +
@@ -706,8 +678,7 @@
             ' aria-haspopup="menu" aria-expanded="false"' +
             ' aria-label="' + esc('状态操作：' + a.name + '，当前' + ps) + '"' +
             ' title="' + esc(pubTitle) + '">' + ICON.pow + '</button>' +
-            '<button class="k-more" type="button" data-id="' + esc(a.id) + '" data-act="more"' +
-            ' aria-haspopup="menu" aria-expanded="false" aria-label="更多操作：' + esc(a.name) + '">' + ICON.more + '</button>' +
+            UIK.Menu.trigger({name:a.name,attrs:{'data-id':a.id,'data-act':'more'}}) +
           '</span>' +
         '</footer>' +
       '</article>';
@@ -834,7 +805,7 @@
        现在是一张登记表：名称必填、重名拦下（读屏能听到原因）、客户与说明可留空。 */
   var D = { mask: $('#ap-mask'), name: $('#ap-name'), desc: $('#ap-desc'),
             err: $('#ap-err'), ok: $('#ap-ok'), ret: null, editing: null };
-  /* ★2026-11-03（m03263）：可见 / 可配置范围，两件都由 assets/scope.js 渲染。
+  /* ★2026-11-03（m03263）：可见 / 可配置范围，两件都由 assets/scope.js?v=8ac7876a 渲染。
      没加载到就退化成 null，表单照常可用 —— 不因为一个增强件把主流程打挂。 */
   /* 2026-11-04：可用范围这一件已从表单撤掉（只留可配置范围）；数据层字段保留，
      老数据里的 visScope 原样留着不删 —— 撤的是入口，不是历史值。 */
@@ -1034,7 +1005,7 @@
     if (!bi) return;
     bi.addEventListener('click', function () {
       Transfer.pick(function (obj) {
-        if (obj.kind === 'daguan-comp') { toast('这是组件文件，请到「组件库」导入', 'error'); return; }
+        if (obj.kind === 'daguan-comp') { toast('这是旧版组件文件，请在能力配置中创建对应技能', 'error'); return; }
         var suggest = obj && obj.app && obj.app.name ? obj.app.name : '';
         Confirm.ask({
           title: '导入应用',
@@ -1075,9 +1046,9 @@
 })();
 </script>
 <div id="xz-host"></div>
-<script src="assets/shell.js?v=fb699fab"></script>
+<script src="assets/shell.js?v=e279ad97"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
-<script src="assets/xiaozhi.js?v=65df31a0"></script>
+<script src="assets/xiaozhi.js?v=6711e9e8"></script>
 <script>
 /* ── 下载客户端浮层（2026-11-01）──────────────────────────────────
    用户口径：放在应用管理右上，图标按钮，悬停显示「下载客户端」，点开分 Mac / Windows。

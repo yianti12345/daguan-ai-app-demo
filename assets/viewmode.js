@@ -16,13 +16,14 @@
   seg.className = 'seg-view';
   seg.setAttribute('role', 'group');
   seg.setAttribute('aria-label', '视图切换');
+  var templateMode=document.body.hasAttribute('data-template-editor'),subject=templateMode?'模版':'应用';
   seg.innerHTML = '<button type="button" data-v="preview" aria-pressed="true">预览</button>'
     + '<button type="button" data-v="code" aria-pressed="false">代码</button>'
-    + '<span class="seg-tip" tabindex="0" role="note" aria-label="预览看页面成品；代码看这个页面与组件的源码文件"'
-    + ' data-tip="预览：看页面做出来的样子。代码：看这个页面与组件的源码文件。">i</span>';
+    + '<span class="seg-tip" tabindex="0" role="note" aria-label="预览看页面成品；代码看当前'+subject+'的源码文件"'
+    + ' data-tip="预览：查看页面效果。代码：查看当前'+subject+'的源码文件。">i</span>';
   ops.insertBefore(seg, ops.firstChild);
 
-  var PAGES = ['components.html', 'component.html', 'app-manage.html', 'app.html', 'versions.html'];
+  var PAGES = templateMode?['templates.html','template.html','versions.html']:['app-manage.html','app.html','versions.html'];
   var CANVAS_KEY = '__canvas__';
   var pane = null, mode = 'preview', selected = null;
 

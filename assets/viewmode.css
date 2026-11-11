@@ -5,28 +5,28 @@
    令牌：--seg-h / --seg-item-h / --code-tree-w + 语义层间距与字色；本文件不出现裸色值。
    说明：2px 是分段控件的内衬（结构性常量，不是间距刻度），3ch 是行号槽宽（按字符计）。 */
 
-/* ★2026-11-04（用户）：预览/代码是重要能力，两页顶栏第一个操作。
-   原来是小灰胶囊（m05120 后被隐藏），现在与顶栏描边按钮同一套：1px 描边分段、选中段浅底，
-   文字后挂 ⓘ 提示（悬浮/聚焦显示），解释"这两个词到底在干什么"。 */
+/* 画布顶栏共享分段控件：固定尺寸、不收缩；与正文控件统一字号。 */
 .seg-view{
-  display:inline-flex; align-items:center; height:32px; margin-right:var(--space-8);
-  border:1px solid var(--line-2); border-radius:var(--radius-control);
-  background:transparent; overflow:visible;
+  display:inline-flex;align-items:center;flex:0 0 auto;gap:var(--space-4);
+  height:var(--seg-h);padding:var(--space-4);margin:0;
+  border:1px solid var(--color-border-hairline);border-radius:var(--radius-control);
+  background:var(--surface-subtle);overflow:visible;box-sizing:border-box;
 }
 .seg-view button{
-  height:30px; padding:0 var(--space-12); border:0; border-radius:0;
-  background:none; color:var(--color-text-secondary);
-  font-family:inherit; font-size:var(--font-size-caption); line-height:1; cursor:pointer;
-  transition:background .16s ease, color .16s ease;
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  height:var(--seg-item-h);padding:0 var(--space-12);
+  border:1px solid transparent;border-radius:var(--radius-sm);
+  background:transparent;color:var(--color-text-secondary);
+  font:inherit;font-size:var(--control-font-size);line-height:var(--line-height-ui);
+  white-space:nowrap;cursor:pointer;transition:background .16s ease,color .16s ease;
 }
-.seg-view button + button{border-left:1px solid var(--line-2)}
-.seg-view button:hover{background:var(--surface-subtle); color:var(--color-text-body)}
-.seg-view button[aria-pressed="true"]{background:var(--surface-subtle); color:var(--color-text-body); font-weight:600}
-.seg-view button:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring); outline-offset:-2px}
+.seg-view button:hover{color:var(--color-text-body)}
+.seg-view button[aria-pressed="true"]{background:var(--surface-page);border-color:var(--color-border-hairline);color:var(--color-text-body);font-weight:var(--font-weight-medium)}
+.seg-view button:focus-visible{outline:var(--size-focus-ring-w) solid var(--color-focus-ring);outline-offset:-2px}
 /* 文字后的 ⓘ：只解释、不操作。提示用 CSS 画，避免原生 title 与自定义提示同时弹两个框。 */
 .seg-tip{
   position:relative; display:inline-flex; align-items:center; justify-content:center;
-  width:16px; height:16px; margin:0 6px 0 2px; border-radius:50%;
+  flex:0 0 auto;width:16px;height:16px;margin:0 var(--space-4); border-radius:50%;
   border:1px solid var(--line-2); color:var(--color-text-tertiary);
   font-size:var(--font-size-caption); font-style:normal; font-weight:600; line-height:1; cursor:help;
 }

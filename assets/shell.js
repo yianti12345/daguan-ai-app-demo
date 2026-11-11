@@ -19,15 +19,14 @@
    ───────────────────────────────────────────────────────────── */
 (function () {
   var NAV = [
-    /* ★2026-11-05（用户定稿）：「整个平台的顶层架构变成极其经典的三足鼎立：
-       应用管理、组件库、配置管理」。一级**只有这三项**，配置管理下面再挂三项。
-       这是用户给的最终版结构，不再加第四项；加之前先读这段注释。 */
-    ['应用管理', 'app-manage.html', 'apps'],
-    ['组件库', 'components.html', 'components'],
-    ['配置管理', [
-      ['小智配置', 'xz-config.html', 'cfg-xz'],
-      ['能力配置', 'abilities.html', 'cap-abilities'],
-      ['基础配置', 'config.html', 'cfg-base']
+    ['应用管理','app-manage.html','apps'],
+    ['资产中心',[
+      ['能力管理','abilities.html','cap-abilities'],
+      ['模版管理','templates.html','asset-templates']
+    ]],
+    ['配置管理',[
+      ['小智配置','xz-config.html','cfg-xz'],
+      ['基础配置','config.html','cfg-base']
     ]]
   ];
 

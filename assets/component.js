@@ -9,7 +9,7 @@
 
    画布内容不写死：三套骨架（工作台 / 表单页 / 列表页）由关键词路由，
    表头与字段名取自 DB.COMPS，应用名取自 DB.APPS。
-   数据一律走 window.DB（assets/data.js），本文件不存副本。
+   数据一律走 DB（assets/data.js），本文件不存副本。
    ───────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
@@ -30,7 +30,8 @@
   }
 
   /* ══ 0. 数据源 ══════════════════════════════════════════════ */
-  var DB = window.DB;
+  var TEMPLATE_MODE=!!window.TemplateBridge;
+  var DB=TEMPLATE_MODE?TemplateBridge.db:window.DB;
   if (DB && DB.load) DB.load();
 
   var LS_LAST_APP = 'ifas90:lastApp';
@@ -720,7 +721,7 @@
   /* ★2026-11-03（用户 m02760）：「每个应用或者组件进去，我不是都说了要都清空，变为空态吗？」
      组件页原来一进来就铺满示例（任务表/详情/规则面板），看的人会以为这里已经有真实内容。
      现在一律从空态起步：要什么，对话里说一句再生成。 */
-  HAS_CONTENT = false;
+  if(!TEMPLATE_MODE)HAS_CONTENT = false;
 
   /* ══ 4. 画布渲染 ═════════════════════════════════════════════ */
   var canvasEl = $('#canvas');
@@ -753,6 +754,7 @@
      （用户 2026-10-23 原话：「直接就是只显示当前应用名称就行了」）；
      而且画布里的内容本身已经在表达"这是什么"。 */
   function setCompName() {
+    if(TEMPLATE_MODE){TemplateBridge.refreshHeader();return;}
     var n = $('#comp-name');
     if (!n) return;
     /* ★ 判定"新建还是编辑"只能用 EXISTS（id 是否真在库里）：带一个库里没有的
@@ -846,23 +848,25 @@
   }
 
   function setOpsDisabled(v) {
+    if(TEMPLATE_MODE)TemplateBridge.setBusy(v);
     ['#act-publish'].forEach(function (sel) {
       var b = document.querySelector(sel);
       if (!b) return;
       /* ★2026-11-04（用户 m01223）：与应用配置页同一套 —— 两颗按钮常驻、可点；
          没内容时点了由 onPublish/onDraft 说一句"先说要做什么"，不改名字、不变灰。 */
-      b.textContent = '保存并发布版本';
-      if (window.UIK && UIK.setDisabled) UIK.setDisabled(b, false, '');
+      b.textContent = TEMPLATE_MODE?'发布':'保存并发布版本';
+      if (window.UIK && UIK.setDisabled) UIK.setDisabled(b, TEMPLATE_MODE&&!TemplateBridge.canManage(), '');
     });
   }
 
   /* 顶栏第二段：更新时间 + 启用状态（用户 m01223：左上角只显示名称、版本号、版本时间、启用状态） */
   function paintMeta() {
+    if(TEMPLATE_MODE)return;
     var meta = document.getElementById('comp-meta');
     if (!meta) return;
-    var rec = (window.DB && COMP && COMP.id && DB.compById) ? DB.compById(COMP.id) : null;
+    var rec = (DB && COMP && COMP.id && DB.compById) ? DB.compById(COMP.id) : null;
     var when = (COMP && (COMP.updated || COMP.savedAt)) || (rec && rec.updated) || '';
-    var st = (window.DB && DB.compState) ? DB.compState(COMP) : ((COMP && COMP.status) || '');
+    var st = (DB && DB.compState) ? DB.compState(COMP) : ((COMP && COMP.status) || '');
     var t = when ? String(when).replace(/^20\d\d-/, '').replace(/-/g, '/') : '';
     /* 2026-11-04 m01223：名称右边读起来要是一件完整的事 —— 「v2 · 更新于 10/30 10:02:17 · 启用」。
        分隔符在这里给，不靠两个 span 之间的空白去猜。 */
@@ -870,6 +874,7 @@
   }
 
   function paintInitial() {
+    if(TEMPLATE_MODE&&TemplateBridge.previewHtml()){setCompName();return;}
     canvasEl.setAttribute('data-busy', 'false');
     canvasEl.setAttribute('data-error', 'false');
     /* 版本号的格子里只放版本号；「未发布/启用/禁用」由右边那一句说一次（同页不重复播报）。 */
@@ -1002,7 +1007,7 @@
     COMP = { id: '', name: '', ver: 'v1', status: '未发布', desc: '', fields: [], spec: null, block: null };
     cur = null;
     EXISTS = false;
-    HAS_CONTENT = false;
+    if(!TEMPLATE_MODE)HAS_CONTENT = false;
     DESC_AUTO = true;   /* 这条还没有描述，归生成写 */
     /* 另起一条＝这一条还没落过库，"未发布/选不到"这件事要重新说一次 */
     noticeShown = false;
@@ -1010,11 +1015,12 @@
   }
 
   function generate(text) {
+    if(TEMPLATE_MODE&&!TemplateBridge.canManage()){toast('仅查看');return;}
     if (!text) return;
     if (busy) { pending = text; toast('前面还有一句在生成'); return; }
     /* 另起一条：这一页已经落过库，而这句话是"做一个 Y" ⇒ 换一条，
        Y 写进新 id，X 原样留在库里（组件库件数 +1，不是把 X 顶掉）。 */
-    if (!IS_EDIT && COMP.id && DB && DB.compById && DB.compById(COMP.id) && wantsNewComp(text)) {
+    if (!TEMPLATE_MODE && !IS_EDIT && COMP.id && DB && DB.compById && DB.compById(COMP.id) && wantsNewComp(text)) {
       newCompSession();
     }
     if (!window.Gen) { showError('生成器没加载（assets/gen.js 不在）'); return; }
@@ -1150,7 +1156,7 @@
       /* 生成成功即落库：不落库刷新就回到旧画面，等于"生成了但没留下"。
          状态保持原样 —— 生成不该把已上架的组件偷偷降回草稿。 */
       var prev = (DB && DB.compById && DB.compById(COMP.id)) ? DB.compById(COMP.id).status : '未发布';
-      upsert(prev);
+      if(!TEMPLATE_MODE)upsert(prev);
       /* ★2026-10-28（体验官 F2）：顶栏必须在**落库之后**再画。
          上一版这一句在 upsert 之前：那一刻 id 是刚铸的、库里还没有这条，
          EXISTS 仍是 false，面包屑画成「新建组件」；去组件库再后退，页面从
@@ -1217,6 +1223,7 @@
      修法两层：①挂载前先把同一组件历史里的重复句收成一句（旧数据也洗干净）；
               ②说话前问历史（ui.hasMsg），已经说过就不再写。 */
   function dedupeDraftNotice() {
+    if(TEMPLATE_MODE)return;
     if (!COMP || !COMP.id) return 0;
     var key = 'ifas90:hist:comp:' + COMP.id;
     try {
@@ -1236,6 +1243,7 @@
   }
 
   function tellDraftNotInstallable() {
+    if(TEMPLATE_MODE)return;
     if (noticeShown) return;
     /* 已上架：装得进去，没什么可说的。已下架：那是"重新上架"的事，
        不是"发布后才能装配"，同一句话会误导 —— 不在本条射程内就不说。 */
@@ -1266,18 +1274,19 @@
      发布前要问的那句话里必须有它：组件的"新版本"不是只改自己，装了它的应用
      画布跟着换。不说这个数，用户在点「发布」的时候根本不知道自己动了谁。 */
   function usersOf() {
-    return (window.DB && DB.APPS ? DB.APPS : appList()).filter(function (a) {
+    return (DB && DB.APPS ? DB.APPS : appList()).filter(function (a) {
       var list = (DB && DB.APP_COMPS[a.id]) || a.comps || [];
       return list.indexOf(COMP.id) >= 0;
     }).length;
   }
 
   function nextCompV() {
-    var st = (window.DB && DB.versOf) ? DB.versOf('comp', COMP.id).filter(function (r) { return r.kind === 'stable'; }) : [];
+    var st = (DB && DB.versOf) ? DB.versOf('comp', COMP.id).filter(function (r) { return r.kind === 'stable'; }) : [];
     return (st.length ? Math.max.apply(null, st.map(function (r) { return r.v; })) : 0) + 1;
   }
 
   function onPublish() {
+    if(TEMPLATE_MODE){var next=nextCompV();Confirm.ask({title:'发布新版本 v'+next+'？',body:UIK.esc(COMP.name),ok:'发布',onOk:function(){try{upsert(COMP.status,next);toast('已发布 v'+next);}catch(e){toast(e.message,'error');}}});return;}
     if (!cur) { toast('先说要做什么，还没有可以保存的内容'); return; }
     /* 发号只认台账最大号：不再用 COMP.status/ver 猜，避免造出两条同号 */
     var n = usersOf();
@@ -1336,11 +1345,11 @@
     /* 人点浮条上的「停止」：掐断当前这次模型调用。 */
     onStop: function () { try { if (window.Gen && Gen.abort) Gen.abort(); } catch (e) {} },
     dialog: {
-      placeholder: '描述你要的组件',
+      placeholder: TEMPLATE_MODE?'描述你要调整的模版':'描述你要的组件',
       onSend: function (text) { generate(text); }
     },
     /* 历史按组件分开存：换一个组件不该看到上一个组件的对话 */
-    historyKey: 'ifas90:hist:comp:' + (COMP && COMP.id ? COMP.id : 'new'),
+    historyKey: (TEMPLATE_MODE?'ifas90:hist:template:':'ifas90:hist:comp:') + (COMP && COMP.id ? COMP.id : 'new'),
     /* 历史卡上的版本号向台账核一次，不在了就不给假入口（2026-11-02） */
     versionExists: function (v) {
       return (DB.versOf('comp', COMP && COMP.id) || []).some(function (r) {
@@ -1382,7 +1391,7 @@
   (function () {
     var bPub = document.getElementById('act-publish');
     var bDraft = document.getElementById('act-draft');
-    if (bPub) { bPub.textContent = '保存并发布版本'; bPub.addEventListener('click', onPublish); }
+    if (bPub) { bPub.textContent = TEMPLATE_MODE?'发布':'保存并发布版本'; bPub.addEventListener('click', onPublish); }
     if (bDraft) bDraft.addEventListener('click', onDraft);
     /* 历史版本按钮已随 m01223 下线：顶栏只留「保存草稿 / 保存并发布版本」两颗，
        入口回到组件库卡片的 ⋮（与应用配置页同一个口径）。 */
@@ -1390,6 +1399,7 @@
 
   /* 保存草稿：写内容，不发版。新建态第一次点它才真的落库（那时还没有 id）。 */
   function onDraft() {
+    if(TEMPLATE_MODE){TemplateBridge.saveDraft();return;}
     if (!cur) { toast('先说要做什么，还没有可以保存的内容'); return; }
     var st = EXISTS ? (COMP.status || '未发布') : '未发布';
     upsert(st);
@@ -1402,7 +1412,7 @@
        新建（无 ?id）  → 库里没有这条 id，unshift 一条新的
        改老组件（?id） → 库里有这条 id，就地更新；name/desc 不动
                         （名字是它在库里的身份，不能被画布骨架名覆盖） */
-  function upsert(status) {
+  function upsert(status, expectedVersion) {
     var c = (DB && DB.compById) ? DB.compById(COMP.id) : null;
     /* ★2026-10-28 E44：保存只写内容，不改"上不上架"。
        已经禁用（enabled=false / 已下架）的组件，保存后必须仍是禁用 ——
@@ -1433,14 +1443,14 @@
       /* 这一条现在是库里真实存在的一条了：面包屑/后续判断都该按"已落库"说 */
       EXISTS = true;
     }
-    if (DB && DB.save) DB.save();
+    if (DB && DB.save) DB.save(expectedVersion);
     /* 指针＝"这一页正在造的是哪一条"。读它的是下次打开新建页（见文件上半段）：
        刷新/再进来认回同一条，而不是铸一条新的、把刚才的结果留在库里当孤儿。
        Flash 是给组件库的一次性置顶信号：每次落库/发布都重新写，
        组件库读完即消费 —— 同一条不会在之后每次进库时反复置顶。 */
     try {
-      localStorage.setItem(LS_NEW_COMP, COMP.id);
-      localStorage.setItem(LS_NEW_COMP_FLASH, COMP.id);
+      if(!TEMPLATE_MODE)localStorage.setItem(LS_NEW_COMP, COMP.id);
+      if(!TEMPLATE_MODE)localStorage.setItem(LS_NEW_COMP_FLASH, COMP.id);
     } catch (e) {}
   }
 
@@ -1612,4 +1622,8 @@
   /* ══ 7. 起手 ═══════════════════════════════════════════════ */
   failNext = /[?&]fail=1(&|$)/.test(location.search);
   paintInitial();
+  if(TEMPLATE_MODE)TemplateBridge.attach({
+    snapshot:function(){return {fields:(COMP.fields||[]).slice(),spec:COMP.spec||null,block:COMP.block||null,layout:COMP.layout||TemplateBridge.db.compById(COMP.id).layout||'full'};},
+    restore:function(s){['fields','spec','block','layout'].forEach(function(k){COMP[k]=s[k];});HAS_CONTENT=!!((COMP.fields||[]).length||COMP.spec);START_LAYOUT=HAS_CONTENT?LAYOUTS[layoutByName(COMP.name,COMP.fields)]:LAYOUTS.workbench;cur=COMP.spec||null;paintInitial();}
+  });
 })();

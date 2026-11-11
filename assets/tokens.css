@@ -314,7 +314,7 @@
 
   /* 按钮 Button（6） */
   --btn-height:var(--size-control-h);
-  --btn-radius:var(--radius-xs);
+  --btn-radius:var(--radius-control);
   --btn-pad-x:var(--space-inline-lg);
   /* 2026-10-29 裁决 #1：原 `var(--space-inline-xs)`=4 无组件规范依据；
      现盘 `.btn` gap 是 `--space-8`=8（sys.css:121），改值对齐并接线。
@@ -324,7 +324,7 @@
   --btn-disabled-fg:var(--color-text-secondary);
 
   /* 列表卡 AppCard（5） */
-  --card-radius:var(--radius-tag);
+  --card-radius:var(--radius-panel);
   /* 2026-10-29 裁决 #2：卡靠 1px 收边环分界（`.kcard` 现盘 sys.css:895 用 `--shadow-card-ring`）；
      原 `--shadow-card` 无环，off 态（sys.css:452）用本令牌会丢环。改值对齐并接线。
      盘面证据：《设计-L3组件令牌29条裁决-20261029》§逐条 #2。 */
@@ -347,11 +347,11 @@
   --card-off-fg:var(--color-text-secondary);
 
   /* 组件卡 ComponentCard（5） */
-  --ccard-radius:var(--radius-tag);
+  --ccard-radius:var(--radius-panel);
   --ccard-accent-h:3px;
-  --table-head-bg:#F2F3F5;
-  --table-head-h:39px;
-  --table-row-h:69px;
+  --table-head-bg:#F7F8FA;
+  --table-head-h:48px;
+  --table-row-h:64px;
   --field-h:30px;
   --field-border:var(--color-border-control);
   /* 2026-11-01：与 --card-shadow 同一条口径 —— 组件卡也不许默认浮着（用户：「阴影很诡异」）。
@@ -385,8 +385,8 @@
 
   /* 视图切换 / 代码面板（2026-10-30，服务 .seg-view / .code-pane / .code-tree）
      这三条是组件尺寸，语义层表达不了；数值各只有一处消费者。 */
-  --seg-h:28px;
-  --seg-item-h:24px;
+  --seg-h:calc(var(--space-32) + var(--space-8));
+  --seg-item-h:calc(var(--space-32) - 2px);
   --code-tree-w:210px;
   --hist-bar-h:40px;   /* 对话历史长条高度（服务 .fk-hist-hd / .fk-hist-btn） */
 
@@ -406,6 +406,18 @@
   --menu-item-disabled-fg:var(--color-text-secondary);
 
   /* 弹层 Dialog（5） */
+  /* 弹窗排版角色：同一映射覆盖标题、正文、表单、按钮和页签。 */
+  --font-family-ui:var(--font-family-sans);
+  --line-height-ui:var(--p-line-22);
+  --font-size-label:var(--font-size-body);
+  --control-font-size:var(--font-size-body);
+  --tab-font-size:var(--font-size-body);
+  --tabs-padding-inline:var(--space-24);
+  --dialog-font-family:var(--font-family-ui);
+  --dialog-title-font-size:var(--font-size-heading);
+  --dialog-body-font-size:var(--font-size-body);
+  --dialog-line-height:var(--line-height-ui);
+  --dialog-title-line-height:var(--space-24);
   --dialog-max-w:var(--p-size-480);
   --dialog-radius:var(--radius-panel);
   --dialog-shadow:var(--shadow-dialog);

@@ -497,3 +497,35 @@ window.UIK = (function () {
 /* 两页都引 ui-kit，账号菜单在 DOM 就绪后自动挂上，调用方不用记。 */
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.UIK.userMenu(); });
 else window.UIK.userMenu();
+
+/* 应用与模版卡片菜单：唯一图标与条目结构，外观来自sys.css .k-mi。 */
+(function(U){
+ U.MenuIcons=Object.freeze({
+    ver: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.5v5l3 1.8"/><circle cx="12" cy="12" r="8.5"/></svg>',
+    /* ★2026-10-27：cfg 回来了。10-26 撤「配置」按钮时把图标一起删了，
+       结果卡上零可见入口（零上下文评审 P0）。现在入口以「蓝色 + 图标」的形态回来，
+       与组件库那颗「配置」完全同一套（那边实测 rgb(47,85,192) / 14px / 带 SVG），
+       两页同一个动作长同一样。 */
+    cfg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 8.9 19a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.7 8.9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>',
+    /* 2026-10-24 m01293：⋮ 回来了 —— 但这次里面放的是卡身放不下的真动作 */
+    more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.4" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18.6" r="1.7"/></svg>',
+    off: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M7 12h10"/></svg>',
+    on: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/></svg>',
+    /* ★2026-10-29（refparity：卡底栏图标钮 真源有/我方缺失）：真源底栏第一颗 24×24 图标钮是
+       Poweroff 形态（圆环上开口 + 一根竖线），hover 出「发布内测版 / 下架」。
+       我方把它落成**一键上架/下架**（复用 menuAct('toggle') 的确认链），不做死图标。 */
+    pow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3.2v7.6"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/></svg>',
+    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 13.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5L11.8 7.2"/><path d="M13.5 10.5a3.5 3.5 0 0 0-5 0L6 13a3.5 3.5 0 0 0 5 5l1.2-1.2"/></svg>',
+    /* 2026-10-30：复制 / 导出 —— 与组件页同一枚形状（同一个动作不许两页两样） */
+    copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/></svg>',
+    /* 2026-10-31（操作缺口）：删除。垃圾桶形，与上面几枚同一套 24 视图 / 1.7 描边 */
+    del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.6h6V7"/><path d="M6.5 7l.9 12.4h9.2L17.5 7"/><path d="M10.2 11v5.2M13.8 11v5.2"/></svg>'
+  });
+ U.Menu={trigger:function(o){var a=o.attrs||{},attrs=Object.keys(a).map(function(k){return ' '+k+'="'+U.esc(a[k])+'"';}).join('');return '<button class="k-more" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="更多操作：'+U.esc(o.name)+'"'+attrs+'>'+U.MenuIcons.more+'</button>';},item:function(o){var a=o.attrs||{},attrs=Object.keys(a).map(function(k){return ' '+k+'="'+U.esc(a[k])+'"';}).join('');var tag=o.href?'a':'button';return '<'+tag+' class="k-mi'+(o.danger?' is-danger':'')+'" role="menuitem"'+(o.href?' href="'+U.esc(o.href)+'"':' type="button"')+attrs+'>'+(U.MenuIcons[o.icon]||'')+U.esc(o.label)+'</'+tag+'>';}};
+})(window.UIK);
+
+/* 统一弹窗结构；业务页只传内容，关闭、提交流程仍沿用各自控制器。 */
+(function(U){
+ U.Dialog={html:function(o){var e=U.esc,title=o.titleId||o.id+'-title';return '<div class="nf-mask" id="'+e(o.id)+'"'+(o.hidden?' hidden':'')+'><div class="nf'+(o.wide?' nf-wide':'')+'" role="dialog" aria-modal="true" aria-labelledby="'+e(title)+'"><div class="nf-hd"><b id="'+e(title)+'">'+e(o.title)+'</b><button type="button" class="icon-btn" id="'+e(o.closeId||o.id+'-close')+'" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'+(o.tabs||'')+'<div class="nf-bd"'+(o.bodyId?' id="'+e(o.bodyId)+'"':'')+'>'+(o.body||'')+'</div><div class="nf-ft">'+(o.footer||'')+'</div></div></div>';}};
+})(window.UIK);

@@ -1,15 +1,4 @@
-/* ─────────────────────────────────────────────────────────────
-   app.js —— 应用配置页（app.html）：一块画布 + 一条底部悬浮条 + 一个装配面板。
-
-   三块职责：
-     画布   = 这个应用现在长什么样。装了什么就长什么，卸掉就少一块。
-     悬浮条 = 说一句改这个应用；装配组件 / 保存 / 发布。整条可拖，位置落 localStorage。
-     面板   = 装配组件（照 VS Code Extensions 的结构：头部 + 独占一行搜索 + 两个平文本切段
-              + 56 行列表，右侧三态都在行内变化，没有「完成/取消」，没有 toast）。
-
-   数据全在 window.DB（assets/data.js），拖动全在 window.Draggable（assets/drag.js）。
-   本文件不存组件副本，也不自己算"装了几个" —— 只问 DB。
-   ───────────────────────────────────────────────────────────── */
+/* 应用配置：独立应用内容、对话生成、草稿与发布。资产通过统一授权目录按需发现。 */
 (function () {
   'use strict';
 
@@ -157,7 +146,8 @@
     } catch (e) { return null; }
   }
   function clearDraft() {
-    try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    try{if(draftSession)draftSession.clear();else localStorage.removeItem(DRAFT_KEY);return true;}
+    catch(e){hint('版本已保存，但草稿未能清除',{kind:'err',ms:9000});return false;}
   }
   function applySnap(snap, persist, opt) {
     if (!snap) return;
@@ -174,15 +164,14 @@
     if (persist !== false) DB.save();
   }
   function saveDraft() {
-    var snap = {
-      name: app.name, desc: app.desc, comps: app.comps.slice(),
-      content: DB.resolveContent(appId), at: today()
-    };
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(snap));
+      draftSession.save();
+      paintSaveState();
       hint('草稿已保存', { ms: 5000 });
+      return true;
     } catch (e) {
       hint('草稿没存上', { kind: 'err', ms: 9000 });
+      return false;
     }
   }
   if (!VIEW_MODE) {
@@ -202,6 +191,17 @@
   /* ★2026-10-27：版本化只读视图 `?mode=view&v=N`。
      客户视图默认看"当前启用版"；带 v 时看指定的历史版本，用于会话改动卡的「查看这一版」。
      内容取快照里的 content，不回落到当前组件库 —— 否则"看历史版"看到的还是今天的内容。 */
+  var draftSession=AppDraft.create({
+    storage:localStorage,key:DRAFT_KEY,now:today,
+    snapshot:function(){return {name:app.name,desc:app.desc,comps:app.comps.slice(),content:DB.resolveContent(appId)};},
+    restore:function(s){applySnap(s,false);},persist:function(){return DB.save();}
+  });
+
+  function latestFormal(){var rows=DB.versOf('app',appId).filter(function(r){return r.kind==='stable';}).sort(function(a,b){return b.v-a.v;});return rows[0]&&rows[0].snap?rows[0]:null;}
+  function syncReset(){var b=$('#act-reset');if(!b)return;b.hidden=VIEW_MODE;var formal=latestFormal();b.disabled=VIEW_MODE||!!genBusy||!formal||(!readDraft()&&!draftSession.isDirty());b.title=formal?'':'暂无正式版本可恢复';}
+  function resetDraft(){var formal=latestFormal();if(VIEW_MODE||!formal||genBusy)return;Confirm.ask({title:'重置为 v'+formal.v+'？',body:'当前修改和已保存的草稿将被清除。',ok:'重置',onOk:function(){try{var current=latestFormal();if(!current)throw new Error('没有可恢复的正式版本');draftSession.reset(current.snap);paintApp();renderCanvas();syncReset();hint('已重置为 v'+current.v);}catch(e){hint(e.message||'重置失败',{kind:'err',ms:9000});}}});}
+  window.addEventListener('beforeunload',function(e){if(!VIEW_MODE&&draftSession.isDirty()){e.preventDefault();e.returnValue='';}});
+
   var viewV = parseInt(qs.get('v'), 10) || 0;
   var VIEW_SNAP = null;
   var viewMissing = false;
@@ -297,6 +297,7 @@
     var hdDesc = $('#app-desc');
     if (hdDesc) {
       var dTxt = (VIEW_SNAP && VIEW_SNAP.desc) ? VIEW_SNAP.desc : (app.desc || '');
+      if(dTxt==='还没装配组件。')dTxt='客户线索跟进与状态管理';
       if (hdDesc.textContent !== dTxt) {
         hdDesc.textContent = dTxt;
         delete hdDesc.dataset.fullBound;
@@ -330,7 +331,7 @@
        ⇒ 这里原来按「装配数 0 就禁用」处理，是把我自造的「空应用」概念又锁进了界面。
          纯定制应用是常见形态，按钮永远可点，不许禁用、不许改文案。 */
     var pub = $('#act-publish');
-    if (pub) pub.textContent = '保存新版本并发布';
+    if(pub)pub.textContent='保存并发布';
     /* ★2026-10-27：客户视图（?mode=view）里不该出现「应用配置」——
        客户不需要知道这是个配置页，他只知道"这是我的审核应用"。
        注意这一行在 paintApp 里，会覆盖上面 VIEW_MODE 分支设过的 title，
@@ -376,6 +377,7 @@
   }
 
   function paintSaveState() {
+    syncReset();
     var ed = $('#app-edit');
     if (!ed) return;
     /* 写盘失败优先：先报"没存上"，版本关系等写盘恢复了再说 */
@@ -403,12 +405,12 @@
       ? stables.reduce(function (a, b) { return b.v > a.v ? b : a; }, stables[0])
       : null;
     var ver = 'v' + (top ? top.v : (app.version || 0));
-    if (top && !sameAsSnap(top.snap)) {
+    ed.removeAttribute('title');
+    if (draftSession && draftSession.isDirty()) {
       ed.setAttribute('data-dirty', '1');
       ed.textContent = ver + ' · 未保存';
-      ed.title = '当前内容和 v' + top.v + ' 不一样，点「保存新版本并发布」才会存下来并让客户看到。';
     } else {
-      ed.textContent = ver;
+      ed.textContent = ver + (readDraft() ? ' · 草稿' : '');
     }
   }
 
@@ -812,7 +814,7 @@
        这两样在装配弹层里刚被用户点名删掉，这里又原样出现一次。
        同一类东西必须一次清干净：客户看这一块只想知道它是什么，不关心它是第几版、
        被归到哪个内部类别。 */
-    return '<section class="blk"><div class="blk-hd"><b>' + esc(title) + '</b></div>'
+    return '<section class="blk" style="'+Gen.themeStyle(c.spec)+'"><div class="blk-hd"><b>' + esc(title) + '</b></div>'
       + (lead || '')
       + '<div class="blk-bd blk-bd--gen">' + out.sections.join('') + '</div></section>';
   }
@@ -841,7 +843,7 @@
      之前只装了应用头时，head 被吃掉后三个槽位全空，输出只剩头部 + 状态条 —— 整片白。 */
   function emptyHtml(title, desc) {
     /* 空态是"画布本来就该是空的"，不是"这里摆了一张卡"。
-       不带 .blk：组件配置页的空态也是纯空白，两边必须长一样。 */
+       不带 .blk：应用编辑页的空态也是纯空白，两边必须长一样。 */
     return '<section class="cv-empty">'
       + (title ? '<b>' + esc(title) + '</b>' : '')
       + '<p>' + esc(desc) + '</p>'
@@ -870,7 +872,7 @@
       /* 首块「上移」、末块「下移」置灰不隐藏：隐藏会让 hover 时整组宽度跳一下。 */
       +     '<button type="button" class="cv-op" data-move="up" data-id="' + esc(c.id) + '"' + (idx === 0 ? ' disabled' : '') + '>上移</button>'
       +     '<button type="button" class="cv-op" data-move="down" data-id="' + esc(c.id) + '"' + (idx === total - 1 ? ' disabled' : '') + '>下移</button>'
-      +     '<button type="button" class="cv-op cv-op--off" data-remove="' + esc(c.id) + '">↓卸下</button>'
+      +     '<button type="button" class="cv-op cv-op--off" data-remove="' + esc(c.id) + '">移除</button>'
       +   '</span>'
       /* ★2026-11-04（用户：「一并去掉啊」）：块头常驻的「改这一块」「改共用件 · 影响 N 家」
          两颗入口整组删除 —— 产品里没有"定制"这回事，块头只留 序号·组件名、上移/下移/卸下、⋯。 */
@@ -1023,21 +1025,21 @@
   /* 卸下：画布上直接拆块，和装配面板里的「卸载」是同一条写入口（DB.uninstall），
      但它是"把应用拆开"的动作，所以先问一句，并写清可逆（随时能装回）。 */
   function removeComp(id) {
-    var c = DB.compById(id);
+    var c = DB.contentOf(appId,id);
     if (!c) return;
     Confirm.ask({
-      title: '卸下「' + c.name + '」？',
+      title: '移除「' + c.name + '」？',
       /* 拆块是不可撤销感的动作（客户那边立刻少一块），所以既说清"客户会怎样"，
          也说清"我能怎么回去" —— 两句话才能让人敢按。 */
-      body: '卸下后客户立刻看不到这一块，可随时从装配面板装回。',
-      ok: '卸下',
+      body: '从当前应用移除此内容？',
+      ok: '移除',
       onOk: function () {
         DB.uninstall(appId, id);
         renderCanvas();
         paintApp();
-        paintCounts();
-        renderList();
-        hint('已卸下「' + c.name + '」，画布上少了一块');
+
+
+        hint('已移除「' + c.name + '」');
       }
     });
   }
@@ -1144,6 +1146,7 @@
   function setGenBusy(on) {
     genBusy = !!on;
     if (ui && ui.setBusy) ui.setBusy(genBusy);
+    syncReset();
   }
   /* 这一句正在改哪一块（P1-B）。失败时唯一要说的信息是"没改成什么"，
      所以在动手改之前把它记下来；没有目标（整页重排那一路）就留 null。 */
@@ -1154,7 +1157,7 @@
      label 是 10-23 之前"卡面用短名"的遗留字段，现在已经没有一处界面读它；
      对外一律取 name。 */
   function nameOf(id) {
-    var c = DB.compById(id);
+    var c = DB.contentOf(appId,id);
     return c ? c.name : id;
   }
 
@@ -1166,16 +1169,6 @@
      本地没把握的（改布局、改内容口径、跨块重组）才回模型。
      ⚠ 新列的值一律填「待补充」，不编数据 —— 编出来的结论会被客户当成真结论。 */
 /* 2026-10-31：撤回栈（lastStruct）已随撤回功能一起删除。此处不再记录任何"可退回的一步"。 */
-
-  function ownSnap(compId) {
-    var a = DB.appById(appId);
-    var own = (a && a.content && a.content[compId]) || null;
-    return own ? dc(own) : null;
-  }
-  function sharedSnap(compId) {
-    var c = DB.compById(compId);
-    return (c && c.spec !== undefined) ? dc(c.spec) : null;
-  }
 
   function tablesOf(c) {
     return (c && c.spec && (c.spec.blocks || []).filter(function (b) { return b.type === 'table'; })) || [];
@@ -1225,8 +1218,6 @@
     if (src.cols.indexOf(col) >= 0) {
       return { msg: '「' + ttl + '」已经有「' + col + '」这一列了，这次没有改动。' };
     }
-    var prevOwn = ownSnap(c.id);
-    var prevShared = sharedSnap(c.id);
     var before = src.cols.length;
     var rows;
     var patch;
@@ -1295,71 +1286,20 @@
       return;
     }
 
-    var comps = DB.COMPS.map(function (c) {
-      return {
-        id: c.id, name: c.name, status: c.status, installed: isOn(c.id),
-        /* 带上"当前标题"，模型在选 edit 目标时能对上用户说的名字 */
-        title: (c.spec && c.spec.title) || c.name
-      };
-    });
-
-    Gen.appPlan(text, { app: app.name, comps: comps }).then(function (plan) {
-      var did = [];
-      plan.uninstall.forEach(function (id) { if (DB.uninstall(appId, id)) did.push('卸下 ' + nameOf(id)); });
-      plan.install.forEach(function (id) { if (DB.install(appId, id)) did.push('装上 ' + nameOf(id)); });
-      if (did.length) {
-        paintApp(); renderCanvas(); genBusy = false; stopTick();
-        if (ui && ui.addMsg) ui.addMsg('cfg', plan.say || ('已' + did.join('、')));
+    var current = installedComps();
+    var target = current.filter(function(c){return text.indexOf(c.name)>=0;})[0] || (current.length === 1 ? current[0] : null);
+    Gen.componentSpec(text, { app:app.name, name:target ? target.name : app.name, fields:target ? target.fields : [], existing:target ? target.spec : null }).then(function(spec){
+      if (!genBusy) return;
+      (spec._abilityRefs || []).forEach(function(ref){ CAP.contextFor([ref.id]); });
+      var id=target ? target.id : 'app-private-'+appId+'-'+Date.now().toString(36);
+      var fields=Gen.specFields(spec);
+      if (!target) {
+        DB.COMPS.push({id:id,name:spec.title || app.name,fields:fields,spec:spec,status:'已上架',enabled:true,ver:'v1',layout:'full',refs:1});
+        app.comps.push(id);DB.APP_COMPS[appId]=app.comps;app.compVer=app.compVer || {};app.compVer[id]='v1';
       }
-      /* ── 改某一块的呈现 ──
-         模型只负责说"改哪个、怎么改"，真正重画走 Gen.componentSpec
-         （和组件配置页同一套生成 + 版式契约），改完存回 DB 并重绘。
-         ★ 这里原来没有这条路：对话只能装/卸，说"把标题改一下"会得到"这句我没听出要改哪里"。
-           实测就是这么回事 —— 应用配置页不能对话改效果，只能换模块。 */
-      if (plan.edit && plan.edit.id) {
-        var target = DB.contentOf(appId, plan.edit.id);
-        if (target) {
-          /* 改前先留一份原样：这一步也要能在屏幕上退回（E23）。
-             prevOwn = 改前本应用有没有自己的覆盖；prevShared = 组件库里的底。 */
-          var editPrevOwn = ownSnap(target.id);
-          var editPrevShared = sharedSnap(target.id);
-          /* 同上：进行中的提示不浮条，改成状态位负责。 */
-          /* 失败时要说清"没改成什么" —— 目标名字在这里就能确定，别等到 catch 里再猜 */
-          failTarget = target.name;
-          return Gen.componentSpec(plan.edit.ask || text, {
-            app: app.name, name: target.name, fields: target.fields || []
-          }).then(function (spec) {
-            var newFields = Gen.specFields(spec).length ? Gen.specFields(spec) : target.fields;
-            /* 改的是本应用这一块，不是共用组件 —— 否则三家一起变 */
-            DB.setAppContent(appId, target.id, {
-              name: spec.title || target.name, spec: spec, fields: newFields
-            }, false);
-            var newName = spec.title || target.name;
-            /* 2026-10-31：同上 —— 撤回栈已删，这里的赋值一并去掉（否则 ReferenceError 打断整条编辑）。 */
-            DB.save();
-            renderCanvas();
-            setGenBusy(false);
-            stopTick();
-            /* 提示只说已完成的事实，不复述模型那句 say ——
-               模型爱说"我准备把…改成…"（将来时），而后半句已经在说"已更新"，
-               两句放一起自相矛盾。 */
-            var done = '改好了：' + newName;
-            /* 成功不必再浮一条：下面那条消息已经是结果，浮条只算重复。 */
-            if (ui && ui.addMsg) ui.addMsg('cfg', done);
-          });
-        }
-      }
-      if (did.length) return;
-      setGenBusy(false);
-      stopTick();
-      /* ★2026-11-06（用户截图：「你好」「111」下面各挂一句「这句我没听出要改哪里」）：
-         原来听不懂时照样往对话里塞那句内部话术，历史里就留下两轮脏对话。
-         现在：说一句能用的引导（带一个真能照着说的例子），并且把刚发的那句
-         从历史里撤回、文字放回输入框 —— 历史不留、画面不留，只留一条提示条。 */
-      /* ★2026-11-06（用户：这条气泡是"额外提示"，不要）：没解析出要改什么，
-         不算一句回复 —— 把那条消息标成"没执行"，给它一个重试。对话里不多一个字。 */
-      if (ui && ui.failLast) ui.failLast();
-      else hint('这句没执行。', { ms: 6000 });
+      DB.setAppContent(appId,id,{name:spec.title || app.name,spec:spec,fields:fields},false);
+      DB.save();renderCanvas();paintApp();setGenBusy(false);stopTick();
+      if(ui && ui.addMsg)ui.addMsg('cfg',window.__genMode==='local' ? '已生成页面草稿（本地模板，未调用模型或业务接口）' : '改好了：'+(spec.title || app.name));
     }).catch(function (e) {
       setGenBusy(false);
       stopTick();
@@ -1490,10 +1430,9 @@
       return;
     }
     app.updated = today();
-    clearDraft();
+    if(!clearDraft()){paintApp();renderCanvas();return;}
     /* 发布＝已经生效：之前那些"还能退回旧版本"的入口一起作废（发布后不可退）。 */
     app.updUndo = {};
-    justUpd = {};
     DB.save();
     /* ★ 2026-10-25 修 F04：发布后只调了 renderCanvas()，没调 paintApp() ——
        画布刷新了，但顶栏那行 meta 还挂着「草稿」。DB 已经改了，界面没跟着改。 */
@@ -1555,7 +1494,7 @@
         }
         paintApp();
         renderCanvas();
-        paintCounts();
+
         /* 同上：这条信息已经写在下面的消息里，浮条是重复。 */
         if (ui && ui.addMsg) ui.addMsg('cfg', '画布已换成 v' + want + '（授权版本仍是 v' + (actNow ? actNow.v : '—') + '）。');
       }
@@ -1622,80 +1561,30 @@
 
     on('#act-publish', 'click', doPublish);
     on('#act-draft', 'click', saveDraft);
-    /* ★2026-10-31（用户原话）：离开配置页要问一句「保存 / 不保存」。
-       原文：「返回之后有一个弹窗问他是否保存草稿……要么保存，要么不保存；
-       不保存的话直接再次进入配置详情页不就完事了吗？就直接重置了」。
-       —— 保存并发布＝留成新版本并设为客户可见（2026-11-03 m05120）；
-          不保存＝这次改动丢掉，回到客户当前那一版的内容，但**不改客户可见版本**
-          （versApply 的 keepActive）。 */
+    on('#act-reset','click',resetDraft);
+    syncReset();
+    // Leaving the editor saves the same draft as the toolbar; publishing is explicit.
     var backBtn = $('#act-back');
-    if (backBtn) on(backBtn, 'click', function (e) {
-      /* ★2026-11-06：客户视图直接放行。
-         下面这套"保存并发布 / 不保存直接走"是配置者的收尾动作 —— 客户进来只看内容，
-         没有任何改动可存，问他"要不要发布一版"既不成立，两个分支又都跳去配置台
-         apps.html（客户会被扔进后台）。客户点返回就回「我的应用」。 */
-      if (VIEW_MODE) return;
-      var pend = 0;
-      try {
-        /* ★2026-11-02：按内容判，不按流水条数 —— 改回原样再离开，不该问"要存一版吗" */
-        pend = DB.hasPending('app', appId) ? (DB.changesOf('app', appId) || []).length : 0;
-      } catch (err) {}
-      if (!pend) return;                       /* 没有未存的改动就直接走，不拿空弹窗烦人 */
+    if (backBtn) backBtn.addEventListener('click', function (e) {
+      if (VIEW_MODE || !draftSession.isDirty()) return;
       e.preventDefault();
       Confirm.ask({
-        title: '离开前要保存并发布吗？',
-        body: '这次改了 ' + pend + ' 处，还没保存。<br>' +
-              '「保存并发布」＝留成 v' + (topVer() + 1) + '，客户立即看到这一版。<br>' +
-              '「不保存直接走」＝这次的改动丢掉，再进来是上次保存过的样子。',
-        ok: '保存并发布',
-        cancel: '不保存直接走',
-        onOk: function () {
-          var content = DB.resolveContent(appId);
-          var prevRec = DB.versActive('app', appId);
-          var snap = {
-            comps: (app.comps || []).slice(), name: app.name, desc: app.desc, client: app.client,
-            content: content, contentHash: DB.hash(content), at: today()
-          };
-          snap.summary = summarizeSnap(prevRec ? prevRec.snap : null, snap);
-          var v = DB.versSave('app', appId, snap, today());
-          if (!v) { hint('没存上，没有离开页面', { kind: 'err', ms: 9000 }); return; }
-          DB.versActivate('app', appId, v);
-          app.updated = today();
-          DB.save();
-          clearDraft();
-          location.href = 'app-manage.html';
+        title:'保存草稿后退出？',
+        body:'当前修改尚未保存。',
+        ok:'保存草稿并退出',
+        cancel:'不保存并退出',
+        onOk:function(){
+          if(!saveDraft())return;
+          location.href='app-manage.html';
         },
-        onCancel: function () {
-          clearDraft();
-          var act = DB.versActive('app', appId);
-          if (act) {
-            DB.versApply('app', appId, act.v, true);      /* 回到客户那一版的内容，不动客户可见版本 */
-          } else {
-            /* ★2026-10-31（盲审抓出）：一版都没存过的应用，原来这里什么都不做 ——
-               用户选了「不保存」，再进来改动却还在，等于这个选项对"全新应用"失效。
-               没有"上次存过的样子"可回，就回到空白：装配清空、本应用的内容层清掉。
-               共用组件库一个字不动（那是全公司的资产，不是这次编辑的对象）。 */
-            app.comps.length = 0;
-            app.content = {};
-            DB.save();
-          }
-          location.href = 'app-manage.html';
+        onCancel:function(){
+          applySnap(draftSession.savedSnapshot(),false);
+          if(DB.save()===false){hint('修改未能还原，请重试',{kind:'err',ms:9000});return;}
+          location.href='app-manage.html';
         }
       });
     });
-    /* ★2026-11-04（用户）：「我应该点击装配组件去看，有哪些可以升级」——
-       有落后组件时直接开「已装配」页签（每行自带 有更新 / 更新 按钮），
-       没有更新才开「可装配」页签去装新的。卸下、装新的都在同一面板里切页签。 */
-    on('#act-assemble', 'click', function () {
-      var nUpd = 0;
-      try { nUpd = DB.updateCount(app.id); } catch (e) {}
-      openDlg(nUpd ? 'on' : 'avail', $('#act-assemble'));
-    });
-
-    /* ★2026-11-03（m05719）：「全选」只勾上当前列表里可升级的行，真正升级由下方批量键触发。 */
-    on('#p-selall', 'change', function () { batchSelectAll(this.checked); });
-    on('#p-upgrade-allnow', 'click', upgradeAllNow);
-    on('#p-batch-do', 'click', batchDo);
+    on('#act-available', 'click', function () { openAvailableAbilities(); });
 
     /* 存一次通知一次：谁在存、存成没成，界面不该靠轮询猜 */
     DB.onSave = function (ok) { paintSaveState(); };
@@ -1711,887 +1600,20 @@
       try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (err) {}
     });
   } else {
-    console.error('[app] assets/float.js 没加载：对话条/操作组/装配胶囊都不可用');
+    console.error('[app] assets/float.js 没加载：对话条或操作组不可用');
   }
 
-  /* ══ 5. 装配面板 ══════════════════════════════════════════════
-     结构照 VS Code Extensions：头部 → 搜索独占一行 → 两个平文本切段 → 列表 → 一行底注。
-     状态全在行内变化：装配 / 装配中… / 已装配（悬浮变卸载）/ 装配失败 + 撤销。
-     没有「完成」「取消」，没有 toast。 */
-  var mask = $('#mask');
-  var tab = 'avail';
-  var pending = {};        /* 装配中：compId -> true */
-  var failed = {};         /* 装配失败：compId -> 冲突对象名 */
-  var FAIL_ID = 'doc-extract';   /* ?fail=1＝故障注入开关：验证「装配失败 + 撤销」这条恢复路径，不是业务入口 */
-
-  /* ── 更新视图的状态（《设计-组件更新提示-20261028》§3–§6）──────────
-     这里只放"界面此刻在干什么"，不放"谁落后了"：
-     后者只有一处算法 DB.updatesOf / DB.updateCount（§11.2 单一数字公式）。
-       updNow     每次重画现算：compId -> {id,name,from,to}
-       confirmId  行内确认态的那一行（同一时刻只允许一行）
-       updBusy    更新中的那一行（同一时刻只允许一行）
-       updErr     更新失败：compId -> true（「有更新」标签保留 —— 失败不等于已更新）
-       justUpd    刚更新完、还在撤回窗口里：compId -> {from,to,content}
-     ★行体点击契约（§3.1）：已装配行**不绑**行体动作 ——
-       改前点行体空白处就是卸载，且没有确认；现在卸载只走行内明确入口，且要确认。 */
-  var updFilter = false;
-  var updNow = {};
-  var confirmId = null;
-  var updBusy = null;
-  var updErr = {};
-  /* ★2026-10-28：撤回不再只活 8 秒——发布前一直可退。
-     状态跟着应用记录走（app.updUndo），刷新、关页面都还在；发布时清空。 */
-  var justUpd = (app && app.updUndo && typeof app.updUndo === 'object') ? app.updUndo : {};
-  /* ★2026-11-03（m05719）：装配面板的多选表。键是 compId；切页签/筛选/动作完成时裁掉失效项。 */
-  var batchSel = {};
-
-  function updMap() {
-    var m = {};
-    DB.updatesOf(appId).forEach(function (u) { m[u.id] = u; });
-    return m;
+  /* 旧装配/组件联动升级流程已删除；旧链接参数不再触发动作。 */
+  function stripEntryParams(){
+    var u=new URL(location.href);['panel','updates','tab'].forEach(function(k){u.searchParams.delete(k);});
+    history.replaceState(null,'',u.pathname+u.search+u.hash);
   }
-  function inUpdView(id) { return !!updNow[id] || !!justUpd[id]; }
-
-  /* 影响句逐字（规格 §4.2）。★不写「客户立刻看到」：客户视图取应用的 active 快照
-     （本文件 VIEW_SNAP），组件版本要经「发布给客户」才进快照 —— 写"立刻"就是一句
-     会被拿去承诺客户的假话。 */
-  function impactOf(id) {
-    var to = (updNow[id] && updNow[id].to) || (justUpd[id] && justUpd[id].to) || '';
-    return app.status === '已下架'
-      ? '画布按 ' + to + ' 重画；应用已下架，客户看不到。'
-      : '画布按 ' + to + ' 重画，发布后客户才看到。';
-  }
-
-  /* 「有更新」标签：只由 ui-kit 出（文案与形态各一处），本文件不手拼这一段 */
-  function updTagHtml() { return UIK.cardBadge({ variant: 'warn', size: 'sm' }); }
-
-  /* 版本对比 v2 → v4（§3.4）：三段 inline-flex + 基线对齐；箭头是一个字符、读屏跳过，
-     整组靠 aria-label 播成「已装配 v2，最新 v4」 */
-  function verPairHtml(u) {
-    return '<span class="ver-pair" aria-label="已装配 ' + esc(u.from) + '，最新 ' + esc(u.to) + '">'
-      + '<span class="ver-from">' + esc(u.from) + '</span>'
-      + '<span class="ver-arrow" aria-hidden="true">→</span>'
-      + '<span class="ver-to">' + esc(u.to) + '</span></span>';
-  }
-
-  /* 一个过滤函数，切段计数与列表共用 —— 各算一套就会出现"写 5 实际 3"。
-     可装配：调 DB.canInstall（发布态 × 启用态的唯一判据，别再在这里写 inline 条件）；
-     已装配：装了就算（后来下架/禁用的也得留着，用户要能卸载）。 */
-  function listOf(kind) {
-    return DB.COMPS.filter(function (c) {
-      if (isOn(c.id)) return kind === 'on';
-      return kind === 'avail' && DB.canInstall(c);
-    });
-  }
-
-  /* 当前视图（搜索/AI 结果、页签都算过）里的行 ——「全部升级（N）」的 N 按它算，
-     做到"屏幕上看到几个可升级，按钮就说几个"。 */
-  var CUR_ROWS = [];
-  function viewUpgradeIds() {
-    return CUR_ROWS.filter(function (c) { return isOn(c.id) && !!updNow[c.id]; })
-      .map(function (c) { return c.id; });
-  }
-
-  /* 能进批量动作的行：可装配页签＝当前可安装；已装配页签＝当前有更新。
-     不可升级的已装行不给勾选 —— 否则会出现「选了 3 个只升 1 个」的计数谎话。 */
-  function canBatch(c) {
-    if (tab === 'on') return isOn(c.id) && !!updNow[c.id] && updBusy !== c.id;
-    return !isOn(c.id) && DB.canInstall(c);
-  }
-
-  /* ★2026-11-04（用户）：「只需要在已装配旁边显示 X 个可升级的标签」。
-     可升级数只挂在「已装配」页签上，不再单独占一行；数字与卡片徽标、顶栏同源（DB.updatesOf）。 */
-  function paintUpdBar() {
-    var chip = $('#tab-upd-chip'), lab = $('#tab-upd-n');
-    var n = Object.keys(updNow || {}).length;
-    if (chip) chip.hidden = !n;
-    if (n && lab) lab.textContent = n;
-  }
-
-  /* ★2026-11-04（用户）：「一个是批量升级，然后一个是全部升级」。
-     口径与组件引用管理一致：批量只认勾选，全部不看勾选、直接升完所有落后件。 */
-  /* ★2026-11-05：范围改成"当前视图"。
-     原来它拿 DB.updatesOf(app.id) = 全库落后件，搜索过之后会出现
-     「屏幕里只有 2 个可升级，按钮写着全部升级（8）」—— 一点下去升了 6 个看不到的。 */
-  function upgradeAllNow() {
-    var ids = viewUpgradeIds();
-    var idsMap = {};
-    ids.forEach(function (id) { idsMap[id] = 1; });
-    var ups = DB.updatesOf(app.id).filter(function (u) { return idsMap[u.id]; });
-    if (!ups.length) { hint('没有要升级的组件', { ms: 4000 }); return; }
-    var total = DB.updatesOf(app.id).length;
-    var names = ups.slice(0, 5).map(function (u) { return u.name + ' ' + u.from + '→' + u.to; }).join('、');
-    Confirm.ask({
-      title: '把 ' + ups.length + ' 个组件升到最新版？',
-      body: (ups.length > 5 ? names + ' 等 ' + ups.length + ' 个' : names) +
-            '<br>只改装配版本；客户那边不会立刻变，要生效还得去「客户授权」页升级。' +
-            (ups.length < total ? '<br>范围：当前搜索出来的 ' + ups.length + ' 个（共 ' + total + ' 个待升级）。' : ''),
-      ok: '全部升级（' + ups.length + '）',
-      onOk: function () {
-        var r = ups.length < total ? DB.upgradeSome(app.id, ids) : DB.upgradeAll(app.id);
-        if (!r || !r.n) { hint('没升成功', { kind: 'err', ms: 9000 }); return; }
-        batchSel = {};
-        renderList(); paintCounts(); paintApp(); renderCanvas();
-        hint('已升级 ' + r.n + ' 个组件到最新版 · 记得「保存新版本并发布」', { ms: 9000 });
-      }
-    });
-  }
-
-  /* ── 多选批量动作（★2026-11-03 m05719）────────────────────────
-     可装配页签：勾多个 → 装配（N）；已装配页签：勾多个可升级的 → 一键升级（N）。
-     计数只算**当前列表里真有勾选框的行**，不拿全库数冒充。 */
-  function batchBoxes() { return $$('#dlg-list [data-pick]'); }
-  function batchIds() {
-    return batchBoxes().filter(function (c) { return c.checked; })
-      .map(function (c) { return c.getAttribute('data-pick'); });
-  }
-  function syncBatch(show) {
-    var bar = $('#p-batch'), btn = $('#p-batch-do');
-    var allNow = $('#p-upgrade-allnow'), selall = $('#p-selall');
-    var boxes = batchBoxes();
-    var n = boxes.filter(function (c) { return c.checked; }).length;
-    var nAll = viewUpgradeIds().length;
-    /* 没有可操作的行走就别留一条「装配（0）」的空工具条：它既不可点，也占一行。 */
-    if (bar) bar.hidden = !show || !boxes.length;
-    if (selall) {
-      selall.checked = boxes.length > 0 && n === boxes.length;
-      selall.indeterminate = n > 0 && n < boxes.length;
-      selall.disabled = !boxes.length;
-    }
-    /* ★2026-11-04（用户）：「右面的装配（0）又是什么意思」——
-       它是"勾了几个就装几个"的批量键，0＝还什么都没勾。没勾的时候它就是一句废话，
-       所以不显示；一勾就出现并报数（已装配页签的「批量升级（N）」同理）。 */
-    if (btn) {
-      btn.hidden = n === 0;
-      btn.disabled = n === 0;
-      btn.textContent = (tab === 'on' ? '批量升级（' : '装配（') + n + '）';
-    }
-    /* 「全部升级」只在已装配页签出现，数的是落后件总数（不看勾选），与引用管理一致。 */
-    if (allNow) {
-      allNow.hidden = tab !== 'on';
-      allNow.textContent = '全部升级（' + nAll + '）';
-      allNow.disabled = !nAll || !!updBusy;
-      /* 搜过之后它只覆盖搜出来的那些 —— 鼠标停上去说清楚，别让人以为升了全库。 */
-      var every = Object.keys(updNow || {}).length;
-      allNow.title = nAll < every
-        ? ('把当前列表里的 ' + nAll + ' 个升到最新（另有 ' + (every - nAll) + ' 个不在当前搜索里）')
-        : ('把 ' + nAll + ' 个待升级组件一次升到最新');
-    }
-  }
-  /* 全选 = 一次性全勾/全不勾当前列表里可操作的行（引用管理里那颗表头勾选框的行为）。 */
-  function batchSelectAll(on) {
-    var boxes = batchBoxes();
-    boxes.forEach(function (c) {
-      c.checked = on;
-      if (on) batchSel[c.getAttribute('data-pick')] = 1;
-      else delete batchSel[c.getAttribute('data-pick')];
-      var r = c.closest('.row');
-      if (r) r.classList.toggle('is-selected', !!on);
-    });
-    syncBatch(true);
-  }
-  function batchInstall() {
-    var ids = batchIds();
-    if (!ids.length) return;
-    var wasTwo = halves();
-    ids.forEach(function (id) { pending[id] = true; delete failed[id]; });
-    batchSel = {};
-    renderList();
-    /* 450ms 与单行装配同节奏：让每一行都先走到「装配中…」，再一起提交。 */
-    setTimeout(function () {
-      var ok = 0, bad = 0;
-      ids.forEach(function (id) {
-        delete pending[id];
-        if (failDemo && id === FAIL_ID) {
-          failed[id] = '与「' + conflictName() + '」冲突';
-          bad++;
-        } else {
-          DB.install(appId, id);
-          ok++;
-        }
-      });
-      renderList(); paintCounts(); renderCanvas(); paintApp();
-      var nowTwo = halves();
-      hint('已装配 ' + ok + ' 个组件' + (bad ? '，' + bad + ' 个失败' : '')
-        + (nowTwo > wasTwo ? '，主区从单栏变成双栏' : ''), { ms: 6000 });
-    }, 450);
-  }
-  function batchUpgrade() {
-    var ids = batchIds();
-    var ups = ids.map(function (id) { return updNow[id]; }).filter(Boolean);
-    if (!ups.length) return;
-    var names = ups.slice(0, 5).map(function (u) { return u.name + ' ' + u.from + '→' + u.to; }).join('、');
-    Confirm.ask({
-      title: '把 ' + ups.length + ' 个组件升到最新版？',
-      body: (ups.length > 5 ? names + ' 等 ' + ups.length + ' 个' : names) +
-            '<br>只改装配版本；客户那边不会立刻变，要生效还得去「客户授权」页升级。',
-      ok: '批量升级',
-      onOk: function () {
-        var r = DB.upgradeSome(app.id, ups.map(function (u) { return u.id; }));
-        if (!r || !r.n) { hint('没升成功', { kind: 'err', ms: 9000 }); return; }
-        batchSel = {};
-        renderList(); paintCounts(); paintApp(); renderCanvas();
-        hint('已升级 ' + r.n + ' 个组件到最新版 · 记得「保存新版本并发布」', { ms: 9000 });
-      }
-    });
-  }
-  function batchDo() {
-    if (tab === 'on') batchUpgrade(); else batchInstall();
-  }
-
-  function paintCounts() {
-    var n = app.comps.length;
-    if (ui && ui.setChipCount) ui.setChipCount(n);
-    /* ★2026-11-03 用户 m03795：「这个应用装了 4 块？这什么狗屎提示，有任何意义吗？」
-       头部计数与底注都删了：页签已经写着可装配/已装配，底部再复述一遍装配数
-       只是在替用户数数，不回答任何下一步动作。 */
-    var c = $('#n-avail'); if (c) c.textContent = listOf('avail').length;
-    var d = $('#n-on'); if (d) d.textContent = listOf('on').length;
-  }
-
-  function actHtml(c) {
-    if (pending[c.id]) {
-      return '<span class="pending"><span>装配中…</span>'
-        + '<span class="genbar" aria-hidden="true"><i></i></span></span>';
-    }
-    if (failed[c.id]) {
-      return '<span class="err-strip" role="alert">装配失败 · ' + esc(failed[c.id]) + '</span>'
-        + '<button type="button" class="btn-undo" data-undo="' + esc(c.id) + '">撤销</button>';
-    }
-    if (isOn(c.id)) {
-      /* 装了但后来下架：留一个次级标记，卸载照旧可用 */
-      return (c.status === '已下架' ? '<span class="off-tag">已下架</span>' : '')
-        + '<span class="on-tag">已装配</span>'
-        + '<button type="button" class="btn-uninstall" data-off="' + esc(c.id) + '">卸载</button>';
-    }
-    if (c.status === '已下架') return '<span class="off-tag">已下架</span>';
-    /* ★ 2026-10-23：三个「装配」按钮文字完全一样，**谁也不知道自己在装哪一个**。
-       小智实测就是卡在这里——它反复点「可装配」tab，因为按钮名里没有组件信息，
-       它没法在 3 个同名的按钮里选中"任务详情"那一个。人读屏也一样。 */
-    return '<button type="button" class="btn-install" data-on="' + esc(c.id) + '"'
-      + ' aria-label="装配 ' + esc(c.name) + '" title="装配 ' + esc(c.name) + '">装配</button>';
-  }
-
-  /* 行内动作组：更新视图的五件之一 + 四态（§3.6 / §4）。
-     普通已装配行原样交给 actHtml（「已下架」胶囊 + 「已装配」+ hover 出的「卸载」），
-     这样"卸载入口"仍然只有一个定义处 —— 本函数不重写那一段。 */
-  function actOf(c, state) {
-    var u = updNow[c.id];
-    var to = (u && u.to) || (justUpd[c.id] && justUpd[c.id].to) || c.ver;
-    if (state === 'pending') {
-      /* 更新中（§4.3）：按钮消失，原位换「更新中…」+ 进度条（沿用现盘 .pending / .genbar） */
-      return '<span class="pending"><span>更新中…</span>'
-        + '<span class="genbar" aria-hidden="true"><i></i></span></span>';
-    }
-    if (state === 'confirm') {
-      /* 焦点默认落「取消」（§4.1）；两颗按钮的可读名都带组件信息（§3.6 同一条教训） */
-      return '<button type="button" class="btn-plain" data-do="cancel"'
-        + ' aria-label="取消更新 ' + esc(c.name) + '">取消</button>'
-        + '<button type="button" class="btn-update" data-do="confirm"'
-        + ' aria-label="确认更新 ' + esc(c.name) + ' 到 ' + esc(to) + '">确认更新</button>';
-    }
-    if (state === 'error') {
-      /* 失败（§4.6）：「有更新」标签保留 —— 失败不等于已更新；动作换「重试」 */
-      return updTagHtml()
-        + '<button type="button" class="btn-plain" data-do="retry"'
-        + ' aria-label="重试更新 ' + esc(c.name) + ' 到 ' + esc(to) + '">重试</button>'
-        + '<button type="button" class="btn-uninstall" data-off="' + esc(c.id) + '"'
-        + ' aria-label="卸载 ' + esc(c.name) + '">卸载</button>';
-    }
-    if (state === 'new') {
-      /* 同一时刻只允许一行在更新：其余行的「更新」瞬态禁用（§3.6）
-         ★2026-11-04（用户）：「有更新了，我万一不用了，不能卸载吗？」——
-         有更新 ≠ 必须更新。这一行也必须带「卸载」，而且不是 hover 才冒出来。 */
-      return updTagHtml()
-        + '<button type="button" class="btn-update" data-do="update"'
-        + (updBusy ? ' disabled' : '')
-        + ' aria-label="更新 ' + esc(c.name) + ' 到 ' + esc(to) + '">更新</button>'
-        + '<button type="button" class="btn-uninstall" data-off="' + esc(c.id) + '"'
-        + ' aria-label="卸载 ' + esc(c.name) + '">卸载</button>';
-    }
-    /* ★2026-10-28 改：不再"更新完不留按钮"。
-       8 秒一过就无路可退是体验官实测的阻断项；这里给一颗「退回 vN」，
-       它一直留到应用发布 —— 发布后才真的作废（doPublish 会清 updUndo）。 */
-    if (state === 'done') {
-      var dn = justUpd[c.id];
-      if (!dn) return '';
-      return '<button type="button" class="btn-plain" data-do="undo"'
-        + ' aria-label="退回 ' + esc(c.name) + ' 到 ' + esc(dn.from) + '">退回 ' + esc(dn.from) + '</button>'
-        + '<button type="button" class="btn-uninstall" data-off="' + esc(c.id) + '"'
-        + ' aria-label="卸载 ' + esc(c.name) + '">卸载</button>';
-    }
-    return actHtml(c);
-  }
-
-  /* 可读名拼接（2026-10-28 实测修）：组件的 desc 自带「。」，按「，」硬接下一段
-     就得到「…处理人。，已装配 v2」—— 读屏会在句号后停一次、逗号后再停一次。
-     这里只去掉每段**末尾**的标点再拼合；屏上的字一个不动，改的只是 aria-label。 */
-  function spoken() {
-    var out = [];
-    for (var i = 0; i < arguments.length; i++) {
-      var s = arguments[i];
-      if (!s) continue;
-      out.push(String(s).replace(/[。；;，,、\s]+$/, ''));
-    }
-    return out.join('，');
-  }
-
-  function rowHtml(c) {
-    /* ★ 2026-10-23 用户原话：「为什么要有第一个字的图标，有什么意义？而且我什么时候有组件
-       还区分能力类这种字段，最后在这显示被 X 个应用引用啊，重要的是组件名称、组件介绍。」
-       —— 原来这一行有三样东西都不该出现：
-         ① 首字方块（规/文/复）：拿名字首字当图标，是"没图可放"的占位，不是信息；
-         ② 「能力类 · v1」：内部字段，客户没有这个概念，他也不该看见；
-         ③ 「被 N 个应用引用」：这句最坏 —— 它暗示"改这里会动别人的应用"，
-            却在装配这种无风险的场景里吓人一跳。
-       客户端真正要判断的是「装了会多出什么」，所以只剩名字 + 一句人话介绍。
-       数据里本来就有 desc（一直没被用上），改用它。
-       ⚠ 上一次改这里时用 shell 内联 node -e 做替换，引号全被吃掉，
-         data-comp 的值变成了一个加号，装配按钮因此找不到行 —— 本文件禁止再用内联方式改。 */
-    /* 三种行只差两处：动作组（actOf）与版本行（meta）。
-       状态只落在 data-upd 上，样式在 app.html 的 .row[data-upd] 段，一处定义。 */
-    var on = isOn(c.id);
-    var upd = updNow[c.id] || null;
-    var done = justUpd[c.id] || null;
-    var state = '';
-    if (on && updBusy === c.id) state = 'pending';
-    else if (on && confirmId === c.id) state = 'confirm';
-    else if (on && updErr[c.id]) state = 'error';
-    else if (on && upd) state = 'new';
-    else if (on && done) state = 'done';
-
-    /* 可读名：读屏听到的是"这件东西现在什么处境、能做什么"，不是一串标签 */
-    var label;
-    if (state === 'confirm' && upd) label = spoken(c.name, '已装配 ' + upd.from, '最新 ' + upd.to, impactOf(c.id));
-    else if (state === 'new' && upd) label = spoken(c.name, c.desc, '已装配 ' + upd.from, '最新 ' + upd.to, '有更新');
-    else if (state === 'done' && done) label = spoken(c.name, c.desc, '已更新到 ' + done.to);
-    else label = spoken(c.name, c.desc, on ? '已装配' : '未装配');
-
-    /* 版本行：更新视图只写对比（旧的「类型 · 被 N 个应用使用」在这五件里不出现，
-       清掉筛选回到普通行时原样恢复，§3.4）。已装配行写的是**装的那一版**，
-       不是库里的最新版 —— 下架件两者会不同（§5.4 单值、不画箭头）。 */
-    var meta;
-    if (state === 'confirm') meta = esc(impactOf(c.id));
-    else if (state === 'done' && done) meta = '已更新到 ' + esc(done.to);
-    else if (state === 'error') meta = '<span role="alert">更新失败，请重试</span>';
-    else if (state === 'new' && upd) meta = verPairHtml(upd);
-    else {
-      var vShown = on ? DB.installedVer(appId, c.id) : (c.ver || 'v1');
-      /* 2026-11-04（q5 拍板）：零引用不印否定句，只报版本号。 */
-      meta = esc(vShown) + (c.refs > 0 ? ' · ' + c.refs + ' 个应用在用' : '');
-    }
-
-    var pick = canBatch(c)
-      ? '<span class="row-pick"><input type="checkbox" class="row-check" data-pick="' + esc(c.id) + '"' +
-          (batchSel[c.id] ? ' checked' : '') +
-          ' aria-label="选择 ' + esc(c.name) + '"></span>'
-      : '<span class="row-pick"></span>';
-    return '<div class="row' + (batchSel[c.id] && canBatch(c) ? ' is-selected' : '') + '" data-comp="' + esc(c.id) + '"'
-      + (state ? ' data-upd="' + state + '"' : '')
-      + ' aria-label="' + esc(label) + '">'
-      + '<div class="row-hd">' + pick + '<b>' + esc(c.name) + '</b>'
-      + '<span class="act">' + actOf(c, state) + '</span></div>'
-      /* 三个既有字段（ver / type / refs）回到卡面。2026-10-23 它们被用户点名删过，
-         2026-10-26 面板改抽屉后又需要它们：抽屉是"决定装不装"的地方 ——
-         装的是哪一版、会不会连带改到别人的应用，是当场要判断的事实，不是内部术语。 */
-      /* ★2026-10-28 设计审查 C2：普通行改回「名称 → 介绍 → 版本/引用」，与组件库卡片同一顺序；
-         只有更新行（data-upd）把版本对比提到介绍之上 —— 那时候版本是判断依据，不是补充信息。 */
-      + (state ? '<p class="row-meta">' + meta + '</p><p class="row-desc">' + esc(c.desc || '') + '</p>'
-               : '<p class="row-desc">' + esc(c.desc || '') + '</p><p class="row-meta">' + meta + '</p>')
-      + '</div>';
-  }
-
-  /* 搜索词别名：placeholder 举的例子（审批流 / 原文对照）不是组件名，
-     不补这层，用户搜这两个词会得到空态 —— 那是假承诺。 */
-  var KEYWORDS = {
-    'app-header': '应用头 头部 顶栏',
-    'task-list': '审核任务列表 任务列表 列表 单据',
-    'task-detail': '任务详情 原件 原文 结论',
-    'verify-queue': '复核队列 审批流 复核 审批',
-    'doc-extract': '文档抽取 原文对照 抽取 文档',
-    'rule-panel': '规则结论 逐条 判定'
-  };
-
-  /* 已装配页签的顺序：有更新的排最前，其余保持现有顺序（= app.comps 的装配序）。
-     刚更新完、还在撤回窗口里的那一行也留在前段 —— 它此刻正显示「已更新到 v4」，
-     若因为 compVer 已对齐就掉到队尾，屏幕上的行会凭空跳一次位置（§4.4）。 */
-  function orderedOn() {
-    var all = listOf('on');
-    var top = all.filter(function (c) { return inUpdView(c.id); });
-    var rest = all.filter(function (c) { return !inUpdView(c.id); });
-    return top.concat(rest);
-  }
-
-  function renderList() {
-    var list = $('#dlg-list');
-    if (!list) return;
-    updNow = updMap();                      /* 每次重画现算一次，N 只有一个算法（§11.2） */
-    var kw = (($('#dlg-search') || {}).value || '').trim().toLowerCase();
-    var wantOn = tab === 'on';
-    var aiIds = window.__aiIds;
-    var rows = (wantOn ? orderedOn() : listOf('avail')).filter(function (c) {
-      /* 2026-11-05：AI 检索的结果优先；空数组＝AI 说没找到，就走空态，不再回落全量。 */
-      if (aiIds) return aiIds.indexOf(c.id) >= 0;
-      var hay = (c.name + c.id + (c.desc || '') + ' ' + (KEYWORDS[c.id] || '')).toLowerCase();
-      return !kw || hay.indexOf(kw) >= 0;
-    });
-    /* ★2026-11-05：勾选不再跟着搜索丢。原来这里按「当前列表」裁选中项 ——
-       先勾 5 个、再改一下搜索词，那 5 个就悄悄没了。现在只在"它真的不需要升级了"时出列。
-       （切页签仍然清：可装配与已装配是两类动作，混着算必然出错。） */
-    CUR_ROWS = rows;
-    var liveSel = {};
-    rows.forEach(function (c) { if (canBatch(c)) liveSel[c.id] = 1; });
-    Object.keys(batchSel).forEach(function (id) {
-      if (tab === 'on' ? !updNow[id] : !liveSel[id]) delete batchSel[id];
-    });
-    paintUpdBar();
-    if (!rows.length) {
-      /* 筛选空态（§5.3）：只留一句事实。清除筛选的入口是上面那行「显示全部」，
-         同一屏同一动作不开第二个入口 —— 但「用 AI 搜这句话」不是同一个动作（换的是检索方式），
-         整句话的需求本来就命中不了关键词，所以这里给它一个出口。 */
-      list.innerHTML = '<div class="p-empty">'
-        + (kw ? '没有匹配的组件' : (wantOn ? '还没装配任何组件' : '全部装上了，没有可装配的'))
-        + (kw ? '<br><button type="button" class="btn-ghost-s" id="p-clear">清除搜索</button>' : '')
-        + (kw && !aiIds ? '<button type="button" class="btn-ghost-s" id="p-ai-try">用 AI 搜这句话</button>' : '')
-        + '</div>';
-      on('#p-clear', 'click', function () {
-        var s = $('#dlg-search'); if (s) s.value = '';
-        renderList();
-        if (s) s.focus();
-      });
-      on('#p-ai-try', 'click', function () {
-        var b = $('#ai-comp'); if (b) b.click();
-      });
-      syncBatch(false);
-      return;
-    }
-    /* 重画会把行整体重建一遍，焦点所在的那颗按钮随之消失 ——
-       记下"哪一行、哪个动作"，画完若焦点已掉回 body，就按同一对坐标放回去。
-       （§4.4 的同一条原则：动作完成后焦点不许掉回 body；撤回窗口到点时也一样。） */
-    var keep = null, a0 = document.activeElement;
-    if (a0 && list.contains(a0)) {
-      var r0 = a0.closest('.row');
-      keep = { comp: r0 && r0.getAttribute('data-comp'), act: a0.getAttribute('data-do') || '' };
-    }
-    list.innerHTML = rows.map(rowHtml).join('');
-    syncBatch(true);
-    /* tabindex 用 setAttribute 落（不是只写在模板里）：键盘能进每一行是硬要求。
-       已装配行保留 tabindex：焦点落到行上时 :focus-within 才露出「卸载」
-       （display:none 的按钮 Tab 跳不到，行本身是键盘用户唯一的触发器）。
-       更新视图里的行不占 Tab 停靠点 —— 它们没有隐藏入口，可点的就在明面上。 */
-    $$('.row', list).forEach(function (r) {
-      var on = isOn(r.getAttribute('data-comp'));
-      if (!on || r.getAttribute('data-upd') === null) r.setAttribute('tabindex', '0');
-    });
-    if (keep && mask && mask.getAttribute('data-open') === 'true'
-        && (!document.activeElement || document.activeElement === document.body)) {
-      var back = null;
-      if (keep.comp) {
-        var rr = null;
-        $$('.row', list).forEach(function (x) { if (x.getAttribute('data-comp') === keep.comp) rr = x; });
-        if (rr) back = keep.act ? $('[data-do="' + keep.act + '"]', rr) : rr;
-      }
-      if (!back) back = $('.btn-update', list);
-      if (!back) back = $('#dlg-close');
-      if (back) back.focus();
-    }
-  }
-
-  function setTab(t) {
-    tab = t === 'on' ? 'on' : 'avail';
-    ['avail', 'on'].forEach(function (k) {
-      var b = $('#tab-' + k);
-      if (b) b.setAttribute('aria-selected', String(k === tab));
-    });
-    renderList();
-  }
-
-  function conflictName() {
-    var t = DB.compById('task-detail');
-    if (t && isOn(t.id)) return t.name;
-    var first = installedComps()[0];
-    return first ? first.name : '应用头';
-  }
-
-  function doInstall(id) {
-    var c = DB.compById(id);
-    if (!c || pending[id] || isOn(id)) return;
-    if (c.status === '已下架') return;             /* 行里已经是「已下架」，没有可点的东西 */
-    var wasTwo = halves();
-    pending[id] = true;
-    delete failed[id];
-    renderList();
-    /* 450ms = 进度条走完的时间（动画节奏），不是假加载：DB 写入本身是同步的，
-       进度条走到头才提交，是为了让人看清"这一行正在装配"。 */
-    setTimeout(function () {
-      delete pending[id];
-      if (failDemo && id === FAIL_ID) {
-        failed[id] = '与「' + conflictName() + '」冲突';
-        renderList();
-        return;
-      }
-      DB.install(appId, id);
-      renderList();
-      paintCounts();
-      renderCanvas();
-      /* 2026-10-24：顶栏「装配组件 N」徽标原来只在进页面时刷一次，
-         装配完还是 0 —— 实测装了两个、徽标仍显示 0。装配/卸载是改计数的事实源头，
-         这里统一重铺一次。 */
-      paintApp();
-      var nowTwo = halves();
-      hint('已装配「' + c.name + '」，' + (nowTwo > wasTwo ? '主区从单栏变成双栏' : '画布上多了一块'));
-    }, 450);
-  }
-
-  /* 卸下要问一句（规格 §3.1 派单口径：卸载只能从明确入口进，且要确认）。
-     改前：点行体空白 = 直接卸载，没有确认、也没有撤销 —— 拉抽屉时手一滑就少一块。 */
-  function doUninstall(id) {
-    var c = DB.compById(id);
-    if (!c || pending[id] || !isOn(id)) return;
-    var run = function () {
-      var wasTwo = halves();
-      DB.uninstall(appId, id);
-      delete failed[id];
-      delete updErr[id];
-      delete justUpd[id];
-      if (confirmId === id) confirmId = null;
-      renderList();
-      paintCounts();
-      renderCanvas();
-      paintApp();
-      /* 行被重画掉了，焦点会掉回 body —— 落到下一行（或页签）上 */
-      var first = $('#dlg-list .row');
-      if (first && first.tabIndex >= 0) first.focus();
-      else { var t = $('#tab-on'); if (t) t.focus(); }
-      var nowTwo = halves();
-      hint('已卸载「' + c.name + '」，' + (nowTwo < wasTwo ? '主区回到单栏' : '画布上去掉一块'));
-    };
-    if (window.Confirm) {
-      Confirm.ask({
-        title: '卸下「' + c.name + '」？',
-        /* 与更新确认句同一条事实：改的是画布，客户视图取 active 快照，发布后才生效 */
-        body: '画布上这一块会消失，发布后客户才看到；可随时从装配面板装回。',
-        ok: '卸下',
-        onOk: run
-      });
-    } else run();
-  }
-
-  function clearFail(id) {
-    delete failed[id];
-    renderList();
-  }
-
-  /* 行体只负责「装」：已装配行不绑行体动作（规格 §3.1）。
-     卸载只走行内「卸载」按钮（带确认）或画布上的明确入口。 */
-  function toggle(id) {
-    if (pending[id]) return;
-    if (failed[id]) { clearFail(id); return; }
-    if (isOn(id)) return;
-    doInstall(id);
-  }
-
-  /* ── 更新动作（规格 §4 / §5）────────────────────────────────
-     入口只有一颗「更新」；出口三个，各有各的语义：
-       取消 / Esc ⇒ 收回确认态（只退这一层，抽屉不关）
-       确认更新   ⇒ 写 compVer、重画画布、给 8 秒撤回
-       撤回       ⇒ 回到更新前的 compVer 与内容，撤回入口同时失效 */
-  function focusUpdBtn(id) {
-    var row = $('.row[data-comp="' + id + '"]');
-    var b = row ? $('.btn-update', row) : null;
-    if (b) { b.focus(); return true; }
-    return false;
-  }
-
-  function askUpdate(id) {
-    var c = DB.compById(id);
-    if (!c || !updNow[id] || updBusy) return;    /* 一行更新中时其余按钮禁用（§3.6） */
-    confirmId = id;                              /* 打开另一行 ⇒ 上一行收回常态 */
-    renderList();
-    var row = $('.row[data-comp="' + id + '"]');
-    var b = row ? $('[data-do="cancel"]', row) : null;
-    if (b) b.focus();                            /* 焦点落「取消」（§4.1） */
-  }
-
-  function cancelUpdate(id) {
-    if (confirmId !== id) return;
-    confirmId = null;
-    renderList();
-    focusUpdBtn(id);
-  }
-
-  /* 完成瞬间那颗按钮从 DOM 消失，焦点不许掉回 body（§4.4）：
-     下一行的「更新」→ 没有就「显示全部」→ 再没有就抽屉关闭钮。 */
-  function focusAfterDone(id) {
-    var rows = $$('#dlg-list .row');
-    var i = -1;
-    rows.forEach(function (r, k) { if (r.getAttribute('data-comp') === id) i = k; });
-    var nxt = null;
-    for (var k = i + 1; k < rows.length && !nxt; k++) nxt = $('.btn-update', rows[k]);
-    if (!nxt) nxt = $('#dlg-close');
-    if (nxt) nxt.focus();
-  }
-
-  /* 撤回窗口结束：这一行移出「只看有更新」列表（§4.4 / §4.5）。
-     由提示条的 onHide 触发 —— 焦点停在「撤回」上时提示条不收，这一行也不收。 */
-  function endUpdWindow(id) {
-    /* 8 秒只是"提示条多久收起"，不是"还能不能退"。撤回权保留到发布为止。 */
-    if (mask && mask.getAttribute('data-open') === 'true') renderList();
-  }
-
-  /* ★2026-11-01（评审 P0）：「退回 vN」这颗按钮原来**没有处理器**。
-     actOf 的 done 态渲染出 `data-do="undo"`，而下面的事件分发只认 update/cancel/confirm/retry，
-     undo 一路落到 `return;` —— 点了没有任何反应，用户只能卸载重装，
-     而 1796 行的注释还写着"撤回权保留到发布为止"。承诺了却没有出口，比不承诺更坏。
-     这里补上：装配版本写回 from，被覆盖前的组件内容一起恢复，然后清掉撤回凭据（只能退一次）。 */
-  function undoUpdate(id) {
-    var dn = (app.updUndo && app.updUndo[id]) || justUpd[id];
-    if (!dn) { hint('这一块没有可退回的版本', { ms: 4000 }); return; }
-    if (!app.compVer || typeof app.compVer !== 'object') app.compVer = {};
-    app.compVer[id] = dn.from;
-    if (dn.content && app.content) app.content[id] = JSON.parse(JSON.stringify(dn.content));
-    delete justUpd[id];
-    if (app.updUndo) delete app.updUndo[id];
-    if (DB.save() === false) { hint('没退成功，内容没动', { kind: 'err', ms: 9000 }); return; }
-    renderList(); renderCanvas();
-    hint('已退回 ' + dn.from, { ms: 6000 });
-  }
-
-  function doUpdate(id) {
-    var c = DB.compById(id), u = updNow[id];
-    if (!c || !u || updBusy) return;
-    var prevVer = (app.compVer && typeof app.compVer[id] === 'string' && app.compVer[id]) || u.from;
-    var prevContent = (app.content && app.content[id]) ? JSON.parse(JSON.stringify(app.content[id])) : null;
-    confirmId = null;
-    delete updErr[id];
-    updBusy = id;
-    renderList();
-    var row = $('.row[data-comp="' + id + '"]');
-    if (row) { row.setAttribute('tabindex', '-1'); row.focus(); }
-    /* 450ms = 现盘装配的既定节奏（§4.3「沿用」），不是假加载：
-       DB 写入本身同步，进度条走到头才提交，是为了让人看清"这一行正在更新"。 */
-    setTimeout(function () {
-      if (!app.compVer || typeof app.compVer !== 'object') app.compVer = {};
-      app.compVer[id] = c.ver;
-      var ok = DB.save();        /* 配额满 / 隐私模式写不进 = 没更新，界面必须说出来 */
-      updBusy = null;
-      if (!ok) {
-        app.compVer[id] = prevVer;               /* 内存也别停在"好像更新了"上 */
-        updErr[id] = true;
-        renderList();
-        var retry = $('.row[data-comp="' + id + '"] [data-do="retry"]');
-        if (retry) retry.focus();
-        hint('更新失败，这一版没保存', { kind: 'err', ms: 8000 });
-        return;
-      }
-      justUpd[id] = { from: prevVer, to: c.ver, content: prevContent };
-      /* 同一份写进应用记录：刷新后「退回 vN」还在，直到发布 */
-      if (!app.updUndo || typeof app.updUndo !== 'object') app.updUndo = {};
-      app.updUndo[id] = { from: prevVer, to: c.ver, content: prevContent };
-      DB.save();
-      renderList();
-      renderCanvas();            /* 画布按新版本重画 —— 影响句承诺的那一件事 */
-      paintApp();
-      hint('已更新「' + c.name + '」到 ' + c.ver, {
-        ms: 8000,                /* 撤回窗口：与结构编辑同值（§4.5） */
-        onHide: function () { endUpdWindow(id); }
-      });
-      focusAfterDone(id);
-    }, 450);
-  }
-
-
-  /* 参数消费后从地址里摘掉（§11.4 收敛）：关掉抽屉、刷新，不许又自动弹开。
-     只删 panel / updates 两个键，id / ns / fail / mode 这些一概不动。 */
-  function stripEntryParams() {
-    try {
-      if (!/[?&](panel|updates)=/.test(location.search)) return;
-      var keep = location.search.replace(/^\?/, '').split('&').filter(function (kv) {
-        return kv && !/^(panel|updates)=/.test(kv);
-      });
-      history.replaceState(null, '', location.pathname + (keep.length ? '?' + keep.join('&') : '') + location.hash);
-    } catch (e) { /* 老浏览器 / file:// 下 replaceState 可能抛，地址不动不影响本页行为 */ }
-  }
-
-  /* 关闭后要把焦点还给"打开它的那个元素"。
-     不能用 document.activeElement 现取：面板内容每次都是 innerHTML 重建的，
-     关闭时原先聚焦的节点已经没了，activeElement 会先掉回 body。
-     所以打开时存引用，关闭时显式还回去（且要 preventScroll —— 关面板会改页面高度，
-     直接 focus 容易顺带滚一下）。 */
-  var dlgReturnTo = null;
-
-  /* ★2026-10-24（判据 check-dialog-focus.mjs 实测）：这个弹层是 aria-modal="true"，
-     但**没有焦点圈禁** —— 从「装配」按 Tab 会走到弹层背后的 .fk-grip / .fk-hist-btn /
-     #fk-input（小智浮层），键盘用户被带进看不见的地方。两条补丁：
-       ① 打开时给弹层以外的 body 直接子元素加 inert（背后既不可点也不可聚焦）；
-       ② 在 #mask 内自己接 Tab / Shift+Tab 兜一圈（inert 在旧浏览器里不一定支持）。 */
-  function setBackgroundInert(on) {
-    Array.prototype.forEach.call(document.body.children, function (el) {
-      /* 包含弹层的容器（#mask 若被包在页面壳里）不能 inert —— 否则弹层自己也没法聚焦 */
-      if (el === mask || el.contains(mask)) return;
-      /* ★2026-10-28 组件更新：提示条 #hint 必须留在可用面里。
-         它带的是全站唯一一颗「撤回」，而更新动作只发生在抽屉里 ——
-         抽屉一开就把 body 其余子元素全 inert，等于把撤回泡在惰性层里：
-         `.click()` 还能调通（程序化点击绕过 inert），真人点不动、键盘停不上。
-         （上一轮 E23 的结构编辑撤回没撞上，是因为那条路径抽屉是关着的。） */
-      if (el === $('#hint')) return;
-      if (on) { if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); el.setAttribute('data-inert-by', 'drawer'); } }
-      else if (el.getAttribute('data-inert-by') === 'drawer') { el.removeAttribute('inert'); el.removeAttribute('data-inert-by'); }
-    });
-  }
-  function dlgTabStops() {
-    return Array.prototype.filter.call(
-      mask.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'),
-      function (el) { return el.offsetParent !== null || el === document.activeElement; }
-    );
-  }
-  function openDlg(t, trigger) {
-    if (!mask) { console.error('[app] 缺少 #mask，装配面板不可用'); return; }
-    if (typeof t === 'string') tab = t === 'on' ? 'on' : 'avail';
-    dlgReturnTo = (trigger && trigger.isConnected) ? trigger
-      : (document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
-    setTab(tab);
-    paintCounts();
-    /* 抽屉标题要说清"往哪个应用里装" —— 原来只有「装配组件」四个字，
-       而同一个人手上可能开着好几个应用的配置页。 */
-    var ttl = $('#dlg-title');
-    if (ttl) { ttl.textContent = '装配组件'; ttl.removeAttribute('title'); }
-    /* 画布让出抽屉宽度（app.html body[data-drawer]）：装完当场看见变化，不被自己挡住。 */
-    document.body.setAttribute('data-drawer', 'on');
-    mask.setAttribute('data-open', 'true');
-    setBackgroundInert(true);
-    /* ★2026-10-24：原来用 setTimeout(…,30) 才 focus —— 判据实测「打开后 activeElement=BODY」，
-       也就是这 30ms 里键盘用户按 Tab 会从 body 起跳。改成同步 focus + 一帧后兜底重试。 */
-    var s0 = $('#dlg-search');
-    if (s0) {
-      s0.focus();
-      if (document.activeElement !== s0) requestAnimationFrame(function () { s0.focus(); });
-    }
-  }
-  function closeDlg() {
-    if (!mask) return;
-    /* ★2026-11-05：关掉面板＝结束这一次操作。原来勾选留在内存里，下次打开会看到
-       「批量升级（1）」，而用户早忘了勾的是哪一个 —— 一不小心就升错了。 */
-    batchSel = {};
-    mask.setAttribute('data-open', 'false');
-    document.body.removeAttribute('data-drawer');
-    setBackgroundInert(false);
-    var back = dlgReturnTo;
-    dlgReturnTo = null;
-    if (back && back.isConnected && back.focus) {
-      try { back.focus({ preventScroll: true }); } catch (e) { back.focus(); }
-    }
-  }
-  /* 还有别的模态层开着（卸下确认框 <div class="nf-mask">）时，抽屉自己的 Tab 圈禁要让开：
-     不然焦点会被从确认框里抢回抽屉 —— 用户按 Tab 看不到「卸下 / 取消」。
-     Esc 不用管：confirm.js 在 capture 阶段就 stopPropagation 了。 */
-  function otherLayerOpen() {
-    return !!document.querySelector('.nf-mask:not([hidden])');
-  }
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Tab') return;
-    if (!mask || mask.getAttribute('data-open') !== 'true') return;
-    if (otherLayerOpen()) return;
-    var stops = dlgTabStops();
-    if (!stops.length) return;
-    var first = stops[0], last = stops[stops.length - 1], a = document.activeElement;
-    if (!mask.contains(a)) { e.preventDefault(); first.focus(); return; }
-    if (e.shiftKey && a === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
-  });
-
-  on('#dlg-close', 'click', closeDlg);
-  on(mask, 'click', function (e) { if (e.target === mask) closeDlg(); });
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
-    if (!mask || mask.getAttribute('data-open') !== 'true') return;
-    if (otherLayerOpen()) return;
-    /* Esc 只退一层（§4.1 / §12.5）：先收确认态，抽屉不关；再按一次才关抽屉 */
-    if (confirmId) { cancelUpdate(confirmId); return; }
-    closeDlg();
-  });
-  on('#tab-avail', 'click', function () { setTab('avail'); });
-  on('#tab-on', 'click', function () { setTab('on'); });
-  /* ★2026-11-04：页签是 role=tab，键盘不能只靠 Tab 键一个个过 —— APG 的 Tabs 模式要求
-     左右方向键在同一组页签间移动、Home/End 跳首尾。两处页签（装配面板 / 引用管理）同一行为了。 */
-  function arrowTabs(list, sel, activate) {
-    list.forEach(function (t, i) {
-      t.addEventListener('keydown', function (e) {
-        var n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1
-          : e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : null;
-        if (n === null) return;
-        e.preventDefault();
-        var to = list[(n + list.length) % list.length];
-        to.focus();
-        activate(to);
-      });
-    });
-  }
-  arrowTabs($$('.p-tabs [role="tab"]'), null, function (t) { setTab(t.getAttribute('data-tab')); });
-  on('#dlg-search', 'input', renderList);
-
-  /* 行内三态：点按钮走按钮，点行体走 toggle；键盘 Space/Enter 同一条路。
-     ★更新视图的那几颗按钮带 data-do，行体上什么都没有 —— 见 toggle 的注释。 */
-  on('#dlg-list', 'change', function (e) {
-    var c = e.target.closest ? e.target.closest('[data-pick]') : null;
-    if (!c) return;
-    var id = c.getAttribute('data-pick');
-    if (c.checked) batchSel[id] = 1; else delete batchSel[id];
-    var row = c.closest('.row');
-    if (row) row.classList.toggle('is-selected', !!c.checked);
-    syncBatch(true);
-  });
-  on('#dlg-list', 'click', function (e) {
-    /* 勾选不触发行体「点一下就装」的旧路径 */
-    if (e.target.closest && e.target.closest('[data-pick]')) return;
-    var btn = e.target.closest ? e.target.closest('button') : null;
-    if (btn) {
-      var act = btn.getAttribute('data-do');
-      if (act) {
-        var host = btn.closest('.row');
-        var cid = host && host.getAttribute('data-comp');
-        if (!cid) return;
-        if (act === 'update') return askUpdate(cid);
-        if (act === 'cancel') return cancelUpdate(cid);
-        if (act === 'confirm' || act === 'retry') return doUpdate(cid);
-        if (act === 'undo') return undoUpdate(cid);
-        return;
-      }
-      if (btn.getAttribute('data-on')) return doInstall(btn.getAttribute('data-on'));
-      if (btn.getAttribute('data-off')) return doUninstall(btn.getAttribute('data-off'));
-      if (btn.getAttribute('data-undo')) return clearFail(btn.getAttribute('data-undo'));
-      return;                                    /* 其它按钮（清除搜索）自己处理 */
-    }
-    var row = e.target.closest ? e.target.closest('.row') : null;
-    if (row) toggle(row.getAttribute('data-comp'));
-  });
-  on('#dlg-list', 'keydown', function (e) {
-    var t = e.target;
-    if (!t || !t.classList || !t.classList.contains('row')) return;
-    if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
-      e.preventDefault();
-      toggle(t.getAttribute('data-comp'));
-    }
-  });
 
   /* ══ 7. 起手 ═════════════════════════════════════════════════ */
   bindCanvasOps();
   paintApp();
-  paintCounts();
+
   renderCanvas();
 
-  /* ── 从应用卡带着「谁能更新」进来（规格 §11.4 / §11.5）──────────────
-     应用卡上是 `app.html?id=X&panel=installed&updates=1`，进来要有四个效果：
-       ① 抽屉自动展开 ② 页签停在「已装配」③ 只显示有更新的行 ④ 筛选行出现
-     参数只消费一次：消费后立刻从地址里摘掉 —— 关掉抽屉再刷新，不许又弹开。
-
-     ★「无更新时参数作废」（派单口径 + §11.4）：N=0 时**不打开筛选**，
-       落到普通的已装配列表，不报错、不显示筛选行。
-       （§5.1 表里"N=0 / 只看有更新"那一格写的是筛选空态 + 筛选行，与 §11.4 相反；
-         两处冲突时按派单明写的"只在有更新时生效"走，筛选空态只在
-         "进去时还有、当场更新到 0"这条路上出现。） */
-  /* ★2026-11-04（用户）：「为什么一进去应用配置，就给我直接打开装配组件弹窗，逻辑给我改啊」。
-     带参进来（应用卡的「N 个组件可升级」链接）不再自动展开抽屉 —— 只把参数从地址里摘掉。
-     想升级就自己点顶栏「装配组件」，进去看已装配页签上的可升级数。 */
   if (!VIEW_MODE) stripEntryParams();
 })();

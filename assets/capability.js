@@ -298,7 +298,7 @@
   }
 
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(cache)); } catch (e) { /* 写不进去也不阻断演示 */ }
+    try { localStorage.setItem(KEY, JSON.stringify(cache)); return true; } catch (e) { throw new Error('没保存上，请减少附件大小后重试'); }
   }
 
   function now() {
@@ -307,7 +307,7 @@
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
 
-  function uid(prefix) { return prefix + '-' + Date.now().toString(36); }
+  function uid(prefix) { return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
 
   /* ── 接口 ─────────────────────────────────────────── */
   function apis() { return load().apis; }
@@ -331,7 +331,7 @@
   /* ── 技能 ─────────────────────────────────────────── */
   function skills() { return load().skills; }
   function addSkill(v) {
-    var it = Object.assign({ id: uid('sk'), scope: '仅自己', state: 'ok', on: true, at: now(), by: '系统超级管理员' }, v);
+    var it = Object.assign({ id: uid('sk'), state: 'ok', on: true, at: now(), by: '系统超级管理员' }, v);
     load().skills.unshift(it); save(); return it;
   }
   function removeSkill(id) { var d = load(); d.skills = d.skills.filter(function (x) { return x.id !== id; }); save(); }
@@ -376,7 +376,7 @@
      kind 决定这条绑定从哪一类模型里挑，不是一个模型能同时占三类。 */
   var SCENE_SEED = [
     { key: 'xz', name: '小智使用模型', desc: '客户在应用里跟小智对话时用', model: 'm-ds-flash', kind: 'chat' },
-    { key: 'config', name: '配置页使用模型', desc: '应用配置、组件配置的对话用', model: 'm-ds-flash', kind: 'chat' },
+    { key: 'config', name: '配置页使用模型', desc: '应用与技能配置的生成、调整使用', model: 'm-ds-flash', kind: 'chat' },
     { key: 'asr', name: '语音模型', desc: '语音输入转成文字时用', model: 'm-asr', kind: 'asr' },
     { key: 'embed', name: '向量模型', desc: '知识切片入库时生成向量用', model: 'm-embed', kind: 'embed' },
     { key: 'rerank', name: '重排序模型', desc: '检索结果重排序时用', model: 'm-rerank', kind: 'rerank' }
@@ -578,7 +578,7 @@
   }
 
   window.CAP = {
-    load: load, save: save,
+    load: load, save: save, refresh: function(){cache=null;return load();},
     apis: apis, apiById: apiById, addApi: addApi, updateApi: updateApi, removeApi: removeApi, toggleApi: toggleApi,
     skills: skills, skillById: skillById, addSkill: addSkill, updateSkill: updateSkill, removeSkill: removeSkill, toggleSkill: toggleSkill,
     compApis: compApis, setCompApis: setCompApis, prompt: prompt, setPrompt: setPrompt, exportAll: exportAll, importAll: importAll,
@@ -591,4 +591,13 @@
     scenes: scenes, setSceneModel: setSceneModel, sceneModel: sceneModel,
     now: now
   };
+  // Reflect the real local backend, without copying any CLI credential to the browser.
+  if(typeof fetch==='function')fetch('/xz/status').then(function(r){if(!r.ok)return null;return r.json();}).then(function(runtime){
+    if(!runtime || runtime.backend!=='codex-cli')return;
+    var d=load(),id='m-local-codex',m=d.models.filter(function(x){return x.id===id;})[0],changed=false;
+    if(!m){m={id:id,name:runtime.model,label:'本机 Codex',kind:'chat',source:'cli',backend:'cli',on:true,temp:0.2,outMax:8192,ctx:200000,headers:[]};d.models.push(m);changed=true;}
+    if(m.name!==runtime.model){m.name=runtime.model;changed=true;}
+    d.scenes.forEach(function(s){if(['xz','config'].indexOf(s.key)<0)return;var old=d.models.filter(function(x){return x.id===s.model;})[0];if(s.model!==id){s.model=id;changed=true;}});
+    if(changed){save();if(typeof window.dispatchEvent==='function')window.dispatchEvent(new Event('models-ready'));}
+  }).catch(function(){});
 })();

@@ -3,148 +3,82 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>编辑 skill</title>
+<title>编辑技能</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/tokens.css?v=8c85267c">
-<link rel="stylesheet" href="assets/sys.css?v=3dce5172">
-<style>
-/* 2026-11-05（用户）：真源点「编辑」进的是 Skill 编辑器（文件树 + 代码区），不是弹窗。
-   这里照它的形态：上方一条工具条（取消/确认），下面左边文件、右边内容。 */
-.se-main{display:grid;grid-template-columns:220px minmax(0,1fr);gap:0;border:1px solid var(--color-border-card);border-radius:var(--radius-xs);overflow:hidden;height:calc(100vh - 210px);min-height:420px}
-.se-tree{border-right:1px solid var(--color-border-hairline);background:var(--surface-page);overflow:auto;padding:var(--space-8) 0}
-.se-tree-hd{display:flex;align-items:center;gap:var(--space-8);padding:0 var(--space-12) var(--space-8)}
-.se-folder,.se-file{display:flex;align-items:center;gap:var(--space-8);width:100%;height:32px;padding:0 var(--space-12);border:0;background:none;font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-body);text-align:left;cursor:pointer}
-.se-file.is-on{background:var(--color-brand-surface);color:var(--color-brand-ink);font-weight:500}
-.se-file:hover{background:var(--color-state-hover)}
-.se-editor{display:flex;flex-direction:column;min-width:0;background:var(--surface-page)}
-.se-editor-hd{display:flex;align-items:center;gap:var(--space-8);height:40px;padding:0 var(--space-12);border-bottom:1px solid var(--color-border-hairline);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
-.se-code{flex:1 1 auto;width:100%;box-sizing:border-box;border:0;padding:var(--space-12);resize:none;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:var(--font-size-caption);line-height:1.8;color:var(--color-text-body);background:var(--surface-page);outline:0}
-.se-form{display:flex;gap:var(--space-16);margin:0 0 var(--space-12)}
-.se-form label{display:flex;flex-direction:column;gap:var(--space-4);font-size:var(--font-size-caption);color:var(--color-text-secondary)}
-.se-form input{height:32px;border:1px solid var(--color-border-control);border-radius:var(--radius-xs);padding:0 var(--space-8);font-family:inherit;font-size:var(--font-size-body);color:var(--color-text-primary);background:var(--surface-page)}
-.se-form input:focus{outline:2px solid var(--color-brand);outline-offset:-1px;border-color:var(--color-brand)}
-</style>
-  <meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="assets/tokens.css?v=b38a25d3">
+<link rel="stylesheet" href="assets/sys.css?v=1affd7da">
+
+<link rel="stylesheet" href="assets/capability-workspace.css?v=734c92c1">
 </head>
-<body>
+<body class="cap-workspace">
 
 <div class="app">
-  <nav class="sider" data-active="cfg-xz"></nav>
+  <nav class="sider" data-active="cap-abilities"></nav>
   <div class="workspace">
     <header class="hdr">
       <nav class="crumb">
-        <b>配置管理</b>
+        <b>资产中心</b>
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
         <!-- 2026-11-06：上一级写成真链接。面包屑里的上一级就是回列表的入口
              （跟 versions.html 同一条原则）；写成 <b> 时左上角的返回图标只能落回汇总页。 -->
-        <b><a href="xz-config.html">小智配置</a></b>
+        <b><a href="abilities.html">能力管理</a></b>
         <span class="sep" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 14 14" fill="currentColor"><path d="M4.396 2.146a.5.5 0 0 0-.057.638l.057.07L8.543 7l-4.147 4.146a.5.5 0 0 0-.057.638l.057.07a.5.5 0 0 0 .638.057l.07-.057 4.5-4.5a.5.5 0 0 0 .057-.638l-.057-.07-4.5-4.5a.5.5 0 0 0-.708 0Z"/></svg></span>
-        <b id="crumb-name">编辑 skill</b>
+        <b id="crumb-name">编辑技能</b>
       </nav>
-      <div class="me"><span>admin</span><u>ad</u></div>
+      <div class="me"><span id="se-actor">zheng</span><u>ad</u></div>
     </header>
 
     <main class="main">
       <h1 class="sr-only">编辑技能</h1>
       <div class="cfg-bar">
         <button type="button" class="btn ghost" id="se-cancel">取消</button>
-        <button type="button" class="btn primary" id="se-save">确认</button>
+        <button type="button" class="btn primary" id="se-save">保存</button>
         <span class="bar-sp"></span>
-        <span class="it-hint" id="se-state"></span>
+        <span class="it-hint" id="se-state"></span><span data-ability-kind="skill"></span>
       </div>
 
       <div class="se-form">
-        <label for="se-name">skills名称<input id="se-name" style="width:240px"></label>
-        <label for="se-desc">skills描述<input id="se-desc" style="width:420px"></label>
+<button class="btn ghost" type="button" id="se-range">可用范围</button>
+        <label for="se-name">能力名称<input id="se-name" style="width:240px"></label>
+        <label for="se-desc">说明<input id="se-desc" style="width:420px"></label>
       </div>
 
       <div class="se-main">
         <div class="se-tree">
           <div class="se-tree-hd">
-            <button type="button" class="btn ghost" id="se-add">新建文件</button>
+            <b class="se-tree-title">文件</b><span class="bar-sp"></span><button type="button" class="btn ghost" id="se-add" title="新建文件" aria-label="新建文件"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16h14V8l-5-5Zm0 0v5h5M9 14h6m-3-3v6"/></svg></button><button type="button" class="btn ghost" id="se-folder" title="新建文件夹" aria-label="新建文件夹"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h7l2 2h9v11H3V7Zm0 0V4h7l2 3M12 12v5m-2.5-2.5h5"/></svg></button><button type="button" class="btn ghost" id="se-upload" title="上传文件" aria-label="上传文件"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></svg></button><input type="file" id="se-input" multiple hidden>
           </div>
           <div id="se-files"></div>
         </div>
         <div class="se-editor">
-          <div class="se-editor-hd"><span id="se-fname">SKILL.md</span></div>
-          <textarea class="se-code" id="se-code" spellcheck="false" aria-label="技能内容"></textarea>
+          <div class="se-editor-hd"><span id="se-fname">SKILL.md</span><span class="bar-sp"></span><button class="abt-op" id="se-view">预览</button><button class="abt-op" id="se-download">下载</button><button class="abt-op" id="se-rename" data-write>重命名</button><button class="abt-op is-danger" id="se-delete" data-write>删除</button></div>
+          <textarea class="se-code" id="se-code" spellcheck="false" aria-label="当前技能文件内容"></textarea><div id="se-preview" class="se-preview" hidden></div>
         </div>
+        <aside class="se-chat" aria-label="技能对话助手">
+          <div class="se-editor-hd"><b>对话生成技能</b><span class="bar-sp"></span><button class="abt-op" id="se-new-chat" type="button">新对话</button></div>
+          <div class="se-messages" id="se-messages" aria-live="polite"></div>
+          <div class="se-chat-compose" id="se-chat-compose"><span class="it-hint" id="se-chat-state" role="status"></span><textarea id="se-prompt" class="se-prompt" placeholder="提出修改方向" aria-label="提出技能修改方向"></textarea><button class="btn primary" type="button" id="se-send">发送</button></div>
+        </aside>
       </div>
     </main>
   </div>
 </div>
 
-<script src="assets/ui-kit.js?v=ca813031"></script>
-<script src="assets/shell.js?v=fb699fab"></script>
-<script src="assets/capability.js?v=4bcd12b2"></script>
-<script src="assets/skills.js?v=0b332a52"></script>
-<script>
-/* Skill 编辑器：真源里点「编辑」进的是这个页面 —— 左边文件、右边内容。
-   一个技能包至少有一个文件（SKILL.md）；内容按文件存进 skill.files。 */
-(function () {
-  var q = new URLSearchParams(location.search);
-  var id = q.get('id');
-  var it = id && window.CAP ? CAP.skillById(id) : null;
-  if (!it) { location.replace('xz-config.html'); return; }
-
-  var files = it.files && it.files.length ? it.files : [{ name: 'SKILL.md', code: it.content || '' }];
-  var cur = 0;
-
-  document.getElementById('crumb-name').textContent = it.name || '编辑 skill';
-  document.getElementById('se-name').value = it.name || '';
-  document.getElementById('se-desc').value = (it.desc && it.desc !== '—') ? it.desc : '';
-
-  function paintTree() {
-    var box = document.getElementById('se-files');
-    box.innerHTML = files.map(function (f, i) {
-      return '<button type="button" class="se-file' + (i === cur ? ' is-on' : '') + '" data-i="' + i + '">' + f.name + '</button>';
-    }).join('');
-    document.getElementById('se-fname').textContent = files[cur].name;
-    document.getElementById('se-code').value = files[cur].code || '';
-  }
-
-  document.getElementById('se-files').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-i]'); if (!b) return;
-    files[cur].code = document.getElementById('se-code').value;
-    cur = Number(b.getAttribute('data-i'));
-    paintTree();
-  });
-
-  document.getElementById('se-code').addEventListener('input', function () {
-    files[cur].code = this.value;
-  });
-
-  /* 不用 prompt：原生弹框在演示里又丑又会被浏览器拦。直接加一个默认文件，名字可以在下面改。 */
-  document.getElementById('se-add').addEventListener('click', function () {
-    files[cur].code = document.getElementById('se-code').value;
-    var n = files.length + 1;
-    files.push({ name: 'file' + n + '.md', code: '' });
-    cur = files.length - 1;
-    paintTree();
-    document.getElementById('se-fname').textContent = files[cur].name;
-  });
-
-  document.getElementById('se-cancel').addEventListener('click', function () {
-    location.href = 'xz-config.html';
-  });
-
-  document.getElementById('se-save').addEventListener('click', function () {
-    files[cur].code = document.getElementById('se-code').value;
-    var name = document.getElementById('se-name').value.trim();
-    if (!name) { document.getElementById('se-name').focus(); return; }
-    CAP.updateSkill(id, {
-      name: name,
-      desc: document.getElementById('se-desc').value.trim() || '—',
-      files: files,
-      content: files[0].code || ''
-    });
-    location.href = 'xz-config.html';
-  });
-
-  paintTree();
-})();
-</script>
+<script src="assets/ui-kit.js?v=1d1eff99"></script>
+<script src="assets/shell.js?v=e279ad97"></script>
+<script src="assets/data.js?v=c21d73e3"></script>
+<script src="assets/capability.js?v=0e6fc3b6"></script>
+<script src="assets/ability-policy.js?v=74980590"></script>
+<script src="assets/template-store.js?v=f58dc3df"></script>
+<script src="assets/asset-policy.js?v=097b3984"></script>
+<script src="assets/ability-components.js?v=f60776c0"></script>
+<script src="assets/capability-catalog.js?v=d75a5bc2"></script>
+<script src="assets/scope.js?v=7bc3b33b"></script>
+<script src="assets/confirm.js?v=33f3cd5b"></script>
+<div class="nf-mask" id="se-scope-mask" hidden><div class="nf" role="dialog" aria-modal="true" aria-labelledby="se-scope-title"><div class="nf-hd"><b id="se-scope-title">可用范围</b><button class="icon-btn" id="se-scope-close" aria-label="关闭">×</button></div><div class="nf-bd" id="se-scope"></div><div class="nf-ft"><button class="btn primary" id="se-scope-ok">完成</button></div></div></div>
+<div class="nf-mask" id="se-name-mask" hidden><div class="nf" role="dialog" aria-modal="true" aria-labelledby="se-path-title"><div class="nf-hd"><b id="se-path-title">新建文件</b><button class="icon-btn" id="se-path-close" aria-label="关闭">×</button></div><div class="nf-bd"><div class="nf-row"><label for="se-path">文件路径</label><input id="se-path" placeholder="例如 references/design.md"><p class="nf-err" id="se-path-error" role="alert"></p></div></div><div class="nf-ft"><button class="btn quiet" id="se-path-cancel">取消</button><button class="btn primary" id="se-path-confirm">确认</button></div></div></div>
+<script src="assets/gen.js?v=ce9fa87e"></script>
+<script src="assets/skill-editor.js?v=6f54e102"></script>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>

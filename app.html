@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>应用配置</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/tokens.css?v=8c85267c">
-<link rel="stylesheet" href="assets/sys.css?v=3dce5172">
+<link rel="stylesheet" href="assets/tokens.css?v=b38a25d3">
+<link rel="stylesheet" href="assets/sys.css?v=1affd7da">
 <link rel="stylesheet" href="assets/float.css?v=4e2a0bec">
-<link rel="stylesheet" href="assets/viewmode.css?v=d7d2718f">
+<link rel="stylesheet" href="assets/viewmode.css?v=ca253b45">
 <link rel="stylesheet" href="assets/generated.css?v=f89c421a">
 <link rel="stylesheet" href="assets/configurator.css?v=59b1113c">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=455c3b02">
 <style>
 /* ─────────────────────────────────────────────────────────────
    应用配置页 · 页面胶水（2026-10-29 结构债第一批：内联 35,517 B → 0）
-   本页已无组件样式。全部归位 assets/sys.css，按段名 grep：
+   本页已无组件样式。全部归位 assets/sys.css?v=53dbaf75，按段名 grep：
      「画布壳 · Canvas Shell」   .canvas / .topbar / .float-hd / .sheet / .blk
      「画布块 · Canvas Block」   .cv-blk* / .cv-op* / .view-ver / 客户视图 / 表格骨架
      「批量指派 · Batch Assign」 .tb-ck / .tb-batch* / .tb-pick*
@@ -28,9 +28,9 @@
    本页只负责组装 + 业务数据。组件样式不许写回这里：
    同一种按钮在别的页面会各写一遍（check-component-first B/C 直接红）。 */
 </style>
-  <meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="assets/capability-workspace.css?v=734c92c1">
 </head>
-<body data-app="">
+<body class="cap-workspace" data-app="">
 
 <!-- 配置器容器（只在 ?cfg=1 时启用）。
      ⚠ 为什么这两个容器在 #canvas **外面**（别合并进去）：
@@ -41,7 +41,7 @@
 <div class="cfg-bar" id="cfg-bar" hidden></div>
 
 <!-- 画布：这个应用现在长什么样。装了什么就长什么，没装就是空的。 -->
-<main class="canvas" id="canvas" aria-label="当前装配"></main>
+<main class="canvas" id="canvas" aria-label="应用内容"></main>
 
 <div class="hint" id="hint" role="status" aria-live="polite" data-on="false" data-kind="info"></div>
 
@@ -50,36 +50,20 @@
     <a class="back" id="act-back" href="app-manage.html" aria-label="返回应用管理">
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </a>
-    <!-- ★2026-11-03（用户 m00984 原话）：「左上角，毫无意义，懂吗？就显示当前应用名称、
-         版本号就行了。不会简约简单一些吗？」。
-         改前第二行挤着四件事：客户 · 发布态（已上架）＋「已存成 v2 · 1 家客户 · 都是最新」。
-         它们全都只在别处才有动作（发布在应用卡、客户在客户授权页），摆在这里等于让用户
-         把三句话翻译一遍，然后什么也做不了。现在一行：名字 + 版本号；只有「未保存」
-         「保存失败」这种必须马上知道的状态才追加在版本号后面（那两件会影响下一步动作）。 -->
-    <div class="hd-main">
-      <div class="hd-top">
-        <h1 class="app-name" id="app-name" data-bind="app-name">应用配置</h1>
-        <span class="app-edit" id="app-edit"></span>
-      </div>
-      <!-- 这一页东西的介绍：超长单行省略，点一下看全文（小弹窗） -->
-      <p class="hd-desc" id="app-desc"></p>
-    </div>
+    <div class="hd-main"><div class="hd-top"><h1 class="app-name" id="app-name" data-bind="app-name">应用配置</h1><span class="app-edit" id="app-edit"></span></div><p class="hd-desc" id="app-desc"></p></div>
   </div>
   <div class="tb-ops">
-    <!-- ★2026-11-03（用户 m05120）：「右上角有2个操作，保存草稿和保存新版本并发布。」
-         顶栏只留这两颗；装配/升级仍留在 DOM 里（hidden），给会话与脚本保留入口，
-         不再占顶栏的视觉位置。 -->
-    <!-- ★2026-11-04（用户：「我应该点击装配组件去看，有哪些可以升级…然后装配组件操作旁边有个标签，显示 X 个组件可升级」）：
-         装配组件回到顶栏常驻，右边挂一枚「N 个组件可升级」的标；顶栏不再有独立的「一键升级」——
-         升级是装配面板里的一件操作（看谁落后、勾谁、升谁、卸谁、装新的都在那一处）。 -->
-    <button type="button" class="btn ghost" id="act-assemble">装配组件 <span class="count-badge" id="act-count">已装 0 / 8</span></button>
+
+
+    <button type="button" class="btn quiet cap-entry" id="act-available">可用资产</button>
     <button type="button" class="btn ghost" id="act-draft">保存草稿</button>
+    <button type="button" class="btn ghost" id="act-reset" disabled>重置</button>
     <!-- ★2026-11-03（用户 m01612）：配置页右上不再放「历史版本」——应用管理卡片的
          ⋮ 菜单已经有这个入口，同一个入口两处没有意义。
          ★2026-11-03（用户 m05120）：顶栏只留「保存草稿」和「保存新版本并发布」两件事。
          后者由 doPublish→commitPublish 一次完成：存快照 + 启用为当前客户可见版本。
          历史版本入口在 →apps.html 的卡片菜单。 -->
-    <button type="button" class="btn primary" id="act-publish">保存新版本并发布</button>
+    <button type="button" class="btn primary" id="act-publish" title="保存为新版本并发布，客户升级仍在客户授权中处理">保存并发布</button>
     <!-- 2026-11-06（用户）：「saas 端出现大问题了…最终拼装的应用几乎都是个性化的，那么没有返回和平台的相关信息及操作了」。
          照 SaaS 真源应用内页实测补：头像 + 账号 + 组织两行 + 下拉，尺寸/层级与真源一致（条高 48）。
          拼装出来的应用是全屏的，这里是唯一的"我在哪个平台、我是谁"的锚点。 -->
@@ -112,51 +96,23 @@
   </div>
 </div>
 
-<!-- 装配组件：头部 64 + 独占一行搜索 + 两个平文本切段 + 56 行列表 + 48 底注 -->
-<div class="mask" id="mask" data-open="false" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
-  <div class="panel">
-    <div class="p-hd">
-      <b id="dlg-title">装配组件</b>
-      <!-- ★2026-10-28 设计审查 C4：搜索原来独占一层，六层压成四层后并入头部 -->
-      <div class="p-search">
-        <input id="dlg-search" type="text" placeholder="搜组件，或说要做什么" aria-label="搜索组件" autocomplete="off">
-        <button type="button" class="p-ai" id="ai-comp" aria-pressed="false" title="让模型按你的描述找组件"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.7 5.3L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.7z"/><path d="M19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/></svg>AI 搜索</button>
-      </div>
-      <button type="button" class="p-x" id="dlg-close" aria-label="关闭">
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-    <div class="p-tabs" role="tablist" aria-label="组件范围">
-      <button type="button" role="tab" class="p-tab" id="tab-avail" data-tab="avail" aria-selected="true">可装配 <span id="n-avail">0</span></button>
-      <button type="button" role="tab" class="p-tab" id="tab-on" data-tab="on" aria-selected="false">已装配 <span id="n-on">0</span><i class="p-tab-chip" id="tab-upd-chip" hidden> <b id="tab-upd-n">0</b> 个可升级</i></button>
-    </div>
-    <!-- 只看有更新：一行筛选说明，不是第三个页签（规格 §5.2）。
-         页签计数 = 已装总数；这一行的数 = 可更新数；两者不同源也不同义。
-         只在带参进来时出现；「显示全部」是唯一的退出入口（空态里不再放第二颗按钮）。 -->
-    <!-- ★2026-11-04（用户）：「只需要在已装配旁边显示 X 个可升级的标签」；
-       「升级跟组件引用管理那边类似，一个一个多选操作的，批量升级，然后一个是全部升级」。
-       所以：可升级数只挂在「已装配」页签上（见 .p-tabs）；操作全在这一行 ——
-       左边全选，右边 全部升级（N） / 批量升级（N），与引用管理的顺序一致。 -->
-    <div class="p-batch" id="p-batch" hidden>
-      <label class="p-selall">
-        <input type="checkbox" id="p-selall" aria-label="全选当前列表里可操作的组件">
-        <span>全选</span>
-      </label>
-      <button type="button" class="btn ghost" id="p-upgrade-allnow" hidden>全部升级（0）</button>
-      <button type="button" class="btn ghost" id="p-batch-do" disabled>装配（0）</button>
-    </div>
-    <div class="p-list" id="dlg-list" role="tabpanel"></div>
-  </div>
-</div>
-
-<script src="assets/ui-kit.js?v=ca813031"></script>
+<script src="assets/ui-kit.js?v=1d1eff99"></script>
 <script src="assets/ai-search.js?v=80eda2c1"></script>
-<script src="assets/gen.js?v=eee8a11a"></script>
-<script src="assets/data.js?v=5ecabad7"></script>
+<script src="assets/capability.js?v=0e6fc3b6"></script>
+<script src="assets/ability-policy.js?v=74980590"></script>
+<script src="assets/template-store.js?v=f58dc3df"></script>
+<script src="assets/asset-policy.js?v=097b3984"></script>
+<script src="assets/ability-components.js?v=f60776c0"></script>
+<script src="assets/capability-catalog.js?v=d75a5bc2"></script>
+<script src="assets/scope.js?v=7bc3b33b"></script>
+<script src="assets/ability-ui.js?v=c729339c"></script>
+<script src="assets/gen.js?v=ce9fa87e"></script>
+<script src="assets/data.js?v=c21d73e3"></script>
 <script src="assets/confirm.js?v=33f3cd5b"></script>
 <script src="assets/drag.js?v=cc6ccb06"></script>
 <script src="assets/float.js?v=e31d3ee3"></script>
-<script src="assets/app.js?v=087593e0"></script>
+<script src="assets/app-draft.js?v=6d9faf54"></script>
+<script src="assets/app.js?v=4227f501"></script>
 <script src="assets/ai-comp.js?v=39f7c8da"></script>
 <script src="assets/configurators/app-standard.js?v=a478d9a2"></script>
 <script src="assets/configurator.js?v=70d866b6"></script>
@@ -165,7 +121,7 @@
      于是 ai-comp 的两条提示（「先说要找什么」「AI 检索没连上，按关键词找」）永远不会出现。
      #hint 保留：它带全站唯一一颗「撤回」，职责不同。 -->
 <div id="toast" class="toast" data-on="false" role="status" aria-live="polite"></div>
-<script src="assets/xiaozhi.js?v=65df31a0"></script>
-<script src="assets/viewmode.js?v=7a3f56fa"></script>
+<script src="assets/xiaozhi.js?v=6711e9e8"></script>
+<script src="assets/viewmode.js?v=e2b3e60a"></script>
 </body>
 </html>

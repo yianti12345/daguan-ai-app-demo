@@ -25,6 +25,16 @@
 */
 window.Versions = (function () {
   'use strict';
+  var templateScope=new URLSearchParams(location.search).get('scope')==='template';
+  if(new URLSearchParams(location.search).get('scope')==='comp'){location.replace('versions.html?scope=template&id='+encodeURIComponent('tpl-legacy-'+new URLSearchParams(location.search).get('id')));return {boot:function(){}};}
+  var DB=templateScope?{
+    load:function(){window.DB.load();CAP.Templates.initialize();},
+    compById:function(id){var t=CAP.Templates.byId(id);return t&&CAP.isGranted(t)?t:null;},
+    versOf:function(scope,id){return CAP.Templates.versionsOf(id);},
+    versNext:function(scope,id){return CAP.Templates.versionsOf(id).reduce(function(n,r){return Math.max(n,r.v);},0)+1;},
+    versRestoreForward:function(scope,id,v){try{return {to:CAP.Templates.copyVersion(id,v),from:v};}catch(e){return {error:e.message};}},
+    MAX_VERS:Infinity
+  }:window.DB;
   var S = { scope: 'app', id: '', kw: '' };
 
   function $(s) { return document.querySelector(s); }
@@ -115,7 +125,7 @@ window.Versions = (function () {
           (S.kw ? '清掉搜索词，或换个版本号再试。'
                 : (S.scope === 'app'
                     ? '在画布顶栏点「保存新版本并发布」。'
-                    : '在画布顶栏点「保存并发布版本」，这里会出现第一个版本。')) + '</div>';
+                    : '在模版配置中点「发布」，这里会出现新版本。')) + '</div>';
       },
         rowClass: 'vl-row gtable-row',
         rowExtra: function (r) { return r.active ? 'is-now' : ''; },
@@ -125,15 +135,16 @@ window.Versions = (function () {
           if (key === 'st') return r.active
             ? '<span class="vl-on">当前版本</span>'
             : '<span class="vl-off">历史版本</span>';
+          if (key === 'creator') return esc(r.createdBy || (r.snap && r.snap.editor) || '—');
           if (key === 'at') {
             var atRaw = String(r.at || '');
             /* 到分；老快照没有时分就只给日期，不在格子里补解释 */
-            return atRaw ? atRaw.replace(/ --:--:--$/, '').replace(/:\d{2}$/, '') : '—';
+            return atRaw ? atRaw.replace(/ --:--:--$/, '').replace(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/, '$1 $2') : '—';
           }
           if (key === 'ops') {
             var viewBtn = (S.scope === 'app')
               ? '<a class="vl-btn is-quiet" href="app.html?id=' + encodeURIComponent(S.id) + '&v=' + r.v + '&mode=view" target="_blank" rel="noopener">查看</a>'
-              : '<a class="vl-btn is-quiet" href="component.html?id=' + encodeURIComponent(S.id) + '&v=' + r.v + '" target="_blank" rel="noopener">查看</a>';
+              : '<a class="vl-btn is-quiet" href="'+(S.scope==='template'?'template.html':'component.html')+'?id=' + encodeURIComponent(S.id) + '&v=' + r.v + '" target="_blank" rel="noopener">查看</a>';
             /* 用户定口径（2026-11-04）：升级与恢复都只改应用版本，不动客户授权；
                这个动作的真实行为是"拿旧版内容生成一个新版本"，按钮就叫它干的事。 */
             return viewBtn + (r.active ? '' :
@@ -173,7 +184,7 @@ window.Versions = (function () {
         : '没生成新版本，改动只在这次会话里', 'error');
       return;
     }
-    toast('已按 v' + out.from + ' 生成 v' + out.to + ' · 客户授权版本未动');
+    toast(S.scope==='template'?'已复制为 v'+out.to:'已按 v' + out.from + ' 生成 v' + out.to + ' · 客户授权版本未动');
   }
 
   function act(what, v) {
@@ -192,7 +203,7 @@ window.Versions = (function () {
       /* ★2026-11-04（用户定口径）：升级与恢复都只改应用的版本存档，不动客户授权的版本。
          原文「客户打开应用看到的就是 vN」在多客户模型下是假话 —— 每家客户各停一版，
          一次复制不可能让所有人都变。这句必须删掉，换成"客户那边不受影响"。 */
-      body: '确认后按 v' + want + ' 的内容生成当前版本 v' + next + '。'
+      body: S.scope==='template' ? '将 v'+want+' 复制为新版本 v'+next+'？' : '确认后按 v' + want + ' 的内容生成当前版本 v' + next + '。'
           + '客户授权的版本不受影响 —— 要让客户用上 v' + next + '，到客户授权页升级。'
           + 'v' + latest + ' 仍留在历史里。',
       ok: '生成 v' + next,
@@ -204,10 +215,10 @@ window.Versions = (function () {
     DB.load();
     var q = new URLSearchParams(location.search);
     var rawScope = q.get('scope');
-    S.scope = rawScope === 'comp' ? 'comp' : 'app';
+    S.scope = rawScope==='template'?'template':(rawScope==='comp'?'comp':'app');
     /* ★2026-11-02（独立前端审计）：scope=zzz 原来静默退回应用视图，
        一条参数写错的链接会看起来"正常打开了另一个东西"。参数在场但不认识就报错。 */
-    S.badScope = !!rawScope && rawScope !== 'app' && rawScope !== 'comp';
+    S.badScope = !!rawScope && rawScope !== 'app' && rawScope !== 'comp' && rawScope !== 'template';
     S.id = q.get('id') || '';
 
     if (S.badScope || !S.id || !owner()) {
@@ -222,8 +233,8 @@ window.Versions = (function () {
       var hd = $('#head'); if (hd) hd.hidden = true;
       /* 2026-11-06：原来这里只有一句「回应用管理重新选一项。」—— 空态没有可点的出口，
          用户得自己翻左侧菜单找。R16 的要求是空态自带出口。 */
-      var backTo = S.scope === 'app' ? 'app-manage.html' : 'components.html';
-      var backName = S.scope === 'app' ? '应用管理' : '组件库';
+      var backTo = S.scope === 'app' ? 'app-manage.html' : 'templates.html';
+      var backName = S.scope === 'app' ? '应用管理' : '模版管理';
       $('#list').innerHTML = '<div class="vl-empty">这一项已经不在了。<a href="' + backTo + '">回'
         + backName + '重新选一项</a>。</div>';
       var _t = $('#total'); if (_t) _t.textContent = '';

@@ -74,7 +74,7 @@
     this.value = norm(opt.value);
     this.id = id;
 
-    var modes = [['self', '仅自己'], ['public', '公开'], ['custom', '指定']];
+    var modes = [['self', '仅自己'], ['public', '公开可用'], ['custom', '指定范围']];
     var modeHtml = modes.map(function (m) {
       return '<label class="sc-opt"><input type="radio" name="' + id + '-mode" value="' + m[0] + '">' + m[1] + '</label>';
     }).join('');
@@ -92,7 +92,7 @@
           '<span class="sc-title">' + title + '</span>' +
           '<div class="sc-opts" role="radiogroup" aria-label="' + title + '">' + modeHtml + '</div>' +
         '</div>' +
-        '<div class="sc-body" hidden>' + fields + '<p class="sc-hint">' + hint + '</p></div>' +
+        '<div class="sc-body" hidden>' + fields + '</div>' +
       '</div>';
 
     this.el = host.querySelector('.sc');

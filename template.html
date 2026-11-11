@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模版配置</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6BE8'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css?v=b38a25d3">
+<link rel="stylesheet" href="assets/sys.css?v=1affd7da">
+<link rel="stylesheet" href="assets/float.css?v=4e2a0bec">
+<link rel="stylesheet" href="assets/viewmode.css?v=ca253b45">
+<link rel="stylesheet" href="assets/generated.css?v=f89c421a">
+<link rel="stylesheet" href="assets/configurator.css?v=59b1113c">
+<link rel="stylesheet" href="assets/xiaozhi.css?v=455c3b02">
+<link rel="stylesheet" href="assets/component-workspace.css?v=9cd7c6fe">
+<link rel="stylesheet" href="assets/capability-workspace.css?v=734c92c1">
+<link rel="stylesheet" href="assets/asset-center.css?v=d7cddde4">
+</head>
+<body data-comp="" data-template-editor class="cap-workspace">
+
+<div class="app">
+
+
+  <div class="topbar">
+    <div class="float-hd">
+      <a class="back" href="templates.html" aria-label="返回模版管理">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <div class="hd-main">
+        <div class="hd-top">
+          <h1 class="app-name" id="comp-name">模版配置</h1>
+          <span class="app-edit" id="comp-ver"></span>
+          <span class="app-edit" id="comp-meta"></span>
+        </div>
+
+        <p class="hd-desc" id="comp-desc"></p>
+      </div>
+
+      <span id="comp-app" hidden></span>
+      <span id="comp-sep" hidden>/</span>
+      <span id="comp-status" hidden></span>
+    </div>
+    <div class="tb-ops">
+
+      <button type="button" class="btn ghost" id="act-draft">保存草稿</button>
+      <button type="button" class="btn ghost" id="act-reset" disabled>重置</button>
+      <button type="button" class="btn primary" id="act-publish">发布</button>
+
+      <div class="ab-wrap">
+      <button type="button" class="ab-user" id="ab-user" aria-haspopup="true" aria-expanded="false" aria-controls="ab-menu" aria-label="当前账号 zheng，达观数据">
+        <span class="ab-av" aria-hidden="true">郑</span>
+        <span class="ab-nm"><b>zheng</b><i>达观数据</i></span>
+        <svg class="ab-cv" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="ab-menu" id="ab-menu" role="menu" hidden>
+        <button type="button" class="ab-mi" role="menuitem">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+          切换平台
+        </button>
+        <button type="button" class="ab-mi" role="menuitem">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          修改密码
+        </button>
+        <button type="button" class="ab-mi" role="menuitem">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.6"/></svg>
+          关于系统
+        </button>
+        <button type="button" class="ab-mi is-out" role="menuitem">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 8l4 4-4 4M13 12H4"/></svg>
+          退出登录
+        </button>
+      </div>
+      </div>
+    </div>
+  </div>
+
+
+  <main class="canvas" id="canvas" aria-busy="false" data-busy="false" data-error="false">
+
+    <div class="err-strip" id="err-strip" role="alert" aria-live="assertive" hidden>
+      <span id="err-txt">这次没生成出来</span>
+      <button type="button" class="strip-act" id="btn-retry">重试</button>
+    </div>
+
+    <div class="cfg-bar" id="cfg-bar" hidden></div>
+    <div class="canvas-inner" id="canvas-inner"></div>
+  </main>
+
+
+  <div id="pub" hidden><span id="pub-tt" role="status" aria-live="polite"></span></div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" data-kind="info" data-on="false"></div>
+</div>
+<div id="genbar" data-off="true"></div>
+<div id="xz-host"></div>
+
+<script src="assets/ui-kit.js?v=1d1eff99"></script>
+<script src="assets/data.js?v=c21d73e3"></script>
+<script src="assets/capability.js?v=0e6fc3b6"></script>
+<script src="assets/ability-policy.js?v=74980590"></script>
+<script src="assets/template-store.js?v=f58dc3df"></script>
+<script src="assets/asset-policy.js?v=097b3984"></script>
+<script src="assets/ability-components.js?v=f60776c0"></script>
+<script src="assets/scope.js?v=7bc3b33b"></script>
+<script src="assets/confirm.js?v=33f3cd5b"></script>
+<script src="assets/gen.js?v=ce9fa87e"></script>
+<script src="assets/drag.js?v=cc6ccb06"></script>
+<script src="assets/float.js?v=e31d3ee3"></script>
+<script src="assets/vendor/fflate.js?v=d85498a4"></script>
+<script src="assets/asset-file-viewer.js?v=d9d5218f"></script>
+<script src="assets/app-draft.js?v=6d9faf54"></script>
+<script src="assets/template-bridge.js?v=ccd80f65"></script>
+<script src="assets/component.js?v=da9d0341"></script>
+<script src="assets/viewmode.js?v=e2b3e60a"></script>
+</body></html>
