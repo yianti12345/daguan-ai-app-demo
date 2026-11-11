@@ -682,6 +682,7 @@
           micEndCleanup(); MIC.st = ''; micUi();
         }
         function micStart() {
+          if(!UIK.modelRequestsAllowed()){say('线上演示不调用模型');return;}
           if (MIC.st === 'rec') { micStop(); return; }
           if (MIC.st === 'busy') return;
           if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
@@ -703,6 +704,7 @@
                 micEndCleanup(); MIC.mr = null; MIC.ch = [];
                 if (!blob.size) { MIC.st = ''; micUi(); say('没有录到声音，再点一次', { ms: 5000 }); return; }
                 MIC.st = 'busy'; micUi();
+                if(!UIK.modelRequestsAllowed()){MIC.st='';micUi();say('线上演示不调用模型');return;}
                 fetch(asrUrl(), {
                   method: 'POST',
                   headers: { 'Content-Type': blob.type || 'application/octet-stream' },
