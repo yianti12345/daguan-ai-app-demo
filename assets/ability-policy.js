@@ -64,22 +64,77 @@
     window.dispatchEvent(new Event('capabilities-changed')); return out;
   };
   C.removeAbility = function (id) { assertManage(C.abilityById(id)); var r=remove(id); window.dispatchEvent(new Event('capabilities-changed')); return r; };
+  C.commitAbilityEdit = function (id, revision, patch, edits) {
+    var user = actor();
+    var data = copy(patch);
+    var name = String(data.name || '').trim();
+    if (!name) throw new Error('填能力名称');
+    if (!data.apiIds.length) throw new Error('先加接口');
+    C.validateFiles(data.files || []);
+    var saved = C.commitChanges(function (store) {
+      var current = id && store.abilities.find(function (item) { return item.id === id; });
+      if (id) {
+        assertManage(current);
+        if (current.kind !== 'api') throw new Error('该历史能力类型本版仅可查看');
+        if (current.revision !== revision) throw new Error('能力已在其他页面修改，请重新打开后再编辑');
+      }
+      var record = current || {id:C.newId('ab'), ownerId:user.id, ownerName:user.name, kind:'api', on:true};
+      var replacements = Object.create(null);
+      data.apiIds = data.apiIds.map(function (apiId) {
+        var edit = edits[apiId];
+        var existing = store.apis.find(function (item) { return item.id === apiId; });
+        if (!edit) return apiId;
+        if (edit.before && JSON.stringify(existing) !== JSON.stringify(edit.before)) {
+          throw new Error('接口已在其他页面修改，请重新打开后再编辑');
+        }
+        var shared = store.abilities.some(function (item) {
+          return item.id !== id && (item.apiIds || []).includes(apiId);
+        });
+        var api = Object.assign({}, edit.after, {
+          id: existing && !shared ? apiId : C.newId('api'),
+          at: C.now()
+        });
+        replacements[apiId] = api.id;
+        if (existing && !shared) Object.assign(existing, api);
+        else store.apis.unshift(api);
+        return api.id;
+      });
+      if (data.docApis) data.docApis = data.docApis.split(',').map(function (part) {
+        var apiId = part.split('|')[0];
+        return (replacements[apiId] || apiId) + part.slice(apiId.length);
+      }).join(',');
+      Object.assign(record, data, {
+        id:record.id, kind:'api', name:name, ownerId:record.ownerId, ownerName:record.ownerName,
+        useScope:scope(data.useScope), at:C.now(), revision:current ? (revision || 1) + 1 : 1
+      });
+      if (!current) store.abilities.push(record);
+      return record;
+    });
+    window.dispatchEvent(new Event('capabilities-changed'));
+    return saved;
+  };
+  function importOptions(items, opt) {
+    if (!Array.isArray(items) || !items.length) throw new Error('能力文件格式不正确');
+    items.forEach(function (item, index) {
+      var label = '第 ' + (index + 1) + ' 条能力';
+      if (!item || !String(item.name || '').trim() || !['api', 'skill', undefined].includes(item.kind)) {
+        throw new Error(label + '格式不正确');
+      }
+      if (item.kind !== 'skill' && (!Array.isArray(item.apis) || !item.apis.length ||
+          item.apis.some(function (api) { return !api || typeof api.path !== 'string' || !api.path.trim(); }))) {
+        throw new Error(label + '「' + item.name + '」缺少有效接口');
+      }
+      C.validateFiles(item.files || []);
+    });
+    return Object.assign({mode:'merge'}, opt, {owner:actor(), canMerge:canManage});
+  }
+  C.previewAbilityImport = function (items) {
+    return originalImport(items, importOptions(items, {mode:'new', preview:true}));
+  };
   C.importAbilities = function (items, opt) {
-    // Imports are new, private assets owned by the importer. Never inherit exported grants.
-    if (!Array.isArray(items) || items.some(function (b) { return !b || !b.name || ['api','skill',undefined].indexOf(b.kind) < 0; })) throw new Error('能力文件格式不正确');
-    items.forEach(function(b){C.validateFiles(b.files || []);});
-    var apiItems = items.filter(function (b) { return b.kind !== 'skill'; });
-    if (opt && opt.mode === 'merge') apiItems.forEach(function (b) {
-      C.abilities().filter(function (x) { return x.name === b.name; }).forEach(assertManage);
-    });
-    var before = C.abilities().map(function (b) { return b.id; });
-    var result = apiItems.length ? originalImport(apiItems, opt) : {abilities:0,apis:0,skipped:0};
-    C.abilities().forEach(function (b) { if (before.indexOf(b.id)<0) { normalize(b); b.ownerId=actor().id; b.ownerName=actor().name; b.useScope=scope(); } });
-    items.filter(function (b) { return b.kind === 'skill'; }).forEach(function (b) {
-      C.validateFiles(b.files || []);
-      C.addAbility({kind:'skill',name:b.name,intro:b.intro || '',doc:b.doc || '',files:copy(b.files || []),docState:b.doc ? 'ready':'none',apiIds:[]}); result.abilities++;
-    });
-    C.save(); return result;
+    var result = originalImport(items, importOptions(items, opt));
+    window.dispatchEvent(new Event('capabilities-changed'));
+    return result;
   };
   C.validateFiles = function (files) {
     var names={}, total=0;
@@ -113,7 +168,7 @@
       terms.forEach(function(t){if(n.indexOf(t)>=0)score+=5;else if(intro.indexOf(t)>=0)score+=2;else if(outline.indexOf(t)>=0)score+=1;});return {b:b,score:score};
     }).filter(function(x){return !q||x.score>0;}).sort(function(a,b){return q?(b.score-a.score||a.b.id.localeCompare(b.b.id)):String(b.b.at||'').localeCompare(String(a.b.at||''));}).map(function(x){return x.b;});
   };
-  C.discoverCandidates=function(text,limit){return C.searchAuthorizedAbilities(text).filter(function(b){return ready(b)&&C.isPersonalEnabled(b);}).slice(0,Math.min(limit||20,30)).map(function(b){return {id:b.id,name:b.name,kind:b.kind,description:b.intro||''};});};
+  C.discoverCandidates=function(text,limit,expanded){return C.searchAuthorizedAbilities(text,expanded).filter(function(b){return ready(b)&&C.isPersonalEnabled(b);}).slice(0,Math.min(limit||20,30)).map(function(b){return {id:b.id,name:b.name,kind:b.kind,description:b.intro||''};});};
   C.contextFor=function (ids) {
     var combined=(ids || []).map(function (id) {
       var b=C.abilityById(id);

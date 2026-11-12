@@ -525,9 +525,132 @@ else window.UIK.userMenu();
  U.Menu={trigger:function(o){var a=o.attrs||{},attrs=Object.keys(a).map(function(k){return ' '+k+'="'+U.esc(a[k])+'"';}).join('');return '<button class="k-more" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="更多操作：'+U.esc(o.name)+'"'+attrs+'>'+U.MenuIcons.more+'</button>';},item:function(o){var a=o.attrs||{},attrs=Object.keys(a).map(function(k){return ' '+k+'="'+U.esc(a[k])+'"';}).join('');var tag=o.href?'a':'button';return '<'+tag+' class="k-mi'+(o.danger?' is-danger':'')+'" role="menuitem"'+(o.href?' href="'+U.esc(o.href)+'"':' type="button"')+attrs+'>'+(U.MenuIcons[o.icon]||'')+U.esc(o.label)+'</'+tag+'>';}};
 })(window.UIK);
 
-/* 统一弹窗结构；业务页只传内容，关闭、提交流程仍沿用各自控制器。 */
+/* 卡片菜单的打开、键盘导航和关闭由应用和模版共用。 */
+UIK.Menu.bind = function (root, options) {
+  if (!root) return;
+  var trigger, menu;
+  function close(restoreFocus) {
+    if (!menu) return;
+    menu.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    var previous = trigger;
+    menu = trigger = null;
+    if (restoreFocus && previous.isConnected) previous.focus({preventScroll:true});
+  }
+  function items() { return Array.from(menu.querySelectorAll('[role="menuitem"]:not(:disabled):not([hidden])')); }
+  function open(button, last) {
+    var panel = options.panel(button);
+    if (!panel) return;
+    close(false);
+    menu = panel;
+    trigger = button;
+    menu.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    if (window.Popover) Popover.place(trigger, menu);
+    var actions = items();
+    var target = last ? actions[actions.length - 1] : actions[0];
+    if (target) target.focus({preventScroll:true});
+  }
+  root.addEventListener('click', function (event) {
+    var button = event.target.closest(options.trigger);
+    if (button) {
+      event.preventDefault();
+      if (trigger === button) close(true);
+      else open(button);
+      return;
+    }
+    var action = menu && event.target.closest('[role="menuitem"]');
+    if (action && menu.contains(action)) {
+      close(true);
+      if (options.action) options.action(action, event);
+    }
+  });
+  root.addEventListener('keydown', function (event) {
+    var button = event.target.closest(options.trigger);
+    if (button && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+      event.preventDefault();
+      open(button, event.key === 'ArrowUp');
+      return;
+    }
+    if (!menu || !menu.contains(event.target)) return;
+    if (event.key === 'Escape' || event.key === 'Tab') {
+      if (event.key === 'Escape') event.preventDefault();
+      close(true);
+      return;
+    }
+    var actions = items();
+    if (!actions.length) return;
+    var index = actions.indexOf(event.target);
+    var next = {Home:0, End:actions.length-1, ArrowDown:(index+1)%actions.length,
+      ArrowUp:(index-1+actions.length)%actions.length}[event.key];
+    if (next != null) { event.preventDefault(); actions[next].focus(); }
+  });
+  document.addEventListener('click', function (event) {
+    if (menu && !menu.contains(event.target) && !trigger.contains(event.target)) close(false);
+  });
+  window.addEventListener('scroll', function () { close(menu && menu.contains(document.activeElement)); }, true);
+  window.addEventListener('resize', function () { close(menu && menu.contains(document.activeElement)); });
+};
+
+/* 统一弹窗结构和焦点生命周期；业务控制器仍决定取消与提交流程。 */
 (function(U){
+ var layers=[], locked=[], managed=new WeakMap();
+ function top(){return layers[layers.length-1];}
+ function inertBg(mask,on){
+  if(!mask)return;
+  var i=layers.indexOf(mask);
+  if(on){if(i>=0)return;layers.push(mask);}
+  else{if(i<0)return;layers.splice(i,1);}
+  locked.forEach(function(n){n.removeAttribute('inert');});
+  locked=[];
+  for(var node=top();node&&node!==document.body&&node.parentElement;node=node.parentElement){
+   Array.from(node.parentElement.children).forEach(function(el){
+    if(el!==node&&!el.hasAttribute('inert')){el.setAttribute('inert','');locked.push(el);}
+   });
+  }
+ }
+ function usable(n){
+  return !!(n&&n.isConnected&&!n.matches(':disabled')&&!n.closest('[hidden],[inert]')&&n.getClientRects().length&&getComputedStyle(n).visibility==='visible');
+ }
+ function focus(n){if(usable(n)){n.focus({preventScroll:true});return document.activeElement===n;}return false;}
+ function focusables(mask){
+  return Array.from(mask.querySelectorAll('button, a[href], input, select, textarea, [contenteditable="true"], [tabindex]')).filter(function(n){
+   return n.tabIndex>=0&&usable(n)&&!(n.type==='radio'&&n.name&&!n.checked&&Array.from(mask.querySelectorAll('input[type="radio"]:checked')).some(function(r){return r.name===n.name&&r.form===n.form;}));
+  });
+ }
+ function open(mask,opts){
+  opts=opts||{};
+  if(!managed.has(mask))managed.set(mask,{ret:opts.returnFocus||document.activeElement,onEscape:opts.onEscape});
+  mask.hidden=false;
+  inertBg(mask,true);
+  if(!focus(opts.initialFocus))focus(focusables(mask)[0]);
+ }
+ function close(mask){
+  if(!mask)return;
+  var entry=managed.get(mask),wasTop=top()===mask;
+  mask.hidden=true;
+  managed.delete(mask);
+  inertBg(mask,false);
+  if(!entry||!wasTop)return;
+  var ret=typeof entry.ret==='function'?entry.ret():entry.ret;
+  if(!focus(ret)&&top())focus(focusables(top())[0]);
+ }
+ document.addEventListener('keydown',function(e){
+  var mask=top(),entry=mask&&managed.get(mask);
+  if(!entry||e.defaultPrevented)return;
+  if(e.key==='Escape'&&entry.onEscape){
+   e.preventDefault();e.stopPropagation();entry.onEscape();return;
+  }
+  if(e.key!=='Tab')return;
+  var list=focusables(mask),first=list[0],last=list[list.length-1],active=document.activeElement;
+  if(!list.length||!mask.contains(active)||(e.shiftKey?active===first:active===last)){
+   e.preventDefault();focus(e.shiftKey?last:first);
+  }
+ },true);
  U.Dialog={html:function(o){var e=U.esc,title=o.titleId||o.id+'-title';return '<div class="nf-mask" id="'+e(o.id)+'"'+(o.hidden?' hidden':'')+'><div class="nf'+(o.wide?' nf-wide':'')+'" role="dialog" aria-modal="true" aria-labelledby="'+e(title)+'"><div class="nf-hd"><b id="'+e(title)+'">'+e(o.title)+'</b><button type="button" class="icon-btn" id="'+e(o.closeId||o.id+'-close')+'" aria-label="关闭"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'+(o.tabs||'')+'<div class="nf-bd"'+(o.bodyId?' id="'+e(o.bodyId)+'"':'')+'>'+(o.body||'')+'</div><div class="nf-ft">'+(o.footer||'')+'</div></div></div>';}};
+ U.Dialog.open=open;
+ U.Dialog.close=close;
+ U.Dialog.inertBg=inertBg;
 })(window.UIK);
 
 /* 公网演示不连接模型；本机的模型与推理配置保持原样。 */

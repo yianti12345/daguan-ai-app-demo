@@ -120,8 +120,10 @@ function byVer(r) { return !VER || String(r.version) === VER; }
   function paintVerOptions() {
     var el = $('#f-ver');
     if (!el) return;
-    var top = DB.latestVer(APP_ID) || 0;
-    var want = [''].concat(top ? Array.apply(null, { length: top }).map(function (_, i) { return String(top - i); }) : []);
+    var versions = DB.authsOfApp(APP_ID).filter(function (record) {
+      return record.status === '已授权' && record.version > 0;
+    }).map(function (record) { return Number(record.version); });
+    var want = [''].concat(Array.from(new Set(versions)).sort(function (a, b) { return b - a; }).map(String));
     var now = el.value;
     if (el.dataset.fill === want.join(',') ) { el.value = now; return; }
     el.innerHTML = want.map(function (v) {
@@ -177,7 +179,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
       var topV = app ? DB.latestVer(APP_ID) : 0;
       if (latestBox) {
         latestBox.hidden = !topV;
-        latestBox.innerHTML = topV ? '最新版本 <b>v' + topV + '</b>' : '';
+        latestBox.innerHTML = topV ? '当前发布版本 <b>v' + topV + '</b>' : '';
       }
     } else {
       if (pgTitle) pgTitle.textContent = '授权总览';
@@ -423,7 +425,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     var tops = {};
     list.forEach(function (r) { tops[r.appName] = 1; });
     var names = Object.keys(tops);
-    return names.length === 1 ? ('「' + names[0] + '」的最新版本') : '各自应用的最新版本';
+    return names.length === 1 ? ('「' + names[0] + '」的当前发布版本') : '各自应用的当前发布版本';
   }
   function whoText(list) {
     var names = list.slice(0, 3).map(function (r) { return r.clientName; }).join('、');
@@ -465,7 +467,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
   function run(list, word) {
     var ok = 0, fail = [];
     list.forEach(function (r) {
-      var x = DB.authUpgrade(r.authId);
+      var x = DB.authUpgrade(r.authId, r.to || r.latest);
       if (x && x.ok) { ok++; }
       else fail.push(r.clientName + (x && x.msg ? '（' + x.msg + '）' : ''));
     });
@@ -487,7 +489,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     $('#bulk-result-t').textContent = fail.length
       ? (word + '升级：成功 ' + ok + ' 家，失败 ' + fail.length + ' 家 · ' + fail.slice(0, 3).join('；')
          + (fail.length > 3 ? ' 等' : ''))
-      : (word + '升级：' + ok + ' 家已升到最新版本');
+      : (word + '升级：' + ok + ' 家已升到当前发布版本');
     resultTimer = setTimeout(function () { box.hidden = true; }, 12000);
   }
 
@@ -505,14 +507,14 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     if (!rec) return;
     var a = DB.appById(rec.appId);
     var top = DB.latestVer(rec.appId);
-    if (top <= (rec.version || 0)) { toast('已经是最新版本 v' + top, 'err'); return; }
+    if (top <= (rec.version || 0)) { toast('没有可升级的发布版本', 'err'); return; }
     Confirm.ask({
       title: '操作确认',
       body: '升级后，' + clientNameOf(rec) + ' 将从 v' + (rec.version || 0) + ' 升到 v' + top +
             '，其他客户不受影响，是否确认升级？',
       ok: '确定',
       onOk: function () {
-        var r = DB.authUpgrade(id);
+        var r = DB.authUpgrade(id, top);
         if (!r.ok) { toast(r.msg, 'err'); return; }
         paint();
         toast('「' + clientNameOf(rec) + '」已从 v' + r.from + ' 升到 v' + r.to);
@@ -614,7 +616,7 @@ function byVer(r) { return !VER || String(r.version) === VER; }
     /* 真源的新增授权不问版本，所以这里不再渲染「授权版本」那一行；
        没有版本时仍然要拦住（授权必须有可指向的版本）。 */
     if (!latest) {
-      box.innerHTML = '<p class="fm-hint">这个应用还没有版本，先在配置页存一版。</p>';
+      box.innerHTML = '<p class="fm-hint">这个应用尚未发布。</p>';
       return;
     }
     /* ★2026-11-04（用户：「列表里边都是已经配置好授权的客户」）：

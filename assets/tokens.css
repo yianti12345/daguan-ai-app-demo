@@ -1,10 +1,8 @@
-/* ⚠⚠ 新增令牌必须同时写进这份模板！
-   原因：token-source --build 是用「模板 + 台账」重新渲染 tokens.css 的，
-   模板里没有插值的令牌会被**直接从 tokens.css 删掉**，页面样式随即静默失效。
-   2026-11-04 踩过一次（表头/字段 6 条），2026-11-05 又踩两次（sider-indent / shadow-knob / gt-min-w）。
-   加令牌的正确顺序：先在本模板加插值 → 再在 tokens.css 写值 → --extract → --check → --build。 */
+/* 令牌值维护在 tools/tokens.dtcg.json；新增值时同时登记 CSS 模板中的位置。
+   使用 node tools/token-source.mjs --build 生成 assets/tokens.css，再用 --check 校验。
+   --extract 只用于迁移已有运行时值，不是日常编辑步骤。 */
 /* ─────────────────────────────────────────────────────────────
-   tokens.css —— 全站唯一的取值来源。
+   tokens.css —— 全站共用的运行时样式。
    三层结构（2026-10-28 立，D3「令牌唯一真源」）：
      L1 primitive  --p-*     原始值。只为 L2 提供原料，组件不许直接引用。
      L2 semantic   意图名     组件只许引用这一层（--surface-* / --color-* / --space-* /
@@ -249,8 +247,7 @@
   /* 尺寸 */
   --size-sider:var(--p-size-200);
   /* ★2026-11-05：侧栏缩进阶梯。三级菜单加过一次，裸 px 每次都要重算，所以做成令牌。
-     ⚠ 新增令牌必须同时写进这份模板，否则 token-source --build 会把它从 tokens.css 里删掉
-     （同一个坑 11-04 踩过一次、11-05 又踩一次）。 */
+     新增令牌需同时登记 DTCG 台账和 CSS 模板。 */
   --sider-indent-1:22px;
   --sider-indent-2:54px;
   --sider-indent-3:86px;

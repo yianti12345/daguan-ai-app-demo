@@ -271,10 +271,12 @@
     paintHeaders(m ? m.headers : []);
     paintChips(); applyNeed();
     setTestRes(pendingTest && pendingTest.fp === CAP.modelFp(m) ? (pendingTest.ok ? 'ok' : 'bad') : '');
-    $('#dlg').hidden = false;
-    setTimeout(function () { $('#f-name').focus(); }, 0);
+    UIK.Dialog.open($('#dlg'), {
+      initialFocus: $('#f-name'), onEscape: closeDlg,
+      returnFocus: function () { return (id && $('[data-act="edit"][data-id="' + CSS.escape(id) + '"]')) || $('#act-new'); }
+    });
   }
-  function closeDlg() { $('#dlg').hidden = true; EDIT_ID = null; }
+  function closeDlg() { UIK.Dialog.close($('#dlg')); EDIT_ID = null; }
 
   /* ★2026-11-09：类型 Tab 点击。事件绑在容器上，Tab 是动态渲染的，绑不到每个按钮。 */
   var tabsBox = $('#mtabs');
@@ -347,9 +349,6 @@
   $('#dlg-x').addEventListener('click', closeDlg);
   $('#dlg-cancel').addEventListener('click', closeDlg);
   $('#dlg').addEventListener('mousedown', function (e) { if (e.target === this) closeDlg(); });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !$('#dlg').hidden) closeDlg();
-  });
 
   $('#dlg-save').addEventListener('click', function () {
     var name = $('#f-name').value.trim();
@@ -386,7 +385,7 @@
     var isEdit = !!EDIT_ID;
     if (isEdit) CAP.updateModel(EDIT_ID, v);
     else CAP.addModel(v);
-    closeDlg(); paintModels(); paintScenes();
+    paintModels(); paintScenes(); closeDlg();
     toast(isEdit ? '已保存' : '已新增');
   });
 

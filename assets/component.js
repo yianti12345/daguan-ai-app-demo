@@ -30,7 +30,8 @@
   }
 
   /* ══ 0. 数据源 ══════════════════════════════════════════════ */
-  var TEMPLATE_MODE=!!window.TemplateBridge;
+  var TEMPLATE_MODE=document.body.hasAttribute('data-template-editor');
+  if(TEMPLATE_MODE&&!window.TemplateBridge)return;
   var DB=TEMPLATE_MODE?TemplateBridge.db:window.DB;
   if (DB && DB.load) DB.load();
 
@@ -840,8 +841,8 @@
        输入条也不再上抬（原来靠 body.is-empty 抬到卡下方），它本来就该在底部常态位。 */
     document.body.classList.remove('is-empty');
     canvasInner.innerHTML = '<section class="cv-empty">'
-      + '<b>这个组件还没有内容</b>'
-      + '<p>说清它解决什么问题、谁在用，边问边生成。</p>'
+      + '<b>'+(TEMPLATE_MODE?'这个模版还没有内容':'这个组件还没有内容')+'</b>'
+      + (TEMPLATE_MODE&&!TemplateBridge.canManage()?'':'<p>说清它解决什么问题、谁在用，边问边生成。</p>')
       + '</section>';
     /* 空态还没有东西可存：保存快照置灰。
        之前它是可点的 —— 点了会真的把版本号 +1，
@@ -1346,6 +1347,10 @@
 
   if (TEMPLATE_MODE && TemplateBridge.coverMode) {
     canvasEl.inert = true;
+    paintInitial();
+    return;
+  }
+  if (TEMPLATE_MODE && !TemplateBridge.canManage()) {
     paintInitial();
     return;
   }

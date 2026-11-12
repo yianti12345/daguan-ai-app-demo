@@ -47,6 +47,9 @@ window.Versions = (function () {
   function owner() {
     return S.scope === 'app' ? DB.appById(S.id) : DB.compById(S.id);
   }
+  function canCopyVersion() {
+    return S.scope !== 'template' || CAP.canManage(owner());
+  }
 
   /* 未入档的改动：自动保存在背后一直写，用户看不到它写过什么。
      这里只做一件事——把"上次保存快照之后攒下的改动"列出来，每条能退回。
@@ -96,6 +99,7 @@ window.Versions = (function () {
   function paint() {
     var o = owner();
     var list = DB.versOf(S.scope, S.id);
+    var current = S.scope === 'app' && DB.latestVer(S.id);
 
     $('#owner').textContent = o ? o.name : '这一项已经不在了';
     /* ★2026-11-04 二改：副标题（介绍）与「当前版本 vN」状态行已按用户要求删除 ——
@@ -134,7 +138,7 @@ window.Versions = (function () {
           if (key === 'v') return '<b>v' + esc(r.v) + '</b>';
           if (key === 'st') return r.active
             ? '<span class="vl-on">当前版本</span>'
-            : '<span class="vl-off">历史版本</span>';
+            : '<span class="vl-off">' + (current && r.v > current ? '未启用' : '历史版本') + '</span>';
           if (key === 'creator') return esc(r.createdBy || (r.snap && r.snap.editor) || '—');
           if (key === 'at') {
             var atRaw = String(r.at || '');
@@ -147,7 +151,7 @@ window.Versions = (function () {
               : '<a class="vl-btn is-quiet" href="'+(S.scope==='template'?'template.html':'component.html')+'?id=' + encodeURIComponent(S.id) + '&v=' + r.v + '" target="_blank" rel="noopener">查看</a>';
             /* 用户定口径（2026-11-04）：升级与恢复都只改应用版本，不动客户授权；
                这个动作的真实行为是"拿旧版内容生成一个新版本"，按钮就叫它干的事。 */
-            return viewBtn + (r.active ? '' :
+            return viewBtn + (r.active || !canCopyVersion() ? '' :
               '<button class="vl-btn is-main" type="button" data-a="act" data-v="' + r.v + '">复制为新版本</button>');
           }
           return '';
@@ -172,9 +176,11 @@ window.Versions = (function () {
     paintChg();
   }
 
-  function doRestore(want) {
-    var before = DB.versOf(S.scope, S.id).filter(function (x) { return x.kind === 'stable'; });
-    var was = before.reduce(function (m, x) { return Math.max(m, x.v); }, 0);
+  function doRestore(want, expectedVersion) {
+    if (DB.versNext(S.scope, S.id) !== expectedVersion) {
+      toast('版本号已变化，请重新确认', 'error');
+      return;
+    }
     var out = DB.versRestoreForward(S.scope, S.id, want);
     paint();
     if (out.error) {
@@ -188,7 +194,7 @@ window.Versions = (function () {
   }
 
   function act(what, v) {
-    if (what !== 'act') return;
+    if (what !== 'act' || !canCopyVersion()) return;
     var want = Number(v);
     var next = DB.versNext(S.scope, S.id);
     var latest = DB.versOf(S.scope, S.id).reduce(function (m, x) {
@@ -203,11 +209,11 @@ window.Versions = (function () {
       /* ★2026-11-04（用户定口径）：升级与恢复都只改应用的版本存档，不动客户授权的版本。
          原文「客户打开应用看到的就是 vN」在多客户模型下是假话 —— 每家客户各停一版，
          一次复制不可能让所有人都变。这句必须删掉，换成"客户那边不受影响"。 */
-      body: S.scope==='template' ? '将 v'+want+' 复制为新版本 v'+next+'？' : '确认后按 v' + want + ' 的内容生成当前版本 v' + next + '。'
+      body: S.scope==='template' ? '将 v'+want+' 复制为 v'+next+'，并设为当前模版版本。' : '确认后按 v' + want + ' 的内容生成当前版本 v' + next + '。'
           + '客户授权的版本不受影响 —— 要让客户用上 v' + next + '，到客户授权页升级。'
           + 'v' + latest + ' 仍留在历史里。',
       ok: '生成 v' + next,
-      onOk: function () { doRestore(want); }
+      onOk: function () { doRestore(want, next); }
     });
   }
 

@@ -110,16 +110,25 @@
     try { j = JSON.parse(raw); } catch (e) { j = null; }
     if (j && j.paths && typeof j.paths === 'object') {
       var proj = (j.info && j.info.title) || '未标注';
+      var swaggerBase = j.host && j.schemes && j.schemes[0]
+        ? j.schemes[0] + '://' + j.host + (j.basePath || '') : '';
+      function server(list) {
+        var candidate = Array.isArray(list) && list.find(function (entry) {
+          return entry && /^https?:\/\/[^\s{}?#]+$/i.test(entry.url || '');
+        });
+        return candidate ? candidate.url.replace(/\/+$/, '') : '';
+      }
       Object.keys(j.paths).forEach(function (p) {
         ['get', 'post', 'put', 'patch', 'delete'].forEach(function (m) {
           var op = j.paths[p] && j.paths[p][m];
           if (!op) return;
+          var base = server(op.servers) || server(j.paths[p].servers) || server(j.servers) || swaggerBase;
           out.push({
             name: op.summary || op.operationId || (m.toUpperCase() + ' ' + p),
-            method: m.toUpperCase(), path: p, project: proj,
+            method: m.toUpperCase(), path: p, project: proj, host: base,
             summary: String(op.description || op.summary || p).replace(/\s+/g, ' ').slice(0, 60),
             params: paramJson(op.parameters), returns: '',
-            raw: m.toUpperCase() + ' ' + p + (op.summary ? '\n' + op.summary : '')
+            raw: m.toUpperCase() + ' ' + base + p + (op.summary ? '\n' + op.summary : '')
           });
         });
       });
@@ -128,6 +137,8 @@
 
     /* 2｜YAML：不引解析库，只认缩进里的「/路径:」和它下面的方法行 */
     var cur = null, hit = 0;
+    var serverLine = raw.match(/^\s*-\s*url:\s*["']?(https?:\/\/[^\s"'{}?#]+)["']?\s*$/im);
+    var yamlBase = serverLine ? serverLine[1].replace(/\/+$/, '') : '';
     raw.split('\n').forEach(function (ln) {
       var p = ln.match(/^(\s*)(\/[A-Za-z0-9_\-./{}:]*)\s*:\s*$/);
       if (p) { cur = p[2]; return; }
@@ -135,7 +146,7 @@
       if (m && cur) {
         out.push({
           name: m[2].toUpperCase() + ' ' + cur, method: m[2].toUpperCase(), path: cur,
-          project: '未标注', summary: '', params: '', returns: '', raw: m[2].toUpperCase() + ' ' + cur
+          project: '未标注', host: yamlBase, summary: '', params: '', returns: '', raw: m[2].toUpperCase() + ' ' + yamlBase + cur
         });
         hit++;
       }
@@ -282,7 +293,7 @@
       if (b.docState === 'run') { b.docState = 'fail'; b.docErr = '上次生成没跑完'; stale = true; }
       /* 老存档迁移出来的空壳：只有一个接口时，接口自己的文档就是这份能力的说明书
          （内容是真的，不是编的）。补上，别让清单里一直挂着"生成失败"。 */
-      if (!b.doc && (b.apiIds || []).length === 1) {
+      if (!b.doc && b.docState !== 'none' && (b.apiIds || []).length === 1) {
         var only = cache.apis.filter(function (x) { return x.id === b.apiIds[0]; })[0];
         if (only && only.doc) {
           b.doc = only.doc; b.docState = 'ready'; b.docFrom = ''; b.docErr = '';
@@ -299,6 +310,29 @@
 
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(cache)); return true; } catch (e) { throw new Error('没保存上，请减少附件大小后重试'); }
+  }
+
+  function commitChanges(change) {
+    cache = null;
+    var next = clone(load());
+    var result = change(next);
+    try { localStorage.setItem(KEY, JSON.stringify(next)); }
+    catch (e) { throw new Error('没保存上，请减少附件大小后重试'); }
+    cache = next;
+    return result;
+  }
+
+  function endpoint(a, project) {
+    var path = String(a.path || '').trim();
+    var full = path.match(/^(https?:\/\/[^/\s?#]+)(.*)$/i);
+    var raw = String(a.raw || '').match(/https?:\/\/[^/\s?#'"]+/i);
+    var host = String(a.host == null ? (raw ? raw[0] : '') : a.host).trim().replace(/\/+$/, '');
+    if (full) { host = full[1]; path = full[2] || '/'; }
+    if (path && path[0] !== '/') path = '/' + path;
+    return {
+      host: host, path: path, method: String(a.method || 'GET').toUpperCase(),
+      key: JSON.stringify([host || 'project:' + (project || a.project || '未标注'), String(a.method || 'GET').toUpperCase(), path])
+    };
   }
 
   function now() {
@@ -453,68 +487,77 @@
     return m ? m.name : '';
   }
 
-  /* 整包导出/导入：接后端前，至少让数据能跟着人走。 */
-  /* ★2026-11-09：导入能力包（interfaces 页「导入」用）。
-     口径：接口进池按 host+method+path 去重（同一个接口被两个能力引用不算两份）；
-     能力同名则合并（追加接口），不新建 —— 客户重发一版不会把清单撑成两份。 */
-  function importAbilities(items, opts) {
-    /* ★2026-11-09 盲审：导入要能选「新建」还是「合并」——
-       原来同名一律静默合并，用户以为新建了一条，实际清单条数没变。
-       mode='new' 时即使同名也建新的一条；默认 merge，保持老调用不变。 */
-    var mode = (opts && opts.mode === 'new') ? 'new' : 'merge';
-    var d = load();
-    var nAb = 0, nApi = 0, nSkip = 0;
-    (items || []).forEach(function (b) {
-      if (!b || !b.name) return;
-      var apiIds = [];
-      (b.apis || []).forEach(function (a) {
-        if (!a || !a.path) return;
-        /* ★2026-11-09：host 在种子里普遍是空串，只用 method+path 做键会把
-           「A 项目的 /api/v1/verify」和「B 项目的 /api/v1/verify」判成同一个接口，
-           静默合并成一条。host 缺失时用项目名占位，宁可多一条也不误合并。 */
-        var hk = a.host || ('project:' + (b.project || '未标注'));
-        var key = hk + ' ' + (a.method || 'GET') + ' ' + a.path;
-        var hit = d.apis.filter(function (x) {
-          var xk = (x.host || ('project:' + (x.project || '未标注'))) + ' ' + (x.method || 'GET') + ' ' + x.path;
-          return xk === key;
-        })[0];
-        if (hit) { apiIds.push(hit.id); nSkip++; return; }
-        var nid = 'api-imp-' + (nApi++) + '-' + Date.now().toString(36);
-        d.apis.push({
-          id: nid, name: a.name || a.path, desc: a.summary || '',
-          source: b.project || '未标注', project: b.project || '未标注',
-          state: 'ok', on: true, at: now(),
-          method: a.method || 'GET', path: a.path || '', host: a.host || '',
-          params: a.params || '', returns: a.returns || '', raw: a.raw || ''
-          /* ★2026-11-09：这里原来写 doc: b.doc —— 把能力的说明书塞给每一个接口。
-             接口的说明和能力的说明是两回事，导进来之后接口详情会显示一段跟它无关的文字。 */
-        });
-        apiIds.push(nid);
+  function applyAbilityImport(store, items, options) {
+    var result = {abilities:0, apis:0, skipped:0, rows:[]};
+    var existingAbilities = store.abilities.slice();
+    var knownApis = new Map(store.apis.filter(function (api) { return !!api.path; }).map(function (api) {
+      return [endpoint(api).key, api.id];
+    }));
+    items.forEach(function (item) {
+      var kind = item.kind || 'api';
+      var matches = existingAbilities.filter(function (record) {
+        return (record.kind || 'api') === kind && record.name === item.name;
       });
-      var same = mode === 'merge' ? d.abilities.filter(function (x) { return x.name === b.name; })[0] : null;
-      if (same) {
-        apiIds.forEach(function (id) { if ((same.apiIds || []).indexOf(id) < 0) same.apiIds.push(id); });
-        /* ★2026-11-09 盲审：原来只在 same.doc 为空时写，导出的说明书永远进不来 ——
-           验收「导出→导入→详情能看到完整说明书」在合并这条路上不成立。以文件为准。 */
-        if (b.doc && b.doc !== same.doc) {
-          same.doc = b.doc;
-          same.docState = 'ready';
-          same.docFrom = b.docFrom || same.docFrom || '';
-          same.docAt = b.docAt || same.docAt || '';
+      var row = {name:item.name, interfaces:0, skipped:0, same:matches.length,
+        matches:matches.map(function (record) { return record.id; }),
+        mergeBlocked:matches.length > 1 || matches.some(function (record) { return !options.canMerge(record); })};
+      result.rows.push(row);
+      if (options.mode === 'merge' && row.mergeBlocked) throw new Error('「' + item.name + '」有多个同名项或无维护权限，请选择新建');
+      var ids = [];
+      (item.apis || []).forEach(function (input) {
+        var normalized = endpoint(Object.assign({}, input, {host:input.host || undefined}), item.project);
+        row.interfaces++;
+        var apiId = knownApis.get(normalized.key);
+        if (apiId) { result.skipped++; row.skipped++; }
+        else {
+          apiId = uid('api');
+          knownApis.set(normalized.key, apiId);
+          store.apis.push({
+            id:apiId, name:input.name || normalized.path, desc:input.summary || '', summary:input.summary || '',
+            source:item.project || '未标注', project:item.project || '未标注',
+            state:'ok', on:true, at:now(), method:normalized.method, path:normalized.path, host:normalized.host,
+            params:input.params || '', returns:input.returns || '', raw:input.raw || ''
+          });
+          result.apis++;
         }
+        if (!ids.includes(apiId)) ids.push(apiId);
+      });
+      var same = options.mode === 'merge' ? matches[0] : null;
+      if (same) {
+        same.apiIds = Array.from(new Set((same.apiIds || []).concat(ids)));
+        if (item.doc) Object.assign(same, {doc:item.doc, docState:'ready',
+          docFrom:item.docFrom || same.docFrom || '', docAt:item.docAt || same.docAt || ''});
+        if (item.files && item.files.length) same.files = clone(item.files);
         same.at = now();
-      } else {
-        d.abilities.push({
-          id: 'ab-imp-' + (nAb++) + '-' + Date.now().toString(36),
-          name: b.name, intro: b.intro || '', project: b.project || '未标注',
-          apiIds: apiIds, doc: b.doc || '',
-          docState: b.doc ? 'ready' : 'none', docFrom: b.docFrom || '', docAt: b.docAt || '',
-          at: now()
-        });
+        same.revision = (same.revision || 1) + 1;
+        return;
       }
+      store.abilities.push({
+        id:uid('ab'), name:item.name, kind:kind, intro:item.intro || '', project:item.project || '未标注',
+        ownerId:options.owner.id, ownerName:options.owner.name,
+        useScope:{mode:'self', roles:[], depts:[], users:[]}, on:true, revision:1,
+        files:clone(item.files || []), apiIds:ids, doc:item.doc || '', docState:item.doc ? 'ready' : 'none',
+        docFrom:item.docFrom || '', docAt:item.docAt || '', at:now()
+      });
+      result.abilities++;
     });
-    save();
-    return { abilities: nAb, apis: nApi, skipped: nSkip };
+    return result;
+  }
+
+  function importAbilities(items, options) {
+    if (options.preview) {
+      cache = null;
+      return applyAbilityImport(clone(load()), items, options);
+    }
+    return commitChanges(function (store) {
+      if (options.expected) {
+        var preview = applyAbilityImport(clone(store), items, Object.assign({}, options, {mode:'new'}));
+        if (JSON.stringify(preview) !== JSON.stringify(options.expected)) {
+          throw new Error('能力或接口已变化，请重新预览后导入');
+        }
+      }
+      return applyAbilityImport(store, items, options);
+    });
   }
 
   function exportAll() {
@@ -579,6 +622,7 @@
 
   window.CAP = {
     load: load, save: save, refresh: function(){cache=null;return load();},
+    commitChanges: commitChanges, newId: uid, endpoint: endpoint,
     apis: apis, apiById: apiById, addApi: addApi, updateApi: updateApi, removeApi: removeApi, toggleApi: toggleApi,
     skills: skills, skillById: skillById, addSkill: addSkill, updateSkill: updateSkill, removeSkill: removeSkill, toggleSkill: toggleSkill,
     compApis: compApis, setCompApis: setCompApis, prompt: prompt, setPrompt: setPrompt, exportAll: exportAll, importAll: importAll,
@@ -592,7 +636,8 @@
     now: now
   };
   // Reflect the real local backend, without copying any CLI credential to the browser.
-  if(typeof fetch==='function')fetch('/xz/status').then(function(r){if(!r.ok)return null;return r.json();}).then(function(runtime){
+  var canReadLocalModel = !window.UIK || !UIK.modelRequestsAllowed || UIK.modelRequestsAllowed();
+  if(canReadLocalModel&&typeof fetch==='function')fetch('/xz/status').then(function(r){if(!r.ok)return null;return r.json();}).then(function(runtime){
     if(!runtime || runtime.backend!=='codex-cli')return;
     var d=load(),id='m-local-codex',m=d.models.filter(function(x){return x.id===id;})[0],changed=false;
     if(!m){m={id:id,name:runtime.model,label:'本机 Codex',kind:'chat',source:'cli',backend:'cli',on:true,temp:0.2,outMax:8192,ctx:200000,headers:[]};d.models.push(m);changed=true;}

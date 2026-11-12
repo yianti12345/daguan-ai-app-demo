@@ -458,6 +458,15 @@ button:disabled{cursor:not-allowed}/* ★2026-10-25 盲评第六轮 P0，原文�
 .gtable-row:last-child{border-bottom: 0}
 .gtable-row:hover{background: var(--color-state-hover)}
 .gtable-head,.gtable-row{min-width:var(--gt-min-w)}
+.gtable[role="table"]{min-width:0;max-width:100%;overflow-x:auto}
+.gtable[role="table"]:focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:-2px}
+.gtable [data-table-actions]{
+  position:sticky;inset-inline-end:0;z-index:1;align-self:stretch;
+  display:flex;align-items:center;justify-content:flex-end;
+  background:var(--surface-page);
+}
+.gtable-head [data-table-actions]{background:var(--table-head-bg)}
+.gtable-row:hover [data-table-actions]{background:var(--color-state-hover)}
 .gtable-foot{padding: 14px var(--gt-pad-x);display:flex;align-items:center;gap:var(--space-12);
   font-size:var(--font-size-caption);color:var(--color-text-secondary)}
 /* ★2026-11-05：这条原先在 interfaces / xz-config / skills / config 四页各抄了一份，一字不差。
@@ -3071,7 +3080,6 @@ b,strong{font-weight:600}
 .nf-row select{width:100%;height:var(--field-h);padding:0 var(--space-8);border:1px solid var(--color-border-control);border-radius:var(--radius-xs);background:var(--surface-page);color:var(--color-text-body);font:inherit}
 
 /* Personal capability discovery panel. */
-.av-panel{max-width:1000px;width:calc(100vw - 64px);max-height:calc(100vh - 64px)}
 .av-filter{display:flex;gap:var(--space-12);padding:var(--space-12) var(--space-24)}.av-filter>.field:first-child{flex:1}.av-filter select{height:var(--field-h);border:0;background:transparent;font:inherit;color:var(--color-text-body)}
 .av-note{margin:0;padding:0 var(--space-24) var(--space-12);font-size:var(--font-size-caption);color:var(--color-text-secondary);line-height:1.7}
 .av-batch,.av-footer{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-12);padding:var(--space-12) var(--space-24);border-top:1px solid var(--color-border-hairline);font-size:var(--font-size-body)}
@@ -3094,6 +3102,34 @@ body[data-app] .topbar .app-name{font-size:var(--font-size-body);max-width:min(3
 body[data-app] .canvas{padding-top:72px}
 .av-reason{margin:0 0 var(--space-8);font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
 @media(max-width:1100px){body[data-app] .topbar{padding:0 var(--space-12);gap:var(--space-8)}body[data-app] .tb-ops{gap:var(--space-8)}body[data-app] .ab-user{margin-left:0}}
+
+@media (max-width:700px) {
+  body:is([data-app]:not([data-mode="view"]),[data-template-editor]){
+    --editor-topbar-height:calc(2 * var(--space-32) + var(--space-24));
+  }
+  body:is([data-app]:not([data-mode="view"]),[data-template-editor]) .topbar{
+    height:var(--editor-topbar-height);padding:0 var(--space-12) var(--space-4);
+    flex-direction:column;align-items:stretch;gap:0;
+  }
+  body:is([data-app]:not([data-mode="view"]),[data-template-editor]) .float-hd{
+    min-height:calc(var(--space-32) + var(--space-16));flex:none;padding-inline-end:calc(var(--space-32) + var(--space-24));
+  }
+  body:is([data-app]:not([data-mode="view"]),[data-template-editor]) .tb-ops{
+    justify-content:flex-end;gap:var(--space-4);margin-inline-start:0;
+  }
+  body:is([data-app]:not([data-mode="view"]),[data-template-editor]) .tb-ops .btn{
+    padding-inline:var(--space-4);font-size:var(--font-size-caption);
+  }
+  body:is([data-app]:not([data-mode="view"]),[data-template-editor]) .tb-ops .ab-wrap{
+    position:absolute;inset-block-start:var(--space-8);inset-inline-end:var(--space-12);
+  }
+  body:is([data-app]:not([data-mode="view"]),[data-template-editor]) .ab-user .ab-nm,
+  body:is([data-app]:not([data-mode="view"]),[data-template-editor]) .cap-entry svg{display:none}
+  body:is([data-app]:not([data-mode="view"]),[data-template-editor]) .canvas{
+    padding-top:calc(var(--editor-topbar-height) + var(--space-8));
+    padding-inline:var(--space-12);
+  }
+}
 
 /* 共享能力类型标签；文案与开关由 UIK.Ability 统一输出。 */
 .ability-kind{display:inline-flex;align-items:center;height:var(--space-24);padding:0 var(--space-8);border-radius:var(--radius-tag);background:var(--surface-sunken);color:var(--color-text-secondary);font-size:var(--font-size-caption);font-weight:500;line-height:1;white-space:nowrap}

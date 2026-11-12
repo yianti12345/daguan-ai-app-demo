@@ -15,7 +15,7 @@
      固定用一个能看全的账号，是为了让分组和筛选有内容可看，不是为了模拟越权。
    ───────────────────────────────────────────────────────────── */
 (function () {
-  var VISIBLE = ['已上架', '内测中'];      /* 客户侧可见状态 */
+  var VISIBLE = ['已上架', '内测中'];
   var F = { kw: '', st: '全部', scene: '全部' };
   var VIEW = 'grid';
   var kwTimer = null;
@@ -34,13 +34,15 @@
   var BUYER = '达观数据';                        /* 顶条账号块里写的那个组织 */
   var BUYER_TID = 'a1b2c3d4e5f60001';            /* 演示租户 ID：16 位，与种子同格式 */
 
-  function isBought(id) {
-    if (!window.DB || !DB.AUTHS) return false;
-    for (var i = 0; i < DB.AUTHS.length; i++) {
-      if (DB.AUTHS[i].appId === id && DB.AUTHS[i].status === '已授权') return true;
-    }
-    return false;
+  function buyer() {
+    return DB.clients().find(function (client) { return client.tenantId === BUYER_TID; }) || DB.clientByName(BUYER);
   }
+
+  function displayStatus(app) {
+    if (DB.latestVer(app.id) > 0) return '已上架';
+    return app.status === '内测中' ? '内测中' : '';
+  }
+
   function today() {
     var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
@@ -57,14 +59,16 @@
 
   function rows() {
     var all = (window.DB && DB.APPS) ? DB.APPS : [];
-    var out = all.filter(function (a) { return VISIBLE.indexOf(a.status) >= 0; });
+    var out = all.filter(function (a) {
+      var status = displayStatus(a);
+      return !!status && (F.st === '全部' || status === F.st);
+    });
     var kw = F.kw.trim().toLowerCase();
     if (kw) {
       out = out.filter(function (a) {
         return (a.name + ' ' + shortName(a.name) + ' ' + (a.desc || '')).toLowerCase().indexOf(kw) >= 0;
       });
     }
-    if (F.st !== '全部') out = out.filter(function (a) { return a.status === F.st; });
     if (F.scene !== '全部') out = out.filter(function (a) { return (a.scene || '其他') === F.scene; });
     return out;
   }
@@ -76,7 +80,7 @@
     var all = (window.DB && DB.APPS) ? DB.APPS : [];
     var seen = [], out = [];
     all.forEach(function (a) {
-      if (VISIBLE.indexOf(a.status) < 0) return;
+      if (!displayStatus(a)) return;
       var s = a.scene || '其他';
       if (seen.indexOf(s) < 0) { seen.push(s); out.push(s); }
     });
@@ -131,8 +135,11 @@
      不能把动作塞进 <a> 里 —— 按钮嵌链接是无效 HTML，点一下会同时触发两个行为。 */
   function cardHtml(a) {
     var href = 'app.html?id=' + encodeURIComponent(a.id) + '&mode=view';
+    var customer = buyer();
+    var grant = customer && DB.authOf(a.id, customer.id);
+    var bought = !!grant && grant.status === '已授权';
+    if (bought && grant.version > 0) href += '&v=' + encodeURIComponent(grant.version);
     var nm = shortName(a.name);
-    var bought = isBought(a.id);
     var cta;
     if (MODE === 'market' && !bought) {
       cta = '<button type="button" class="ac-cart" data-buy="' + esc(a.id) + '"'
@@ -169,11 +176,11 @@
       body: '开通后这条授权会写进客户授权，' + BUYER + ' 的账号可以用它。',
       ok: '开通',
       onOk: function () {
-        var cl = DB.clientByName(BUYER);
+        var cl = buyer();
         if (!cl) {
           var r = DB.addClient(BUYER, BUYER_TID);
           if (!r || !r.ok) { UIK.toast((r && r.msg) || '客户台账没写进去', 'error'); return; }
-          cl = DB.clientByName(BUYER);
+          cl = buyer();
         }
         if (!cl) { UIK.toast('客户台账没写进去', 'error'); return; }
         var res = DB.authGrant(id, [cl.id], 12, today());

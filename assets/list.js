@@ -104,14 +104,30 @@
     if (!body) return;
 
     /* ① 列宽：唯一的声明处。页面 CSS 里不许再写 --gt-cols。 */
-    if (table && spec.cols) table.style.setProperty('--gt-cols', spec.cols);
+    if (table && spec.cols) {
+      var tracks = String(spec.cols).trim().split(/\s+(?![^(]*\))/);
+      var minWidth = tracks.reduce(function (sum, track) {
+        var value = track.match(/^(?:minmax\(\s*)?(\d+(?:\.\d+)?)px\b/);
+        return sum + (value ? Number(value[1]) : 0);
+      }, 0);
+      table.style.setProperty('--gt-cols', spec.cols);
+      table.style.setProperty('--gt-min-w', 'calc(' + minWidth + 'px + ' +
+        (tracks.length - 1) + ' * var(--gt-gap) + 2 * var(--gt-pad-x))');
+      table.setAttribute('role', 'table');
+      table.setAttribute('aria-label', body.getAttribute('aria-label') || table.getAttribute('aria-label') || spec.object);
+      table.tabIndex = 0;
+      body.setAttribute('role', 'rowgroup');
+      body.removeAttribute('aria-label');
+    }
 
     /* ② 表头 */
     if (head) {
+      head.setAttribute('role', 'row');
+      head.removeAttribute('aria-hidden');
       head.innerHTML = spec.headCols.map(function (c) {
         var inner = (typeof spec.headCell === 'function') ? spec.headCell(c.key) : null;
         if (inner == null) inner = (c.label == null ? '' : esc(c.label));
-        return '<span' + (c.cls ? ' class="' + esc(c.cls) + '"' : '') +
+        return '<span role="columnheader"' + (c.key === 'ops' ? ' data-table-actions' : '') + (c.cls ? ' class="' + esc(c.cls) + '"' : '') +
           (c.align ? ' style="text-align:' + esc(c.align) + '"' : '') + '>' +
           inner + '</span>';
       }).join('');
@@ -132,11 +148,11 @@
       var cls = spec.rowClass || '';
       if (spec.rowExtra) cls += ' ' + (spec.rowExtra(r) || '');
       var attr = spec.rowAttr ? (spec.rowAttr(r) || '') : '';
-      return '<div class="' + cls.trim() + '" role="listitem"' + attr + '>' +
+      return '<div class="' + cls.trim() + '" role="row"' + attr + '>' +
         spec.headCols.map(function (c) {
           var inner = spec.cell(c.key, r);
           var cattr = spec.cellAttr ? (spec.cellAttr(c.key, r) || '') : '';
-          return '<span' + (c.cls ? ' class="' + esc(c.cls) + '"' : '') + cattr + '>' +
+          return '<span role="cell"' + (c.key === 'ops' ? ' data-table-actions' : '') + (c.cls ? ' class="' + esc(c.cls) + '"' : '') + cattr + '>' +
             (inner == null ? '' : inner) + '</span>';
         }).join('') +
       '</div>';

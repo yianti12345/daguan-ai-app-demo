@@ -163,9 +163,10 @@
     app.content = JSON.parse(JSON.stringify(snap.content || {}));
     if (persist !== false) DB.save();
   }
+  var editingVersion = 0;
   function saveDraft() {
     try {
-      draftSession.save();
+      draftSession.save({baseVersion:editingVersion});
       paintSaveState();
       hint('草稿已保存', { ms: 5000 });
       return true;
@@ -176,16 +177,10 @@
   }
   if (!VIEW_MODE) {
     var bootDraft = readDraft();
+    var baseline = DB.appEditVersion(appId);
+    editingVersion = bootDraft && Number.isInteger(bootDraft.baseVersion) ? bootDraft.baseVersion : (baseline ? baseline.v : 0);
     if (bootDraft) applySnap(bootDraft, false);
-    else {
-      /* 没有草稿：回到**最大号**的稳定版，不是 active —— 未上架应用没有 active，
-         但它的最新版本仍应作为下次编辑的起点。 */
-      var bootList = (DB.versOf('app', appId) || []).filter(function (r) {
-        return r.kind === 'stable' && r.snap;
-      });
-      bootList.sort(function (a, b) { return b.v - a.v; });
-      if (bootList[0]) applySnap(bootList[0].snap, false);
-    }
+    else if (baseline) applySnap(baseline.snap, false);
   }
 
   /* ★2026-10-27：版本化只读视图 `?mode=view&v=N`。
@@ -197,9 +192,9 @@
     restore:function(s){applySnap(s,false);},persist:function(){return DB.save();}
   });
 
-  function latestFormal(){var rows=DB.versOf('app',appId).filter(function(r){return r.kind==='stable';}).sort(function(a,b){return b.v-a.v;});return rows[0]&&rows[0].snap?rows[0]:null;}
+  function latestFormal(){return DB.appEditVersion(appId);}
   function syncReset(){var b=$('#act-reset');if(!b)return;b.hidden=VIEW_MODE;var formal=latestFormal();b.disabled=VIEW_MODE||!!genBusy||!formal||(!readDraft()&&!draftSession.isDirty());b.title=formal?'':'暂无正式版本可恢复';}
-  function resetDraft(){var formal=latestFormal();if(VIEW_MODE||!formal||genBusy)return;Confirm.ask({title:'重置为 v'+formal.v+'？',body:'当前修改和已保存的草稿将被清除。',ok:'重置',onOk:function(){try{var current=latestFormal();if(!current)throw new Error('没有可恢复的正式版本');draftSession.reset(current.snap);paintApp();renderCanvas();syncReset();hint('已重置为 v'+current.v);}catch(e){hint(e.message||'重置失败',{kind:'err',ms:9000});}}});}
+  function resetDraft(){var formal=latestFormal();if(VIEW_MODE||!formal||genBusy)return;Confirm.ask({title:'重置为 v'+formal.v+'？',body:'当前修改和已保存的草稿将被清除。',ok:'重置',danger:true,onOk:function(){try{var current=latestFormal();if(!current||current.v!==formal.v)throw new Error('正式版本已变化，请重新确认重置');draftSession.reset(current.snap);editingVersion=current.v;paintApp();renderCanvas();syncReset();hint('已重置为 v'+current.v);}catch(e){hint(e.message||'重置失败',{kind:'err',ms:9000});}}});}
   window.addEventListener('beforeunload',function(e){if(!VIEW_MODE&&draftSession.isDirty()){e.preventDefault();e.returnValue='';}});
 
   var viewV = parseInt(qs.get('v'), 10) || 0;
@@ -214,7 +209,7 @@
       /* 指定版本：只认快照，取不到就显示"不存在"，绝不回落到当前内容 */
       if (vrec && vrec.snap) VIEW_SNAP = vrec.snap;
       else { viewMissing = true; viewBlocked = true; }
-    } else if (app.status === '已上架' && vrec && vrec.snap) {
+    } else if (vrec && vrec.snap) {
       /* 客户链接：必须已上架且有 active 快照 */
       VIEW_SNAP = vrec.snap;
     } else {
@@ -249,18 +244,6 @@
     }
   }
 
-  /* 版本号来源：台账 active 快照 > 最大号。第一次保存快照 = v1。 */
-  function getVer() {
-    /* 2026-10-27：当前线上 = active 的那一版；没有 active 就是 0（未上线），
-       不再回落到最大号 —— 否则下架后顶栏还会写「当前线上 v6」。 */
-    var act = DB.versActive('app', appId);
-    return act ? act.v : 0;
-  }
-  function topVer() {
-    /* 新快照号只增不回收：取现有最大号，+1 在 doPublish 里算。 */
-    var st = DB.versOf('app', appId).filter(function (r) { return r.kind === 'stable'; });
-    return st.length ? st[0].v : 0;
-  }
   /* ★2026-10-27 单一工作区模型：不再有"当前编辑的是草稿还是线上"这个问题。
      画布永远只有一份最新实时状态，改动自动保存；版本只在点「保存快照」时产生。
      顶栏这行只说两件事实：当前线上是哪版、刚才有没有自动保存。 */
@@ -400,11 +383,7 @@
          · 内容和存档版不一致 → 「未保存」（该去点「保存新版本并发布」）
          · 写盘失败          → 「保存失败」（红字，上面已 early return）
        一版都没存过时印 v0：数据层里草稿的 version 就是 0，不另造一个词。 */
-    var stables = DB.versOf('app', appId).filter(function (r) { return r.kind === 'stable'; });
-    var top = stables.length
-      ? stables.reduce(function (a, b) { return b.v > a.v ? b : a; }, stables[0])
-      : null;
-    var ver = 'v' + (top ? top.v : (app.version || 0));
+    var ver = 'v' + editingVersion;
     ed.removeAttribute('title');
     if (draftSession && draftSession.isDirty()) {
       ed.setAttribute('data-dirty', '1');
@@ -1347,7 +1326,7 @@
     /* ★2026-10-27 单一工作区模型：没有"发布草稿"这回事。
        当前画布已经自动保存；这一步只做一件事：把当前所有内容冻成不可变快照。
        所以问句说的是"保存哪一版、客户会看到什么"，不是"要不要发布草稿"。 */
-    var next = topVer() + 1;
+    var next = DB.versNext('app', appId);
     /* ★2026-11-03（用户 m05120）：「保存新版本并发布」—— 存快照和让客户看到
        在这一颗按钮里完成，不再让用户存完再找授权页。 */
     Confirm.ask({
@@ -1357,7 +1336,7 @@
       body: '当前内容存为 v' + next + '，并设为这个应用当前的版本；'
         + '已授权的客户要升到 v' + next + '，得在「客户授权」里推送。',
       ok: '保存并发布',
-      onOk: commitPublish
+      onOk: function () { commitPublish(next); }
     });
   }
 
@@ -1401,34 +1380,24 @@
     return bits.join(' · ');
   }
 
-  function commitPublish() {
+  function commitPublish(expectedVersion) {
     /* 2026-10-26：发布改成"把当前内容冻成一个正式版并启用"。
        2026-10-27：冻结的内容不再只有组件 id，而是每一块的 spec/fields/config 快照；
        同时算一句人话摘要和内容指纹，会话里那张改动卡直接用它。 */
     var prevRec = DB.versActive('app', appId);
     var prevSnap = prevRec ? prevRec.snap : null;
-    var content = DB.resolveContent(appId);
-    var snap = {
-      comps: (app.comps || []).slice(), name: app.name, desc: app.desc, client: app.client,
-      content: content, contentHash: DB.hash(content), at: today(),
-      /* ★2026-11-01（用户：「什么叫保存人，最后编辑人不行吗」）：
-         就叫**最后编辑人**，而且必须真的写进去 —— 原来快照里根本没这个字段，
-         版本页只能显示「—」，等于这一栏从来没工作过。 */
-      editor: DB.editor()
-    };
+    if (DB.versNext('app', appId) !== expectedVersion) {
+      hint('版本号已变化，请重新确认发布', {kind:'err', ms:9000});
+      return;
+    }
+    var snap = DB.appVersionSnapshot(appId);
     snap.summary = summarizeSnap(prevSnap, snap);
-    /* ★2026-10-31：versPublish → versSave。存一版不再顺手把客户看到的换掉，
-       客户的版本只由「客户授权」页的那一个升级动作改（见 00e-版本与授权模型）。 */
-    var v = DB.versSave('app', appId, snap, today());
+    var v = DB.versPublish('app', appId, snap, today(), expectedVersion);
     if (!v) {
-      hint('没保存上，内容还在', { kind: 'err', ms: 9000 });
+      hint('发布失败，当前修改仍在页面上', {kind:'err', ms:9000});
       return;
     }
-    var published = DB.versActivate('app', appId, v);
-    if (!published) {
-      hint('版本存下了但没发布；去「客户授权」启用 v' + v, { kind: 'err', ms: 9000 });
-      return;
-    }
+    editingVersion = v;
     app.updated = today();
     if(!clearDraft()){paintApp();renderCanvas();return;}
     /* 发布＝已经生效：之前那些"还能退回旧版本"的入口一起作废（发布后不可退）。 */

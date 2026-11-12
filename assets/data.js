@@ -425,15 +425,9 @@
      新增授权和升级版本都默认指向当前应用的最新版本。
      ⇒ 版本不让人选：新增和升级都取 latestVer(appId)。要停在一版，就别升级。 */
   DB.latestVer = function (appId) {
-    var a = DB.appById(appId);
-    var v = 0;
-    try {
-      (DB.versOf('app', appId) || []).forEach(function (r) {
-        if (r.kind === 'stable' && r.v > v) v = r.v;
-      });
-    } catch (e) {}
-    if (!v && a) v = parseInt(a.version, 10) || 0;
-    return v;
+    if (!DB.appById(appId)) return 0;
+    var current = DB.versActive('app', appId);
+    return current && current.snap ? current.v : 0;
   };
   DB.authOf = function (appId, clientId) {
     for (var i = 0; i < DB.AUTHS.length; i++) {
@@ -474,7 +468,8 @@
     var a = DB.appById(appId);
     if (!a) return { ok: false, msg: '应用不存在', added: [] };
     var v = DB.latestVer(appId);
-    if (!v) return { ok: false, msg: '这个应用还没有版本，先「存成新版本」再授权', added: [] };
+    if (!v) return { ok: false, msg: '请先发布应用，再授权客户', added: [] };
+    var before = JSON.stringify(DB.AUTHS);
     var ids = Array.isArray(clientIds) ? clientIds : (clientIds ? [clientIds] : []);
     /* ★2026-11-02：有效期允许「长期」。原来只认月份，"0" 是真值 ⇒ addMonths(0) 当天到期；
        真实系统用 9999-12-31 表示长期，这里同一个哨兵值。 */
@@ -496,21 +491,29 @@
       }
       added.push(c.name);
     });
-    if (added.length) { a.status = a.status === '已下架' ? '已上架' : a.status; DB.save(); }
+    if (added.length && DB.save() === false) {
+      DB.AUTHS = JSON.parse(before);
+      return { ok: false, msg: '没保存上，请重试', added: [] };
+    }
     return { ok: added.length > 0, added: added, skipped: skipped, version: v,
              msg: added.length ? '' : (skipped.length ? '选中的客户已经授权过了' : '没有可授权的客户') };
   };
   /* 升级：只改这条授权的版本，其它客户的版本不动。版本一律取最新。 */
-  DB.authUpgrade = function (authId) {
+  DB.authUpgrade = function (authId, expectedVersion) {
     var rec = null;
     for (var i = 0; i < DB.AUTHS.length; i++) if (DB.AUTHS[i].id === authId) rec = DB.AUTHS[i];
     if (!rec || rec.status !== '已授权') return { ok: false, msg: '这条授权不存在或已取消' };
     var v = DB.latestVer(rec.appId);
-    if (!v) return { ok: false, msg: '这个应用还没有版本' };
-    if (v <= (rec.version || 0)) return { ok: false, msg: '已经是最新版本 v' + v };
+    if (!v) return { ok: false, msg: '应用当前没有已发布版本' };
+    if (expectedVersion != null && v !== expectedVersion) return {ok:false, msg:'发布版本已变化，请重新确认升级'};
+    if (v <= (rec.version || 0)) return { ok: false, msg: '没有可升级的发布版本' };
     var from = rec.version || 0;
+    var previousTime = rec.upgradedAt;
     rec.version = v; rec.upgradedAt = nowStamp();
-    if (DB.save() === false) return { ok: false, msg: '没存进去' };
+    if (DB.save() === false) {
+      rec.version = from; rec.upgradedAt = previousTime;
+      return { ok: false, msg: '没保存上，请重试' };
+    }
     return { ok: true, from: from, to: v };
   };
   DB.authRevoke = function (authId) {
@@ -1672,7 +1675,8 @@
         if (Array.isArray(arr) && arr.length) {
           var clean = normalize(arr);
           /* 去重结果写回：否则原始台账里同号两条会一直在，页面只是读时看不见 */
-          try { localStorage.setItem(LEDGER_KEY(scope, id), JSON.stringify(clean)); } catch (e2) {}
+          var normalized = JSON.stringify(clean);
+          if (normalized !== raw) { try { localStorage.setItem(LEDGER_KEY(scope, id), normalized); } catch (e2) {} }
           return clean;
         }
       } catch (e) {}
@@ -1706,10 +1710,10 @@
   DB.versPublish = function (scope, id, snap, at, forceV) {
     var list = DB.versOf(scope, id);
     var stables = list.filter(function (r) { return r.kind === 'stable'; });
-    var next = parseInt(forceV, 10) ||
-      (stables.length ? Math.max.apply(null, stables.map(function (r) { return r.v; })) + 1 : 1);
-    /* 发号不许撞号：撞了就是调用方算错了，返回 null，不许造出两条同号快照 */
-    if (list.some(function (r) { return r.kind === 'stable' && r.v === next; })) return null;
+    var next = stables.length ? Math.max.apply(null, stables.map(function (r) { return r.v; })) + 1 : 1;
+    if (forceV != null && Number(forceV) !== next) return null;
+    if (scope === 'app' && !snap) return null;
+    list.forEach(function (record) { record.active = false; });
     list = list.filter(function (r) { return r.kind !== 'draft'; });
     /* 不可变：快照一旦落盘就与当前对象脱钩，后续改画布不会改到历史版 */
     var frozen = snap ? JSON.parse(JSON.stringify(snap)) : null;
@@ -1750,7 +1754,7 @@
     var want = parseInt(v, 10);
     var list = DB.versOf(scope, id);
     /* 目标不存在就什么都不做：旧代码会把所有 active 置 false，等于静默下架 */
-    if (!list.some(function (r) { return r.kind === 'stable' && r.v === want; })) return null;
+    if (!list.some(function (r) { return r.kind === 'stable' && r.v === want && (scope !== 'app' || r.snap); })) return null;
     var hit = null;
     list.forEach(function (r) {
       if (r.kind === 'stable' && r.v === want) { r.active = true; hit = r; }
@@ -1820,6 +1824,21 @@
 
   /* 下一个正式版号（只读）。版本页要在确认框里说"将生成 V4"，
      必须与 versPublish 用同一条发号规则，不能在页面里另算一次。 */
+  DB.appEditVersion = function (id) {
+    var versions = DB.versOf('app', id).filter(function (record) { return !!record.snap; });
+    return versions.find(function (record) { return record.active; }) || versions[0] || null;
+  };
+
+  DB.appVersionSnapshot = function (id) {
+    var app = DB.appById(id);
+    if (!app) return null;
+    var content = DB.resolveContent(id);
+    return {
+      comps: (app.comps || []).slice(), name: app.name, desc: app.desc, client: app.client,
+      content: content, contentHash: DB.hash(content), at: DB.now(), editor: DB.editor()
+    };
+  };
+
   DB.versNext = function (scope, id) {
     var st = DB.versOf(scope, id).filter(function (r) { return r.kind === 'stable'; });
     return (st.length ? Math.max.apply(null, st.map(function (r) { return r.v; })) : 0) + 1;
@@ -1903,8 +1922,7 @@
 
   /* 老的读写口子保留，内部换成台账 —— 别处还在用它们，不能留两套实现 */
   DB.appVer = function (id) {
-    var act = DB.versActive('app', id);
-    return act ? act.v : 0;
+    return DB.latestVer(id);
   };
 
 

@@ -6,8 +6,8 @@
 <title>应用管理</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23587FFF'/%3E%3Crect x='8' y='9' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='15' width='11' height='3' rx='1.5' fill='white' opacity='.75'/%3E%3Crect x='8' y='21' width='7' height='3' rx='1.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/common_card.webp">
-<link rel="stylesheet" href="assets/tokens.css?v=b38a25d3">
-<link rel="stylesheet" href="assets/sys.css?v=1affd7da">
+<link rel="stylesheet" href="assets/tokens.css?v=828c7552">
+<link rel="stylesheet" href="assets/sys.css?v=36927670">
 <link rel="stylesheet" href="assets/xiaozhi.css?v=455c3b02">
 <style>
 /* 只作用于本页：页标题 + 一句说明。取值全部来自 tokens.css（字号 16/12 在阶内）。 */
@@ -163,10 +163,10 @@
   </div>
 </div>
 
-<script src="assets/data.js?v=c21d73e3"></script>
-<script src="assets/ui-kit.js?v=5e35a26b"></script>
+<script src="assets/data.js?v=1fbaf42c"></script>
+<script src="assets/ui-kit.js?v=5a79564d"></script>
 <script src="assets/transfer.js?v=d79dd74b"></script>
-<script src="assets/confirm.js?v=33f3cd5b"></script>
+<script src="assets/confirm.js?v=162e2372"></script>
 <script src="assets/popover.js?v=7f96155d"></script>
 <script src="assets/scope.js?v=7bc3b33b"></script>
 <script>
@@ -198,46 +198,6 @@
   };
 
 
-
-  /* ── 卡片 ⋮ 菜单：一个打开着的就够，永远不叠两层 ── */
-  var MENU = { open: null, btn: null };
-  function closeMenu(back) {
-    if (!MENU.open) return;
-    MENU.open.hidden = true;
-    MENU.btn.setAttribute('aria-expanded', 'false');
-    var b = MENU.btn;
-    MENU.open = null; MENU.btn = null;
-    if (back) b.focus();
-  }
-  function openMenu(btn) {
-    /* ★2026-10-26 晚修：⋮ 移进 footer 的 .kc-ops 之后，它的 parentNode 里已经
-       没有 .k-menu 了（菜单还挂在卡片尾部）—— 按 parentNode 找永远 null，于是
-       "点了完全没反应"。走查判据一次抓出 6 个死控件就是这么来的。
-       改成往上找最近的卡片：不管 ⋮ 以后被挪到哪一格，只要还在卡里就找得到。 */
-    var host = btn.closest('.kcard') || btn.parentNode;
-    var isStatus = btn.classList.contains('k-pub');
-    var menu = host.querySelector(isStatus ? '.js-k-menu-status' : '.k-menu:not(.js-k-menu-status)');
-    if (!menu) return;
-    closeMenu(false);
-    menu.hidden = false;
-    btn.setAttribute('aria-expanded', 'true');
-    MENU.open = menu; MENU.btn = btn;
-    placeMenu(btn, menu);
-    var first = menu.querySelector('[role="menuitem"]');
-    if (first) first.focus();
-  }
-
-  /* ★2026-10-26：菜单位置改成**算出来**，不再交给 CSS 的 top/bottom。
-     原因是这段几何怎么都钉不住（实测：CSS 里写 top:calc(100%+6px) 且 bottom:auto，
-     渲染出来仍贴在卡内、bottom 被解析成 -120px 把 top 吃掉），
-     而"菜单盖住卡片描述"是用户一眼就看见的问题，不能再赌样式层。
-     现在：贴着 ⋮ 的下沿开、右缘与 ⋮ 对齐、下方放不下就翻到上面。 */
-  /* 2026-10-26：这段搬进 assets/popover.js?v=026014fb 了 —— 组件卡当时另有一套 CSS 定位，
-     两页同一颗 ⋮ 开出不同位置（CARDMENU ⑧c 实测右缘差 153px）。
-     **一件事只有一个定义处**：现在两页都调 Popover.place。 */
-  function placeMenu(btn, menu) {
-    if (window.Popover) Popover.place(btn, menu);
-  }
 
   /* 菜单项的真实结果（每一条都必须有可见反馈） */
   function menuAct(act, id) {
@@ -307,7 +267,7 @@
       return;
     }
     if (act === 'live') {
-      var stv = DB.versOf('app', id).filter(function (r) { return r.kind === 'stable'; });
+      var stv = DB.versOf('app', id).filter(function (r) { return r.kind === 'stable' && r.snap; });
       /* ★2026-11-03 盲审：种子里的 v0 草稿没有正式版，点「上架正式版」直接报错 —— 又是一个死项。
          上架就是"把当前内容发成正式版"：没有正式版时先发 v1，再启用它。 */
       Confirm.ask({
@@ -317,10 +277,11 @@
           : '当前还没有正式版本。上架会把现在的内容发布为 v1，所有已授权客户都能看到。',
         ok: '上架',
         onOk: function () {
-          var v = stv.length ? stv[0].v : DB.versPublish('app', id, null);
-          if (!v) { toast('上架失败：版本号冲突，请重试', 'error'); return; }
-          DB.versApply('app', id, v);
-          a.status = '已上架'; DB.save(); render();
+          var v = stv.length ? stv[0].v : DB.versPublish('app', id, DB.appVersionSnapshot(id));
+          if (!v || (stv.length && !DB.versApply('app', id, v))) {
+            toast('上架失败，请重试', 'error'); return;
+          }
+          render();
           toast('「' + a.name + '」已上架 · 授权版本 v' + v);
         }
       });
@@ -336,7 +297,7 @@
         ok: '确定',
         danger: true,
         onOk: function () {
-          DB.versDeactivate('app', id);
+          if (!DB.versDeactivate('app', id)) { toast('下架失败，请重试', 'error'); return; }
           a.status = '未上架'; DB.save(); render();
           toast('「' + a.name + '」已下架 · 客户已不可见');
         }
@@ -416,14 +377,11 @@
   /* ── 三态（2026-11-03）：真源只有 未上架 / 内测中 / 已上架 ──────────
      底层数据还留着历史字段（未发布 / 已下架），这一层只做一次翻译，
      页面上的徽章、筛选、排序、动作全部只认 pubState()，不再各写一份判断。 */
-  function pubState(a) {
+  function pubState(a, currentVersion) {
     if (!a) return '未上架';
-    if (a.status === '未发布') return '未上架';
-    /* ★2026-11-03（真源）：系统只有 未上架/内测中/已上架；没有「已下架」这个界面态。
-       下架后是「未上架」，不是「内测中」——旧映射把下架误读成内测。 */
-    if (a.status === '已下架') return '未上架';
-    if (a.status === '内测中') return '内测中';
-    return a.status === '已上架' ? '已上架' : '未上架';
+    if (currentVersion == null) currentVersion = DB.latestVer(a.id);
+    if (currentVersion) return '已上架';
+    return a.status === '内测中' ? '内测中' : '未上架';
   }
 
   function rows() {
@@ -597,13 +555,13 @@
          卡上另一件事：有几家客户、几家还停在旧版（DB.authRows 直接给 behind）。 */
       var cardVer = 0, authCnt = 0, behindCnt = 0;
       try {
-        cardVer = DB.latestVer(a.id) || a.version || 0;
+        cardVer = ver;
         var _ar = DB.authRows(a.id).filter(function (r) { return r.status === '已授权'; });
         authCnt = _ar.length;
         behindCnt = _ar.filter(function (r) { return r.behind; }).length;
-      } catch (e) { cardVer = a.version || 0; }
-      var up = a.status === '已上架';
-      var ps = pubState(a);
+      } catch (e) { cardVer = ver; }
+      var up = !!ver;
+      var ps = pubState(a, ver);
       /* 卡底电源钮的 title 与上面菜单项**同一句话**（不新编文案）；
          写在这里而不是模板里，是因为 cardcopy 判据按区域扫模板中的写死中文。 */
       var pubTitle = up
@@ -733,56 +691,16 @@
   })();
 
   $('#f-sort').addEventListener('change', function () { render(); });
-  /* 卡身整张可点（进配置页）；⋮ 与菜单是兄弟控件，点它们不会顺带进配置页。
-     ⋮ 的可见性交给 CSS（:hover / :focus-within），这里只管"开/关/执行"。
-     键盘：Tab 能到 ⋮；Enter/Space/↓ 打开并聚焦第一项；↑↓ 移动；Esc 关闭回 ⋮；Tab 关闭（走回 DOM 顺序）。 */
   $('#grid').addEventListener('click', function (e) {
     if (e.target.closest('.js-clear')) { resetFilters(); render(); }
-    var mb = e.target.closest('.k-more');
-    if (mb) {
-      e.preventDefault();
-      if (MENU.btn === mb) { closeMenu(true); } else { openMenu(mb); }
-      return;
-    }
-    /* ★2026-11-03（真源）：电源钮开**状态菜单**（发布内测/上架/下架），⋮ 开通用菜单。
-       两条菜单不再混在一起；状态动作仍走 menuAct。 */
-    var pb = e.target.closest('.k-pub');
-    if (pb) {
-      e.preventDefault();
-      if (MENU.btn === pb) { closeMenu(true); } else { openMenu(pb); }
-      return;
-    }
-    var mi = e.target.closest('.k-mi');
-    if (mi) {
-      var act = mi.getAttribute('data-act');
-      var id = mi.getAttribute('data-id');
-      closeMenu(true);
-      menuAct(act, id);
-    }
   });
-  $('#grid').addEventListener('keydown', function (e) {
-    var mb = e.target.closest('.k-more, .k-pub');
-    if (mb) {
-      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); openMenu(mb); }
-      return;
-    }
-    var mi = e.target.closest('.k-mi');
-    if (!mi) return;
-    var items = Array.prototype.slice.call(MENU.open ? MENU.open.querySelectorAll('[role="menuitem"]') : []);
-    var i = items.indexOf(mi);
-    if (e.key === 'ArrowDown') { e.preventDefault(); (items[(i + 1) % items.length] || items[0]).focus(); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); (items[(i - 1 + items.length) % items.length] || items[0]).focus(); }
-    else if (e.key === 'Home') { e.preventDefault(); items[0].focus(); }
-    else if (e.key === 'End') { e.preventDefault(); items[items.length - 1].focus(); }
-    else if (e.key === 'Escape') { e.preventDefault(); closeMenu(true); }
-    else if (e.key === 'Tab') { closeMenu(false); }
-  });
-  window.addEventListener('scroll', function () { closeMenu(false); }, true);
-  window.addEventListener('resize', function () { closeMenu(false); });
-  document.addEventListener('click', function (e) {
-    if (!MENU.open) return;
-    if (e.target.closest('.k-menu') || e.target.closest('.k-more') || e.target.closest('.k-pub')) return;
-    closeMenu(false);
+  UIK.Menu.bind($('#grid'), {
+    trigger: '.k-more, .k-pub',
+    panel: function (button) {
+      return button.closest('.kcard').querySelector(button.classList.contains('k-pub')
+        ? '.js-k-menu-status' : '.k-menu:not(.js-k-menu-status)');
+    },
+    action: function (item) { menuAct(item.dataset.act, item.dataset.id); }
   });
   /* 刷新：从存储重新读一遍再重绘。
      ★2026-10-24 修 P1-A1：原来只 `render()`（拿内存重画），别处改过的名字/状态永远刷不出来，

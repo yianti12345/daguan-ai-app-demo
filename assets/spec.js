@@ -147,7 +147,7 @@
           /* ★2026-11-05（用户选 A：保留版本与升级，风格照真源）：
              真源的「有效期」是区间（2026-11-05 ~ 2027-11-01），起点就是授权日 ——
              所以原来单独的「授权时间」列是同一个数的第二次出现，删掉。 */
-          cols: '40px 170px 190px minmax(0,1fr) 96px 200px 210px'
+          cols: '40px 170px 190px minmax(130px,1fr) 96px 200px 210px'
         },
         sub: {
           headCols: [
@@ -159,7 +159,7 @@
             { key: 'ops', label: '操作', cls: 'au-o', from: 'user' }
           ],
           /* 列宽：客户吃掉剩余，其余按内容收口；操作列 210 放得下两颗按钮。 */
-          cols: '40px minmax(0,1fr) 220px 96px 200px 210px'
+          cols: '40px minmax(130px,1fr) 220px 96px 200px 210px'
         }
       }
     }

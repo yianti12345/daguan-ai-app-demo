@@ -119,7 +119,7 @@
       if (!a) return null;
       return {
         name: a.name || '', summary: a.desc || '', method: a.method || 'GET',
-        path: a.path || '', host: a.host || '',
+        path: a.path || '', host: CAP.endpoint(a).host,
         params: a.params || '', returns: a.returns || '', raw: a.raw || ''
       };
     }).filter(Boolean);
@@ -182,6 +182,7 @@
      原实现点一下就直接落库，冲突被静默合并，用户看不到跳过了几条。
      现在第二步把「能力名 / 接口数 / 冲突」摆出来，再让他选新建还是合并。 */
   var PENDING = null;
+  var importRead = 0;
 
   function openImport() {
     var m = $('#imp-mask');
@@ -232,18 +233,18 @@
       }
     }
     m = $('#imp-mask');
-    m.hidden = false;
     backStep1();
-    setTimeout(function () { var t = $('#imp-raw'); if (t) t.focus(); }, 0);
+    UIK.Dialog.open(m, { initialFocus: $('#imp-raw'), onEscape: closeImp });
   }
 
   function closeImp() {
-    var m = $('#imp-mask'); if (m) m.hidden = true;
+    UIK.Dialog.close($('#imp-mask'));
     var t = $('#imp-raw'); if (t) t.value = '';
     backStep1();
   }
 
   function backStep1() {
+    importRead++;
     PENDING = null;
     var s1 = $('#imp-s1'), s2 = $('#imp-s2');
     if (s1) s1.hidden = false;
@@ -273,89 +274,73 @@
     };
   }
 
-  /* 冲突口径必须与 importAbilities 一致：host 缺失用 project 占位 */
-  function conflictOf(item) {
-    var same = CAP.abilities().filter(function (x) { return x.name === item.name; }).length;
-    var pool = CAP.apis();
-    var dup = 0;
-    (item.apis || []).forEach(function (a) {
-      if (!a || !a.path) return;
-      var hk = a.host || ('project:' + (item.project || '未标注'));
-      var key = hk + ' ' + (a.method || 'GET') + ' ' + a.path;
-      var hit = pool.filter(function (x) {
-        return ((x.host || ('project:' + (x.project || '未标注'))) + ' ' + (x.method || 'GET') + ' ' + x.path) === key;
-      })[0];
-      if (hit) dup++;
+  async function readFiles(files) {
+    var selected = Array.from(files || []);
+    if (!selected.length) return;
+    var read = ++importRead;
+    var loaded = await Promise.allSettled(selected.map(function (file) { return file.text(); }));
+    if (read !== importRead || $('#imp-mask').hidden) return;
+    var items = [], errors = [];
+    loaded.forEach(function (entry, index) {
+      var pack = entry.status === 'fulfilled' && parseInput(entry.value);
+      if (!pack || !pack.items.length) errors.push(selected[index].name);
+      else items.push.apply(items, pack.items);
     });
-    return { same: same, dup: dup };
-  }
-
-  /* 读文件：多个文件合并成一次导入，逐个 parse 后拼 items。
-     不做 size 上限之外的拦截 —— 解析不出就明说，不吞。 */
-  function readFiles(files) {
-    var arr = [].slice.call(files || []);
-    if (!arr.length) return;
-    var texts = new Array(arr.length), done = 0;
-    function tick() {
-      if (++done < arr.length) return;
-      var items = [];
-      texts.forEach(function (t) {
-        var p = t && parseInput(t);
-        if (p) items = items.concat(p.items);
-      });
-      if (!items.length) { toast('文件里没解析出能力', 'error'); return; }
-      showPreview({ from: 'file', items: items });
-    }
-    arr.forEach(function (f, i) {
-      var r = new FileReader();
-      r.onload = function () { texts[i] = String(r.result || ''); tick(); };
-      r.onerror = function () { texts[i] = ''; tick(); };
-      r.readAsText(f);
-    });
+    if (errors.length) { toast('未能读取：' + errors.join('、'), 'error'); return; }
+    showPreview({items:items});
   }
 
   function preview() {
     var raw = (($('#imp-raw') || {}).value || '').trim();
-    var p = parseInput(raw);
-    if (!p) { toast('没解析出接口', 'error'); return; }
-    showPreview(p);
+    var pack = parseInput(raw);
+    if (!pack) { toast('没解析出接口', 'error'); return; }
+    showPreview(pack);
   }
 
-  function showPreview(p) {
-    PENDING = p;
-    var it = p.items[0] || {};
-    var c = conflictOf(it);
-    var total = p.items.reduce(function (n, x) { return n + (x.apis || []).length; }, 0);
+  function showPreview(pack) {
+    var items, result;
+    try {
+      items = pack.items.map(function (item) {
+        if (!item) return item;
+        return Object.assign({}, item, {name:String(item.name || '').trim(),
+          kind:item.abilityType || (item.kind === 'skill' ? 'skill' : 'api')});
+      });
+      if (items.some(function (item) { return item && item.kind !== 'api'; })) throw new Error('本版仅支持接口能力');
+      result = CAP.previewAbilityImport(items);
+    } catch (e) { toast(e.message, 'error'); return; }
+    PENDING = {items:items, expected:result};
     $('#imp-s1').hidden = true;
-    var s2 = $('#imp-s2');
-    s2.hidden = false;
-    s2.innerHTML = '<div class="imp-pv">'
-      + row('能力名', esc(it.name || '—'))
-      + row('接口数', String(total))
-      + row('同名能力', c.same ? ('已存在 ' + c.same + ' 条，合并会追加接口') : '无')
-      + row('已存在接口', c.dup ? ('将跳过 ' + c.dup + ' 个') : '无')
-      + '</div>'
-      + '<p class="imp-tip">' + (p.items.length > 1 ? ('这份文件含 ' + p.items.length + ' 条能力，会一并导入。') : '') + '</p>';
+    var details = $('#imp-s2');
+    details.hidden = false;
+    details.innerHTML = '<div class="imp-pv">' + result.rows.map(function (row) {
+      var summary = row.interfaces + ' 个接口';
+      if (row.skipped) summary += '，复用 ' + row.skipped + ' 个';
+      if (row.same) summary += row.mergeBlocked ? '，同名项不可合并' : '，已有同名项';
+      return '<div class="imp-row"><span>' + esc(row.name) + '</span><b>' + esc(summary) + '</b></div>';
+    }).join('') + '</div>';
     var ok = $('#imp-ok');
-    ok.textContent = '新建一条';
+    ok.textContent = '新建 ' + items.length + ' 条';
     ok.disabled = false;
-    var mg = $('#imp-merge');
-    mg.hidden = !c.same;
-
-    function row(k, v) {
-      return '<div class="imp-row"><span>' + k + '</span><b>' + v + '</b></div>';
-    }
+    $('#imp-merge').hidden = !result.rows.some(function (row) { return row.same; }) ||
+      result.rows.some(function (row) { return row.mergeBlocked; });
+    ok.focus();
   }
 
   function doImport(mode) {
     if (!PENDING) return;
-    var r;
-    try { r = CAP.importAbilities(PENDING.items.map(function(b){return Object.assign({},b,{kind:b.abilityType || (b.kind==='skill'?'skill':'api')});}), { mode: mode }); } catch(e) { toast(e.message,'error'); return; }
+    var result;
+    try {
+      result = CAP.importAbilities(PENDING.items, {mode:mode, expected:PENDING.expected});
+    } catch (e) {
+      toast(e.message,'error');
+      if (/重新预览/.test(e.message)) showPreview(PENDING);
+      return;
+    }
     closeImp();
     paint();
-    var msg = '导入完成：新增 ' + r.abilities + ' 条能力、' + r.apis + ' 个接口';
-    if (r.skipped) msg += '，跳过 ' + r.skipped + ' 个已存在接口';
-    toast(msg);
+    var message = '导入完成：新增 ' + result.abilities + ' 条能力、' + result.apis + ' 个接口';
+    if (result.skipped) message += '，复用 ' + result.skipped + ' 个接口';
+    toast(message);
   }
 
   /* ── 事件 ───────────────────────────────────────────────────────── */

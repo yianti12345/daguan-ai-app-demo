@@ -50,7 +50,7 @@
         document.title=(b.name||'能力')+' · 查看能力';
         document.querySelectorAll('.main input,.main textarea,.main select').forEach(function(x){x.disabled=true;});
         $('#act-save').hidden=true;$('#act-gen').hidden=true;$('#skill-upload').hidden=true;
-        document.querySelectorAll('#api-title ~ .abt-ops,#api-title + .abt-ops,.api-ops [data-act="edit"],.api-ops [data-act="rm"],#act-add,#act-testall').forEach(function(x){x.hidden=true;});
+        document.querySelectorAll('#api-title ~ .abt-ops,#api-title + .abt-ops,.api-ops [data-act="edit"],.api-ops [data-act="rm"],.api-ops [data-act="test"],#act-add,#act-testall').forEach(function(x){x.hidden=true;});
         document.addEventListener('click',function(e){if(e.target.closest('#act-add,#act-testall,#act-gen,#act-save,[data-act="rm"],[data-act="edit"],[data-act="test"]')){e.preventDefault();e.stopImmediatePropagation();}},true);
       }
     });

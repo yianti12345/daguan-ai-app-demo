@@ -83,8 +83,13 @@
 .cap-workspace .api-raw { border-radius:var(--radius-control); }
 
 /* 授权能力：白卡、轻边框、舒展的间距，状态与说明各有层级。 */
-.cap-workspace .av-panel { max-width:1000px; }
-.cap-workspace .av-panel .p-hd { border-bottom:1px solid var(--color-border-hairline); }
+.cap-workspace .av-panel {
+  width:calc(100vw - 64px);max-width:1280px;height:min(820px,calc(100vh - 64px));
+}
+.cap-workspace .av-panel .p-hd {
+  border-bottom:1px solid var(--color-border-hairline);
+  gap:var(--space-12);padding:calc(var(--space-16) + var(--space-4)) var(--space-24);
+}
 .cap-workspace .av-panel .p-hd b { font-size:var(--dialog-title-font-size); }
 .cap-workspace .av-filter { padding:var(--space-16) var(--space-24) var(--space-12); }
 .cap-workspace .av-filter .field { height:calc(var(--space-32) + var(--space-8)); background:var(--surface-subtle); border-color:transparent; }
@@ -132,11 +137,11 @@
 .cap-workspace #se-send { justify-self:end; min-width:calc(var(--space-32) * 2); }
 
 /* 应用配置：清晰顶栏与柔和输入区，不给生成页面强加固定主题。 */
-.cap-workspace[data-app] .topbar { height:64px; border-bottom:1px solid var(--color-border-hairline); }
-.cap-workspace[data-app] .topbar .btn { height:calc(var(--space-32) + var(--space-8)); padding:0 var(--space-16); }
+body.cap-workspace:where([data-app],[data-template-editor]) .topbar { height:64px; border-bottom:1px solid var(--color-border-hairline); }
+body.cap-workspace:where([data-app],[data-template-editor]) .topbar .btn { height:calc(var(--space-32) + var(--space-8)); padding:0 var(--space-16); }
 .cap-workspace[data-app] .cap-entry { border-radius:var(--radius-control); }
 .cap-workspace[data-app] .cap-ratio { font-weight:400; }
-.cap-workspace[data-app] .canvas { padding-top:80px; }
+body.cap-workspace:where([data-app],[data-template-editor]) .canvas { padding-top:80px; }
 .cap-workspace[data-app] .fk-bar { border:1px solid var(--color-border-hairline); border-radius:var(--radius-panel); box-shadow:var(--shadow-floating); }
 .cap-workspace[data-app] .fk-dock[data-hist="closed"] .fk-bar { border-radius:var(--radius-panel); box-shadow:var(--shadow-floating); }
 .cap-workspace[data-app] .fk-bar:focus-within { border-color:var(--color-brand); }
@@ -161,8 +166,6 @@
 
 
 /* 高频能力目录：大弹窗、通用搜索、无预设分类。 */
-.cap-workspace .av-panel{width:calc(100vw - 64px);max-width:1280px;height:min(820px,calc(100vh - 64px))}
-.cap-workspace .av-panel .p-hd{gap:var(--space-12);padding:calc(var(--space-16) + var(--space-4)) var(--space-24)}
 .cap-workspace .av-summary{font-size:var(--font-size-caption);color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
 .cap-workspace .av-filter{gap:var(--space-12)}
 .cap-workspace #av-search{height:calc(var(--space-32) + var(--space-8))}
@@ -181,3 +184,21 @@
 .av-template-preview{display:block;max-width:100%;max-height:240px;object-fit:contain;border-radius:var(--radius-control)}
 
 #ability-scope{margin-top:var(--space-16);margin-bottom:var(--space-16)}
+
+
+@media (max-width:760px) {
+  .abt-two { grid-template-columns:minmax(0,1fr); }
+  .abt-doc-ta { min-height:320px; }
+  .cap-workspace #available-list > .av-card { min-width:0; }
+  .cap-workspace .av-panel {
+    width:calc(100vw - 2 * var(--space-12));
+    height:calc(100dvh - 2 * var(--space-12));
+    max-height:none;
+  }
+  .cap-workspace #available-list, .cap-workspace .av-panel .p-hd,
+  .cap-workspace .av-filter, .cap-workspace .av-batch, .cap-workspace .av-footer {
+    padding-inline:var(--space-12);
+  }
+  .cap-workspace .av-card .row-hd { flex-wrap:wrap; }
+  .cap-workspace .av-choice { flex:1 1 120px; }
+}

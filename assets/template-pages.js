@@ -59,15 +59,14 @@
   var text=esc('保存草稿或确认发布时，截取当前画布并更新封面。');
   return '<span class="seg-tip tm-cover-tip" tabindex="0" role="note" aria-label="'+text+'" data-tip="'+text+'">?</span>';
  }
+ function closeEdit(){
+  coverRead++;$('#tm-cover-preview').replaceChildren();UIK.Dialog.close($('#tm-mask'));
+  pending=null;editId=null;coverTemplate=null;coverVersion=null;coverImage='';
+ }
  function edit(t,pkg){
   if(!$('#tm-mask')){
    document.body.insertAdjacentHTML('beforeend',UIK.Dialog.html({id:'tm-mask',titleId:'tm-title',title:'编辑模版',closeId:'tm-close',hidden:true,body:'<div class="nf-row"><label for="tm-name">模版名称 <span class="nf-req">*</span></label><input id="tm-name" maxlength="80" required></div><div class="nf-row"><label for="tm-intro">说明</label><textarea id="tm-intro"></textarea></div><fieldset class="nf-row tm-cover-field" id="tm-cover-field"><legend>模版封面</legend><div class="tm-cover-preview" id="tm-cover-preview" inert></div><div class="nf-cover-act"><button type="button" class="btn quiet" id="tm-cover-default" aria-pressed="true">默认预览</button>'+coverHint()+'<label class="btn quiet tm-cover-upload" id="tm-cover-upload">本地上传<input type="file" id="tm-cover-file" accept="image/jpeg,image/png,image/webp"></label></div></fieldset><div id="tm-scope"></div><p id="tm-files-count" class="it-hint"></p><p id="tm-error" role="alert" class="nf-err" hidden></p>',footer:'<button type="button" class="btn quiet" id="tm-cancel">取消</button><button type="button" class="btn primary" id="tm-save">保存</button>'}));
-   scopeControl=Scope.render($('#tm-scope'),{});function close(){
-    coverRead++;
-    $('#tm-cover-preview').replaceChildren();
-    $('#tm-mask').hidden=true;
-    pending=null;editId=null;coverTemplate=null;coverVersion=null;coverImage='';
-   }
+   scopeControl=Scope.render($('#tm-scope'),{});
    $('#tm-cover-file').onchange=coverChanged;
    $('#tm-cover-default').onclick=function(){
     coverRead++;coverImage='';
@@ -75,8 +74,8 @@
     $('#tm-error').hidden=true;
     paintCover();
    };
-   $('#tm-close').onclick=close;$('#tm-cancel').onclick=close;$('#tm-mask').onkeydown=function(e){if(e.key==='Escape')close();};
-   $('#tm-save').onclick=function(){try{var meta={name:$('#tm-name').value,intro:$('#tm-intro').value,useScope:scopeControl.get(),cover:coverImage};if(editId)T.update(editId,meta);else T.create(meta,pending.files);close();paint();UIK.toast('已保存');}catch(e){$('#tm-error').textContent=e.message;$('#tm-error').hidden=false;}};
+   $('#tm-close').onclick=closeEdit;$('#tm-cancel').onclick=closeEdit;
+   $('#tm-save').onclick=function(){try{var meta={name:$('#tm-name').value,intro:$('#tm-intro').value,useScope:scopeControl.get(),cover:coverImage};if(editId)T.update(editId,meta);else T.create(meta,pending.files);paint();closeEdit();UIK.toast('已保存');}catch(e){$('#tm-error').textContent=e.message;$('#tm-error').hidden=false;}};
   }
   coverRead++;
   coverTemplate=t;
@@ -85,7 +84,7 @@
   $('#tm-cover-field').hidden=!t;
   $('#tm-save').disabled=false;
   if(t)paintCover();
-  editId=t?t.id:null;pending=pkg;$('#tm-title').textContent=t?'编辑模版':'导入模版';$('#tm-name').value=t?t.name:pkg.name;$('#tm-intro').value=t?t.intro:pkg.intro;scopeControl.set(t?t.useScope:{mode:'self'});$('#tm-files-count').hidden=true;$('#tm-error').hidden=true;$('#tm-mask').hidden=false;$('#tm-name').focus();
+  editId=t?t.id:null;pending=pkg;$('#tm-title').textContent=t?'编辑模版':'导入模版';$('#tm-name').value=t?t.name:pkg.name;$('#tm-intro').value=t?t.intro:pkg.intro;scopeControl.set(t?t.useScope:{mode:'self'});$('#tm-files-count').hidden=true;$('#tm-error').hidden=true;UIK.Dialog.open($('#tm-mask'),{initialFocus:$('#tm-name'),onEscape:closeEdit,returnFocus:function(){return t?document.querySelector('[data-template-menu="'+CSS.escape(t.id)+'"]'):$('#tm-import');}});
  }
  async function inputChanged(e){var input=e.target;if(!input.files.length)return;input.disabled=true;try{var pkg=await T.unpack(input.files);edit(null,pkg);}catch(err){notify(err);}finally{input.disabled=false;input.value='';}}
  function paint(){
@@ -101,15 +100,17 @@
 
  }
  document.addEventListener('click',function(e){var b=e.target.closest('[data-tpl-edit],[data-tpl-copy],[data-tpl-export],[data-tpl-delete],[data-act="toggle"]');if(!b)return;
-  try{if(b.dataset.tplCopy){T.clone(b.dataset.tplCopy);paint();UIK.toast('已复制');}if(b.dataset.tplEdit)edit(T.byId(b.dataset.tplEdit));if(b.dataset.tplExport)download(b.dataset.tplExport);if(b.dataset.tplDelete){var t=T.byId(b.dataset.tplDelete);Confirm.ask({title:'删除模版？',body:esc(t.name),ok:'删除',onOk:function(){T.remove(t.id);paint();}});}if(b.dataset.act==='toggle'){var t=T.byId(b.dataset.id);if(t){T.update(t.id,{on:t.on===false});paint();}}}catch(err){notify(err);}
+  try{if(b.dataset.tplCopy){T.clone(b.dataset.tplCopy);paint();UIK.toast('已复制');}if(b.dataset.tplEdit)edit(T.byId(b.dataset.tplEdit));if(b.dataset.tplExport)download(b.dataset.tplExport);if(b.dataset.tplDelete){var t=T.byId(b.dataset.tplDelete);Confirm.ask({title:'删除模版？',body:esc(t.name),ok:'删除',danger:true,onOk:function(){T.remove(t.id);paint();}});}if(b.dataset.act==='toggle'){var t=T.byId(b.dataset.id);if(t){T.update(t.id,{on:t.on===false});paint();}}}catch(err){notify(err);}
  });
  $('#tm-file').onchange=inputChanged;
  if($('#tm-import'))$('#tm-import').onclick=function(){$('#tm-file').click();};
  if($('#tm-status'))$('#tm-status').onchange=paint;
  if($('#tm-search'))$('#tm-search').oninput=function(){kw=this.value.trim();paint();};
  if($('#tm-detail-export'))$('#tm-detail-export').onclick=function(){download(id);};
- document.addEventListener('click',function(e){var btn=e.target.closest('[data-template-menu]');document.querySelectorAll('.k-menu:not([hidden])').forEach(function(m){if(!btn||m!==btn.nextElementSibling)m.hidden=true;});if(btn){var menu=btn.nextElementSibling;menu.hidden=!menu.hidden;btn.setAttribute('aria-expanded',String(!menu.hidden));if(!menu.hidden){Popover.place(btn,menu);var first=menu.querySelector('button');if(first)first.focus();}}else if(!e.target.closest('.k-menu'))document.querySelectorAll('[data-template-menu]').forEach(function(b){b.setAttribute('aria-expanded','false');});});
- document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.k-menu').forEach(function(m){m.hidden=true;});});
+ UIK.Menu.bind($('#grid'),{
+  trigger:'[data-template-menu]',
+  panel:function(button){return button.nextElementSibling;}
+ });
  document.addEventListener('click',function(e){var card=e.target.closest('[data-template-id]');if(card&&!e.target.closest('button,a,input,label,.k-menu,.ability-toggle'))location.href='template.html?id='+encodeURIComponent(card.dataset.templateId);});
  paint();window.addEventListener('storage',function(e){if(e.key==='ifas90:cap'){C.refresh();paint();}else if(e.key&&e.key.startsWith('ifas90:draft:template:'))paint();});
 })();

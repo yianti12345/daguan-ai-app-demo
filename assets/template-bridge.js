@@ -3,13 +3,16 @@
  'use strict';
  var C=CAP,T=C.Templates,id=new URLSearchParams(location.search).get('id'),key='ifas90:draft:template:'+id;
  window.DB.load();T.initialize();var source=T.byId(id);
- if(!source||!C.isGranted(source)){location.replace('templates.html');throw new Error('模版不可访问');}
+ if(!source||!C.isGranted(source)){location.replace('templates.html');return;}
  var query=new URLSearchParams(location.search),coverMode=query.get('cover')==='1';
- var view=Number(query.get('v'))||0,version=view&&T.versionsOf(id).find(function(r){return r.v===view;});
+ var requested=query.get('v'),view=requested===null?0:Number(requested);
+ var version=view&&T.versionsOf(id).find(function(r){return r.v===view;});
+ if(requested!==null&&(!/^[1-9]\d*$/.test(requested)||!version||!version.snap||!Array.isArray(version.snap.files))){
+  location.replace('versions.html?scope=template&id='+encodeURIComponent(id));return;
+ }
  if(coverMode&&!view){version=T.currentVersion(id);view=version?version.v:0;}
  var readOnly=!!view||coverMode;
  if(coverMode)document.body.setAttribute('data-template-cover','');
- if(view&&(!version||!version.snap))throw new Error('此历史版本没有可用内容快照');
  function copy(v){return JSON.parse(JSON.stringify(v));}
  function contents(files){var json=files.find(function(f){return f.name==='template.json'&&f.encoding!=='base64';}),p=json?JSON.parse(json.content):{};return {fields:p.fields||[],spec:p.spec||null,block:p.block||null,layout:p.layout||'full'};}
  function canManage(){return !readOnly&&C.canManage(T.byId(id));}
@@ -74,7 +77,7 @@
    UIK.toast(captureFailed?message+'，封面截图未更新':message,captureFailed?'error':undefined);
   });
  }
- function reset(){var formal=latestFormal();if(!canManage()||!formal||busy||saving||!session)return;Confirm.ask({title:'重置为 v'+formal.v+'？',body:'当前修改和已保存的草稿将被清除。',ok:'重置',onOk:function(){try{if(!canManage())throw new Error('没有模版维护权限');var current=latestFormal();if(!current)throw new Error('没有可恢复的正式版本');var files=copy(current.snap.files),target=contents(files);session.reset(target);savedFiles=files;controller.restore(target);header();UIK.toast('已重置为 v'+current.v);}catch(e){UIK.toast(e.message||'重置失败','error');}}});}
+ function reset(){var formal=latestFormal();if(!canManage()||!formal||busy||saving||!session)return;Confirm.ask({title:'重置为 v'+formal.v+'？',body:'当前修改和已保存的草稿将被清除。',ok:'重置',danger:true,onOk:function(){try{if(!canManage())throw new Error('没有模版维护权限');var current=latestFormal();if(!current)throw new Error('没有可恢复的正式版本');var files=copy(current.snap.files),target=contents(files);session.reset(target);savedFiles=files;controller.restore(target);header();UIK.toast('已重置为 v'+current.v);}catch(e){UIK.toast(e.message||'重置失败','error');}}});}
  window.TemplateBridge={db:db,coverMode:coverMode,refreshHeader:header,canManage:canManage,saveDraft:saveDraft,publish:publish,isSaving:function(){return saving;},setBusy:function(v){busy=!!v;header();},previewHtml:function(){
   if(record.spec)return false;var html=savedFiles.find(function(f){return /\.html?$/i.test(f.name);});if(!html)return false;var canvas=document.getElementById('canvas-inner');canvas.classList.add('template-preview');AssetFileViewer.mount(canvas,[html].concat(savedFiles.filter(function(f){return f!==html;})),0);return true;
  },attach:function(access){

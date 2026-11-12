@@ -18,11 +18,11 @@
 /* 从某个应用进来时应用是锁定的：去掉下拉箭头，否则看起来还能选、点开却没反应 */
 #fm-app.is-locked{appearance:none;-webkit-appearance:none;background-image:none;cursor:default}
 .au-card{margin-top:0}/* 2026-11-02：没有页内大标题后，工具条要与 apps.html 的第一行对齐（去掉 12px 偏移） */
-.au-bar{display:flex;align-items:center;gap:12px;padding:0 0 12px}
+.au-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 0 12px}
 /* display:flex 会盖掉 [hidden]：空态时收起的是右侧筛选，不是整条工具栏 */
 .au-bar .right[hidden]{display:none}
 .au-foot[hidden]{display:none}
-.au-bar .right{margin-left:auto;display:flex;align-items:center;gap:16px}
+.au-bar .right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:16px}
 /* 进了某个应用之后，「应用」这一列和标题是同一句话（标题就是应用名）—— 整列隐藏。 */
 /* ★2026-11-01：授权时间列 108 → 150。时间格式升级成「2026-10-20 14:32:08」（19 字符）之后
    原来那 108 装不下，时分秒被折到第二行，整行高度跟着变。同一件事的另一个口径：

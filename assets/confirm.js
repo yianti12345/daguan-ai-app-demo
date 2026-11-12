@@ -22,37 +22,11 @@
 */
 window.Confirm = (function () {
   'use strict';
-  var mask = null, cfg = null, ret = null;
+  var mask = null, cfg = null;
 
   function q(sel) { return mask.querySelector(sel); }
 
-  /* ── 背景 inert：按"祖先的兄弟"逐层关，而不是"把 body 子元素一律关掉" ──
-     两种错法都踩过：
-       ① 只列几个选择器（.sider/.bar/#grid…）—— 漏掉的 `.hdr`、`#xz-host` 仍可 Tab 到，
-          焦点一旦跑到弹层外，挂在弹层上的 Tab 陷阱就再也接不到事件；
-       ② body 子元素一律 inert —— 弹层通常包在页面容器里，这等于把弹层自己的祖先也关了，
-          focus() 全部失效、Tab 一动不动。
-     正确做法：从弹层往上走，每一层"关掉除自己这一支以外的兄弟"，
-     到 body 为止（于是 #xz-host、脚本容器这些也一并关掉）。 */
-  function inertBg(layer, on) {
-    if (!layer) return;
-    var node = layer;
-    while (node && node !== document.body) {
-      var p = node.parentNode;
-      if (!p) break;
-      Array.prototype.forEach.call(p.children, function (el) {
-        if (el === node) return;
-        /* 已经开着别的弹层时，那个弹层所在的支要留着，否则关掉这层也放不出那层 */
-        if (el.querySelector && el.querySelector('.nf-mask:not([hidden])')) return;
-        if (on) {
-          if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); el.setAttribute('data-inert-by', 'confirm'); }
-        } else if (el.getAttribute('data-inert-by') === 'confirm') {
-          el.removeAttribute('inert'); el.removeAttribute('data-inert-by');
-        }
-      });
-      node = p;
-    }
-  }
+  function inertBg(layer, on) { UIK.Dialog.inertBg(layer, on); }
 
   function build() {
     mask = document.createElement('div');
@@ -81,33 +55,11 @@ window.Confirm = (function () {
       var b = e.target.closest('[data-cf]');
       if (b) close(b.getAttribute('data-cf') === 'ok', true);
     });
-    /* capture 阶段：页面自己的 Esc 处理（关别的弹层）不该被这个框带响 */
-    document.addEventListener('keydown', onKey, true);
-  }
-
-  function focusables() {
-    return Array.prototype.filter.call(
-      mask.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])'),
-      function (n) { return !n.disabled && n.offsetParent !== null; }
-    );
-  }
-
-  function onKey(e) {
-    if (!mask || mask.hidden) return;
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(false, false); return; }
-    if (e.key !== 'Tab') return;
-    var f = focusables();
-    if (!f.length) return;
-    var first = f[0], last = f[f.length - 1], a = document.activeElement;
-    if (!mask.contains(a)) { e.preventDefault(); first.focus(); return; }
-    if (e.shiftKey && a === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
   }
 
   function ask(o) {
     if (!mask) build();
     cfg = o || {};
-    ret = document.activeElement;
 
     q('#cf-title').textContent = cfg.title || '操作确认';
     q('#cf-ico').hidden = !cfg.danger;
@@ -155,16 +107,8 @@ window.Confirm = (function () {
       okBtn.disabled = false;
     }
 
-    mask.hidden = false;
-    inertBg(mask, true);
-    /* 破坏性动作把焦点放在「取消」上：手一快敲回车不会把应用停掉。
-       用 rAF 而不是定时器 —— 定时器在慢帧下会晚于用户的第一次 Tab，
-       那一次 Tab 会从 body 起步，陷阱就白设了。 */
     var target = cfg.input ? input : (cfg.danger ? q('[data-cf="no"]') : okBtn);
-    target.focus();
-    if (document.activeElement !== target) {
-      requestAnimationFrame(function () { if (mask && !mask.hidden) target.focus(); });
-    }
+    UIK.Dialog.open(mask, { initialFocus: target, onEscape: function () { close(false, false); } });
   }
 
   /* viaBtn：这次关闭是「点了按钮」还是「点遮罩 / 按 Esc 放弃」。
@@ -172,13 +116,8 @@ window.Confirm = (function () {
      点遮罩放弃不该顺手把人带到别处去。 */
   function close(ok, viaBtn) {
     if (!mask || mask.hidden) return;
-    mask.hidden = true;
-    inertBg(mask, false);
     var c = cfg; cfg = null;
-    if (ret && ret.focus) {
-      try { ret.focus({ preventScroll: true }); } catch (e) { try { ret.focus(); } catch (e2) {} }
-    }
-    ret = null;
+    UIK.Dialog.close(mask);
     if (ok && c && typeof c.onOk === 'function') {
       c.onOk(c.input ? q('#cf-input').value.trim() : undefined);
     }
