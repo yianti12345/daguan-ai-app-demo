@@ -3,7 +3,7 @@
    逻辑本体原样取自 _work/aiwb/index.html 第 5298–6288 行，未重写一行。
    本文件只在前面补它依赖的外部件（G / att / here / render / sv / 挂载点）。
    ⚠ xzPlanModel 走 fetch(XZ_CFG.endpoint)，需要 xz-server 转发模型；
-     静态预览下没有这个接口，会走到「没接上模型」的提示，不假装执行。
+     公网演示的应用页从预设流程取计划，沿用原执行器。
 
    ⚠ 数据边界（改这个文件前先读这一条）：
      window.__xzLog（只在 ?debug=1 时挂）是"动作元数据流水"，
@@ -473,6 +473,50 @@ var XZ_Q = {
      不是整套系统的推荐：写成这页真做得到的事，第一条点下去就能看见它动手。 */
   app: ['打开「可用资产」', '保存草稿']
 };
+
+/* 公网演示只回放固定、可逆的页面操作。 */
+var XZ_DEMOS = {
+  'app-manage.html': [
+    { prompt:'搜一下「复核」', result:'应用列表已按「复核」搜索。',
+      steps:[
+        { p:'pick', id:'f-st', v:'全部', label:'清除应用状态筛选' },
+        { p:'fill', id:'f-kw', v:'复核', label:'搜索「复核」' }
+      ] },
+    { prompt:'只看已上架的应用', result:'应用列表已筛选为「已上架」。',
+      steps:[
+        { p:'fill', id:'f-kw', v:'', label:'清空搜索关键词' },
+        { p:'pick', id:'f-st', v:'已上架', label:'筛选「已上架」' }
+      ] }
+  ],
+  'app.html': [
+    { prompt:'打开「可用资产」', result:'已打开「可用资产」。',
+      steps:[{ p:'click', id:'act-available', label:'打开「可用资产」' }],
+      opened:'available-mask' }
+  ]
+};
+
+function xzDemoScenarios(){
+  if (UIK.modelRequestsAllowed()) return null;
+  return XZ_DEMOS[location.pathname.split('/').pop()] || null;
+}
+
+function xzQuestions(){
+  var demos = xzDemoScenarios();
+  return demos ? demos.map(function(demo){ return demo.prompt; }) : XZ_Q[xzPageRole()] || XZ_Q.admin;
+}
+
+function xzDemoPlan(demo, snap){
+  var acts = demo.steps.map(function(step){
+    var i = XZ_REF.indexOf(document.getElementById(step.id));
+    return { p:step.p, i:i, v:step.v, gen:snap.gen };
+  });
+  if (acts.some(function(act){ return act.i < 0; })) return null;
+  return {
+    say:'我来操作这一页。',
+    stages:[{ t:'执行步骤', steps:demo.steps.map(function(step){ return step.label; }) }],
+    acts:acts
+  };
+}
 
 /* ── 不可逆动作的代码闸 ─────────────────────────────────────────────
    ★ 这条绝对不能只写在 prompt 里。实测过：prompt 里明确写了"授权前停住"，
@@ -1318,6 +1362,15 @@ function xzClaimedAction(stages){
    为什么不一轮干完：点了会弹窗、会跳页、会出新数据，一口气规划的后面几步
    在第一步做完之后就失效了 —— 那正是"跑到第三步开始乱点"的来源。 */
 function xzRun(intent, list){
+  if (G.xzBusy) return;
+  var demos = xzDemoScenarios();
+  var demo = demos && demos.find(function(item){ return item.prompt === intent; });
+  if (demos && !demo){
+    list.push({ who:'me', text:intent }, { who:'xz', text:'点击下方示例，体验预设流程。' });
+    xzHistTouch();
+    render();
+    return;
+  }
   var t0 = xzNow();
   list.push({ who:'me', text:intent });
   xzHistTouch();
@@ -1560,7 +1613,14 @@ function xzRun(intent, list){
     if (facts.layer && turn > 1) pushStage('看到弹窗', false, ['页面弹出了对话框，我改看对话框里的内容']);
 
     var planP;
-    if (XZ_CFG.useModel && XZ_CFG.endpoint){
+    if (demo){
+      var demoPlan = xzDemoPlan(demo, snap);
+      if (!demoPlan){
+        m.err = '当前页面没有找到演示所需的控件。';
+        finish(); return;
+      }
+      planP = Promise.resolve(demoPlan);
+    } else if (XZ_CFG.useModel && XZ_CFG.endpoint){
       planP = xzPlanModel(intent, snap, facts).catch(function(e){
         /* ★2026-10-22：面板是给人看的，不许写 "Expected ',' or ']'"。
            解析细节（哪个字符、原始输出前 300 字）只留给控制台，
@@ -1629,7 +1689,7 @@ function xzRun(intent, list){
           if (m.plan.steps.indexOf(roundSteps[lr]) >= 0) continue;
           m.plan.steps.push(roundSteps[lr]);
         }
-        m.plan.partial = m.plan.steps.length <= 1;
+        m.plan.partial = !demo && m.plan.steps.length <= 1;
       }
       xzPaint();
 
@@ -1641,7 +1701,7 @@ function xzRun(intent, list){
          结果在下面的 `if (!real.length) finish()` 就返回了，确认被吃掉。
          而且这时候**不能信模型给的索引** —— 弹窗里元素只有几个，i 非常容易漂。
          所以按上次拦下的那个按钮名，在本轮快照里重新定位。 */
-      if (G.xzOnce && G.xzPendingName){
+      if (!demo && G.xzOnce && G.xzPendingName){
         var hitIdx = -1;
         for (var z = 0; z < snap.els.length; z++){
           if (snap.els[z].n === G.xzPendingName){ hitIdx = z; break; }
@@ -1734,7 +1794,7 @@ function xzRun(intent, list){
         }
         if (structural && G.xzDirty){ G.xzDirty = 0; render(); }
         else G.xzDirty = 0;
-        actsTotal += okN;
+        if (!demo) actsTotal += okN;
 
         /* 撞到不可逆动作：已经停在它前面了，这一轮就到此为止 */
         if (m.pending){
@@ -1745,6 +1805,13 @@ function xzRun(intent, list){
 
         if (okN !== real.length){
           pushStage('中断', true, ['有动作没成，我没有重试 —— 重试只会换一种错法']);
+          finish(); return;
+        }
+
+        if (demo){
+          var opened = demo.opened && document.getElementById(demo.opened);
+          if (demo.opened && (!opened || opened.hidden)) m.err = '没有打开「可用资产」。';
+          else m.text = demo.result;
           finish(); return;
         }
 
@@ -1815,13 +1882,12 @@ function xzRun(intent, list){
       /* ★ 2026-10-23（用户当面指出，腾讯那套的做法）：动手期间面板挡住操作对象，
          人就看不到"在操作什么"。所以动作一开始先把面板平滑收起，收尾再展开。
          时机选在这里而不是每个 xzAct 里：一次查询可能有多条动作，收一次就够。 */
-      document.body.classList.add('xz-acting');
       var actI = 0;
       /* ★2026-10-28（实测打转）：授权后放行，模型会在「点发布 → 点保存 → 再点发布」
          之间来回转，日志里 140 次调用仍在转。同一个元素连点 3 次就强制停 —— 这不是规则，
          是"一直跑"必须配的刹车。 */
       var lastActSig = '', repAct = 0;
-      (function stepAct(){
+      function stepAct(){
         if (stopped) return;
         /* 上一条动作的账在这里结（此时页面已经稳了） */
         xzProbeClose();
@@ -1847,6 +1913,7 @@ function xzRun(intent, list){
           finish(); return;
         }
         /* 动手之前先把目标框出来 —— "看得见"的全部来源就是这一步 */
+        if (demo && tgt) tgt.scrollIntoView({ block:'nearest', inline:'nearest' });
         xzSpot(1, tgt, xzActLabel(aNow, tgt));
         /* ★2026-10-22 A 方案：动作前后各量一次真值（DOM 三项 + 持久化一项）。
            条目先落、账后结（xzProbeClose），因为失败会立刻 afterActs()，
@@ -1889,14 +1956,29 @@ function xzRun(intent, list){
             xzAnnounce('需要你确认：我试的是「' + entry.name + '」，我报的是没做成，但' + what + '。请核对。', true);
           };
         }
-        if (rr.ok){ okN++; aNow._ok = true; }
+        if (rr.ok){
+          okN++; aNow._ok = true;
+          if (demo){
+            actsTotal++;
+            roundSteps[actI - 1].done = true;
+            xzPaint();
+            xzSpot(1, document.getElementById(demo.steps[actI - 1].id), xzActLabel(aNow, tgt));
+          }
+        }
         /* 撞到不可逆动作：停，不是失败。等用户说"确认"再放行一次。 */
         else if (rr.needConfirm){ m.pending = rr.name; G.xzPendingName = rr.name; afterActs(); return; }
         /* 失败原因只给人看，不写进正文 —— 瞬时错误进了上下文，
            模型会开始"解释那个错误"而不是继续做事（page-agent 源码注释原话）。 */
         else { m.err = rr.why; afterActs(); return; }
         setTimeout(stepAct, XZ_CFG.opPace);
-      })();
+      }
+      function startActs(){
+        if (G.xzAbort){ finish(false); return; }
+        document.body.classList.add('xz-acting');
+        stepAct();
+      }
+      if (demo) setTimeout(startActs, XZ_CFG.opPace);
+      else startActs();
 
     }).catch(function(e){
       m.err = '这一轮出错：' + (e && e.message ? e.message : e);
@@ -2689,7 +2771,7 @@ function xzMsgs(){
   if (!c.msgs.length){
     /* 开场白不要在面板里重复副标题那句话 —— 副标题已经说了"我能帮你操作"。 */
     c.msgs.push({ who:'xz', icon:1,
-      text: (k === 'client')
+      text: xzDemoScenarios() ? '点击下方示例，看看小智怎么操作。' : (k === 'client')
         ? '说一句你想找什么，我来筛。'
         : '说一句你要做什么，我来点。' });
     xzHistSaveSoon();
@@ -2711,9 +2793,7 @@ function xzPageRole(){
 /* 消息区渲染抽成一处：面板首绘与步骤点亮都走它。
    步骤按"阶段"分组，不是 ①..⑫ 平铺 —— 平铺那是执行日志，不是给人看的。 */
 function xzMsgsHtml(){
-  var X = xzState();
-  var role = xzPageRole();
-  var qs = XZ_Q[role] || XZ_Q.admin;
+  var qs = xzQuestions();
   var body = xzMsgs().map(function(m, mi){
     if (m.who === 'me') return '<p class="xz-say is-me">' + att(m.text) + '</p>' + (m.atts ? UIK.Attach.msgHtml(m.atts) : '');
     /* ★2026-10-24（xz3.log 实测）：成功的那一轮里模型照样塞一段「做到这里 ■
@@ -2833,7 +2913,7 @@ function xzMsgsHtml(){
     /* 授权卡（2026-10-28）：撤不回来的动作停在它前面，等**人点**。
        不给"说确认"的路：语音识别错一个字就能把发布放出去。 */
     var grant = '';
-    if (m.pending){
+    if (m.pending && !xzDemoScenarios()){
       grant = '<div class="xz-grant" role="group" aria-label="需要你授权">'
         + '<p class="xz-grant-t">' + (m.pendingGeneric ? '继续做刚才停下的那一步吗？' : ('要执行「' + att(m.pending) + '」吗？')) + '</p>'
         + '<p class="xz-grant-s">这一步撤不回来。点「确认执行」我接着做；如果后面弹出页面自己的确认框，我到那儿停下，最后一下归你。</p>'
@@ -2932,7 +3012,7 @@ function xzFailClass(m){
 }
 /* 这一页真做得到的一句示例（推荐问题的第一条），只用来填输入框，不自动发送。 */
 function xzExample(){
-  var qs = XZ_Q[xzPageRole()] || XZ_Q.admin;
+  var qs = xzQuestions();
   return (qs && qs.length) ? qs[0] : '点一下「新增组件」';
 }
 
@@ -3084,7 +3164,8 @@ function xzHtml(mode){
   var talk = !isHist && msgs.length > 1;
   /* 标题两行、22px、是整块面板的视觉重心 —— 原来只有 15px 一行，撑不住。
      不经过 att()，因为要保留 <br>。 */
-  var h1 = isHist ? '对话历史' : talk ? '小智' : (X.mode === 'client')
+  var demo = !!xzDemoScenarios();
+  var h1 = isHist ? '对话历史' : demo ? '小智 · 演示' : talk ? '小智' : (X.mode === 'client')
     ? 'Hi，我是小智 ~<br>想找什么应用，跟我说'
     : 'Hi，我是小智 ~<br>随时可以让我帮你操作';
   var sub = isHist ? '点一条，看看当时说了什么' : (X.mode === 'client')
@@ -3119,7 +3200,7 @@ function xzHtml(mode){
         + (isHist ? '' : '<p class="xz-sub xz-prog" id="xzProg" role="status" hidden></p>'
           + '<div class="xz-ava" aria-hidden="true"></div>')
         + '<h2 class="xz-h1">' + h1 + '</h2>'
-        + ((isHist || !talk) ? '<p class="xz-sub">' + att(sub) + '</p>' : '')
+        + ((isHist || (!talk && !demo)) ? '<p class="xz-sub">' + att(sub) + '</p>' : '')
         + '</div>'
         + (isHist ? '' : '<div class="xz-task" id="xzTask"' + xzTaskAttrs() + (taskHtml ? '' : ' hidden') + '>' + taskHtml + '</div>')
         + '<div class="xz-body' + (isHist ? ' is-hist' : '') + '" id="xzBody">' + (isHist ? xzHistBodyHtml() : xzMsgsHtml()) + '</div>'
@@ -3162,7 +3243,7 @@ function xzPaint(){
   if (head && !head.classList.contains('is-talk') && xzMsgs().length > 1){
     head.classList.add('is-talk');
     var h1el = head.querySelector('.xz-h1');
-    if (h1el) h1el.textContent = '小智';
+    if (h1el && !xzDemoScenarios()) h1el.textContent = '小智';
     /* 只撤副标题，不许动进度行：进度也挂着 .xz-sub（为了复用副标题的水平内边距），
        原来按 .xz-sub 取第一个，会把 #xzProg 一起删掉 —— 实测顶部进度直接消失。 */
     var subEl = head.querySelector('.xz-sub:not(.xz-prog)');
@@ -3345,6 +3426,7 @@ function xzMicToggle(){
    "按名字重新定位那个按钮"），另加 G.xzGrant：本轮剩下的不可逆动作不再逐个停。
    「不用了」只清掉待确认态，不动页面。 */
 function xzGrant(){
+  if (xzDemoScenarios()) return;
   var list = xzMsgs();
   for (var i = list.length - 1; i >= 0; i--){
     if (list[i].who === 'xz' && list[i].pending){
@@ -3413,6 +3495,7 @@ function xzAsk(me, fromVoice, atts){
     xzHistTouch(); render(); return;
   }
   var list = xzMsgs();
+  if (xzDemoScenarios()){ xzRun(me, list); return; }
   var last = null;
   for (var i = list.length - 1; i >= 0; i--){
     if (list[i].who === 'xz' && list[i].pending){ last = list[i]; break; }
