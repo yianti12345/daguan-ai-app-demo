@@ -1,7 +1,16 @@
 /* 模版资产：独立文件包，旧组件只复制一次；不回写旧组件或已生成的应用。 */
 (function(){
  'use strict';
- var C=window.CAP,MAX=1024*1024;
+ var C=window.CAP,MAX=1024*1024,MAX_COVER=256*1024;
+ function coverImage(value){
+  return typeof value==='string'&&value.length<=MAX_COVER&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(value)?value:'';
+ }
+ function checkedCover(value){
+  if(!value)return '';
+  var image=coverImage(value);
+  if(!image)throw new Error('封面图片无效或过大');
+  return image;
+ }
  function copy(v){return JSON.parse(JSON.stringify(v));}
  function scope(v){v=v||{};return {mode:['self','public','custom'].includes(v.mode)?v.mode:'self',roles:v.roles||[],depts:v.depts||[],users:v.users||[]};}
  function emit(){window.dispatchEvent(new Event('capabilities-changed'));}
@@ -28,12 +37,12 @@
   C.validateFiles(files);return copy(files);
  }
  function create(meta,files){
-  var actor=C.actor(),t={id:'tpl-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),assetType:'template',kind:'template',name:String(meta.name||'').trim(),intro:String(meta.intro||''),ownerId:actor.id,ownerName:actor.name,useScope:scope(meta.useScope),on:true,revision:1,at:C.now(),files:validate(files)};
+  var actor=C.actor(),t={id:'tpl-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),assetType:'template',kind:'template',name:String(meta.name||'').trim(),intro:String(meta.intro||''),ownerId:actor.id,ownerName:actor.name,useScope:scope(meta.useScope),on:true,revision:1,at:C.now(),files:validate(files),cover:checkedCover(meta.cover)};
   if(!t.name)throw new Error('填写模版名称');save(all().concat([t]));return t;
  }
  function update(id,patch){
   var list=all(),old=byId(id);if(!old||!C.canManage(old))throw new Error('只有创建人和管理员可以维护模版');
-  var next=copy(old);['name','intro','on'].forEach(function(k){if(k in patch)next[k]=patch[k];});if('useScope'in patch)next.useScope=scope(patch.useScope);if('files'in patch)next.files=validate(patch.files);
+  var next=copy(old);['name','intro','on'].forEach(function(k){if(k in patch)next[k]=patch[k];});if('useScope'in patch)next.useScope=scope(patch.useScope);if('files'in patch)next.files=validate(patch.files);if('cover'in patch)next.cover=checkedCover(patch.cover);
   next.name=String(next.name||'').trim();if(!next.name)throw new Error('填写模版名称');next.revision++;next.at=C.now();save(list.map(function(t){return t.id===id?next:t;}));return next;
  }
  function remove(id){var t=byId(id);if(!t||!C.canManage(t))throw new Error('只有创建人和管理员可以维护模版');save(all().filter(function(x){return x.id!==id;}));}
@@ -46,8 +55,8 @@
  async function unpack(input){
   var selected=Array.from(input||[]);if(!selected.length)throw new Error('请选择文件');var files=[],meta={},base=selected[0].name.replace(/\.[^.]+$/,'');
   if(selected.length===1&&/\.zip$/i.test(selected[0].name)){
-   if(!window.fflate)throw new Error('压缩包读取组件未加载');if(selected[0].size>MAX)throw new Error('压缩包超过演示容量（1 MB）');
-   var total=0,count=0,raw=fflate.unzipSync(new Uint8Array(await selected[0].arrayBuffer()),{filter:function(f){if(f.name.endsWith('/'))return false;total+=f.originalSize;count++;if(total>MAX||count>200)throw new Error('解压后的模版超过演示容量');return true;}});
+   if(!window.fflate)throw new Error('压缩包读取组件未加载');if(selected[0].size>MAX+MAX_COVER+64*1024)throw new Error('压缩包超过演示容量');
+   var total=0,count=0,manifestSeen=false,raw=fflate.unzipSync(new Uint8Array(await selected[0].arrayBuffer()),{filter:function(f){if(f.name.endsWith('/'))return false;if(/(^|\/)\.asset-manifest\.json$/.test(f.name)){if(manifestSeen||f.originalSize>MAX_COVER+64*1024)throw new Error('模版清单无效');manifestSeen=true;return true;}total+=f.originalSize;count++;if(total>MAX||count>200)throw new Error('解压后的模版超过演示容量');return true;}});
    Object.keys(raw).forEach(function(n){if(/(^|\/)\.asset-manifest\.json$/.test(n)){meta=JSON.parse(new TextDecoder().decode(raw[n]));return;}if(!/(^|\/)__MACOSX\/|(^|\/)\.DS_Store$/.test(n))files.push(fromBytes(n,raw[n]));});
   }else if(selected.length===1&&/\.json$/i.test(selected[0].name)){
    var text=await selected[0].text(),j;try{j=JSON.parse(text);}catch(e){throw new Error('JSON 格式无效');}
@@ -56,9 +65,9 @@
    var size=selected.reduce(function(n,f){return n+f.size;},0);if(size>MAX)throw new Error('模版超过演示容量（1 MB）');
    for(var f of selected)files.push(fromBytes(f.webkitRelativePath||f.name,new Uint8Array(await f.arrayBuffer())));
   }
-  return {name:meta.name||base,intro:meta.intro||'',files:validate(files)};
+  return {name:meta.name||base,intro:meta.intro||'',cover:coverImage(meta.cover),files:validate(files)};
  }
- function exportZip(id){var t=byId(id);if(!t||!C.canManage(t))throw new Error('没有导出权限');var entries={};t.files.forEach(function(f){entries[f.name]=bytes(f);});entries['.asset-manifest.json']=new TextEncoder().encode(JSON.stringify({kind:'template-asset',schema:1,name:t.name,intro:t.intro},null,2));return new Blob([fflate.zipSync(entries)],{type:'application/zip'});}
+ function exportZip(id){var t=byId(id);if(!t||!C.canManage(t))throw new Error('没有导出权限');var entries={};t.files.forEach(function(f){entries[f.name]=bytes(f);});entries['.asset-manifest.json']=new TextEncoder().encode(JSON.stringify({kind:'template-asset',schema:1,name:t.name,intro:t.intro,cover:coverImage(t.cover)},null,2));return new Blob([fflate.zipSync(entries)],{type:'application/zip'});}
  function context(t){
   var sorted=t.files.slice().sort(function(a,b){return (/design\.md$/i.test(a.name)?-1:0)-(/design\.md$/i.test(b.name)?-1:0);});
   return sorted.map(function(f){return '\n### '+f.name+'\n'+(f.encoding==='base64'?'二进制素材（'+f.mime+'），未读取图像内容':f.content);}).join('\n');
@@ -73,17 +82,32 @@
   var next=copy(t);next.versions=versions;save(all().map(function(x){return x.id===id?next:x;}));return next.versions;
  }
  function versionsOf(id){var t=byId(id);if(!t||!C.isGranted(t))return [];return copy(ensureVersions(id)).sort(function(a,b){return b.v-a.v;});}
- function versionNumber(id){var rows=versionsOf(id),active=rows.find(function(r){return r.active;});return active?active.v:0;}
- function saveVersion(id,files,expectedVersion){
+ function versionNumber(id){var active=currentVersion(id);return active?active.v:0;}
+ function saveVersion(id,files,expectedVersion,previewCover){
   var t=byId(id);if(!t||!C.canManage(t))throw new Error('只有创建人和管理员可以保存模版版本');
   var checked=validate(files),rows=copy(ensureVersions(id)),number=rows.reduce(function(n,r){return Math.max(n,r.v);},0)+1;
   if(expectedVersion&&number!==Number(expectedVersion))throw new Error('版本已更新，请重新确认发布');
   var actor=C.actor();
-  t=byId(id);var next=copy(t);next.files=checked;next.revision++;next.at=C.now();rows.forEach(function(r){r.active=false;});rows.push({v:number,kind:'stable',active:true,at:next.at,createdById:actor.id,createdBy:actor.name,snap:snapshot(next)});next.versions=rows;
+  t=byId(id);var next=copy(t);next.files=checked;next.previewCover=coverImage(previewCover);next.revision++;next.at=C.now();rows.forEach(function(r){r.active=false;});rows.push({v:number,kind:'stable',active:true,at:next.at,createdById:actor.id,createdBy:actor.name,snap:snapshot(next)});next.versions=rows;
   save(all().map(function(x){return x.id===id?next:x;}));return number;
  }
  function copyVersion(id,v){var r=versionsOf(id).find(function(x){return x.v===Number(v);});if(!r||!r.snap)throw new Error('此历史版本没有可用内容快照');return saveVersion(id,r.snap.files);}
- function clone(id){var t=byId(id);if(!t||!C.canManage(t))throw new Error('没有复制权限');var base=t.name+'（副本）',name=base,n=2;while(all().some(function(x){return x.name===name;}))name=base+n++;var copied=create({name:name,intro:t.intro,useScope:{mode:'self'}},copy(t.files));ensureVersions(copied.id);return byId(copied.id);}
- C.Templates={versionsOf:versionsOf,versionNumber:versionNumber,saveVersion:saveVersion,copyVersion:copyVersion,clone:clone,initialize:init,all:all,byId:byId,create:create,update:update,remove:remove,validate:validate,unpack:unpack,exportZip:exportZip,bytes:bytes,context:context,ready:function(t){return !!(t&&t.on!==false&&t.name&&Array.isArray(t.files)&&t.files.length);},visible:function(){return all().filter(function(t){return C.isGranted(t)||C.canManage(t);});}};
+ function clone(id){var t=byId(id);if(!t||!C.canManage(t))throw new Error('没有复制权限');var base=t.name+'（副本）',name=base,n=2;while(all().some(function(x){return x.name===name;}))name=base+n++;var copied=create({name:name,intro:t.intro,cover:coverImage(t.cover),useScope:{mode:'self'}},copy(t.files));ensureVersions(copied.id);return byId(copied.id);}
+ function readDraft(id){
+  return AppDraft.read(localStorage,'ifas90:draft:template:'+id,function(d){
+   return Array.isArray(d.fields)&&('spec' in d);
+  });
+ }
+ function automaticCover(t){
+  var draft=C.canManage(t)?readDraft(t.id):null;
+  return coverImage(draft&&draft.previewCover)||coverImage(t.previewCover);
+ }
+ function currentVersion(id){
+  var t=byId(id);
+  if(!t||!C.isGranted(t))return null;
+  var current=ensureVersions(id).find(function(row){return row.active;});
+  return current?copy(current):null;
+ }
+ C.Templates={readDraft:readDraft,automaticCover:automaticCover,coverImage:coverImage,currentVersion:currentVersion,versionsOf:versionsOf,versionNumber:versionNumber,saveVersion:saveVersion,copyVersion:copyVersion,clone:clone,initialize:init,all:all,byId:byId,create:create,update:update,remove:remove,validate:validate,unpack:unpack,exportZip:exportZip,bytes:bytes,context:context,ready:function(t){return !!(t&&t.on!==false&&t.name&&Array.isArray(t.files)&&t.files.length);},visible:function(){return all().filter(function(t){return C.isGranted(t)||C.canManage(t);});}};
  if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',function(){try{init();}catch(e){UIK.toast(e.message,'error');}});
 })();

@@ -9,7 +9,7 @@
    savedSnapshot:function(){return clone(baseline);},
    markSaved:function(){baseline=clone(opt.snapshot());},
    clear:function(){opt.storage.removeItem(opt.key);baseline=clone(opt.snapshot());},
-   save:function(){var current=clone(opt.snapshot()),saved=Object.assign({},current,{at:opt.now()});opt.storage.setItem(opt.key,JSON.stringify(saved));baseline=current;return saved;},
+   save:function(metadata){var current=clone(opt.snapshot()),saved=Object.assign({},metadata,current,{at:opt.now()});opt.storage.setItem(opt.key,JSON.stringify(saved));baseline=current;return saved;},
    reset:function(target){
     var before=clone(opt.snapshot()),previous=clone(baseline);
     try{opt.restore(clone(target));if(opt.persist&&opt.persist()===false)throw new Error('重置未能保存');opt.storage.removeItem(opt.key);baseline=clone(opt.snapshot());}

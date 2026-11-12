@@ -1,8 +1,8 @@
 /* 模版文件查看组件：代码只读；HTML 在无脚本、无网络权限的 iframe 中预览。 */
 (function(){
  'use strict';
- function mount(host,files){
-  var selected=Math.max(0,files.findIndex(function(f){return /(^|\/)(index\.html|preview\.(png|jpg|webp)|design\.md)$/i.test(f.name);})),preview=true;
+ function mount(host,files,start){
+  var selected=start??Math.max(0,files.findIndex(function(f){return /(^|\/)(index\.html|preview\.(png|jpg|webp)|design\.md)$/i.test(f.name);})),preview=true;
   host.innerHTML='<div class="af-tree"></div><div class="af-main"><div class="af-head"><span class="af-name"></span><span class="bar-sp"></span><button type="button" class="abt-op af-mode">代码</button><button type="button" class="abt-op af-download">下载</button></div><div class="af-content"></div></div>';
   var tree=host.querySelector('.af-tree'),body=host.querySelector('.af-content'),mode=host.querySelector('.af-mode');
   function data(f){return 'data:'+(f.mime||'text/plain')+';base64,'+(f.encoding==='base64'?f.content:btoa(unescape(encodeURIComponent(f.content||''))));}

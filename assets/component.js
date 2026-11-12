@@ -273,13 +273,15 @@
      只读：进来只为了"看旧版长什么样"，不在这里改。 */
   var VIEW_V = (function () { var m = /[?&]v=(\d+)/.exec(location.search); return m ? parseInt(m[1], 10) : 0; })();
   var VIEW_ONLY = false;
-  if (VIEW_V && EDIT_ID && DB && DB.versOf) {
+  if (VIEW_V && EDIT_ID && DB && DB.versOf && !(TEMPLATE_MODE && TemplateBridge.coverMode)) {
     var _rec = DB.versOf('comp', EDIT_ID).filter(function (r) { return r.kind === 'stable' && r.v === VIEW_V; })[0];
     if (_rec && _rec.snap) {
-      COMP.spec = _rec.snap.spec || null;
-      if (_rec.snap.fields) COMP.fields = _rec.snap.fields.slice();
-      if (_rec.snap.name) COMP.name = _rec.snap.name;
-      if (_rec.snap.desc) COMP.desc = _rec.snap.desc;
+      if (!TEMPLATE_MODE) {
+        COMP.spec = _rec.snap.spec || null;
+        if (_rec.snap.fields) COMP.fields = _rec.snap.fields.slice();
+        if (_rec.snap.name) COMP.name = _rec.snap.name;
+        if (_rec.snap.desc) COMP.desc = _rec.snap.desc;
+      }
       COMP.ver = 'v' + VIEW_V;
       VIEW_ONLY = true;
       /* 只读提示：不标出来，用户会以为正在改当前版 */
@@ -1016,6 +1018,7 @@
 
   function generate(text) {
     if(TEMPLATE_MODE&&!TemplateBridge.canManage()){toast('仅查看');return;}
+    if(TEMPLATE_MODE&&TemplateBridge.isSaving())return;
     if (!text) return;
     if (busy) { pending = text; toast('前面还有一句在生成'); return; }
     /* 另起一条：这一页已经落过库，而这句话是"做一个 Y" ⇒ 换一条，
@@ -1286,7 +1289,7 @@
   }
 
   function onPublish() {
-    if(TEMPLATE_MODE){var next=nextCompV();Confirm.ask({title:'发布新版本 v'+next+'？',body:UIK.esc(COMP.name),ok:'发布',onOk:function(){try{upsert(COMP.status,next);toast('已发布 v'+next);}catch(e){toast(e.message,'error');}}});return;}
+    if(TEMPLATE_MODE){var next=nextCompV();Confirm.ask({title:'发布新版本 v'+next+'？',body:UIK.esc(COMP.name),ok:'发布',onOk:function(){TemplateBridge.publish(next);}});return;}
     if (!cur) { toast('先说要做什么，还没有可以保存的内容'); return; }
     /* 发号只认台账最大号：不再用 COMP.status/ver 猜，避免造出两条同号 */
     var n = usersOf();
@@ -1339,6 +1342,12 @@
       var raw = localStorage.getItem('ifas90:hist:comp:new');
       if (raw) localStorage.setItem('ifas90:hist:comp:' + COMP.id, raw);
     } catch (e) {}
+  }
+
+  if (TEMPLATE_MODE && TemplateBridge.coverMode) {
+    canvasEl.inert = true;
+    paintInitial();
+    return;
   }
 
   var ui = window.Float ? window.Float.mount({
