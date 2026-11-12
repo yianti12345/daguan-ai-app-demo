@@ -491,7 +491,15 @@ var XZ_DEMOS = {
   'app.html': [
     { prompt:'打开「可用资产」', result:'已打开「可用资产」。',
       steps:[{ p:'click', id:'act-available', label:'打开「可用资产」' }],
-      opened:'available-mask' }
+      opened:'available-mask' },
+    { prompt:'在模版资产中查找「审核任务列表」',
+      result:'已找到模版「审核任务列表」。',
+      steps:[
+        { p:'click', id:'act-available', label:'打开「可用资产」' },
+        { p:'click', id:'av-tab-template', label:'切到「模版资产」' },
+        { p:'fill', id:'available-kw', v:'审核任务列表', label:'搜索「审核任务列表」' }
+      ],
+      opened:'available-mask', resultCard:'审核任务列表' }
   ]
 };
 
@@ -505,17 +513,25 @@ function xzQuestions(){
   return demos ? demos.map(function(demo){ return demo.prompt; }) : XZ_Q[xzPageRole()] || XZ_Q.admin;
 }
 
-function xzDemoPlan(demo, snap){
-  var acts = demo.steps.map(function(step){
-    var i = XZ_REF.indexOf(document.getElementById(step.id));
-    return { p:step.p, i:i, v:step.v, gen:snap.gen };
-  });
-  if (acts.some(function(act){ return act.i < 0; })) return null;
+function xzDemoPlan(demo){
   return {
     say:'我来操作这一页。',
     stages:[{ t:'执行步骤', steps:demo.steps.map(function(step){ return step.label; }) }],
-    acts:acts
+    acts:demo.steps.map(function(step){ return { p:step.p, v:step.v, demoId:step.id }; })
   };
+}
+
+function xzDemoResult(demo){
+  var mask = demo.opened && document.getElementById(demo.opened);
+  if (demo.opened && (!mask || mask.hidden)) return '没有打开「可用资产」。';
+  if (!demo.resultCard) return '';
+  var selected = mask.querySelector('#av-tab-template[aria-selected="true"]');
+  var input = mask.querySelector('#available-kw');
+  var cards = mask.querySelectorAll('#available-list .av-choice b');
+  if (selected && input && input.value === demo.resultCard && Array.prototype.some.call(cards, function(card){
+    return card.textContent === demo.resultCard;
+  })) return '';
+  return '未找到模版「' + demo.resultCard + '」。';
 }
 
 /* ── 不可逆动作的代码闸 ─────────────────────────────────────────────
@@ -1614,12 +1630,7 @@ function xzRun(intent, list){
 
     var planP;
     if (demo){
-      var demoPlan = xzDemoPlan(demo, snap);
-      if (!demoPlan){
-        m.err = '当前页面没有找到演示所需的控件。';
-        finish(); return;
-      }
-      planP = Promise.resolve(demoPlan);
+      planP = Promise.resolve(xzDemoPlan(demo));
     } else if (XZ_CFG.useModel && XZ_CFG.endpoint){
       planP = xzPlanModel(intent, snap, facts).catch(function(e){
         /* ★2026-10-22：面板是给人看的，不许写 "Expected ',' or ']'"。
@@ -1809,9 +1820,8 @@ function xzRun(intent, list){
         }
 
         if (demo){
-          var opened = demo.opened && document.getElementById(demo.opened);
-          if (demo.opened && (!opened || opened.hidden)) m.err = '没有打开「可用资产」。';
-          else m.text = demo.result;
+          m.err = xzDemoResult(demo);
+          if (!m.err) m.text = demo.result;
           finish(); return;
         }
 
@@ -1894,6 +1904,14 @@ function xzRun(intent, list){
         if (G.xzAbort){ m.text = '好，我停下了。'; finish(false); return; }
         if (actI >= real.length){ afterActs(); return; }
         var aNow = real[actI++];
+        if (demo){
+          aNow.gen = xzObserve().gen;
+          aNow.i = XZ_REF.indexOf(document.getElementById(aNow.demoId));
+          if (aNow.i < 0){
+            m.err = '当前页面没有找到「' + demo.steps[actI - 1].label + '」所需的控件。';
+            afterActs(); return;
+          }
+        }
         if (aNow.gen == null) aNow.gen = snap.gen;
         var tgt = (aNow.p === 'go') ? null : XZ_REF[aNow.i];
         var tname = tgt ? (xzNameOf(tgt) || '') : '';
@@ -1915,6 +1933,11 @@ function xzRun(intent, list){
         /* 动手之前先把目标框出来 —— "看得见"的全部来源就是这一步 */
         if (demo && tgt) tgt.scrollIntoView({ block:'nearest', inline:'nearest' });
         xzSpot(1, tgt, xzActLabel(aNow, tgt));
+        if (demo && demo.resultCard) setTimeout(function(){ performAction(aNow, tgt); }, XZ_CFG.opPace);
+        else performAction(aNow, tgt);
+      }
+      function performAction(aNow, tgt){
+        if (G.xzAbort){ finish(false); return; }
         /* ★2026-10-22 A 方案：动作前后各量一次真值（DOM 三项 + 持久化一项）。
            条目先落、账后结（xzProbeClose），因为失败会立刻 afterActs()，
            先量后记会让"没记上"变成漏判。 */
@@ -1962,7 +1985,13 @@ function xzRun(intent, list){
             actsTotal++;
             roundSteps[actI - 1].done = true;
             xzPaint();
-            xzSpot(1, document.getElementById(demo.steps[actI - 1].id), xzActLabel(aNow, tgt));
+            var target = document.getElementById(aNow.demoId);
+            var mask = demo.resultCard && document.getElementById(demo.opened);
+            if (mask && !mask.hidden){
+              xzMoveDemoIndicators(mask);
+              if (!mask.contains(target)) target = null;
+            }
+            xzSpot(1, target, xzActLabel(aNow, tgt));
           }
         }
         /* 撞到不可逆动作：停，不是失败。等用户说"确认"再放行一次。 */
@@ -2480,7 +2509,22 @@ function xzSpotWait(){
   box.classList.add('is-wait');
 }
 /* 顶部流动线 + 底部接管提示。一开一关，不参与任何判断逻辑。 */
+var XZ_OP_DONE_TIMER = 0;
+
+function xzMoveDemoIndicators(parent){
+  ['xzSpot', 'xzVig', 'xzOpFoot'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el && el.parentElement !== parent){
+      parent.appendChild(el);
+      // 弹窗打开时背景节点已被设为 inert，移入当前弹窗后恢复「停止」。
+      if (parent !== document.body) el.removeAttribute('inert');
+    }
+  });
+}
+
 function xzOp(on){
+  clearTimeout(XZ_OP_DONE_TIMER);
+  if (on) xzMoveDemoIndicators(document.body);
   var vig = document.getElementById('xzVig');
   if (!vig){
     vig = document.createElement('div');
@@ -2568,7 +2612,7 @@ function xzOpDone(){
   var tx = foot.querySelector('.xz-optext');
   if (tx) tx.textContent = '交接完成';
   /* 2.4 秒太短 —— 人可能刚把视线从页面挪回来，它已经没了。给 5 秒。 */
-  setTimeout(function(){ xzFootSet(foot, false); }, 5200);
+  XZ_OP_DONE_TIMER = setTimeout(function(){ xzFootSet(foot, false); }, 5200);
 }
 /* 用户按「停止」：立刻断掉，不再往下走。
    标志放在 G 上而不是 xzRun 的闭包里，因为按钮的点击在闭包外面。 */
