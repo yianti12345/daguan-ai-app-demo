@@ -1792,7 +1792,7 @@ function xzRun(intent, list){
         xzProbeClose();
         G.xzHold = 0;
         if (G.xzAbort){ m.text = '好，我停下了。'; finish(false); return; }
-        xzSpotWait();
+        if (!demo) xzSpotWait();
         /* ★ 按动作类型决定要不要重绘，这一步错过一次：
            弹窗的内容是"打开那一刻的字符串快照"（G.modal.body），每次 render 都拿旧快照重建，
            所以选完下拉再 render，值立刻被打回空 —— 状态明明已经写进去了，界面却是空的。
