@@ -70,22 +70,20 @@
       cols: '40px 200px minmax(200px,1fr) 140px 150px 130px 176px'
     },
     'config.html': {
-      object: '模型（对话/向量/重排/语音）以及各场景绑定哪一个',
-      source: '真源 /Expert/Management/Config（真源页面名是「能力配置」，这里叫模型配置，避免与一级的「能力管理」撞出"能力XX"；默认模型不可下线，温度/迭代/输出上限/上下文）',
-      truth: '按场景绑定建模：应用配置对话 / 组件配置对话 / 技能生成',
+      object: '对话与语音模型及其场景绑定',
+      source: '基础配置模型管理，按用户确认的页面范围展示',
+      truth: '小智和配置页绑定对话模型，语音输入绑定语音模型',
       states: ['无模型', '有数据', '有停用项', '默认模型'],
       headCols: [
         { key: 'name', label: '模型' },
         { key: 'vendor', label: '供应商' },
         { key: 'conn', label: '连接' },
-        { key: 'temp', label: '温度' },
-        { key: 'react', label: '最大迭代' },
         { key: 'outMax', label: '输出上限' },
         { key: 'ctx', label: '上下文' },
         { key: 'on', label: '状态' },
         { key: 'ops', label: '操作' }
       ],
-      cols: '240px 120px 84px 80px 110px 120px 110px 90px 150px'
+      cols: 'minmax(160px,1fr) 104px 80px 88px 88px 64px 112px'
     },
     'skills.html': {
       object: '技能（直接装给小智的技能包，只有一个归属：小智）',

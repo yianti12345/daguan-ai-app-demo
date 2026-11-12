@@ -15,28 +15,33 @@
     else if (window.confirm(o.body || '')) o.onOk && o.onOk();
   };
 
-  /* 2026-11-06：「模型类型」表单字段曾一度从界面撤除（当时只建对话模型）。
-     ★2026-11-09 恢复：用户要求「模型类型肯定要，不然新增的模型怎么选类型、怎么跟类型关联」，
-       类型重回新增/编辑表单，并按类型联动字段。数据层的 kind 从头到尾没删过。
-       定稿值域见 _reports/方案-v1-能力配置与基础配置-20261109.md 第九节 9.6。 */
-  /* 这条规则：kind 在数据层只有一个值，不要在别处另立 type 字段。 */
+  var KIND_DEF = [
+    { k: 'chat', label: '对话' },
+    { k: 'asr', label: '语音' }
+  ];
+  var KIND_TABS = [{ k: 'all', label: '全部' }].concat(KIND_DEF);
   var EDIT_ID = null;
   window.addEventListener('models-ready',function(){paintModels();paintScenes();});
 
-  function chatModels() {
-    return CAP.models().filter(function (m) { return m.kind === 'chat' && m.on; });
+  function supportedKind(kind) {
+    return KIND_DEF.find(function (entry) { return entry.k === kind; });
+  }
+
+  function managedModels() {
+    return CAP.models().filter(function (model) { return supportedKind(model.kind); });
   }
 
   function paintScenes() {
     var box = $('#scenes');
-    box.innerHTML = CAP.scenes().map(function (s) {
-      /* ★2026-11-09：每条绑定只列它自己那一类模型。原来固定列 chat，
-         加语音/向量/重排之后会把对话模型塞进向量下拉，选了就绑错。 */
+    var models = managedModels();
+    box.innerHTML = CAP.scenes().filter(function (scene) {
+      return supportedKind(scene.kind || 'chat');
+    }).map(function (s) {
       var kind = s.kind || 'chat';
       /* ★2026-11-09 盲审：停用后原来直接从下拉消失，但库里绑定还是它 ——
          界面说 A、实际绑 B。现在把当前绑定的那条留在列表里，并标「已停用」。 */
-      var ms = CAP.models().filter(function (m) { return m.kind === kind && (m.on || m.id === s.model); });
-      var kl = (KIND_DEF.filter(function (x) { return x.k === kind; })[0] || { label: '' }).label;
+      var ms = models.filter(function (m) { return m.kind === kind && (m.on || m.id === s.model); });
+      var kl = supportedKind(kind).label;
       var opts = ms.length
         ? ms.map(function (m) {
             return '<option value="' + esc(m.id) + '" title="' + esc(m.name) + '"' + (m.id === s.model ? ' selected' : '') + '>'
@@ -50,29 +55,14 @@
     }).join('');
   }
 
-  /* ★2026-11-09（用户：模型要区分类型，不然新增的模型怎么选类型、怎么跟类型关联）：
-     按类型筛选。视觉不做 Tab —— 它是「对话」模型的一个属性（多模态），
-     单列成一个类型会逼一个既能对话又能读图的模型二选一。
-     计数为 0 的类型不出现：真源那个「视觉(0)」就是纯噪音。 */
-  var KIND_TABS = [
-    { k: 'all', label: '全部' },
-    { k: 'chat', label: '对话' },
-    { k: 'embed', label: '向量' },
-    { k: 'rerank', label: '重排' },
-    { k: 'asr', label: '语音' }
-  ];
   var modelKind = 'all';
 
-  function kindCount(k) {
-    return CAP.models().filter(function (m) { return k === 'all' || m.kind === k; }).length;
-  }
-
-  function paintTabs() {
+  function paintTabs(models) {
     var box = $('#mtabs'); if (!box) return;
     /* ★2026-11-09（用户）：没有对应模型的类型也要显示 —— 不显示就不知道系统支持哪几类。
        空 Tab 是能力声明，不是噪音。所以这里不再按计数过滤。 */
     box.innerHTML = KIND_TABS.map(function (t) {
-      var c = kindCount(t.k);
+      var c = models.filter(function (m) { return t.k === 'all' || m.kind === t.k; }).length;
       return '<button class="mtab" type="button" role="tab" data-kind="' + t.k + '" aria-selected="'
         + (modelKind === t.k ? 'true' : 'false') + '">' + esc(t.label)
         + '<span class="n">(' + c + ')</span></button>';
@@ -90,8 +80,9 @@
   }
 
   function paintModels() {
-    paintTabs();
-    var rows = CAP.models().filter(function (m) { return modelKind === 'all' || m.kind === modelKind; });
+    var models = managedModels();
+    paintTabs(models);
+    var rows = models.filter(function (m) { return modelKind === 'all' || m.kind === modelKind; });
     List.render(SPEC['config.html'], {
       table: '.cfg-table', head: '#head', body: '#list', total: '#total',
       rows: rows,
@@ -102,8 +93,6 @@
         }
         if (key === 'vendor') return esc(r.vendor || '—');
         if (key === 'conn') return connCell(r);
-        if (key === 'temp') return r.kind === 'chat' ? String(r.temp) : '—';
-        if (key === 'react') return r.react ? String(r.react) : '—';
         if (key === 'outMax') return r.outMax ? String(r.outMax) : '—';
         if (key === 'ctx') return r.ctx ? String(r.ctx) : '—';
         if (key === 'on') {
@@ -118,8 +107,6 @@
         }
         return '';
       },
-      /* ★2026-11-09：空 Tab 现在会显示（全部/对话/向量/重排/语音），点进来不能只说"还没有模型" ——
-         那会让人以为是整个清单空。要说出是"哪一类"还空着。 */
       empty: function () {
         var t = KIND_TABS.filter(function (x) { return x.k === modelKind; })[0];
         var what = modelKind === 'all' ? '模型' : (t ? t.label : '') + '类模型';
@@ -133,12 +120,6 @@
   /* ══ 模型类型与来源（2026-11-09）══════════════════════════════════
      用户原话：「模型类型不是肯定要的吗？不然新增的模型怎么去选择类型，怎么跟类型关联啊」
      类型是第一项，且决定下面出现哪些字段。视觉不做类型 —— 它是对话模型的属性（见 f-vision）。 */
-  var KIND_DEF = [
-    { k: 'chat', label: '对话' },
-    { k: 'embed', label: '向量' },
-    { k: 'rerank', label: '重排' },
-    { k: 'asr', label: '语音' }
-  ];
   var SRC_DEF = [{ k: 'api', label: 'API' }, { k: 'ollama', label: 'Ollama' }];
   var dlgKind = 'chat', dlgSrc = 'api', pendingTest = null;
 
@@ -149,10 +130,8 @@
         + (dlgKind === t.k) + '">' + t.label + '</button>';
     }).join('');
     if (sb) sb.innerHTML = SRC_DEF.map(function (t) {
-      /* 重排不支持 Ollama（真源与两家厂商文档一致），直接禁用而不是选了再报错 */
-      var dis = t.k === 'ollama' && dlgKind === 'rerank';
       return '<button type="button" class="fchip" data-src="' + t.k + '" aria-pressed="'
-        + (dlgSrc === t.k) + '"' + (dis ? ' disabled' : '') + '>' + t.label + '</button>';
+        + (dlgSrc === t.k) + '">' + t.label + '</button>';
     }).join('');
   }
 
@@ -179,11 +158,10 @@
     el.className = 'rt' + (kind === 'ok' ? ' is-ok' : kind === 'bad' ? ' is-bad' : '');
   }
 
-  /* 必填没齐时「测试连接」是灰的（真源图 2 同款）。embed 另要向量维度。 */
+  /* 测试连接需要模型标识和 API 地址。 */
   function syncTestBtn() {
     var btn = $('#dlg-test'); if (!btn) return;
     var ok = ['f-name', 'f-url'].every(function (id) { return ($('#' + id).value || '').trim(); });
-    if (dlgKind === 'embed' && !($('#f-dim').value || '').trim()) ok = false;
     btn.disabled = !ok || btn.getAttribute('data-run') === '1';
   }
 
@@ -248,24 +226,21 @@
   }
 
   function openDlg(id) {
-    EDIT_ID = id || null;
     var m = id ? CAP.modelById(id) : null;
+    if (id && (!m || !supportedKind(m.kind))) return;
+    EDIT_ID = id || null;
     $('#dlg-t').textContent = m ? '编辑模型' : '新建模型';
     $('#f-name').value = m ? m.name : '';
     $('#f-label').value = m ? (m.label || '') : '';
     $('#f-vendor').value = m ? (m.vendor || '') : '';
     $('#f-url').value = m ? (m.url || '') : '';
     $('#f-key').value = m ? (m.key || '') : '';
-    $('#f-temp').value = m ? m.temp : 0.2;
-    $('#f-react').value = m ? m.react : 10;
     $('#f-out').value = m ? m.outMax : 32768;
     $('#f-ctx').value = m ? m.ctx : 128000;
     /* ★2026-11-09：类型/来源回填，并按类型决定哪些字段可用 */
     dlgKind = (m && m.kind) || 'chat';
     dlgSrc = (m && m.source) || 'api';
     pendingTest = (m && m.test) || null;
-    $('#f-dim').value = m && m.embedDim ? m.embedDim : '';
-    $('#f-topn').value = m && m.topn ? m.topn : '';
     $('#f-afmt').value = m && m.afmt ? m.afmt : '';
     $('#f-vision').value = m && m.vision ? '1' : '0';
     paintHeaders(m ? m.headers : []);
@@ -297,10 +272,7 @@
       paintChips(); applyNeed();
     });
   }
-  bindChips($('#k-chips'), 'data-kind', function (k) {
-    dlgKind = k;
-    if (k === 'rerank' && dlgSrc === 'ollama') dlgSrc = 'api';
-  });
+  bindChips($('#k-chips'), 'data-kind', function (k) { dlgKind = k; });
   bindChips($('#s-chips'), 'data-src', function (s) { dlgSrc = s; });
 
   /* ── 自定义请求头：加一行空键值对 ── */
@@ -337,7 +309,7 @@
   });
 
   /* 必填项 / 会改变连接结果的项变了，按钮跟着变灰，旧结果作废 */
-  ['f-name', 'f-url', 'f-dim', 'f-key'].forEach(function (id) {
+  ['f-name', 'f-url', 'f-key'].forEach(function (id) {
     var el = $('#' + id);
     if (el) el.addEventListener('input', function () { setTestRes(''); pendingTest = null; syncTestBtn(); });
   });
@@ -353,29 +325,20 @@
   $('#dlg-save').addEventListener('click', function () {
     var name = $('#f-name').value.trim();
     if (!name) { toast('先填模型标识', 'error'); $('#f-name').focus(); return; }
-    /* ★2026-11-09 盲审：原来只校验名称 —— 地址空、向量维度空都能「保存成功」，
-       之后这条模型在清单里看着正常，测试连接却永远是灰的。 */
     var url0 = $('#f-url').value.trim();
     if (!url0) { toast('先填 API 地址', 'error'); $('#f-url').focus(); return; }
-    if (dlgKind === 'embed' && !(Number($('#f-dim').value) > 0)) {
-      toast('向量模型要填向量维度', 'error'); $('#f-dim').focus(); return;
-    }
     var v = {
       name: name,
       label: $('#f-label').value.trim() || name,
       vendor: $('#f-vendor').value.trim(),
       url: url0,
       key: $('#f-key').value.trim(),
-      temp: Number($('#f-temp').value) || 0,
-      react: Number($('#f-react').value) || 0,
       outMax: Number($('#f-out').value) || 0,
       ctx: Number($('#f-ctx').value) || 0,
       kind: dlgKind,
       source: dlgSrc,
       vision: $('#f-vision').value === '1',
       headers: collectHeaders(),
-      embedDim: Number($('#f-dim').value) || 0,
-      topn: Number($('#f-topn').value) || 0,
       afmt: $('#f-afmt').value.trim()
     };
     /* 测过、且测的就是这一版配置 → 把结果一起存下来。

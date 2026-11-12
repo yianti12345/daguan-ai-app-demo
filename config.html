@@ -17,7 +17,7 @@
 .cfg-sec-hd{display:flex;align-items:baseline;gap:var(--space-8);margin:0 0 var(--space-12)}
 .cfg-sec-hd b{font-size:var(--font-size-heading);font-weight:600;color:var(--color-text-primary)}
 .cfg-sec-hd span{font-size:var(--font-size-caption);color:var(--color-text-tertiary)}
-#scenes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--space-32)} /* 五条绑定两列排，别一条占一行把右边空掉 */
+#scenes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--space-32)}
 .scene{display:flex;align-items:center;gap:var(--space-16);padding:var(--space-12) 0;border-bottom:1px solid var(--color-border-hairline)}
 .scene:last-child{border-bottom:0}
 .scene .scene-t{flex:1 1 auto;min-width:0}
@@ -107,12 +107,8 @@
         <datalist id="vendor-list"><option value="DeepSeek"></option><option value="阿里云"></option><option value="OpenAI"></option><option value="自建"></option></datalist>
         <label for="f-url"><span>API 地址</span><input id="f-url" placeholder="https://api.example.com/v1"></label>
         <label for="f-key"><span>API Key</span><input id="f-key" type="password" placeholder="sk-..."></label>
-        <label for="f-temp" data-need="chat"><span>温度</span><input id="f-temp" type="number" step="0.1" min="0" max="2" value="0.2"></label>
-        <label for="f-react" data-need="chat"><span>最大迭代</span><span class="f-hint">一轮对话里最多调几次工具</span><input id="f-react" type="number" min="0" value="10"></label>
         <label for="f-out" data-need="chat"><span>输出上限</span><span class="f-hint">单次回复的最大 token</span><input id="f-out" type="number" min="0" value="32768"></label>
-        <label for="f-ctx" data-need="chat embed rerank"><span>上下文</span><span class="f-hint">模型能记住的最大 token</span><input id="f-ctx" type="number" min="0" value="128000"></label>
-        <label for="f-dim" data-need="embed"><span>向量维度</span><span class="f-hint">必须与索引一致，换模型要重建索引</span><input id="f-dim" type="number" min="0" placeholder="例如 1024"></label>
-        <label for="f-topn" data-need="rerank"><span>候选数</span><input id="f-topn" type="number" min="1" placeholder="例如 10"></label>
+        <label for="f-ctx" data-need="chat"><span>上下文</span><span class="f-hint">模型能记住的最大 token</span><input id="f-ctx" type="number" min="0" value="128000"></label>
         <label for="f-afmt" data-need="asr"><span>音频格式</span><span class="f-hint">允许上传的格式，逗号分隔</span><input id="f-afmt" placeholder="例如 mp3, wav"></label>
         <label for="f-vision" data-need="chat"><span>视觉多模态</span><span class="f-hint">勾「支持」后，下拉里会标注「多模态」</span><select id="f-vision"><option value="0">不支持</option><option value="1">支持</option></select></label>
         <div class="fld">
@@ -135,9 +131,9 @@
 <script src="assets/shell.js?v=e279ad97"></script>
 <script src="assets/ui-kit.js?v=5a79564d"></script>
 <script src="assets/confirm.js?v=162e2372"></script>
-<script src="assets/spec.js?v=8e057186"></script>
+<script src="assets/spec.js?v=6c34d9fc"></script>
 <script src="assets/list.js?v=72bd485b"></script>
 <script src="assets/capability.js?v=92dbad3c"></script>
-<script src="assets/config.js?v=bae0b663"></script>
+<script src="assets/config.js?v=ec063850"></script>
 </body>
 </html>
